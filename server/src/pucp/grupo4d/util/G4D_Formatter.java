@@ -1,0 +1,103 @@
+package pucp.grupo4d.util;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+
+public class G4D_Formatter {
+    // Convertir Latitud DMS a Latitud Decimal
+    public static double toLatDEC(String dms) {
+        dms = dms.trim();
+        boolean negativo = dms.endsWith("S"); // latitud sur negativa
+        dms = dms.replaceAll("[NS]", "").trim();
+        String[] partes = dms.split("[°'\"]+");
+        int grados = Integer.parseInt(partes[0].trim());
+        int minutos = Integer.parseInt(partes[1].trim());
+        int segundos = Integer.parseInt(partes[2].trim());
+        double decimal = grados + (minutos / 60.0) + (segundos / 3600.0);
+        return negativo ? -decimal : decimal;
+    }
+    // Convertir Latitud Decimal a Latitud DMS
+    public static String toLatDMS(double decimal) {
+        String hemisferio = decimal >= 0 ? "N" : "S";
+        double abs = Math.abs(decimal);
+        int grados = (int) abs;
+        double minutosDec = (abs - grados) * 60;
+        int minutos = (int) minutosDec;
+        double segundosDec = (minutosDec - minutos) * 60;
+        int segundos = (int) Math.round(segundosDec);
+
+        return String.format("%02d° %02d' %02d\" %s", grados, minutos, segundos, hemisferio);
+    }
+    // Convertir Longitud DMS a Longitud Decimal
+    public static double toLonDEC(String dms) {
+        dms = dms.trim();
+        boolean negativo = dms.endsWith("W"); // longitud oeste negativa
+        dms = dms.replaceAll("[EW]", "").trim();
+
+        String[] partes = dms.split("[°'\"]+");
+        int grados = Integer.parseInt(partes[0].trim());
+        int minutos = Integer.parseInt(partes[1].trim());
+        int segundos = Integer.parseInt(partes[2].trim());
+
+        double decimal = grados + (minutos / 60.0) + (segundos / 3600.0);
+        return negativo ? -decimal : decimal;
+    }
+    // Convertir Longitud Decimal a Longitud DMS
+    public static String toLonDMS(double decimal) {
+        String hemisferio = decimal >= 0 ? "E" : "W";
+        double abs = Math.abs(decimal);
+
+        int grados = (int) abs;
+        double minutosDec = (abs - grados) * 60;
+        int minutos = (int) minutosDec;
+        double segundosDec = (minutosDec - minutos) * 60;
+        int segundos = (int) Math.round(segundosDec);
+
+        return String.format("%03d° %02d' %02d\" %s", grados, minutos, segundos, hemisferio);
+    }
+    // Obtener Charset de Archivo
+    public static Charset getFileCharset(File file) {
+        try (FileInputStream fis = new FileInputStream(file)) {
+            byte[] bom = new byte[3];
+            int n = fis.read(bom, 0, bom.length);
+
+            if (n >= 2) {
+                if ((bom[0] & 0xFF) == 0xFF && (bom[1] & 0xFF) == 0xFE) {
+                    return StandardCharsets.UTF_16LE; // UTF-16 Little Endian
+                }
+                if ((bom[0] & 0xFF) == 0xFE && (bom[1] & 0xFF) == 0xFF) {
+                    return StandardCharsets.UTF_16BE; // UTF-16 Big Endian
+                }
+            }
+            if (n == 3) {
+                if ((bom[0] & 0xFF) == 0xEF && (bom[1] & 0xFF) == 0xBB && (bom[2] & 0xFF) == 0xBF) {
+                    return StandardCharsets.UTF_8; // UTF-8 con BOM
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return StandardCharsets.UTF_8; // UTF-8 default
+    }
+
+    // Convertir LocalDateTime a String 'Valid'
+    public static String toValidString(LocalDateTime ldt) {
+        if (ldt == null) return null;
+        return ldt.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+    }
+    // Imprimir Simbolos en Linea en Archivo
+    public static void imprimirLinea(PrintWriter writer, char simbolo, int medida, boolean enter) {
+        for (int i = 0; i < medida; i++) writer.print(simbolo);
+        if(enter) writer.println();
+    }
+    // Imprimir Cadena Centrada Respecto a Medida
+    public static void imprimirCentrado(PrintWriter writer, int dimLinea, String cadena) {
+        writer.printf("%" + ((dimLinea + cadena.length())/2) + "s%n", cadena);
+    }
+}
