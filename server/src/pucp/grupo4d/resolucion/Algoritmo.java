@@ -3,6 +3,10 @@ package pucp.grupo4d.resolucion;
 import java.io.FileWriter;
 import java.io.PrintWriter;
 import java.util.Random;
+import pucp.grupo4d.modelo.Vuelo;
+import pucp.grupo4d.modelo.Ruta;
+import pucp.grupo4d.modelo.Pedido;
+import pucp.grupo4d.modelo.Producto;
 import pucp.grupo4d.modelo.Problematica;
 import pucp.grupo4d.modelo.Solucion;
 import pucp.grupo4d.util.G4D_Formatter;
@@ -27,8 +31,11 @@ public class Algoritmo {
         this.T_MAX = 10;
         this.MAX_INTENTOS = 10;
         this.NO_ENCONTRADO = -1;
+        this.solucionInicial = null;
+        this.solucionVND = null;
+        this.solucionGVNS = null;
     }
-
+    //
     public void GVNS(Problematica problematica) {
         // Declaracion de Variables
         Solucion solucionAux = new Solucion();
@@ -38,7 +45,7 @@ public class Algoritmo {
         Random rand = new Random(System.currentTimeMillis());
         // Solución inicial (Nearest Neighbor)
         // To do: // solucionInicial(problematica, solucionAux);
-        solucionAux.setPaquetes(problematica.getAllPaquetes());
+        solucionAux.setPedidos(problematica.getPedidos());
         imprimirSolucion(solucionAux, "SolucionInicial.txt");
         /*
         // Optimización por VND
@@ -88,26 +95,28 @@ public class Algoritmo {
         imprimirSolucion(xBest, "SolucionGVNS.txt");
         */
     }
+    // Solución Inicial: Nearest Neighbor
+    private void solucionInicial(Problematica problematica, Solucion solucion) {
 
+    }
     // Búsqueda local: Variable Neighborhood Descent
     private void VND(Solucion solucion) {
 
     }
-
     // Perturbación: Shaking
     private void Shaking(Solucion solucion, int k) {
 
     }
-
     //
     public void imprimirSolucionInicial(String rutaArchivo) { imprimirSolucion(solucionInicial, rutaArchivo); }
+    //
     public void imprimirSolucionVND(String rutaArchivo) { imprimirSolucion(solucionVND, rutaArchivo); }
+    //
     public void imprimirSolucionGVNS(String rutaArchivo) { imprimirSolucion(solucionGVNS, rutaArchivo); }
-
     //
     private void imprimirSolucion(Solucion solucion, String rutaArchivo) {
         // Declaracion de variables
-        int dimLinea = 120;
+        int dimLinea = 120,posPedido = 0,posProducto,posVuelo;
         FileWriter archivo;
         PrintWriter archivoWriter;
         // Carga de datos
@@ -117,10 +126,40 @@ public class Algoritmo {
             archivo = new FileWriter(rutaArchivo);
             archivoWriter = new PrintWriter(archivo);
             // Impresion de reporte
-            G4D_Formatter.imprimirLinea(archivoWriter, '=', dimLinea, true);
+            G4D_Formatter.imprimirLinea(archivoWriter, '=', dimLinea);
             G4D_Formatter.imprimirCentrado(archivoWriter, dimLinea, "FITNESS DE LA SOLUCIÓN");
             G4D_Formatter.imprimirCentrado(archivoWriter, dimLinea, String.format("%.2f", solucion.getFitness()));
-            G4D_Formatter.imprimirLinea(archivoWriter, '=', dimLinea, true);
+            G4D_Formatter.imprimirLinea(archivoWriter, '=', dimLinea);
+            for(Pedido pedido : solucion.getPedidos()) {
+                G4D_Formatter.imprimirCentrado(archivoWriter, dimLinea, String.format("PEDIDO #%d", posPedido + 1));
+                G4D_Formatter.imprimirLinea(archivoWriter, '-', dimLinea);
+                G4D_Formatter.imprimirCentrado(archivoWriter, dimLinea, "info pedido");
+                archivoWriter.println();
+                G4D_Formatter.imprimirCentrado(archivoWriter, dimLinea, "> PRODUCTOS MPE <");
+                G4D_Formatter.imprimirLinea(archivoWriter, '*', dimLinea,4);
+                posProducto = 0;
+                for(Producto producto : pedido.getProductos()) {
+                    archivoWriter.printf("%10s PRODUCTO #%d%n",">>",posProducto+1);
+                    G4D_Formatter.imprimirCentrado(archivoWriter, dimLinea, "info ruta");
+                    if(producto.getRuta() != null) {
+                        posVuelo = 0;
+                        for(Vuelo vuelo: producto.getRuta().getSecuenciaDeVuelos()) {
+                            archivoWriter.printf("%s --> %s%n",vuelo.getOrigen().getCodigo(),vuelo.getDestino().getCodigo());
+                            posVuelo++;
+                        }
+                        
+                    }
+                    G4D_Formatter.imprimirLinea(archivoWriter, '.', dimLinea, 8);
+                    archivoWriter.printf("%31s%n","Resumen de la ruta:");
+                    G4D_Formatter.imprimirLinea(archivoWriter, '.', dimLinea, 8);
+                    posProducto++;
+                }
+                G4D_Formatter.imprimirLinea(archivoWriter, '-', dimLinea);
+                archivoWriter.printf("%23s%n","Resumen del pedido:");
+                G4D_Formatter.imprimirLinea(archivoWriter, '=', dimLinea);
+                posPedido++;
+            }
+            G4D_Formatter.imprimirLinea(archivoWriter, '-', dimLinea);
             System.out.println("Archivo 'Solucion' generado en la ruta '" + rutaArchivo + "'.");
             archivoWriter.flush();
             archivoWriter.close();

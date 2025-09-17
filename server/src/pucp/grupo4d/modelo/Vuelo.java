@@ -7,8 +7,11 @@ public class Vuelo {
     private String horaSalida;
     private String horaLlegada;
     private int capacidad;
+    private EstadoVuelo estado;
 
-    public Vuelo() {}
+    public Vuelo() {
+        this.estado = EstadoVuelo.PROGRAMADO;
+    }
 
     public int getId() {
         return id;
@@ -56,5 +59,13 @@ public class Vuelo {
 
     public void setCapacidad(int capacidad) {
         this.capacidad = capacidad;
+    }
+
+    public EstadoVuelo getEstado() {
+        return estado;
+    }
+
+    public void setEstado(EstadoVuelo estado) {
+        this.estado = estado;
     }
 }

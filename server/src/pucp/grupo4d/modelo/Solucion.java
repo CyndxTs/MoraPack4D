@@ -4,22 +4,22 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Solucion {
-    private List<Paquete> paquetes;
+    private List<Pedido> pedidos;
     private double fitness;
     private double duracionTotal;
 
     public Solucion() {
-        this.paquetes = new ArrayList<>();
+        this.pedidos = new ArrayList<>();
         this.fitness = 0;
         this.duracionTotal = 0.0;
     }
 
-    public List<Paquete> getPaquetes() {
-        return paquetes;
+    public List<Pedido> getPedidos() {
+        return pedidos;
     }
 
-    public void setPaquetes(List<Paquete> paquetes) {
-        this.paquetes = paquetes;
+    public void setPedidos(List<Pedido> pedidos) {
+        this.pedidos = pedidos;
     }
 
     public double getFitness() {

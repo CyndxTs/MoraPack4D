@@ -92,12 +92,25 @@ public class G4D_Formatter {
         return ldt.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
     }
     // Imprimir Simbolos en Linea en Archivo
-    public static void imprimirLinea(PrintWriter writer, char simbolo, int medida, boolean enter) {
+    public static void imprimirLinea(PrintWriter writer, char simbolo, int medida) {
         for (int i = 0; i < medida; i++) writer.print(simbolo);
-        if(enter) writer.println();
+        writer.println();
+    }
+    // Imprimir Simbolos en Linea en Archivo
+    public static void imprimirLinea(PrintWriter writer, char simbolo, int medida, int offset) {
+        int limite = medida - 2*offset;
+        for (int i = 0; i < offset; i++) writer.print(" ");
+        for (int i = 0; i < limite; i++) writer.print(simbolo);
+        writer.println();
     }
     // Imprimir Cadena Centrada Respecto a Medida
     public static void imprimirCentrado(PrintWriter writer, int dimLinea, String cadena) {
         writer.printf("%" + ((dimLinea + cadena.length())/2) + "s%n", cadena);
+    }
+    // Imprimir Cadena Centrada y Enmarcada Respecto a Medida
+    public static void imprimirCentrado(PrintWriter w,int dim,String txt,String marco) {
+        if(marco.length()!=2) throw new IllegalArgumentException("El marco debe tener 2 caracteres");
+        int esp=(dim-txt.length())/2;
+        w.println(String.valueOf(marco.charAt(0)).repeat(esp-1) + " " + txt + " " + String.valueOf(marco.charAt(1)).repeat(esp-1));
     }
 }

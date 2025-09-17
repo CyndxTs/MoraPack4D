@@ -1,13 +1,13 @@
 package pucp.grupo4d.modelo;
 
-public class Paquete {
+public class Producto {
     private int id;
     private Pedido pedido;
     private Aeropuerto origen;
     private Aeropuerto destino;
     private Ruta ruta;
 
-    public Paquete() {}
+    public Producto() {}
 
     public int getId() {
         return id;

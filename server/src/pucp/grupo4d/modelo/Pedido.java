@@ -10,10 +10,10 @@ public class Pedido {
     private int cantidad;
     private String instanteCreacion;
     private String instanteLimite;
-    private List<Paquete> paquetes;
+    private List<Producto> productos;
 
     public Pedido() {
-        this.paquetes = new ArrayList<>();
+        this.productos = new ArrayList<>();
         this.cantidad = 0;
     }
 
@@ -65,11 +65,11 @@ public class Pedido {
         this.instanteLimite = instanteLimite;
     }
 
-    public List<Paquete> getPaquetes() {
-        return paquetes;
+    public List<Producto> getProductos() {
+        return productos;
     }
 
-    public void setPaquetes(List<Paquete> paquetes) {
-        this.paquetes = paquetes;
+    public void setProductos(List<Producto> productos) {
+        this.productos = productos;
     }
 }

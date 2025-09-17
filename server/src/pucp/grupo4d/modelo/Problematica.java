@@ -27,56 +27,20 @@ public class Problematica {
         this.vuelos = new ArrayList<>();
         this.pedidos = new ArrayList<>();
     }
-
-    public List<Aeropuerto> getSedes() {
-        return new ArrayList<>(sedes.values());
-    }
-
-    public List<Aeropuerto> getAeropuertos() {
-        return aeropuertos;
-    }
-
-    public void setAeropuertos(List<Aeropuerto> aeropuertos) {
-        this.aeropuertos = aeropuertos;
-    }
-
-    public List<Vuelo> getVuelos() {
-        return vuelos;
-    }
-
-    public void setVuelos(List<Vuelo> vuelos) {
-        this.vuelos = vuelos;
-    }
-
-    public List<Pedido> getPedidos() {
-        return pedidos;
-    }
-
-    public void setPedidos(List<Pedido> pedidos) {
-        this.pedidos = pedidos;
-    }
-
-    public List<Paquete> getAllPaquetes() {
-        List<Paquete> paquetes = new ArrayList<>();
-        for (Pedido p : pedidos) {
-            paquetes.addAll(p.getPaquetes());
-        }
-        return paquetes;
-    }
-
+    //
     public void cargarDatos(String rutaArchivoAeropuertos, String rutaArchivoVuelos, String rutaArchivoPedidos) {
         cargarSedes(null);
         cargarAeropuertos(rutaArchivoAeropuertos);
         cargarVuelos(rutaArchivoVuelos);
         cargarPedidos(rutaArchivoPedidos);
     }
-
+    //
     private void cargarSedes(String rutaArchivo) {
         this.sedes.put("SPIM", null);
         this.sedes.put("EBCI", null);
         this.sedes.put("UBBB", null);
     }
-
+    //
     private void cargarAeropuertos(String rutaArchivo) {
         // Declaracion de variables
         String continente = "",linea;
@@ -205,21 +169,21 @@ public class Problematica {
                     random.nextInt(60))
                 );
                 pedido.setInstanteCreacion(G4D_Formatter.toValidString(ldt_instanteCreacion));
-                int numPaquetes = 1 + random.nextInt(3);
-                pedido.setCantidad(numPaquetes);
-                for(int k = 0;k < numPaquetes;k++) {
-                    Paquete paquete = new Paquete();
-                    paquete.setId(k+1);
-                    paquete.setPedido(pedido);
-                    paquete.setDestino(pedido.getDestino());
-                    pedido.getPaquetes().add(paquete);
+                int numProductos = 1 + random.nextInt(3);
+                pedido.setCantidad(numProductos);
+                for(int k = 0;k < numProductos;k++) {
+                    Producto producto = new Producto();
+                    producto.setId(k+1);
+                    producto.setPedido(pedido);
+                    producto.setDestino(pedido.getDestino());
+                    pedido.getProductos().add(producto);
                 }
                 pedidos.add(pedido);
             }
         }
         System.out.println("Se cargaron " + pedidos.size() + " pedidos.");
     }
-
+    //
     private Aeropuerto buscarAeropuertoPorCodigo(String codigo) {
         for (Aeropuerto a : aeropuertos) {
             if (a.getCodigo().equalsIgnoreCase(codigo)) {
@@ -227,5 +191,41 @@ public class Problematica {
             }
         }
         return null;
+    }
+    //
+    public List<Producto> getAllProductos() {
+        List<Producto> productos = new ArrayList<>();
+        for (Pedido p : pedidos) {
+            productos.addAll(p.getProductos());
+        }
+        return productos;
+    }
+
+    public List<Aeropuerto> getSedes() {
+        return new ArrayList<>(sedes.values());
+    }
+
+    public List<Aeropuerto> getAeropuertos() {
+        return aeropuertos;
+    }
+
+    public void setAeropuertos(List<Aeropuerto> aeropuertos) {
+        this.aeropuertos = aeropuertos;
+    }
+
+    public List<Vuelo> getVuelos() {
+        return vuelos;
+    }
+
+    public void setVuelos(List<Vuelo> vuelos) {
+        this.vuelos = vuelos;
+    }
+
+    public List<Pedido> getPedidos() {
+        return pedidos;
+    }
+
+    public void setPedidos(List<Pedido> pedidos) {
+        this.pedidos = pedidos;
     }
 }
