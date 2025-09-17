@@ -155,7 +155,7 @@ public class Problematica {
     private void cargarPedidos(String rutaArchivo) {
         System.out.println("Generando pedidos..");
         Random random = new Random();
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < 3; i++) {
             Cliente cliente = new Cliente();
             cliente.setId(i+1);
             cliente.setNombre("Cli_" + (i + 1));

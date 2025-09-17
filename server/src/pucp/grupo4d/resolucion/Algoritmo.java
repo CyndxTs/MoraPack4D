@@ -211,7 +211,7 @@ public class Algoritmo {
     //
     private void imprimirSolucion(Solucion solucion, String rutaArchivo) {
         // Declaracion de variables
-        int dimLinea = 120,posPedido = 0,posProducto,posVuelo,numProductos;
+        int dimLinea = 135,posPedido = 0,posProducto,posVuelo,numProductos;
         FileWriter archivo;
         PrintWriter archivoWriter;
         // Carga de datos
@@ -228,30 +228,32 @@ public class Algoritmo {
             for(Pedido pedido : solucion.getPedidos()) {
                 G4D_Formatter.imprimirCentrado(archivoWriter, dimLinea, String.format("PEDIDO #%d", posPedido + 1));
                 G4D_Formatter.imprimirLinea(archivoWriter, '-', dimLinea,4);
-                G4D_Formatter.imprimirCentrado(archivoWriter, dimLinea, "info pedido");
+                archivoWriter.printf("%5s %-30s %15s %25s %19s %30s%n","","CLIENTE","DESTINO","NUM. PRODUCTOS MPE","REGISTRO","ENTREGA PLANIFICADA");
+                archivoWriter.printf("%5s %-30s %13s %20s %31s %25s%n","",pedido.getCliente().getNombre(),pedido.getDestino().getCodigo(),String.format("%03d",pedido.getCantidad()),pedido.getInstanteCreacion(),"dd/mm/yyyy hh:MM:ss");
                 archivoWriter.println();
-                G4D_Formatter.imprimirCentrado(archivoWriter, dimLinea, "> PRODUCTOS MPE <");
+                G4D_Formatter.imprimirCentrado(archivoWriter, dimLinea, "> SECUENCIA DE VUELOS PLANIFICADOS <");
                 G4D_Formatter.imprimirLinea(archivoWriter, '*', dimLinea,8);
                 posProducto = 0;
                 numProductos = pedido.getProductos().size();
                 for(Producto producto : pedido.getProductos()) {
-                    archivoWriter.printf("%10s PRODUCTO #%d%n",">>",posProducto+1);
-                    G4D_Formatter.imprimirCentrado(archivoWriter, dimLinea, "info ruta");
+                    archivoWriter.printf("%10s PRODUCTO #%s - ORIGEN: %s%n",">>",String.format("%03d",posPedido+1),producto.getOrigen().getCodigo());
+                    archivoWriter.printf("%47s %29s%n","ORIGEN","DESTINO");
                     if(producto.getRuta() != null) {
                         posVuelo = 0;
                         for(Vuelo vuelo: producto.getRuta().getVuelos()) {
-                            archivoWriter.printf("%s --> %s%n",vuelo.getOrigen().getCodigo(),vuelo.getDestino().getCodigo());
+                            archivoWriter.printf("%36s  dd/mm/aaaa hh:MM:ss  -->  %s dd/mm/aaaa  hh:MM:ss  ==  %.2f hrs.%n",vuelo.getOrigen().getCodigo(),vuelo.getDestino().getCodigo(),vuelo.getDuracion());
                             posVuelo++;
                         }
-                        
                     }
                     G4D_Formatter.imprimirLinea(archivoWriter, '.', dimLinea, 8);
                     archivoWriter.printf("%27s%n","Resumen de la ruta:");
+                    archivoWriter.printf("%31s %.2f hrs.%n",">> Duración de la ruta:",producto.getRuta().getDuracion());
                     if(posProducto != numProductos - 1) G4D_Formatter.imprimirLinea(archivoWriter, '*', dimLinea, 8);
                     posProducto++;
                 }
                 G4D_Formatter.imprimirLinea(archivoWriter, '-', dimLinea,4);
                 archivoWriter.printf("%23s%n","Resumen del pedido:");
+                archivoWriter.printf("%25s %.2f hrs.%n",">> Tiempo optimizado:",0.0);
                 G4D_Formatter.imprimirLinea(archivoWriter, '=', dimLinea);
                 posPedido++;
             }
