@@ -7,9 +7,14 @@ import java.io.PrintWriter;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 
 public class G4D_Formatter {
+    private static final double RADIO_TIERRA_KM = 6371.0;
+    private static final DateTimeFormatter dtf = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
+    private static final DateTimeFormatter tf = DateTimeFormatter.ofPattern("HH:mm");
+
     // Convertir Latitud DMS a Latitud Decimal
     public static double toLatDEC(String dms) {
         dms = dms.trim();
@@ -85,12 +90,6 @@ public class G4D_Formatter {
         }
         return StandardCharsets.UTF_8; // UTF-8 default
     }
-
-    // Convertir LocalDateTime a String 'Valid'
-    public static String toValidString(LocalDateTime ldt) {
-        if (ldt == null) return null;
-        return ldt.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-    }
     // Imprimir Simbolos en Linea en Archivo
     public static void imprimirLinea(PrintWriter writer, char simbolo, int medida) {
         for (int i = 0; i < medida; i++) writer.print(simbolo);
@@ -112,5 +111,27 @@ public class G4D_Formatter {
         if(marco.length()!=2) throw new IllegalArgumentException("El marco debe tener 2 caracteres");
         int esp=(dim-txt.length())/2;
         w.println(String.valueOf(marco.charAt(0)).repeat(esp-1) + " " + txt + " " + String.valueOf(marco.charAt(1)).repeat(esp-1));
+    }
+    // Calcular Distancia Con Coordenadas
+    public static double calcularDistancia(double origLat, double origLon, double destLat, double destLon) {
+        double lat1 = Math.toRadians(origLat), lon1 = Math.toRadians(origLon);
+        double lat2 = Math.toRadians(destLat), lon2 = Math.toRadians(destLon);
+        double dLat = lat2 - lat1, dLon = lon2 - lon1;
+        double h = Math.pow(Math.sin(dLat / 2), 2) + Math.cos(lat1) * Math.cos(lat2) * Math.pow(Math.sin(dLon / 2), 2);
+        return 2 * 6371.0 * Math.asin(Math.sqrt(h));
+    }
+    //
+    public static double toDEC_Hour(String time) {
+        LocalTime t = LocalTime.parse(time, tf);
+        return t.getHour() + t.getMinute() / 60.0;
+    }
+    //
+    public static String toTimeString(String dateTime) {
+        LocalDateTime ldt = LocalDateTime.parse(dateTime, dtf);
+        if(ldt.getSecond() > 0) ldt = ldt.withSecond(0).plusMinutes(1);
+        return ldt.format(tf);
+    }
+    public static String toDateTimeString(LocalDateTime ldt) {
+        return ldt.format(dtf);
     }
 }

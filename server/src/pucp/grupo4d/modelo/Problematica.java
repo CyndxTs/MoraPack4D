@@ -73,7 +73,8 @@ public class Problematica {
                     aeropuerto.setContinente(continente);
                     aeropuerto.setAlias(lineaSC.next());
                     aeropuerto.setHusoHorario(lineaSC.nextInt());
-                    aeropuerto.setCapacidad(lineaSC.nextInt());
+                    aeropuerto.setCapacidadTotal(lineaSC.nextInt());
+                    aeropuerto.setCapacidadDisponible(aeropuerto.getCapacidadTotal());
                     lineaSC.useDelimiter("\\s+");
                     lineaSC.next();
                     aeropuerto.setLatitud(lineaSC.next() + " " + lineaSC.next() + " " + lineaSC.next() + " " + lineaSC.next());
@@ -130,7 +131,9 @@ public class Problematica {
                 vuelo.setDestino(buscarAeropuertoPorCodigo(codigoDestino));
                 vuelo.setHoraSalida(lineaSC.next());
                 vuelo.setHoraLlegada(lineaSC.next());
-                vuelo.setCapacidad(lineaSC.nextInt());
+                vuelo.setCapacidadTotal(lineaSC.nextInt());
+                vuelo.setCapacidadDisponible(vuelo.getCapacidadTotal());
+                vuelo.setDuracion();
                 vuelos.add(vuelo);
                 lineaSC.close();
             }
@@ -156,7 +159,7 @@ public class Problematica {
             Cliente cliente = new Cliente();
             cliente.setId(i+1);
             cliente.setNombre("Cli_" + (i + 1));
-            int numPedidos = 1 + random.nextInt(5);
+            int numPedidos = 1 + random.nextInt(3);
             for(int j = 0;j < numPedidos;j++) {
                 Pedido pedido = new Pedido();
                 pedido.setId(j + 1);
@@ -164,11 +167,9 @@ public class Problematica {
                 pedido.setDestino(aeropuertos.get(random.nextInt(aeropuertos.size())));
                 LocalDateTime ldt_instanteCreacion = LocalDateTime.of(
                     LocalDate.now().plusDays(random.nextInt(3)).minusDays(random.nextInt(3)),
-                    LocalTime.of(random.nextInt(24),
-                    random.nextInt(60),
-                    random.nextInt(60))
+                    LocalTime.of(random.nextInt(24),random.nextInt(60),random.nextInt(60))
                 );
-                pedido.setInstanteCreacion(G4D_Formatter.toValidString(ldt_instanteCreacion));
+                pedido.setInstanteCreacion(G4D_Formatter.toDateTimeString(ldt_instanteCreacion));
                 int numProductos = 1 + random.nextInt(3);
                 pedido.setCantidad(numProductos);
                 for(int k = 0;k < numProductos;k++) {
@@ -191,14 +192,6 @@ public class Problematica {
             }
         }
         return null;
-    }
-    //
-    public List<Producto> getAllProductos() {
-        List<Producto> productos = new ArrayList<>();
-        for (Pedido p : pedidos) {
-            productos.addAll(p.getProductos());
-        }
-        return productos;
     }
 
     public List<Aeropuerto> getSedes() {

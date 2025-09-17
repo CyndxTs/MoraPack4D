@@ -10,13 +10,18 @@ public class Aeropuerto {
     private String continente;
     private String alias;
     private int husoHorario;
-    private int capacidad;
+    private int capacidadTotal;
+    private int capacidadDisponible;
     private String latitudDMS;
     private double latitudDEC;
     private String longitudDMS;
     private double longitudDEC;
 
     public Aeropuerto() {}
+
+    public double calcularDistancia(Aeropuerto aDest) {
+        return G4D_Formatter.calcularDistancia(latitudDEC,longitudDEC,aDest.latitudDEC,aDest.longitudDEC);
+    }
 
     public int getId() {
         return id;
@@ -74,12 +79,20 @@ public class Aeropuerto {
         this.husoHorario = husoHorario;
     }
 
-    public int getCapacidad() {
-        return capacidad;
+    public int getCapacidadTotal() {
+        return capacidadTotal;
     }
 
-    public void setCapacidad(int capacidad) {
-        this.capacidad = capacidad;
+    public void setCapacidadTotal(int capacidadTotal) {
+        this.capacidadTotal = capacidadTotal;
+    }
+
+    public int getCapacidadDisponible() {
+        return capacidadDisponible;
+    }
+
+    public void setCapacidadDisponible(int capacidadDisponible) {
+        this.capacidadDisponible = capacidadDisponible;
     }
 
     public String getLatitud_DMS() {
@@ -116,5 +129,18 @@ public class Aeropuerto {
     public void setLongitud(double longitudDEC) {
         this.longitudDEC = longitudDEC;
         this.longitudDMS = G4D_Formatter.toLonDMS(longitudDEC);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Aeropuerto that = (Aeropuerto) o;
+        return codigo != null && codigo.equals(that.codigo);
+    }
+
+    @Override
+    public int hashCode() {
+        return codigo != null ? codigo.hashCode() : 0;
     }
 }

@@ -2,16 +2,24 @@ package pucp.grupo4d.resolucion;
 
 import java.io.FileWriter;
 import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.Random;
 import pucp.grupo4d.modelo.Vuelo;
 import pucp.grupo4d.modelo.Ruta;
+import pucp.grupo4d.modelo.Aeropuerto;
 import pucp.grupo4d.modelo.Pedido;
 import pucp.grupo4d.modelo.Producto;
 import pucp.grupo4d.modelo.Problematica;
 import pucp.grupo4d.modelo.Solucion;
 import pucp.grupo4d.util.G4D_Formatter;
 
+
 public class Algoritmo {
+    private final static double PEOR_FITNESS = 9999.99;
     private final int L_MIN;        
     private final int L_MAX;        
     private final int K_MIN;        
@@ -44,8 +52,7 @@ public class Algoritmo {
         int tBest = 0;
         Random rand = new Random(System.currentTimeMillis());
         // Solución inicial (Nearest Neighbor)
-        // To do: // solucionInicial(problematica, solucionAux);
-        solucionAux.setPedidos(problematica.getPedidos());
+        solucionAux = solucionInicial(problematica, solucionAux);
         imprimirSolucion(solucionAux, "SolucionInicial.txt");
         /*
         // Optimización por VND
@@ -96,9 +103,97 @@ public class Algoritmo {
         */
     }
     // Solución Inicial: Nearest Neighbor
-    private void solucionInicial(Problematica problematica, Solucion solucion) {
-
+    private Solucion solucionInicial(Problematica problematica, Solucion solucion) {
+        //
+        List<Aeropuerto> sedes = new ArrayList<>(problematica.getSedes());
+        List<Pedido> pedidos = new ArrayList<>(problematica.getPedidos());
+        List<Vuelo> vuelos = new ArrayList<>(problematica.getVuelos());
+        String instanteCreacion;
+        Ruta ruta;
+        int pped = 1,pprod;
+        //
+        for (Pedido pedido : pedidos) {
+            instanteCreacion = pedido.getInstanteCreacion();
+            pprod = 1;
+            for (Producto producto : pedido.getProductos()) {
+                System.out.printf("PREVIA: %d - %d%n",pped,pprod);
+                ruta = obtenerMejorRuta(instanteCreacion, sedes, producto.getDestino(), vuelos);
+                System.out.printf("REALIZADA: %d - %d%n",pped,pprod);
+                if (ruta != null) {
+                    System.out.printf(">> DURACION: %.2f %n",ruta.getDuracion());
+                    if(ruta.getVuelos().size() > 0) {
+                        for(Vuelo vuelo : ruta.getVuelos()) {
+                            System.out.printf("[#] >> %s  ->  %s%n",vuelo.getOrigen().getCodigo(),vuelo.getDestino().getCodigo());
+                        }   
+                    } else System.out.println("NO HAY VUELOS REGISTRADOS ??");
+                    
+                    producto.setOrigen(ruta.getVuelos().get(0).getOrigen());
+                }
+                else producto.setOrigen(null);
+                System.out.printf("FINALIZADA: %d - %d%n",pped,pprod);
+                producto.setRuta(ruta);
+                pprod++;
+            }
+            pped++;
+        }
+        // Guardar en solución
+        solucion.setPedidos(pedidos);
+        solucion.setDuracion();
+        solucion.setFitness();
+        return solucion;
     }
+    //
+    private Ruta obtenerMejorRuta(String instanteInicial, List<Aeropuerto> origenes, Aeropuerto destino, List<Vuelo> vuelos) {
+        Ruta ruta,mejorRuta = null;
+        Set<Aeropuerto> visitados;
+        for(Aeropuerto origen : origenes) {
+            visitados = new HashSet<>();
+            ruta = construirRutaVoraz(instanteInicial,origen, destino, vuelos, visitados);
+            if(ruta == null) continue;
+            if(mejorRuta == null || ruta.getDuracion() < mejorRuta.getDuracion()) mejorRuta = ruta;
+        }
+        return mejorRuta;
+    }
+    //
+    private Ruta construirRutaVoraz(String instanteInicial, Aeropuerto origen, Aeropuerto destino, List<Vuelo> vuelos, Set<Aeropuerto> visitados) {
+        String horaInicial = G4D_Formatter.toTimeString(instanteInicial);
+        Vuelo vueloMasProximo;
+        List<Vuelo> secuenciaDeVuelos = new ArrayList<>();
+        Aeropuerto actual = origen;
+        Ruta ruta = new Ruta();
+        while (!actual.equals(destino)) {
+            visitados.add(actual);
+            vueloMasProximo = obtenerVueloMasProximo(horaInicial,actual,destino,vuelos, visitados);
+            if (vueloMasProximo == null) return null;
+            secuenciaDeVuelos.add(vueloMasProximo);
+            actual = vueloMasProximo.getDestino();
+        }
+        ruta.setVuelos(secuenciaDeVuelos);
+        ruta.setDuracion();
+        return ruta;
+    }
+    //
+    private Vuelo obtenerVueloMasProximo(String horaOrigen,Aeropuerto origen, Aeropuerto destino, List<Vuelo> vuelos, Set<Aeropuerto> visitados) {
+        double duracionTotal,distancia, proximidad, mejorProximidad = Double.MAX_VALUE;
+        Vuelo vueloMasProximo = null;
+        List<Vuelo> vuelosPosibles = vuelos.stream()
+                                           .filter(v -> v.getOrigen().equals(origen))
+                                           .filter(v -> v.getCapacidadDisponible() > 0)
+                                           .filter(v -> !visitados.contains(v.getDestino()))
+                                           .toList();
+        for(Vuelo vuelo : vuelosPosibles) {
+            duracionTotal = G4D_Formatter.toDEC_Hour(vuelo.getHoraLlegada()) - G4D_Formatter.toDEC_Hour(horaOrigen);
+            if(duracionTotal < 0) duracionTotal += 24;
+            distancia = vuelo.getDestino().calcularDistancia(destino);
+            proximidad = duracionTotal + 0.003 * distancia;
+            if(proximidad < mejorProximidad) {
+                mejorProximidad = proximidad;
+                vueloMasProximo = vuelo;
+            }
+        }
+        return vueloMasProximo;
+    }
+
     // Búsqueda local: Variable Neighborhood Descent
     private void VND(Solucion solucion) {
 
@@ -116,7 +211,7 @@ public class Algoritmo {
     //
     private void imprimirSolucion(Solucion solucion, String rutaArchivo) {
         // Declaracion de variables
-        int dimLinea = 120,posPedido = 0,posProducto,posVuelo;
+        int dimLinea = 120,posPedido = 0,posProducto,posVuelo,numProductos;
         FileWriter archivo;
         PrintWriter archivoWriter;
         // Carga de datos
@@ -132,34 +227,34 @@ public class Algoritmo {
             G4D_Formatter.imprimirLinea(archivoWriter, '=', dimLinea);
             for(Pedido pedido : solucion.getPedidos()) {
                 G4D_Formatter.imprimirCentrado(archivoWriter, dimLinea, String.format("PEDIDO #%d", posPedido + 1));
-                G4D_Formatter.imprimirLinea(archivoWriter, '-', dimLinea);
+                G4D_Formatter.imprimirLinea(archivoWriter, '-', dimLinea,4);
                 G4D_Formatter.imprimirCentrado(archivoWriter, dimLinea, "info pedido");
                 archivoWriter.println();
                 G4D_Formatter.imprimirCentrado(archivoWriter, dimLinea, "> PRODUCTOS MPE <");
-                G4D_Formatter.imprimirLinea(archivoWriter, '*', dimLinea,4);
+                G4D_Formatter.imprimirLinea(archivoWriter, '*', dimLinea,8);
                 posProducto = 0;
+                numProductos = pedido.getProductos().size();
                 for(Producto producto : pedido.getProductos()) {
                     archivoWriter.printf("%10s PRODUCTO #%d%n",">>",posProducto+1);
                     G4D_Formatter.imprimirCentrado(archivoWriter, dimLinea, "info ruta");
                     if(producto.getRuta() != null) {
                         posVuelo = 0;
-                        for(Vuelo vuelo: producto.getRuta().getSecuenciaDeVuelos()) {
+                        for(Vuelo vuelo: producto.getRuta().getVuelos()) {
                             archivoWriter.printf("%s --> %s%n",vuelo.getOrigen().getCodigo(),vuelo.getDestino().getCodigo());
                             posVuelo++;
                         }
                         
                     }
                     G4D_Formatter.imprimirLinea(archivoWriter, '.', dimLinea, 8);
-                    archivoWriter.printf("%31s%n","Resumen de la ruta:");
-                    G4D_Formatter.imprimirLinea(archivoWriter, '.', dimLinea, 8);
+                    archivoWriter.printf("%27s%n","Resumen de la ruta:");
+                    if(posProducto != numProductos - 1) G4D_Formatter.imprimirLinea(archivoWriter, '*', dimLinea, 8);
                     posProducto++;
                 }
-                G4D_Formatter.imprimirLinea(archivoWriter, '-', dimLinea);
+                G4D_Formatter.imprimirLinea(archivoWriter, '-', dimLinea,4);
                 archivoWriter.printf("%23s%n","Resumen del pedido:");
                 G4D_Formatter.imprimirLinea(archivoWriter, '=', dimLinea);
                 posPedido++;
             }
-            G4D_Formatter.imprimirLinea(archivoWriter, '-', dimLinea);
             System.out.println("Archivo 'Solucion' generado en la ruta '" + rutaArchivo + "'.");
             archivoWriter.flush();
             archivoWriter.close();

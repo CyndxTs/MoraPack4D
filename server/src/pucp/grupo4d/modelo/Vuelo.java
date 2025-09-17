@@ -1,16 +1,21 @@
 package pucp.grupo4d.modelo;
 
+import pucp.grupo4d.util.G4D_Formatter;
+
 public class Vuelo {
     private int id;
     private Aeropuerto origen;
     private Aeropuerto destino;
     private String horaSalida;
     private String horaLlegada;
-    private int capacidad;
+    private int capacidadTotal;
+    private int capacidadDisponible;
     private EstadoVuelo estado;
+    private double duracion;
 
     public Vuelo() {
         this.estado = EstadoVuelo.PROGRAMADO;
+        this.duracion = 0.0;
     }
 
     public int getId() {
@@ -53,12 +58,20 @@ public class Vuelo {
         this.horaLlegada = horaLlegada;
     }
 
-    public int getCapacidad() {
-        return capacidad;
+    public int getCapacidadTotal() {
+        return capacidadTotal;
     }
 
-    public void setCapacidad(int capacidad) {
-        this.capacidad = capacidad;
+    public void setCapacidadTotal(int capacidadTotal) {
+        this.capacidadTotal = capacidadTotal;
+    }
+
+    public int getCapacidadDisponible() {
+        return capacidadDisponible;
+    }
+
+    public void setCapacidadDisponible(int capacidadDisponible) {
+        this.capacidadDisponible = capacidadDisponible;
     }
 
     public EstadoVuelo getEstado() {
@@ -67,5 +80,15 @@ public class Vuelo {
 
     public void setEstado(EstadoVuelo estado) {
         this.estado = estado;
+    }
+
+    public double getDuracion() {
+        return duracion;
+    }
+
+    public void setDuracion() {
+        double duracion = G4D_Formatter.toDEC_Hour(horaLlegada) - G4D_Formatter.toDEC_Hour(horaSalida);
+        if(duracion < 0) duracion += 24;
+        this.duracion = duracion;
     }
 }

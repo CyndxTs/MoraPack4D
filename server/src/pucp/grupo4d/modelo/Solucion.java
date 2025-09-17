@@ -6,12 +6,12 @@ import java.util.List;
 public class Solucion {
     private List<Pedido> pedidos;
     private double fitness;
-    private double duracionTotal;
+    private double duracion;
 
     public Solucion() {
         this.pedidos = new ArrayList<>();
-        this.fitness = 0;
-        this.duracionTotal = 0.0;
+        this.fitness = 0.0;
+        this.duracion = 0.0;
     }
 
     public List<Pedido> getPedidos() {
@@ -30,11 +30,29 @@ public class Solucion {
         this.fitness = fitness;
     }
 
-    public double getDuracionTotal() {
-        return duracionTotal;
+    public void setFitness() {
+        double fitness = 0.0;
+        for(Pedido pedido : pedidos) {
+            for(Producto producto : pedido.getProductos()) {
+                fitness += producto.getRuta().getDuracion();
+            }
+        }
+        this.fitness = fitness;
     }
 
-    public void setDuracionTotal(double duracionTotal) {
-        this.duracionTotal = duracionTotal;
+    public double getDuracion() {
+        return duracion;
+    }
+
+    public void setDuracion() {
+        List<Producto> productos;
+        double duracion = 0.0;
+        for(Pedido pedido : pedidos) {
+            productos = pedido.getProductos();
+            for(Producto producto : productos) {
+                duracion += producto.getRuta().getDuracion();
+            }
+        }
+        this.duracion = duracion;
     }
 }
