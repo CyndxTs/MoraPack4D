@@ -1,3 +1,9 @@
+/**]
+ >> Project:    MoraPack
+ >> Author:     Grupo 4D
+ >> File:       RegistroProducto.java 
+[**/
+
 package pucp.grupo4d.modelo;
 
 public class RegistroProducto {

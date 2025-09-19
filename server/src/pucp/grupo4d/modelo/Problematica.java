@@ -1,8 +1,8 @@
-/*]
- >> Project: MoraPack
- >> Author:  Grupo 4D
- >> File:    Problematica.java 
-[*/
+/**]
+ >> Project:    MoraPack
+ >> Author:     Grupo 4D
+ >> File:       Problematica.java 
+[**/
 
 package pucp.grupo4d.modelo;
 
@@ -157,10 +157,10 @@ public class Problematica {
     private void cargarPedidos(String rutaArchivo) {
         System.out.println("Generando pedidos..");
         Random random = new Random();
-        for (int i = 0; i < 25; i++) {
+        for (int i = 0; i < 30; i++) {
             Cliente cliente = new Cliente();
             cliente.setNombre("Cli_" + (i + 1));
-            int numPedidos = 1 + random.nextInt(15);
+            int numPedidos = 1 + random.nextInt(20);
             for(int j = 0;j < numPedidos;j++) {
                 Pedido pedido = new Pedido();
                 pedido.setCliente(cliente);
@@ -170,7 +170,7 @@ public class Problematica {
                     LocalTime.of(random.nextInt(24),random.nextInt(60),random.nextInt(60))
                 );
                 pedido.setInstanteCreacion(G4D_Formatter.toDateTimeString(ldt_instanteCreacion));
-                int numProductos = 1 + random.nextInt(5);
+                int numProductos = 1 + random.nextInt(10);
                 pedido.setCantidad(numProductos);
                 for(int k = 0;k < numProductos;k++) {
                     Producto producto = new Producto();

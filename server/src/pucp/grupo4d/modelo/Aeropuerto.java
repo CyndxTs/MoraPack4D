@@ -1,15 +1,14 @@
-/*]
- >> Project: MoraPack
- >> Author:  Grupo 4D
- >> File:    Aeropuerto.java 
-[*/
+/**]
+ >> Project:    MoraPack
+ >> Author:     Grupo 4D
+ >> File:       Aeropuerto.java 
+[**/
 
 package pucp.grupo4d.modelo;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-
 import pucp.grupo4d.util.G4D_Formatter;
 
 public class Aeropuerto {

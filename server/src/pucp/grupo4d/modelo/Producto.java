@@ -1,8 +1,8 @@
-/*]
- >> Project: MoraPack
- >> Author:  Grupo 4D
- >> File:    Producto.java 
-[*/
+/**]
+ >> Project:    MoraPack
+ >> Author:     Grupo 4D
+ >> File:       Producto.java 
+[**/
 
 package pucp.grupo4d.modelo;
 

@@ -1,3 +1,9 @@
+/**]
+ >> Project:    MoraPack
+ >> Author:     Grupo 4D
+ >> File:       Algoritmo.java 
+[**/
+/*
 package pucp.grupo4d.resolucion;
 
 import java.io.FileWriter;
@@ -9,10 +15,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.Random;
-import pucp.grupo4d.modelo.Vuelo;
+import pucp.grupo4d.modelo.PlanDeVuelo;
 import pucp.grupo4d.modelo.Ruta;
 import pucp.grupo4d.modelo.Aeropuerto;
-import pucp.grupo4d.modelo.IntWrapper;
 import pucp.grupo4d.modelo.Pedido;
 import pucp.grupo4d.modelo.Producto;
 import pucp.grupo4d.modelo.Problematica;
@@ -57,7 +62,6 @@ public class Algoritmo {
         solucionInicial(problematica, solucionAux);
         imprimirSolucion(solucionAux, "SolucionInicial.txt");
         
-/* 
         // Optimización por VND
         VND(problematica, solucionAux);
         imprimirSolucion(solucionAux, "SolucionVND.txt");
@@ -90,7 +94,6 @@ public class Algoritmo {
         // Guardar solución final
         imprimirSolucion(xBest, "SolucionGVNS.txt");
 
-        */
     }
     // Solución Inicial: Nearest Neighbor
     private Solucion solucionInicial(Problematica problematica, Solucion solucion) {
@@ -99,7 +102,7 @@ public class Algoritmo {
         Ruta ruta;
         List<Aeropuerto> sedes = problematica.getSedes();
         List<Pedido> pedidos = problematica.getPedidos();
-        List<Vuelo> vuelos = problematica.getVuelos();
+        List<PlanDeVuelo> vuelos = problematica.getVuelos();
         //
         for (Pedido pedido : pedidos) {
             instanteCreacion = pedido.getInstanteCreacion();
@@ -117,7 +120,7 @@ public class Algoritmo {
         return solucion;
     }
     //
-    private Ruta obtenerMejorRuta(String instanteDeCreacion, List<Aeropuerto> origenes, Aeropuerto destino, List<Vuelo> vuelos) {
+    private Ruta obtenerMejorRuta(String instanteDeCreacion, List<Aeropuerto> origenes, Aeropuerto destino, List<PlanDeVuelo> vuelos) {
         //
         Ruta ruta,mejorRuta = null;
         Set<Aeropuerto> visitados;
@@ -131,11 +134,11 @@ public class Algoritmo {
         return mejorRuta;
     }
     //
-    private Ruta construirRutaVoraz(String instanteDeCreacion, Aeropuerto origen, Aeropuerto destino, List<Vuelo> vuelos, Set<Aeropuerto> visitados) {
+    private Ruta construirRutaVoraz(String instanteDeCreacion, Aeropuerto origen, Aeropuerto destino, List<PlanDeVuelo> vuelos, Set<Aeropuerto> visitados) {
         //
         String horaOrigen = G4D_Formatter.toTimeString(instanteDeCreacion);
-        Vuelo vueloMasProximo;
-        List<Vuelo> secuenciaDeVuelos = new ArrayList<>();
+        PlanDeVuelo vueloMasProximo;
+        List<PlanDeVuelo> secuenciaDeVuelos = new ArrayList<>();
         Aeropuerto actual = origen;
         Ruta ruta = new Ruta();
         if(actual.equals(destino)) return null;
@@ -143,7 +146,7 @@ public class Algoritmo {
             visitados.add(actual);
             vueloMasProximo = obtenerVueloMasProximo(horaOrigen,actual,destino,vuelos, visitados);
             if (vueloMasProximo == null) {
-                for(Vuelo vuelo : secuenciaDeVuelos) vuelo.setCapacidadDisponible(vuelo.getCapacidadDisponible() + 1);
+                for(PlanDeVuelo vuelo : secuenciaDeVuelos) vuelo.setCapacidadDisponible(vuelo.getCapacidadDisponible() + 1);
                 return null;
             }
             vueloMasProximo.setCapacidadDisponible(vueloMasProximo.getCapacidadDisponible() - 1);
@@ -155,17 +158,17 @@ public class Algoritmo {
         return ruta;
     }
     //
-    private Vuelo obtenerVueloMasProximo(String horaOrigen,Aeropuerto origen, Aeropuerto destino, List<Vuelo> vuelos, Set<Aeropuerto> visitados) {
+    private PlanDeVuelo obtenerVueloMasProximo(String horaOrigen,Aeropuerto origen, Aeropuerto destino, List<PlanDeVuelo> vuelos, Set<Aeropuerto> visitados) {
         //
         double duracionTotal,distancia, proximidad, mejorProximidad = Double.MAX_VALUE;
-        Vuelo vueloMasProximo = null;
-        List<Vuelo> vuelosPosibles = vuelos.stream()
+        PlanDeVuelo vueloMasProximo = null;
+        List<PlanDeVuelo> vuelosPosibles = vuelos.stream()
                                            .filter(v -> v.getOrigen().equals(origen))
                                            .filter(v -> v.getCapacidadDisponible() > 0)
                                            .filter(v -> !visitados.contains(v.getDestino()))
                                            .toList();
         //
-        for(Vuelo vuelo : vuelosPosibles) {
+        for(PlanDeVuelo vuelo : vuelosPosibles) {
             duracionTotal = G4D_Formatter.calcularDuracion(horaOrigen,0, vuelo.getHoraLlegada(),vuelo.getDestino().getHusoHorario());
             distancia = vuelo.getDestino().calcularDistancia(destino);
             proximidad = duracionTotal + 0.003 * distancia;
@@ -277,7 +280,7 @@ public class Algoritmo {
                     archivoWriter.printf("%47s %29s%n","ORIGEN","DESTINO");
                     if(producto.getRuta() != null) {
                         posVuelo = 0;
-                        for(Vuelo vuelo: producto.getRuta().getVuelos()) {
+                        for(PlanDeVuelo vuelo: producto.getRuta().getVuelos()) {
                             archivoWriter.printf("%36s  dd/mm/aaaa hh:MM:ss  -->  %s dd/mm/aaaa  hh:MM:ss  ==  %.2f hrs.%n",vuelo.getOrigen().getCodigo(),vuelo.getDestino().getCodigo(),vuelo.getDuracion());
                             posVuelo++;
                         }
@@ -303,3 +306,4 @@ public class Algoritmo {
         }
     }
 }
+*/

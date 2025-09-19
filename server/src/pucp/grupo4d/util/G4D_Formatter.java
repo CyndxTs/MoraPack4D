@@ -1,8 +1,8 @@
-/*]
- >> Project: MoraPack
- >> Author:  Grupo 4D
- >> File:    G4D_Formatter.java 
-[*/
+/**]
+ >> Project:    MoraPack
+ >> Author:     Grupo 4D
+ >> File:       G4D_Formatter.java 
+[**/
 
 package pucp.grupo4d.util;
 
@@ -163,5 +163,22 @@ public class G4D_Formatter {
         if (border.length() != 2) throw new IllegalArgumentException("The border must have 2 characters");
         int space = (lineDim - text.length())/2;
         writer.println(String.valueOf(border.charAt(0)).repeat(space - 1) + text + String.valueOf(border.charAt(1)).repeat(space - 1));
-    } 
+    }
+    // Clase agrupadora de 'Integer' para pasar por referencia
+    public static class IntegerWrapper {
+        public Integer value;
+
+        public IntegerWrapper() {
+            this.value = 0;
+        }
+
+        public IntegerWrapper(Integer value) {
+            this.value = value;
+        }
+
+        @Override
+        public String toString() {
+            return String.valueOf(this.value);
+        }
+    }
 }
