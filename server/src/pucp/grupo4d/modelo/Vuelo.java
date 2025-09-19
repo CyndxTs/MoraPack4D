@@ -3,92 +3,64 @@ package pucp.grupo4d.modelo;
 import pucp.grupo4d.util.G4D_Formatter;
 
 public class Vuelo {
-    private int id;
-    private Aeropuerto origen;
-    private Aeropuerto destino;
-    private String horaSalida;
-    private String horaLlegada;
-    private int capacidadTotal;
-    private int capacidadDisponible;
-    private EstadoVuelo estado;
-    private double duracion;
+    private String id;
+    private Integer capacidadDisponible;
+    private PlanDeVuelo plan;
+    private String instanteSalida;
+    private String instanteLlegada;
 
     public Vuelo() {
-        this.estado = EstadoVuelo.PROGRAMADO;
-        this.duracion = 0.0;
+        this.id = G4D_Formatter.generateIdentifier("VUE");
+        this.capacidadDisponible = 0;
     }
 
-    public int getId() {
+    public Vuelo replicar() {
+        Vuelo vuelo = new Vuelo();
+        vuelo.id = this.id;
+        vuelo.capacidadDisponible = this.capacidadDisponible;
+        vuelo.plan = (this.plan != null) ? this.plan.replicar() : null;
+        vuelo.instanteSalida = this.instanteSalida;
+        vuelo.instanteLlegada = this.instanteLlegada;
+        return vuelo;
+    }
+
+    public String getId() {
         return id;
     }
 
-    public void setId(int id) {
+    public void setId(String id) {
         this.id = id;
     }
 
-    public Aeropuerto getOrigen() {
-        return origen;
-    }
-
-    public void setOrigen(Aeropuerto origen) {
-        this.origen = origen;
-    }
-
-    public Aeropuerto getDestino() {
-        return destino;
-    }
-
-    public void setDestino(Aeropuerto destino) {
-        this.destino = destino;
-    }
-
-    public String getHoraSalida() {
-        return horaSalida;
-    }
-
-    public void setHoraSalida(String horaSalida) {
-        this.horaSalida = horaSalida;
-    }
-
-    public String getHoraLlegada() {
-        return horaLlegada;
-    }
-
-    public void setHoraLlegada(String horaLlegada) {
-        this.horaLlegada = horaLlegada;
-    }
-
-    public int getCapacidadTotal() {
-        return capacidadTotal;
-    }
-
-    public void setCapacidadTotal(int capacidadTotal) {
-        this.capacidadTotal = capacidadTotal;
-    }
-
-    public int getCapacidadDisponible() {
+    public Integer getCapacidadDisponible() {
         return capacidadDisponible;
     }
 
-    public void setCapacidadDisponible(int capacidadDisponible) {
+    public void setCapacidadDisponible(Integer capacidadDisponible) {
         this.capacidadDisponible = capacidadDisponible;
     }
 
-    public EstadoVuelo getEstado() {
-        return estado;
+    public PlanDeVuelo getPlan() {
+        return plan;
     }
 
-    public void setEstado(EstadoVuelo estado) {
-        this.estado = estado;
+    public void setPlan(PlanDeVuelo plan) {
+        this.plan = plan;
     }
 
-    public double getDuracion() {
-        return duracion;
+    public String getInstanteSalida() {
+        return instanteSalida;
     }
 
-    public void setDuracion() {
-        double duracion = G4D_Formatter.toDEC_Hour(horaLlegada) - G4D_Formatter.toDEC_Hour(horaSalida);
-        if(duracion < 0) duracion += 24;
-        this.duracion = duracion;
+    public void setInstanteSalida(String instanteSalida) {
+        this.instanteSalida = instanteSalida;
+    }
+
+    public String getInstanteLlegada() {
+        return instanteLlegada;
+    }
+
+    public void setInstanteLlegada(String instanteLlegada) {
+        this.instanteLlegada = instanteLlegada;
     }
 }

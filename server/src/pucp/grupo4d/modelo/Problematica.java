@@ -1,3 +1,9 @@
+/*]
+ >> Project: MoraPack
+ >> Author:  Grupo 4D
+ >> File:    Problematica.java 
+[*/
+
 package pucp.grupo4d.modelo;
 
 import java.io.File;
@@ -18,29 +24,29 @@ import pucp.grupo4d.util.G4D_Formatter;
 public class Problematica {
     private Map<String, Aeropuerto> sedes;
     private List<Aeropuerto> aeropuertos;
-    private List<Vuelo> vuelos;
+    private List<PlanDeVuelo> planes;
     private List<Pedido> pedidos;
 
     public Problematica() {
         this.sedes = new HashMap<>();
         this.aeropuertos = new ArrayList<>();
-        this.vuelos = new ArrayList<>();
+        this.planes = new ArrayList<>();
         this.pedidos = new ArrayList<>();
     }
-    //
+    // Carga de elementos desde archivos
     public void cargarDatos(String rutaArchivoAeropuertos, String rutaArchivoVuelos, String rutaArchivoPedidos) {
         cargarSedes(null);
         cargarAeropuertos(rutaArchivoAeropuertos);
-        cargarVuelos(rutaArchivoVuelos);
+        cargarPlanesDeVuelos(rutaArchivoVuelos);
         cargarPedidos(rutaArchivoPedidos);
     }
-    //
+    // Carga de datos de sedes
     private void cargarSedes(String rutaArchivo) {
         this.sedes.put("SPIM", null);
         this.sedes.put("EBCI", null);
         this.sedes.put("UBBB", null);
     }
-    //
+    // Carga de datos de Aeropuertos
     private void cargarAeropuertos(String rutaArchivo) {
         // Declaracion de variables
         String continente = "",linea;
@@ -66,15 +72,14 @@ public class Problematica {
                 // Validacion por tipo de linea a partir de primer caracter
                 if (Character.isDigit(linea.charAt(0))) {
                     aeropuerto = new Aeropuerto();
-                    aeropuerto.setId(lineaSC.nextInt());
+                    aeropuerto.setId(lineaSC.next());
                     aeropuerto.setCodigo(lineaSC.next());
                     aeropuerto.setCiudad(lineaSC.next());
                     aeropuerto.setPais(lineaSC.next());
                     aeropuerto.setContinente(continente);
                     aeropuerto.setAlias(lineaSC.next());
                     aeropuerto.setHusoHorario(lineaSC.nextInt());
-                    aeropuerto.setCapacidadTotal(lineaSC.nextInt());
-                    aeropuerto.setCapacidadDisponible(aeropuerto.getCapacidadTotal());
+                    aeropuerto.setCapacidadMaxima(lineaSC.nextInt());
                     lineaSC.useDelimiter("\\s+");
                     lineaSC.next();
                     aeropuerto.setLatitud(lineaSC.next() + " " + lineaSC.next() + " " + lineaSC.next() + " " + lineaSC.next());
@@ -102,17 +107,16 @@ public class Problematica {
             if (archivoSC != null) archivoSC.close();
         }
     }
-    //
-    private void cargarVuelos(String rutaArchivo) {
+    // Cargas de datos de vuelos
+    private void cargarPlanesDeVuelos(String rutaArchivo) {
         // Declaracion de variables
-        int id = 1;
         String linea,codigoOrigen,codigoDestino;
         File archivo;
         Scanner archivoSC = null,lineaSC;
-        Vuelo vuelo;
+        PlanDeVuelo plan;
         // Carga de datos
         try {
-            System.out.println("Leyendo archivo de 'Vuelos' desde '" + rutaArchivo + "'..");
+            System.out.println("Leyendo archivo de 'Planes' desde '" + rutaArchivo + "'..");
             // Inicializaion del archivo y scanner
             archivo = new File(rutaArchivo);
             archivoSC = new Scanner(archivo,G4D_Formatter.getFileCharset(archivo));
@@ -123,21 +127,19 @@ public class Problematica {
                 // Inicializacion de scanner de linea
                 lineaSC = new Scanner(linea);
                 lineaSC.useDelimiter("-");
-                vuelo = new Vuelo();
-                vuelo.setId(id++);
+                plan = new PlanDeVuelo();
                 codigoOrigen = lineaSC.next();
-                vuelo.setOrigen(buscarAeropuertoPorCodigo(codigoOrigen));
+                plan.setOrigen(buscarAeropuertoPorCodigo(codigoOrigen));
                 codigoDestino = lineaSC.next();
-                vuelo.setDestino(buscarAeropuertoPorCodigo(codigoDestino));
-                vuelo.setHoraSalida(lineaSC.next());
-                vuelo.setHoraLlegada(lineaSC.next());
-                vuelo.setCapacidadTotal(lineaSC.nextInt());
-                vuelo.setCapacidadDisponible(vuelo.getCapacidadTotal());
-                vuelo.setDuracion();
-                vuelos.add(vuelo);
+                plan.setDestino(buscarAeropuertoPorCodigo(codigoDestino));
+                plan.setHoraSalida(lineaSC.next());
+                plan.setHoraLlegada(lineaSC.next());
+                plan.setCapacidadMaxima(lineaSC.nextInt());
+                plan.setDuracion();
+                planes.add(plan);
                 lineaSC.close();
             }
-            System.out.println("Se cargaron " + vuelos.size() + " planes de vuelo.");
+            System.out.println("Se cargaron " + planes.size() + " planes de vuelo.");
         } catch (FileNotFoundException e) {
             System.err.println("ERROR: No se encontró el archivo de vuelos en la ruta '" + rutaArchivo + "'");
             System.exit(1);
@@ -155,14 +157,12 @@ public class Problematica {
     private void cargarPedidos(String rutaArchivo) {
         System.out.println("Generando pedidos..");
         Random random = new Random();
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < 25; i++) {
             Cliente cliente = new Cliente();
-            cliente.setId(i+1);
             cliente.setNombre("Cli_" + (i + 1));
-            int numPedidos = 1 + random.nextInt(3);
+            int numPedidos = 1 + random.nextInt(15);
             for(int j = 0;j < numPedidos;j++) {
                 Pedido pedido = new Pedido();
-                pedido.setId(j + 1);
                 pedido.setCliente(cliente);
                 pedido.setDestino(aeropuertos.get(random.nextInt(aeropuertos.size())));
                 LocalDateTime ldt_instanteCreacion = LocalDateTime.of(
@@ -170,12 +170,10 @@ public class Problematica {
                     LocalTime.of(random.nextInt(24),random.nextInt(60),random.nextInt(60))
                 );
                 pedido.setInstanteCreacion(G4D_Formatter.toDateTimeString(ldt_instanteCreacion));
-                int numProductos = 1 + random.nextInt(3);
+                int numProductos = 1 + random.nextInt(5);
                 pedido.setCantidad(numProductos);
                 for(int k = 0;k < numProductos;k++) {
                     Producto producto = new Producto();
-                    producto.setId(k+1);
-                    producto.setPedido(pedido);
                     producto.setDestino(pedido.getDestino());
                     pedido.getProductos().add(producto);
                 }
@@ -206,12 +204,12 @@ public class Problematica {
         this.aeropuertos = aeropuertos;
     }
 
-    public List<Vuelo> getVuelos() {
-        return vuelos;
+    public List<PlanDeVuelo> getPlanes() {
+        return planes;
     }
 
-    public void setVuelos(List<Vuelo> vuelos) {
-        this.vuelos = vuelos;
+    public void setPlanes(List<PlanDeVuelo> planes) {
+        this.planes = planes;
     }
 
     public List<Pedido> getPedidos() {

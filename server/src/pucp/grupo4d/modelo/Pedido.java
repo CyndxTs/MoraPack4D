@@ -1,27 +1,46 @@
+/*]
+ >> Project: MoraPack
+ >> Author:  Grupo 4D
+ >> File:    Pedido.java 
+[*/
+
 package pucp.grupo4d.modelo;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import pucp.grupo4d.util.G4D_Formatter;
+
 public class Pedido {
-    private int id;
+    private String id;
     private Cliente cliente;
     private Aeropuerto destino;
-    private int cantidad;
+    private Integer cantidad;
     private String instanteCreacion;
-    private String instanteLimite;
     private List<Producto> productos;
 
     public Pedido() {
+        this.id = G4D_Formatter.generateIdentifier("PED");
         this.productos = new ArrayList<>();
         this.cantidad = 0;
     }
 
-    public int getId() {
+    public Pedido replicar() {
+        Pedido pedido = new Pedido();
+        pedido.id = this.id;
+        pedido.cliente = (this.cliente != null) ? this.cliente.replicar() : null;
+        pedido.destino = (this.destino != null) ? this.destino.replicar() : null;
+        pedido.cantidad = this.cantidad;
+        pedido.instanteCreacion = this.instanteCreacion;
+        for(Producto producto : productos) pedido.productos.add(producto.replicar());
+        return pedido;
+    }
+
+    public String getId() {
         return id;
     }
 
-    public void setId(int id) {
+    public void setId(String id) {
         this.id = id;
     }
 
@@ -55,14 +74,6 @@ public class Pedido {
 
     public void setInstanteCreacion(String instanteCreacion) {
         this.instanteCreacion = instanteCreacion;
-    }
-
-    public String getInstanteLimite() {
-        return instanteLimite;
-    }
-
-    public void setInstanteLimite(String instanteLimite) {
-        this.instanteLimite = instanteLimite;
     }
 
     public List<Producto> getProductos() {

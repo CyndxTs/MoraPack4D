@@ -1,3 +1,9 @@
+/*]
+ >> Project: MoraPack
+ >> Author:  Grupo 4D
+ >> File:    Solucion.java 
+[*/
+
 package pucp.grupo4d.modelo;
 
 import java.util.ArrayList;
@@ -6,12 +12,17 @@ import java.util.List;
 public class Solucion {
     private List<Pedido> pedidos;
     private double fitness;
-    private double duracion;
 
     public Solucion() {
         this.pedidos = new ArrayList<>();
         this.fitness = 0.0;
-        this.duracion = 0.0;
+    }
+
+    public Solucion replicar() {
+        Solucion solucion = new Solucion();
+        solucion.fitness = this.fitness;
+        for (Pedido pedido : pedidos) solucion.pedidos.add(pedido.replicar());
+        return solucion;
     }
 
     public List<Pedido> getPedidos() {
@@ -38,21 +49,5 @@ public class Solucion {
             }
         }
         this.fitness = fitness;
-    }
-
-    public double getDuracion() {
-        return duracion;
-    }
-
-    public void setDuracion() {
-        List<Producto> productos;
-        double duracion = 0.0;
-        for(Pedido pedido : pedidos) {
-            productos = pedido.getProductos();
-            for(Producto producto : productos) {
-                duracion += producto.getRuta().getDuracion();
-            }
-        }
-        this.duracion = duracion;
     }
 }

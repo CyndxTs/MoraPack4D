@@ -1,20 +1,33 @@
+/*]
+ >> Project: MoraPack
+ >> Author:  Grupo 4D
+ >> File:    Cliente.java 
+[*/
+
 package pucp.grupo4d.modelo;
 
+import pucp.grupo4d.util.G4D_Formatter;
+
 public class Cliente {
-    private int id;
+    private String id;
     private String nombre;
-    private TipoDocumento tipoDocumento;
-    private String numeroDocumento;
-    private String email;
-    private String telefono;
 
-    public Cliente() {}
+    public Cliente() {
+        this.id = G4D_Formatter.generateIdentifier("CLI");
+    }
 
-    public int getId() {
+    public Cliente replicar() {
+        Cliente cliente = new Cliente();
+        cliente.id = this.id;
+        cliente.nombre = this.nombre;
+        return cliente;
+    }
+
+    public String getId() {
         return id;
     }
 
-    public void setId(int id) {
+    public void setId(String id) {
         this.id = id;
     }
 
@@ -24,37 +37,5 @@ public class Cliente {
 
     public void setNombre(String nombre) {
         this.nombre = nombre;
-    }
-
-    public TipoDocumento getTipoDocumento() {
-        return this.tipoDocumento;
-    }
-
-    public void setTipoDocumento(TipoDocumento tipoDocumento) {
-        this.tipoDocumento = tipoDocumento;
-    }
-
-    public String getNumeroDocumento() {
-        return numeroDocumento;
-    }
-
-    public void setNumeroDocumento(String numeroDocumento) {
-        this.numeroDocumento = numeroDocumento;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
-    }
-
-    public String getTelefono() {
-        return telefono;
-    }
-
-    public void setTelefono(String telefono) {
-        this.telefono = telefono;
     }
 }

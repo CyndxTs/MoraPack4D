@@ -1,28 +1,58 @@
+/*]
+ >> Project: MoraPack
+ >> Author:  Grupo 4D
+ >> File:    Producto.java 
+[*/
+
 package pucp.grupo4d.modelo;
 
+import pucp.grupo4d.util.G4D_Formatter;
+
 public class Producto {
-    private int id;
-    private Pedido pedido;
+    private String id;
+    private String instanteLlegada;
+    private String instanteLimite;
     private Aeropuerto origen;
     private Aeropuerto destino;
     private Ruta ruta;
 
-    public Producto() {}
+    public Producto() {
+        this.id = G4D_Formatter.generateIdentifier("PRO");
+    }
 
-    public int getId() {
+    public Producto replicar() {
+        Producto producto = new Producto();
+        producto.id = this.id;
+        producto.instanteLlegada = this.instanteLlegada;
+        producto.instanteLimite = this.instanteLimite;
+        producto.origen = (this.origen != null) ? this.origen.replicar() : null;
+        producto.destino = (this.destino != null) ? this.destino.replicar() : null;
+        producto.ruta = (this.ruta != null) ? this.ruta.replicar() : null;
+        return producto;
+    }
+
+    public String getId() {
         return id;
     }
 
-    public void setId(int id) {
+    public void setId(String id) {
         this.id = id;
     }
 
-    public Pedido getPedido() {
-        return pedido;
+    public String getInstanteLlegada() {
+        return instanteLlegada;
     }
 
-    public void setPedido(Pedido pedido) {
-        this.pedido = pedido;
+    public void setInstanteLlegada(String instanteLlegada) {
+        this.instanteLlegada = instanteLlegada;
+    }
+
+    public String getInstanteLimite() {
+        return instanteLimite;
+    }
+
+    public void setInstanteLimite(String instanteLimite) {
+        this.instanteLimite = instanteLimite;
     }
 
     public Aeropuerto getOrigen() {

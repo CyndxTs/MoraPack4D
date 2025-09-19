@@ -1,7 +1,15 @@
-package pucp.grupo4d;
+/*]
+ >> Project: MoraPack
+ >> Author:  Grupo 4D
+ >> File:    Main.java 
+[*/
 
+package pucp.grupo4d.programa;
+
+import pucp.grupo4d.modelo.IntWrapper;
 import pucp.grupo4d.modelo.Problematica;
 import pucp.grupo4d.resolucion.Algoritmo;
+import pucp.grupo4d.util.G4D_Formatter;
 
 public class Main {
     public static void main(String[] args) {

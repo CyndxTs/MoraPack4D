@@ -2,8 +2,9 @@ package pucp.grupo4d.resolucion;
 
 import java.io.FileWriter;
 import java.io.PrintWriter;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -11,6 +12,7 @@ import java.util.Random;
 import pucp.grupo4d.modelo.Vuelo;
 import pucp.grupo4d.modelo.Ruta;
 import pucp.grupo4d.modelo.Aeropuerto;
+import pucp.grupo4d.modelo.IntWrapper;
 import pucp.grupo4d.modelo.Pedido;
 import pucp.grupo4d.modelo.Producto;
 import pucp.grupo4d.modelo.Problematica;
@@ -20,6 +22,7 @@ import pucp.grupo4d.util.G4D_Formatter;
 
 public class Algoritmo {
     private final static double PEOR_FITNESS = 9999.99;
+    private static final Random random = new Random();
     private final int L_MIN;        
     private final int L_MAX;        
     private final int K_MIN;        
@@ -49,92 +52,63 @@ public class Algoritmo {
         Solucion solucionAux = new Solucion();
         Solucion xBest = new Solucion();
         int t = 0;
-        int tBest = 0;
-        Random rand = new Random(System.currentTimeMillis());
+        IntWrapper tBest = new IntWrapper();
         // Solución inicial (Nearest Neighbor)
-        solucionAux = solucionInicial(problematica, solucionAux);
+        solucionInicial(problematica, solucionAux);
         imprimirSolucion(solucionAux, "SolucionInicial.txt");
-        /*
+        
+/* 
         // Optimización por VND
-        // To do: // VND(problematica, solucionAux);
+        VND(problematica, solucionAux);
         imprimirSolucion(solucionAux, "SolucionVND.txt");
-        System.out.printf("%18s%n", "Nuevo mejor!");
-        System.out.printf("[%9.2f]%n", solucionAux.getFitness());
         // Guardar como mejor solución
-        xBest = solucionAux.clonar();
+        xBest = new Solucion(solucionAux);
         // Inicializar cronómetro
         Instant start = Instant.now();
         do {
-            int k = K_MIN;
-            solucionAux = xBest.clonar();
+            IntWrapper k = new IntWrapper(K_MIN);
+            solucionAux = new Solucion(solucionAux);
 
-            while (k <= K_MAX && t < T_MAX) {
-                Solucion xPrima = solucionAux.clonar();
+            while (k.value <= K_MAX && t < T_MAX) {
+                Solucion xPrima = new Solucion(solucionAux);
 
                 // Intentar hasta encontrar una solución posible
                 while (true) {
-                    xPrima = solucionAux.clonar();
-                    shaking(xPrima, k, problematica);
-                    System.out.println("Validando...");
-                    if (posibleSolucion(xPrima)) {
-                        break;
-                    } else {
-                        System.out.printf("%18s%n", "[ABERRACION]");
-                    }
+                    xPrima = new Solucion(solucionAux);
+                    Shaking(xPrima, k, problematica);
+                    if (xPrima.getFitness() != PEOR_FITNESS) break;
                 }
-
-                System.out.printf("%20s%n", "[POSIBLE MEJORA]");
-
-                Solucion xPrimaDoble = xPrima.clonar();
+                Solucion xPrimaDoble = new Solucion(xPrima);
                 VND(problematica, xPrimaDoble);
-
-                // Actualizar tiempo
                 Instant end = Instant.now();
                 Duration duracion = Duration.between(start, end);
                 t = (int) duracion.getSeconds();
-
                 // Cambio de vecindario si hay mejora
-                cambiarVecindario(problematica, solucionAux, xPrimaDoble, xBest, k, t, tBest);
+                NeighborhoodChange(problematica, solucionAux, xPrimaDoble, xBest, k, t, tBest);
             }
         } while (t < T_MAX);
         // Guardar solución final
-        problematica.setSolucion(xBest);
         imprimirSolucion(xBest, "SolucionGVNS.txt");
+
         */
     }
     // Solución Inicial: Nearest Neighbor
     private Solucion solucionInicial(Problematica problematica, Solucion solucion) {
-        //
-        List<Aeropuerto> sedes = new ArrayList<>(problematica.getSedes());
-        List<Pedido> pedidos = new ArrayList<>(problematica.getPedidos());
-        List<Vuelo> vuelos = new ArrayList<>(problematica.getVuelos());
+        // Declaracion de variables
         String instanteCreacion;
         Ruta ruta;
-        int pped = 1,pprod;
+        List<Aeropuerto> sedes = problematica.getSedes();
+        List<Pedido> pedidos = problematica.getPedidos();
+        List<Vuelo> vuelos = problematica.getVuelos();
         //
         for (Pedido pedido : pedidos) {
             instanteCreacion = pedido.getInstanteCreacion();
-            pprod = 1;
             for (Producto producto : pedido.getProductos()) {
-                System.out.printf("PREVIA: %d - %d%n",pped,pprod);
                 ruta = obtenerMejorRuta(instanteCreacion, sedes, producto.getDestino(), vuelos);
-                System.out.printf("REALIZADA: %d - %d%n",pped,pprod);
-                if (ruta != null) {
-                    System.out.printf(">> DURACION: %.2f %n",ruta.getDuracion());
-                    if(ruta.getVuelos().size() > 0) {
-                        for(Vuelo vuelo : ruta.getVuelos()) {
-                            System.out.printf("[#] >> %s  ->  %s%n",vuelo.getOrigen().getCodigo(),vuelo.getDestino().getCodigo());
-                        }   
-                    } else System.out.println("NO HAY VUELOS REGISTRADOS ??");
-                    
-                    producto.setOrigen(ruta.getVuelos().get(0).getOrigen());
-                }
+                if (ruta != null) producto.setOrigen(ruta.getVuelos().get(0).getOrigen());
                 else producto.setOrigen(null);
-                System.out.printf("FINALIZADA: %d - %d%n",pped,pprod);
                 producto.setRuta(ruta);
-                pprod++;
             }
-            pped++;
         }
         // Guardar en solución
         solucion.setPedidos(pedidos);
@@ -143,28 +117,36 @@ public class Algoritmo {
         return solucion;
     }
     //
-    private Ruta obtenerMejorRuta(String instanteInicial, List<Aeropuerto> origenes, Aeropuerto destino, List<Vuelo> vuelos) {
+    private Ruta obtenerMejorRuta(String instanteDeCreacion, List<Aeropuerto> origenes, Aeropuerto destino, List<Vuelo> vuelos) {
+        //
         Ruta ruta,mejorRuta = null;
         Set<Aeropuerto> visitados;
+        //
         for(Aeropuerto origen : origenes) {
             visitados = new HashSet<>();
-            ruta = construirRutaVoraz(instanteInicial,origen, destino, vuelos, visitados);
+            ruta = construirRutaVoraz(instanteDeCreacion,origen,destino,vuelos,visitados);
             if(ruta == null) continue;
             if(mejorRuta == null || ruta.getDuracion() < mejorRuta.getDuracion()) mejorRuta = ruta;
         }
         return mejorRuta;
     }
     //
-    private Ruta construirRutaVoraz(String instanteInicial, Aeropuerto origen, Aeropuerto destino, List<Vuelo> vuelos, Set<Aeropuerto> visitados) {
-        String horaInicial = G4D_Formatter.toTimeString(instanteInicial);
+    private Ruta construirRutaVoraz(String instanteDeCreacion, Aeropuerto origen, Aeropuerto destino, List<Vuelo> vuelos, Set<Aeropuerto> visitados) {
+        //
+        String horaOrigen = G4D_Formatter.toTimeString(instanteDeCreacion);
         Vuelo vueloMasProximo;
         List<Vuelo> secuenciaDeVuelos = new ArrayList<>();
         Aeropuerto actual = origen;
         Ruta ruta = new Ruta();
+        if(actual.equals(destino)) return null;
         while (!actual.equals(destino)) {
             visitados.add(actual);
-            vueloMasProximo = obtenerVueloMasProximo(horaInicial,actual,destino,vuelos, visitados);
-            if (vueloMasProximo == null) return null;
+            vueloMasProximo = obtenerVueloMasProximo(horaOrigen,actual,destino,vuelos, visitados);
+            if (vueloMasProximo == null) {
+                for(Vuelo vuelo : secuenciaDeVuelos) vuelo.setCapacidadDisponible(vuelo.getCapacidadDisponible() + 1);
+                return null;
+            }
+            vueloMasProximo.setCapacidadDisponible(vueloMasProximo.getCapacidadDisponible() - 1);
             secuenciaDeVuelos.add(vueloMasProximo);
             actual = vueloMasProximo.getDestino();
         }
@@ -174,6 +156,7 @@ public class Algoritmo {
     }
     //
     private Vuelo obtenerVueloMasProximo(String horaOrigen,Aeropuerto origen, Aeropuerto destino, List<Vuelo> vuelos, Set<Aeropuerto> visitados) {
+        //
         double duracionTotal,distancia, proximidad, mejorProximidad = Double.MAX_VALUE;
         Vuelo vueloMasProximo = null;
         List<Vuelo> vuelosPosibles = vuelos.stream()
@@ -181,9 +164,9 @@ public class Algoritmo {
                                            .filter(v -> v.getCapacidadDisponible() > 0)
                                            .filter(v -> !visitados.contains(v.getDestino()))
                                            .toList();
+        //
         for(Vuelo vuelo : vuelosPosibles) {
-            duracionTotal = G4D_Formatter.toDEC_Hour(vuelo.getHoraLlegada()) - G4D_Formatter.toDEC_Hour(horaOrigen);
-            if(duracionTotal < 0) duracionTotal += 24;
+            duracionTotal = G4D_Formatter.calcularDuracion(horaOrigen,0, vuelo.getHoraLlegada(),vuelo.getDestino().getHusoHorario());
             distancia = vuelo.getDestino().calcularDistancia(destino);
             proximidad = duracionTotal + 0.003 * distancia;
             if(proximidad < mejorProximidad) {
@@ -195,13 +178,67 @@ public class Algoritmo {
     }
 
     // Búsqueda local: Variable Neighborhood Descent
-    private void VND(Solucion solucion) {
-
+    private Solucion VND(Problematica problematicа,Solucion solucion) {
+        Solucion solucionPropuesta;
+        boolean huboMejora = false;
+        int i = 1;
+        while (i <= 3) {
+            solucionPropuesta = new Solucion(solucion);
+            switch (i) {
+                case 1:
+                    // huboMejora = LSInsertar(problematicа, solucion, solucionPropuesta, 1);
+                    break;
+                case 2:
+                    // huboMejora = LSIntercambiar(problematicа, solucion, solucionPropuesta, 1);
+                    break;
+                case 3:
+                    // huboMejora = LSRealocar(problematicа, solucion, solucionPropuesta, 1);
+                    break;
+                default:
+                    huboMejora = false;
+            }
+            if (huboMejora) {
+                solucion.copiar(solucionPropuesta);
+                i = 1;
+            } else {
+                i++;
+            }
+        }
+        return solucion;
     }
-    // Perturbación: Shaking
-    private void Shaking(Solucion solucion, int k) {
-
+    //
+    private void Shaking(Solucion solucion,IntWrapper k,Problematica problematica) {
+        for (int i = 0; i < k.value; i++) {
+            int neighborhood = random.nextInt(3); // 0, 1 o 2
+            int ele = L_MIN + random.nextInt(L_MAX - L_MIN + 1);
+            switch (neighborhood) {
+                case 0: // Insertar l pedidos en la misma ruta
+                    // TInsertar(problematica, solucion, ele);
+                    break;
+                case 1: // Realocar l pedidos entre rutas diferentes
+                    // TRealocar(problematica, solucion, ele);
+                    break;
+                case 2: // Intercambiar l pedidos entre rutas diferentes
+                    // TIntercambiar(problematica, solucion, ele);
+                    break;
+            }
+            // Actualizar fitness
+            solucion.setFitness();
+        }
     }
+
+    private void NeighborhoodChange(Problematica problematica,Solucion solucionAux,Solucion xPrimaDoble,Solucion xBest,
+                                    IntWrapper k,int t,IntWrapper tBest) {
+        if (xPrimaDoble.getFitness() < xBest.getFitness()) {
+            xBest.copiar(xPrimaDoble);
+            solucionAux.copiar(xPrimaDoble);
+            k.value = K_MIN;
+            tBest.value = t;
+        } else {
+            k.value++;
+        }
+    }
+    
     //
     public void imprimirSolucionInicial(String rutaArchivo) { imprimirSolucion(solucionInicial, rutaArchivo); }
     //
