@@ -13,9 +13,12 @@ import java.io.PrintWriter;
 import java.math.BigInteger;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 public class G4D_Formatter {
@@ -69,27 +72,70 @@ public class G4D_Formatter {
         Integer seconds = (int) Math.round(secondsDec);
         return String.format("%03d° %02d' %02d\" %s", degrees, minutes, seconds, hemisphere);
     }
-    // Convertir 'instante' a cadena valida para 'instante'
+    // Convertir 'LocalDateTime' a 'DateTimeString'
     public static String toDateTimeString(LocalDateTime ldt) {
         return ldt.format(DateTimeFormatter.ofPattern(dt_p));
     }
-    // Convertir cadena valida para 'instante' a 'instante'
+    // Convertir 'DateTimeString' a 'LocalDateTime'
     public static LocalDateTime toDateTime(String dateTime) {
         return LocalDateTime.parse(dateTime, DateTimeFormatter.ofPattern(dt_p));
     }
-    // Convertir cadena valida para 'instante' a cadena valida para 'hora'
+    // Convertir 'LocalTime' a 'TimeString'
+    public static String toTimeString(LocalTime lt) {
+        return lt.format(DateTimeFormatter.ofPattern(t_p));
+    }
+    // Convertir 'TimeString' a 'LocalTime'
+    public static LocalTime toTime(String time) {
+        return LocalTime.parse(time, DateTimeFormatter.ofPattern(t_p));
+    }
+    // Convertir 'DateTimeString' a 'TimeString'
     public static String toTimeString(String dateTime) {
         LocalDateTime ldt = LocalDateTime.parse(dateTime, DateTimeFormatter.ofPattern(dt_p));
         return ldt.format(DateTimeFormatter.ofPattern(t_p));
     }
-    // Convertir cadena valida de 'hora' a 'hora'
-    public static LocalTime toTime(String time) {
-        return LocalTime.parse(time, DateTimeFormatter.ofPattern(t_p));
+    // Convertir 'TimeString' a 'DateTimeString'
+    public static String toDateTimeString(String time) {
+        LocalTime lt = toTime(time);
+        LocalDateTime ldt_ref = LocalDateTime.now();
+        LocalDateTime ldt = ldt_ref.withHour(lt.getHour()).withMinute(lt.getMinute());
+        if(ldt.isBefore(ldt_ref)) ldt = ldt.plusDays(1);
+        return toDateTimeString(ldt);
     }
-    // Convertir cadena valida para 'hora' a cantidad decimal de 'horas'
-    public static double toDEC_Hour(String time) {
-        LocalTime lt = LocalTime.parse(time, DateTimeFormatter.ofPattern(t_p));
-        return lt.getHour() + lt.getMinute() / 60.0;
+    // Convertir 'TimeString' a 'DateTimeString'
+    public static String toDateTimeString(String time,String dateTimeReference) {
+        LocalTime lt = toTime(time);
+        LocalDateTime ldt_ref = toDateTime(dateTimeReference);
+        LocalDateTime ldt = ldt_ref.withHour(lt.getHour()).withMinute(lt.getMinute());
+        return toDateTimeString(ldt);
+    }
+    // Convertir 'DateTimeString' a UTC
+    public static String toUTC_DateTimeString(String dateTime, Integer gmt) {
+        LocalDateTime ldt = toDateTime(dateTime);
+        ldt = ldt.minusHours(Long.valueOf(gmt));
+        return toDateTimeString(ldt);
+    }
+    // Convertir 'TimeString' a UTC
+    public static String toUTC_TimeString(String time, Integer gmt) {
+        LocalTime lt = toTime(time);
+        lt = lt.minusHours(Long.valueOf(gmt));
+        return toTimeString(lt);
+    }
+    // Validar
+    public static Boolean isOffset_DateTime(String dateTime, String dateTimeReference) {
+        LocalDateTime ldt = toDateTime(dateTime);
+        LocalDateTime ldt_ref = toDateTime(dateTimeReference);
+        return ldt.isBefore(ldt_ref);
+    }
+    // Agregar dia
+    public static String addDay(String dateTime) {
+        LocalDateTime ldt = toDateTime(dateTime);
+        return toDateTimeString(ldt.plusDays(1));
+    }
+    //
+    public static String addMinutes(String dateTime,Long minutes) {
+        LocalDateTime ldt = toDateTime(dateTime);
+        ldt = ldt.plusMinutes(minutes);
+        return toDateTimeString(ldt);
     }
     // Calcular distancia geodesica
     public static Double calculateGeodesicDistance(Double origLat, Double origLon, Double destLat, Double destLon) {
@@ -100,14 +146,16 @@ public class G4D_Formatter {
         return 2 * EARTH_RADIUS_KM * Math.asin(Math.sqrt(h));
     }
     // Calcular tiempo transcurrido de origen a destino
-    public static Double calculateElapsedTime(String origTime, Integer origGMT, String destTime, Integer destGMT) {
-        Double origHourUTC = toDEC_Hour(origTime) - origGMT;
-        if (origHourUTC < 0) origHourUTC += 24;
-        Double destHourUTC = toDEC_Hour(destTime) - destGMT;
-        if (destHourUTC < 0) destHourUTC += 24;
-        Double duration = destHourUTC - origHourUTC;
-        if (duration < 0) duration += 24;
-        return duration;
+    public static Double calculateElapsed_Time(String origTime, String destTime) {
+        LocalTime ot = toTime(origTime), dt = toTime(destTime);
+        Long elapsed_minutes = Duration.between(ot, dt).toMinutes();
+        return elapsed_minutes / 60.0;
+    }
+    // Calcular tiempo transcurrido de origen a destino
+    public static Double calculateElapsed_DateTime(String origDateTime, String destDateTime) {
+        LocalDateTime odt = toDateTime(origDateTime), ddt = toDateTime(destDateTime);
+        Long elapsed_minutes = Duration.between(odt, ddt).toMinutes();
+        return elapsed_minutes / 60.0;
     }
     // Generar identificador unico
     public static String generateIdentifier(String prefix) {
@@ -180,5 +228,18 @@ public class G4D_Formatter {
         public String toString() {
             return String.valueOf(this.value);
         }
+    }
+    // Interfaz de replicacion para modelo
+    public static interface Replicable<T> {
+        T replicar();
+    } 
+    // Replicar lista 'modelo' en otra
+    public static <T extends Replicable<T>> List<T> replicar(List<T> lista) {
+        List<T> replica = new ArrayList<>();
+        for (T e : lista) {
+            T ne = e.replicar();
+            replica.add(ne);
+        }
+        return replica;
     }
 }

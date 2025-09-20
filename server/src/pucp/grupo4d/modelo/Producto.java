@@ -7,8 +7,9 @@
 package pucp.grupo4d.modelo;
 
 import pucp.grupo4d.util.G4D_Formatter;
+import pucp.grupo4d.util.G4D_Formatter.Replicable;
 
-public class Producto {
+public class Producto implements Replicable<Producto> {
     private String id;
     private String instanteLlegada;
     private String instanteLimite;
@@ -20,6 +21,7 @@ public class Producto {
         this.id = G4D_Formatter.generateIdentifier("PRO");
     }
 
+    @Override
     public Producto replicar() {
         Producto producto = new Producto();
         producto.id = this.id;

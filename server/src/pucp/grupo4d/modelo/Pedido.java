@@ -10,8 +10,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import pucp.grupo4d.util.G4D_Formatter;
+import pucp.grupo4d.util.G4D_Formatter.Replicable;
 
-public class Pedido {
+public class Pedido implements Replicable<Pedido> {
     private String id;
     private Cliente cliente;
     private Aeropuerto destino;
@@ -25,6 +26,7 @@ public class Pedido {
         this.cantidad = 0;
     }
 
+    @Override
     public Pedido replicar() {
         Pedido pedido = new Pedido();
         pedido.id = this.id;

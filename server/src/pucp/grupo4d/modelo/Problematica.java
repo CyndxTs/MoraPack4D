@@ -17,11 +17,18 @@ import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Random;
 import java.util.Scanner;
+import java.util.Set;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.HashSet;
+
 import pucp.grupo4d.util.G4D_Formatter;
 
 public class Problematica {
+    public static final Double MAX_HORAS_RECOJO = 2.0;
+    public static final Integer MAX_DIAS_ENTREGA_INTRACONTINENTAL = 2;
+    public static final Integer MAX_DIAS_ENTREGA_INTERCONTINENTAL = 3;
+    public static final Set<Vuelo> vuelosActivos = new HashSet<>();
     private Map<String, Aeropuerto> sedes;
     private List<Aeropuerto> aeropuertos;
     private List<PlanDeVuelo> planes;
@@ -135,7 +142,6 @@ public class Problematica {
                 plan.setHoraSalida(lineaSC.next());
                 plan.setHoraLlegada(lineaSC.next());
                 plan.setCapacidadMaxima(lineaSC.nextInt());
-                plan.setDuracion();
                 planes.add(plan);
                 lineaSC.close();
             }
@@ -157,10 +163,10 @@ public class Problematica {
     private void cargarPedidos(String rutaArchivo) {
         System.out.println("Generando pedidos..");
         Random random = new Random();
-        for (int i = 0; i < 30; i++) {
+        for (int i = 0; i < 5; i++) {
             Cliente cliente = new Cliente();
             cliente.setNombre("Cli_" + (i + 1));
-            int numPedidos = 1 + random.nextInt(20);
+            int numPedidos = 1 + random.nextInt(5);
             for(int j = 0;j < numPedidos;j++) {
                 Pedido pedido = new Pedido();
                 pedido.setCliente(cliente);
@@ -170,7 +176,7 @@ public class Problematica {
                     LocalTime.of(random.nextInt(24),random.nextInt(60),random.nextInt(60))
                 );
                 pedido.setInstanteCreacion(G4D_Formatter.toDateTimeString(ldt_instanteCreacion));
-                int numProductos = 1 + random.nextInt(10);
+                int numProductos = 1 + random.nextInt(5);
                 pedido.setCantidad(numProductos);
                 for(int k = 0;k < numProductos;k++) {
                     Producto producto = new Producto();

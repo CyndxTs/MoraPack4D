@@ -9,7 +9,9 @@ package pucp.grupo4d.modelo;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Solucion {
+import pucp.grupo4d.util.G4D_Formatter.Replicable;
+
+public class Solucion implements Replicable<Solucion> {
     private List<Pedido> pedidos;
     private double fitness;
 
@@ -18,6 +20,7 @@ public class Solucion {
         this.fitness = 0.0;
     }
 
+    @Override
     public Solucion replicar() {
         Solucion solucion = new Solucion();
         solucion.fitness = this.fitness;

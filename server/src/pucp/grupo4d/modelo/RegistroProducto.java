@@ -6,13 +6,16 @@
 
 package pucp.grupo4d.modelo;
 
-public class RegistroProducto {
+import pucp.grupo4d.util.G4D_Formatter.Replicable;
+
+public class RegistroProducto implements Replicable<RegistroProducto> {
     private String idProducto;
     private String instanteLlegada;
     private String instanteSalida;
 
     public RegistroProducto() {}
 
+    @Override
     public RegistroProducto replicar() {
         RegistroProducto registroProducto = new RegistroProducto();
         registroProducto.idProducto = this.idProducto;

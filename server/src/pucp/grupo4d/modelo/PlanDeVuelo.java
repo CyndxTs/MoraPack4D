@@ -7,27 +7,29 @@
 package pucp.grupo4d.modelo;
 
 import pucp.grupo4d.util.G4D_Formatter;
+import pucp.grupo4d.util.G4D_Formatter.Replicable;
 
-public class PlanDeVuelo {
+public class PlanDeVuelo implements Replicable<PlanDeVuelo> {
+    private String id;
     private Aeropuerto origen;
     private Aeropuerto destino;
     private String horaSalida;
     private String horaLlegada;
     private Integer capacidadMaxima;
-    private Double duracion;
 
     public PlanDeVuelo() {
-        this.duracion = 0.0;
+        this.id = G4D_Formatter.generateIdentifier("PLA");
     }
 
+    @Override
     public PlanDeVuelo replicar() {
         PlanDeVuelo vuelo = new PlanDeVuelo();
+        vuelo.id = this.id;
         vuelo.origen = (this.origen != null) ? this.origen.replicar() : null;
         vuelo.destino = (this.destino != null) ? this.destino.replicar() : null;
         vuelo.horaSalida = this.horaSalida;
         vuelo.horaLlegada = this.horaLlegada;
         vuelo.capacidadMaxima = this.capacidadMaxima;
-        vuelo.duracion = this.duracion;
         return vuelo;
     }
 
@@ -69,17 +71,5 @@ public class PlanDeVuelo {
 
     public void setCapacidadMaxima(Integer capacidadMaxima) {
         this.capacidadMaxima = capacidadMaxima;
-    }
-
-    public Double getDuracion() {
-        return duracion;
-    }
-
-    public void setDuracion(Double duracion) {
-        this.duracion = duracion;
-    }
-
-    public void setDuracion() {
-        this.duracion = G4D_Formatter.calculateElapsedTime(horaSalida,origen.getHusoHorario(),horaLlegada,destino.getHusoHorario());
     }
 }
