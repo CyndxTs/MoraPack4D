@@ -8,6 +8,8 @@ package pucp.grupo4d.resolucion;
 
 import java.io.FileWriter;
 import java.io.PrintWriter;
+import java.sql.Time;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -26,9 +28,9 @@ import pucp.grupo4d.util.G4D_Formatter;
 
 public class Algoritmo {
     private static final Integer L_MIN = 1;
-    public static final Integer L_MAX = 2;
+    private static final Integer L_MAX = 2;
     private static final Integer K_MIN = 3;
-    public static Integer K_MAX = 5;
+    private static final Integer K_MAX = 5;
     private static final Integer T_MAX = 10;
     private static final Integer MAX_INTENTOS = 10; 
     private static final Integer NO_ENCONTRADO = -1;
@@ -88,82 +90,96 @@ public class Algoritmo {
     // Solución Inicial: Nearest Neighbor
     private void solucionInicial(Problematica problematica, Solucion solucion) {
         //
+        System.out.println("Generando solución inicial..");
+        //
         List<Pedido> pedidos = problematica.getPedidos();
         List<PlanDeVuelo> planes = problematica.getPlanes();
         List<Aeropuerto> sedes = problematica.getSedes();
         Set<Vuelo> vuelosActivos = new HashSet<>();
-        int posPed = 1,posProd;
+        int numPed = 1,cantPed = pedidos.size(),numProd,cantProd;
         // Actualizar rutas de productos de pedidos
         for (Pedido pedido : pedidos) {
-            System.out.printf("[#] ATENDIENDO PEDIDO #%d%n",posPed);
-            String instanteCreacion = pedido.getInstanteCreacion();
-            posProd = 1;
-            for (Producto producto : pedido.getProductos()) {
-                System.err.printf(">> PRODUCTO #%d de %d%n",posProd,pedido.getProductos().size());
-                Ruta ruta = obtenerMejorRuta(instanteCreacion,sedes,producto.getDestino(),planes,vuelosActivos);
+            System.out.printf("[#] ATENDIENDO PEDIDO #%d de %d%n",numPed,cantPed);
+            LocalDateTime fechaHoraCreacion = pedido.getFechaHoraCreacion();
+            List<Producto> productos = pedido.getProductos();
+            cantProd = productos.size();
+            numProd = 1;
+            for (Producto producto : productos) {
+                System.err.printf(">> ATENDIENDO PRODUCTO #%d de %d%n",numProd,cantProd);
+                Ruta ruta = obtenerMejorRuta(fechaHoraCreacion,producto.getDestino(),sedes,planes,vuelosActivos);
                 if (ruta == null){
                     producto.setOrigen(null);
-                    System.out.println("No se pudo atender un producto.");
+                    System.out.printf("[ERROR] Ningún origen pudo atender al producto #%s del pedido %s.%n",numProd,numPed);
                     System.exit(1);
                 }
                 producto.setOrigen(ruta.getVuelos().getFirst().getPlan().getOrigen());
-                producto.setInstanteLlegada(ruta.getVuelos().getLast().getInstanteLlegadaUniversal());
-                Integer dias = obtenerMaxDiasParaEntrega(ruta.getTipo());
-                producto.setInstanteLimite(G4D_Formatter.addMinutes(instanteCreacion,Long.valueOf(24*60*dias)));
+                producto.setDestino(ruta.getVuelos().getLast().getPlan().getDestino());
+                producto.setFechaHoraLlegadaLocal(ruta.getVuelos().getLast().getFechaHoraLlegadaLocal());
+                producto.setFechaHoraLlegadaUTC(ruta.getVuelos().getLast().getFechaHoraLlegadaUTC());
+                LocalDateTime fechaHoraLimiteUTC = fechaHoraCreacion.plusMinutes((long)(double)(60*ruta.getTipo().getMaxHorasParaEntrega()));
+                producto.setFechaHoraLimiteLocal(G4D_Formatter.toLocal(fechaHoraLimiteUTC,producto.getDestino().getHusoHorario()));
+                producto.setFechaHoraLimiteUTC(fechaHoraLimiteUTC);
                 producto.setRuta(ruta);
-                System.out.println("PRODUCTO ENRUTADO.");
-                posProd++;
+                producto.registrarRuta(fechaHoraCreacion);
+                System.out.println("PRODUCTO ATENDIDO.");
+                numProd++;
             }
-            posPed++;
+            System.out.println("PEDIDO ATENDIDO.");
+            numPed++;
         }
         // Guardar en solución
         solucion.setPedidos(pedidos);
         solucion.setFitness();
     }
     //
-    private Ruta obtenerMejorRuta(String instanteDeCreacion,List<Aeropuerto> origenes,Aeropuerto destino,List<PlanDeVuelo> planes,Set<Vuelo> vuelosActivos) {
+    private Ruta obtenerMejorRuta(LocalDateTime fechaHoraCreacion, Aeropuerto destino, List<Aeropuerto> origenes,
+                                  List<PlanDeVuelo> planes, Set<Vuelo> vuelosActivos) {
         System.out.println("Enrutando..");
         //
+        int cantOrig = origenes.size(),numOrig = 1;
         Ruta ruta,mejorRuta = null;
-        Set<Aeropuerto> visitados;
-        int posOrig = 1;
+        Set<Aeropuerto> aeropuertosVisitados;
         //
         for(Aeropuerto origen : origenes) {
-            System.out.printf("[ORIGEN #%d de %d]%n",posOrig,origenes.size());
-            TipoRuta tipoRuta = (origen.getContinente().compareTo(destino.getContinente()) == 0)? TipoRuta.INTRACONTINENTAL : TipoRuta.INTERCONTINENTAL;
-            visitados = new HashSet<>();
-            ruta = construirRutaVoraz(instanteDeCreacion,origen,destino,planes,visitados,vuelosActivos,tipoRuta);
+            System.out.printf("[ORIGEN #%d de %d]%n",numOrig,cantOrig);
+            aeropuertosVisitados = new HashSet<>();
+            ruta = construirRutaVoraz(fechaHoraCreacion,origen,destino,planes,vuelosActivos,aeropuertosVisitados);
             if(ruta == null) {
                 System.out.println("No es posible generar una ruta a partir de este origen.");
                 continue;
             }
-            if(mejorRuta == null || ruta.getDuracion() < mejorRuta.getDuracion()) mejorRuta = ruta;
-            posOrig++;
+            if(mejorRuta == null || ruta.getDuracion() < mejorRuta.getDuracion()) {
+                System.out.printf("Nueva mejor ruta asignada: %s%n",ruta.getId());
+                mejorRuta = ruta;
+            }
+            numOrig++;
         }
         return mejorRuta;
     }
     //
-    private Ruta construirRutaVoraz(String instanteDeOrigen,Aeropuerto origen,Aeropuerto destino,List<PlanDeVuelo>planes,Set<Aeropuerto> visitados,Set<Vuelo> vuelosActivos,TipoRuta tipoRuta) {
+    private Ruta construirRutaVoraz(LocalDateTime fechaHoraCreacion,Aeropuerto origen,Aeropuerto destino,
+                                    List<PlanDeVuelo>planes,Set<Vuelo> vuelosActivos,Set<Aeropuerto> aeropuertosVisitados) {
         //
         System.err.println("Construyendo ruta..");
         //
-        Double duracionActual = 0.0,maxDuracionParaEntrega = 24.0*obtenerMaxDiasParaEntrega(tipoRuta);
+        int numVuelo = 1;
+        TipoRuta tipoRuta = (origen.getContinente().compareTo(destino.getContinente()) == 0) ? TipoRuta.INTRACONTINENTAL : TipoRuta.INTERCONTINENTAL;
+        Double duracionActual = 0.0, maxDuracionParaEntrega = tipoRuta.getMaxHorasParaEntrega();
         Ruta ruta = new Ruta();
         List<Vuelo> secuenciaDeVuelos = new ArrayList<>();
         Aeropuerto actual = origen;
-        String instanteActual = instanteDeOrigen;
-        int posVuel = 1;
+        LocalDateTime fechaHoraActual = fechaHoraCreacion;
         //
         if(actual.equals(destino)) return null;
         //
         while (!actual.equals(destino)) {
-            if(posVuel != 1) System.out.println("DESTINO NO ALCANZADO. Redirigiendo..");
-            visitados.add(actual);
-            System.err.printf("> VUELO #%d%n",posVuel);
+            aeropuertosVisitados.add(actual);
+            if(numVuelo != 1) System.out.println("DESTINO NO ALCANZADO. Redirigiendo..");
+            System.out.printf("> VUELO #%d%n",numVuelo);
             System.out.print("Buscando mejor plan de vuelo..");
-            PlanDeVuelo mejorPlan = obtenerMejorPlanDeVuelo(planes, visitados, actual, instanteActual, duracionActual,maxDuracionParaEntrega);
+            PlanDeVuelo mejorPlan = obtenerPlanMasProximo(actual,fechaHoraActual,planes,duracionActual,maxDuracionParaEntrega,aeropuertosVisitados);
             if(mejorPlan == null) {
-                System.out.println(" [ERROR]");
+                System.out.println(" [NO ENCONTRADO]");
                 for(Vuelo vuelo : secuenciaDeVuelos) {
                     vuelo.setCapacidadDisponible(vuelo.getCapacidadDisponible() + 1);
                     if(vuelo.getCapacidadDisponible() == vuelo.getPlan().getCapacidadMaxima()) vuelosActivos.remove(vuelo);
@@ -171,25 +187,25 @@ public class Algoritmo {
                 return null;
             }
             System.out.println(" [ENCONTRADO]");
-            System.out.print("Validando existencia de vuelo activo..");
-            Vuelo vuelo = obtenerVueloActivo(instanteActual,mejorPlan,vuelosActivos);
+            System.out.print("Bucando vuelo activo..");
+            Vuelo vuelo = obtenerVueloActivo(mejorPlan,fechaHoraActual,vuelosActivos);
             if(vuelo == null) {
                 System.out.println(" [NO_ENCONTRADO]");
                 System.out.println("Activando nuevo vuelo..");
                 vuelo = new Vuelo();
                 vuelo.setPlan(mejorPlan);
                 vuelo.setCapacidadDisponible(vuelo.getPlan().getCapacidadMaxima());
-                vuelo.setInstantes(instanteActual);
+                vuelo.instanciarHorarios(fechaHoraActual);
                 vuelo.setDuracion();
                 vuelosActivos.add(vuelo);
             } else System.out.println(" [ENCONTRADO]");
-            System.out.printf("VUELO ASIGNADO: [%s]%n",vuelo.getId());
+            System.out.printf("VUELO ASIGNADO: %s%n",vuelo.getId());
             vuelo.setCapacidadDisponible(vuelo.getCapacidadDisponible() - 1);
             secuenciaDeVuelos.add(vuelo);
-            instanteActual = vuelo.getInstanteLlegadaUniversal();
+            fechaHoraActual = vuelo.getFechaHoraLlegadaUTC();
             duracionActual += vuelo.getDuracion();
             actual = vuelo.getPlan().getDestino();
-            posVuel++;
+            numVuelo++;
         }
         System.out.println("DESTINO ALCANZADO. Guardando ruta..");
         //
@@ -199,59 +215,60 @@ public class Algoritmo {
         return ruta;
     }
     //
-    private PlanDeVuelo obtenerMejorPlanDeVuelo(List<PlanDeVuelo> planes,Set<Aeropuerto> visitados,Aeropuerto origen,String instanteActual,Double duracionActual,Double maxDuracionParaEntrega) {
+    private PlanDeVuelo obtenerPlanMasProximo(Aeropuerto origen, LocalDateTime fechaHoraActual, List<PlanDeVuelo> planes,
+                                              Double duracionActual,Double maxDuracionParaEntrega,Set<Aeropuerto> visitados) {
         Double mejorProximidad = Double.MAX_VALUE;
-        PlanDeVuelo mejorPlanDeVuelo = null;
+        PlanDeVuelo planMaxProximo = null;
         List<PlanDeVuelo> planesPosibles = planes.stream().filter(p -> p.getOrigen().equals(origen))
                                                           .filter(p -> !visitados.contains(p.getDestino()))
                                                           .toList();
         for(PlanDeVuelo plan : planesPosibles) {
-            String instanteSalida =  G4D_Formatter.toUTC_DateTimeString(
-                G4D_Formatter.toDateTimeString(plan.getHoraSalida(),instanteActual),
+            LocalDateTime fechaHoraSalidaUTC =  G4D_Formatter.toUTC(
+                G4D_Formatter.toDateTime(plan.getHoraSalida(),fechaHoraActual),
                 plan.getOrigen().getHusoHorario()
             );
-            String instanteLlegada =  G4D_Formatter.toUTC_DateTimeString(
-                G4D_Formatter.toDateTimeString(plan.getHoraLlegada(),instanteActual),
+            LocalDateTime fechaHoraLlegadaUTC =  G4D_Formatter.toUTC(
+                G4D_Formatter.toDateTime(plan.getHoraLlegada(),fechaHoraActual),
                 plan.getDestino().getHusoHorario()
             );
-            if(G4D_Formatter.isOffset_DateTime(instanteLlegada, instanteSalida)) instanteLlegada = G4D_Formatter.addDay(instanteLlegada);
-            if(G4D_Formatter.isOffset_DateTime(instanteSalida,instanteActual)) {
-                instanteSalida = G4D_Formatter.addDay(instanteSalida);
-                instanteLlegada = G4D_Formatter.addDay(instanteLlegada);
+            if(fechaHoraLlegadaUTC.isBefore(fechaHoraSalidaUTC)) fechaHoraLlegadaUTC = fechaHoraLlegadaUTC.plusDays(1);
+            if(fechaHoraSalidaUTC.isBefore(fechaHoraActual)) {
+                fechaHoraSalidaUTC = fechaHoraSalidaUTC.plusDays(1);
+                fechaHoraLlegadaUTC = fechaHoraLlegadaUTC.plusDays(1);
             }
-            Double transcurrido = G4D_Formatter.calculateElapsed_DateTime(instanteActual,instanteLlegada);
+            Double transcurrido = G4D_Formatter.calculateElapsedHours(fechaHoraActual,fechaHoraLlegadaUTC);
             if(duracionActual + transcurrido > maxDuracionParaEntrega) continue;
-            Integer capacidadDisponible = plan.getDestino().obtenerCapacidadDisponible(G4D_Formatter.toUTC_DateTimeString(G4D_Formatter.toDateTimeString(plan.getHoraLlegada(),instanteActual),plan.getDestino().getHusoHorario()));
+            Integer capacidadDisponible = plan.getDestino().obtenerCapacidadDisponible(G4D_Formatter.toUTC(G4D_Formatter.toDateTime(plan.getHoraLlegada(),fechaHoraActual),plan.getDestino().getHusoHorario()));
             if(capacidadDisponible < 1) continue;
             Double distancia = origen.obtenerDistanciaHasta(plan.getDestino());
             Double proximidad = transcurrido + 0.003 * distancia + 0.01 * capacidadDisponible;
             if(proximidad < mejorProximidad) {
                 mejorProximidad = proximidad;
-                mejorPlanDeVuelo = plan;
+                planMaxProximo = plan;
             }
         }
-        return mejorPlanDeVuelo;
+        return planMaxProximo;
     }
 
-    private Vuelo obtenerVueloActivo(String instanteActual,PlanDeVuelo plan,Set<Vuelo> vuelosActivos) {
+    private Vuelo obtenerVueloActivo(PlanDeVuelo plan, LocalDateTime fechaHoraActual, Set<Vuelo> vuelosActivos) {
         List<Vuelo> vuelosPosibles = vuelosActivos.stream().filter(v -> v.getPlan().getOrigen() == plan.getOrigen())
                                                            .filter(v -> v.getPlan().getDestino() == plan.getDestino())
-                                                           .filter(v -> v.getPlan().getHoraSalida().compareTo(plan.getHoraSalida()) == 0)
-                                                           .filter(v -> v.getPlan().getHoraLlegada().compareTo(plan.getHoraLlegada()) == 0)
+                                                           .filter(v -> v.getPlan().getHoraSalida().equals(plan.getHoraSalida()))
+                                                           .filter(v -> v.getPlan().getHoraLlegada().equals(plan.getHoraLlegada()))
                                                            .toList();
-        for(Vuelo vuelo : vuelosPosibles) {
-            String instanteSalida =  G4D_Formatter.toUTC_DateTimeString(
-                G4D_Formatter.toDateTimeString(plan.getHoraSalida(),instanteActual),
+        LocalDateTime fechaHoraSalida = G4D_Formatter.toUTC(
+                G4D_Formatter.toDateTime(plan.getHoraSalida(),fechaHoraActual),
                 plan.getOrigen().getHusoHorario()
-            );
-            if(G4D_Formatter.isOffset_DateTime(instanteSalida,instanteActual)) instanteSalida = G4D_Formatter.addDay(instanteSalida);
-            if(instanteSalida.compareTo(vuelo.getInstanteSalidaUniversal()) == 0) return vuelo;
+        );
+        if(fechaHoraSalida.isBefore(fechaHoraActual)) {
+            fechaHoraSalida = fechaHoraSalida.plusDays(1);
+        }
+        for(Vuelo vuelo : vuelosPosibles) {
+            if(fechaHoraSalida.equals(vuelo.getFechaHoraSalidaUTC())) {
+                return vuelo;
+            }
         }
         return null;
-    }
-
-    private Integer obtenerMaxDiasParaEntrega(TipoRuta tipoRuta) {
-        return (tipoRuta == TipoRuta.INTRACONTINENTAL)? Problematica.MAX_DIAS_ENTREGA_INTRACONTINENTAL : Problematica.MAX_DIAS_ENTREGA_INTERCONTINENTAL;
     }
 /*
     // Búsqueda local: Variable Neighborhood Descent
@@ -338,12 +355,22 @@ public class Algoritmo {
             G4D_Formatter.printFullLine(archivoWriter, '=', dimLinea);
             G4D_Formatter.printCentered(archivoWriter, dimLinea, "FITNESS DE LA SOLUCIÓN");
             G4D_Formatter.printCentered(archivoWriter, dimLinea, String.format("%.2f", solucion.getFitness()));
+            archivoWriter.println();
+            G4D_Formatter.printCentered(archivoWriter,dimLinea,String.format("%s %32s %24s","DURACION PROM.","DISTANCIA RECORRIDA PROM.","CAP. DISPO. PROM."));
+            G4D_Formatter.printCentered(archivoWriter,dimLinea,String.format(
+                                "%15s %28s %11s%s | %s",
+                                String.format("%.2f hrs.",solucion.getDuracionPromedio()),
+                                String.format("%.2f Km.",solucion.getDistanciaRecorridaPromedio()),
+                                " ",
+                                String.format("V: %.2f",solucion.getCapacidadDiponiblePromedioPorVuelo()),
+                                String.format("A: %.2f",solucion.getCapacidadDisponiblePromedioPorAeropuerto())
+                            ));
             G4D_Formatter.printFullLine(archivoWriter, '=', dimLinea);
             for(Pedido pedido : solucion.getPedidos()) {
                 G4D_Formatter.printCentered(archivoWriter, dimLinea, String.format("PEDIDO #%d", posPedido + 1));
                 G4D_Formatter.printFullLine(archivoWriter, '-', dimLinea,4);
                 archivoWriter.printf("%5s %-30s %15s %25s %25s%n","","CLIENTE","DESTINO","NUM. PRODUCTOS MPE","INSTANTE DE REGISTRO");
-                archivoWriter.printf("%5s %-30s %13s %20s %31s%n","",pedido.getCliente().getNombre(),pedido.getDestino().getCodigo(),String.format("%03d",pedido.getCantidad()),pedido.getInstanteCreacion());
+                archivoWriter.printf("%5s %-30s %13s %20s %31s%n","",pedido.getCliente().getNombre(),pedido.getDestino().getCodigo(),String.format("%03d",pedido.getCantidad()),G4D_Formatter.toDisplayString(pedido.getFechaHoraCreacion()));
                 archivoWriter.println();
                 G4D_Formatter.printCentered(archivoWriter, dimLinea, "> SECUENCIA DE VUELOS PLANIFICADOS <");
                 G4D_Formatter.printFullLine(archivoWriter, '*', dimLinea,8);
@@ -351,8 +378,8 @@ public class Algoritmo {
                 tiempoAhorrado = 0.0;
                 numProductos = pedido.getProductos().size();
                 for(Producto producto : pedido.getProductos()) {
-                    tiempoAhorrado += G4D_Formatter.calculateElapsed_DateTime(producto.getInstanteLlegada(),producto.getInstanteLimite());
-                    archivoWriter.printf("%10s PRODUCTO #%s  |  ORIGEN: %s  |  TIPO DE ENVIO:  %s  |  ENTREGA PLANIFICADA: %s%n",">>",String.format("%03d",posProducto+1),producto.getOrigen().getCodigo(),producto.getRuta().getTipo(),producto.getInstanteLlegada());
+                    tiempoAhorrado += G4D_Formatter.calculateElapsedHours(producto.getFechaHoraLlegadaUTC(),producto.getFechaHoraLimiteUTC());
+                    archivoWriter.printf("%10s PRODUCTO #%s  |  ORIGEN: %s  |  TIPO DE ENVIO:  %s  |  ENTREGA PLANIFICADA: %s%n",">>",String.format("%03d",posProducto+1),producto.getOrigen().getCodigo(),producto.getRuta().getTipo(),G4D_Formatter.toDisplayString(producto.getFechaHoraLlegadaUTC()));
                     archivoWriter.println();
                     archivoWriter.printf("%46s %29s %22s%n","ORIGEN","DESTINO","TRANSCURRIDO");
                     if(producto.getRuta() != null) {
@@ -360,9 +387,9 @@ public class Algoritmo {
                             archivoWriter.printf(
                                 "%36s  %s  -->  %s  %s  ==  %.2f hrs.%n",
                                 vuelo.getPlan().getOrigen().getCodigo(),
-                                vuelo.getInstanteSalidaUniversal(),
+                                G4D_Formatter.toDisplayString(vuelo.getFechaHoraSalidaUTC()),
                                 vuelo.getPlan().getDestino().getCodigo(),
-                                vuelo.getInstanteLlegadaUniversal(),
+                                G4D_Formatter.toDisplayString(vuelo.getFechaHoraLlegadaUTC()),
                                 vuelo.getDuracion()
                             );
                         }

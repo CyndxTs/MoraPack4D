@@ -6,18 +6,20 @@
 
 package pucp.grupo4d.modelo;
 
+import java.time.LocalDateTime;
+
 import pucp.grupo4d.util.G4D_Formatter;
 import pucp.grupo4d.util.G4D_Formatter.Replicable;
 
 public class Vuelo implements Replicable<Vuelo> {
     private String id;
     private Integer capacidadDisponible;
-    private PlanDeVuelo plan;
-    private String instanteSalidaLocal;
-    private String instanteSalidaUniversal;
-    private String instanteLlegadaLocal;
-    private String instanteLlegadaUniversal;
     private Double duracion;
+    private LocalDateTime fechaHoraSalidaLocal;
+    private LocalDateTime fechaHoraSalidaUTC;
+    private LocalDateTime fechaHoraLlegadaLocal;
+    private LocalDateTime fechaHoraLlegadaUTC;
+    private PlanDeVuelo plan;
 
     public Vuelo() {
         this.id = G4D_Formatter.generateIdentifier("VUE");
@@ -25,18 +27,35 @@ public class Vuelo implements Replicable<Vuelo> {
         this.duracion = 0.0;
     }
 
+    public void instanciarHorarios(LocalDateTime fechaHoraReferencia) {
+        this.fechaHoraSalidaLocal = G4D_Formatter.toDateTime(this.plan.getHoraSalida(),fechaHoraReferencia);
+        this.fechaHoraSalidaUTC = G4D_Formatter.toUTC(this.fechaHoraSalidaLocal,this.plan.getOrigen().getHusoHorario());
+        this.fechaHoraLlegadaLocal = G4D_Formatter.toDateTime(this.plan.getHoraLlegada(),fechaHoraReferencia);
+        this.fechaHoraLlegadaUTC = G4D_Formatter.toUTC(this.fechaHoraLlegadaLocal,this.plan.getDestino().getHusoHorario());
+        if(this.fechaHoraLlegadaUTC.isBefore(fechaHoraSalidaUTC)) {
+            this.fechaHoraLlegadaLocal = this.fechaHoraLlegadaLocal.plusDays(1);
+            this.fechaHoraLlegadaUTC = this.fechaHoraLlegadaUTC.plusDays(1);
+        }
+        if(this.fechaHoraSalidaUTC.isBefore(fechaHoraReferencia)) {
+            this.fechaHoraSalidaLocal = this.fechaHoraSalidaLocal.plusDays(1);
+            this.fechaHoraSalidaUTC = this.fechaHoraSalidaUTC.plusDays(1);
+            this.fechaHoraLlegadaLocal = this.fechaHoraLlegadaLocal.plusDays(1);
+            this.fechaHoraLlegadaUTC = this.fechaHoraLlegadaUTC.plusDays(1);
+        }
+    }
+
     @Override
     public Vuelo replicar() {
-        Vuelo vuelo = new Vuelo();
-        vuelo.id = this.id;
-        vuelo.capacidadDisponible = this.capacidadDisponible;
-        vuelo.plan = (this.plan != null) ? this.plan.replicar() : null;
-        vuelo.instanteSalidaLocal = this.instanteSalidaLocal;
-        vuelo.instanteSalidaUniversal = this.instanteSalidaUniversal;
-        vuelo.instanteLlegadaLocal = this.instanteLlegadaLocal;
-        vuelo.instanteLlegadaUniversal = this.instanteLlegadaUniversal;
-        vuelo.duracion = this.duracion;
-        return vuelo;
+        Vuelo copia = new Vuelo();
+        copia.id = this.id;
+        copia.capacidadDisponible = this.capacidadDisponible;
+        copia.duracion = this.duracion;
+        copia.fechaHoraSalidaLocal = this.fechaHoraSalidaLocal;
+        copia.fechaHoraSalidaUTC = this.fechaHoraSalidaUTC;
+        copia.fechaHoraLlegadaLocal = this.fechaHoraLlegadaLocal;
+        copia.fechaHoraLlegadaUTC = this.fechaHoraLlegadaUTC;
+        copia.plan = (this.plan != null) ? this.plan.replicar() : null;
+        return copia;
     }
 
     @Override
@@ -51,7 +70,6 @@ public class Vuelo implements Replicable<Vuelo> {
     public int hashCode() {
         return id != null ? id.hashCode() : 0;
     }
-
 
     public String getId() {
         return id;
@@ -69,53 +87,51 @@ public class Vuelo implements Replicable<Vuelo> {
         this.capacidadDisponible = capacidadDisponible;
     }
 
+    public Double getDuracion() {
+        return duracion;
+    }
+
+    public void setDuracion() {
+        this.duracion = G4D_Formatter.calculateElapsedHours(this.fechaHoraSalidaUTC,this.fechaHoraLlegadaUTC);
+    }
+
+    public LocalDateTime getFechaHoraSalidaLocal() {
+        return fechaHoraSalidaLocal;
+    }
+
+    public void setFechaHoraSalidaLocal(LocalDateTime fechaHoraSalidaLocal) {
+        this.fechaHoraSalidaLocal = fechaHoraSalidaLocal;
+    }
+
+    public LocalDateTime getFechaHoraSalidaUTC() {
+        return fechaHoraSalidaUTC;
+    }
+
+    public void setFechaHoraSalidaUTC(LocalDateTime fechaHoraSalidaUTC) {
+        this.fechaHoraSalidaUTC = fechaHoraSalidaUTC;
+    }
+
+    public LocalDateTime getFechaHoraLlegadaLocal() {
+        return fechaHoraLlegadaLocal;
+    }
+
+    public void setFechaHoraLlegadaLocal(LocalDateTime fechaHoraLlegadaLocal) {
+        this.fechaHoraLlegadaLocal = fechaHoraLlegadaLocal;
+    }
+
+    public LocalDateTime getFechaHoraLlegadaUTC() {
+        return fechaHoraLlegadaUTC;
+    }
+
+    public void setFechaHoraLlegadaUTC(LocalDateTime fechaHoraLlegadaUTC) {
+        this.fechaHoraLlegadaUTC = fechaHoraLlegadaUTC;
+    }
+
     public PlanDeVuelo getPlan() {
         return plan;
     }
 
     public void setPlan(PlanDeVuelo plan) {
         this.plan = plan;
-    }
-
-    public String getInstanteSalidaLocal() {
-        return instanteSalidaLocal;
-    }
-
-    public String getInstanteSalidaUniversal() {
-        return instanteSalidaUniversal;
-    }
-
-    public void setInstantes(String instanteReferencia) {
-        this.instanteSalidaLocal = G4D_Formatter.toDateTimeString(plan.getHoraSalida(),instanteReferencia);
-        this.instanteSalidaUniversal = G4D_Formatter.toUTC_DateTimeString(this.instanteSalidaLocal,this.plan.getOrigen().getHusoHorario());
-        this.instanteLlegadaLocal = G4D_Formatter.toDateTimeString(plan.getHoraLlegada(),instanteReferencia);
-        this.instanteLlegadaUniversal = G4D_Formatter.toUTC_DateTimeString(this.instanteLlegadaLocal,this.plan.getDestino().getHusoHorario());
-        if(G4D_Formatter.isOffset_DateTime(this.instanteLlegadaUniversal,this.instanteSalidaUniversal)) {
-            this.instanteLlegadaLocal = G4D_Formatter.addDay(this.instanteLlegadaLocal);
-            this.instanteLlegadaUniversal = G4D_Formatter.addDay(this.instanteLlegadaUniversal);
-        }
-        if(G4D_Formatter.isOffset_DateTime(this.instanteSalidaUniversal, instanteReferencia)) {
-            this.instanteSalidaLocal = G4D_Formatter.addDay(this.instanteSalidaLocal);
-            this.instanteSalidaUniversal = G4D_Formatter.addDay(this.instanteSalidaUniversal);
-            this.instanteLlegadaLocal = G4D_Formatter.addDay(this.instanteLlegadaLocal);
-            this.instanteLlegadaUniversal = G4D_Formatter.addDay(this.instanteLlegadaUniversal);
-        }
-    }
-
-    public String getInstanteLlegadaLocal() {
-        return instanteLlegadaLocal;
-    }
-
-    public String getInstanteLlegadaUniversal() {
-        return instanteLlegadaUniversal;
-    }
-
-    public Double getDuracion() {
-        return duracion;
-    }
-
-    public void setDuracion() {
-        if(this.instanteSalidaUniversal == null || this.instanteLlegadaUniversal == null) this.duracion = 0.0;
-        else this.duracion = G4D_Formatter.calculateElapsed_DateTime(instanteSalidaUniversal, instanteLlegadaUniversal);
     }
 }

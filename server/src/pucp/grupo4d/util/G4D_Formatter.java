@@ -23,8 +23,10 @@ import java.util.UUID;
 
 public class G4D_Formatter {
     private static final double EARTH_RADIUS_KM = 6371.0;
-    private static final String dt_p = "dd/MM/yyyy HH:mm";
-    private static final String t_p = "HH:mm";
+    private static final String disp_ldt = "dd/MM/yyyy HH:mm";
+    private static final String serv_ldt = "yyyy-MM-dd'T'HH:mm:ss";
+    private static final String disp_lt = "HH:mm";
+    private static final String serv_lt = "HH:mm:ss";
 
     // Convertir latitud DMS a latitud DEC
     public static Double toLatDEC(String latDMS) {
@@ -72,70 +74,56 @@ public class G4D_Formatter {
         Integer seconds = (int) Math.round(secondsDec);
         return String.format("%03d° %02d' %02d\" %s", degrees, minutes, seconds, hemisphere);
     }
-    // Convertir 'LocalDateTime' a 'DateTimeString'
-    public static String toDateTimeString(LocalDateTime ldt) {
-        return ldt.format(DateTimeFormatter.ofPattern(dt_p));
+    // Convertir 'DateTime' a 'DisplayString'
+    public static String toDisplayString(LocalDateTime ldt) {
+        return ldt.format(DateTimeFormatter.ofPattern(disp_ldt));
     }
-    // Convertir 'DateTimeString' a 'LocalDateTime'
-    public static LocalDateTime toDateTime(String dateTime) {
-        return LocalDateTime.parse(dateTime, DateTimeFormatter.ofPattern(dt_p));
+    // Convertir 'DateTimeString' de BD a 'DateTime'
+    public static LocalDateTime toDateTime(String dateTimeString) {
+        try {
+            return LocalDateTime.parse(dateTimeString, DateTimeFormatter.ofPattern(serv_ldt));
+        } catch (Exception e) {
+            return LocalDateTime.parse(dateTimeString, DateTimeFormatter.ofPattern(disp_ldt));
+        }
     }
-    // Convertir 'LocalTime' a 'TimeString'
-    public static String toTimeString(LocalTime lt) {
-        return lt.format(DateTimeFormatter.ofPattern(t_p));
+    // Convertir 'Time' a 'DisplayString'
+    public static String toDisplayString(LocalTime lt) {
+        return lt.format(DateTimeFormatter.ofPattern(disp_lt));
     }
-    // Convertir 'TimeString' a 'LocalTime'
-    public static LocalTime toTime(String time) {
-        return LocalTime.parse(time, DateTimeFormatter.ofPattern(t_p));
+    // Convertir 'TimeString' a 'Time'
+    public static LocalTime toTime(String timeString) {
+        try {
+            return LocalTime.parse(timeString, DateTimeFormatter.ofPattern(serv_lt));
+        } catch (Exception e) {
+            return LocalTime.parse(timeString, DateTimeFormatter.ofPattern(disp_lt));
+        }
     }
-    // Convertir 'DateTimeString' a 'TimeString'
-    public static String toTimeString(String dateTime) {
-        LocalDateTime ldt = LocalDateTime.parse(dateTime, DateTimeFormatter.ofPattern(dt_p));
-        return ldt.format(DateTimeFormatter.ofPattern(t_p));
-    }
-    // Convertir 'TimeString' a 'DateTimeString'
-    public static String toDateTimeString(String time) {
-        LocalTime lt = toTime(time);
+    // Convertir 'Time' a 'DateTime'
+    public static LocalDateTime toDateTime(LocalTime lt) {
         LocalDateTime ldt_ref = LocalDateTime.now();
-        LocalDateTime ldt = ldt_ref.withHour(lt.getHour()).withMinute(lt.getMinute());
-        if(ldt.isBefore(ldt_ref)) ldt = ldt.plusDays(1);
-        return toDateTimeString(ldt);
+        return ldt_ref.withHour(lt.getHour()).withMinute(lt.getMinute());
     }
-    // Convertir 'TimeString' a 'DateTimeString'
-    public static String toDateTimeString(String time,String dateTimeReference) {
-        LocalTime lt = toTime(time);
-        LocalDateTime ldt_ref = toDateTime(dateTimeReference);
-        LocalDateTime ldt = ldt_ref.withHour(lt.getHour()).withMinute(lt.getMinute());
-        return toDateTimeString(ldt);
+    // Convertir 'Time' a 'DateTime'
+    public static LocalDateTime toDateTime(LocalTime lt, LocalDateTime ldt_ref) {
+        return ldt_ref.withHour(lt.getHour()).withMinute(lt.getMinute());
     }
-    // Convertir 'DateTimeString' a UTC
-    public static String toUTC_DateTimeString(String dateTime, Integer gmt) {
-        LocalDateTime ldt = toDateTime(dateTime);
-        ldt = ldt.minusHours(Long.valueOf(gmt));
-        return toDateTimeString(ldt);
+    // Convertir 'Local' a 'UTC'
+    public static LocalDateTime toUTC(LocalDateTime ldt, Integer gmt) {
+        return ldt.minusHours(Long.valueOf(gmt));
     }
-    // Convertir 'TimeString' a UTC
-    public static String toUTC_TimeString(String time, Integer gmt) {
-        LocalTime lt = toTime(time);
-        lt = lt.minusHours(Long.valueOf(gmt));
-        return toTimeString(lt);
+    // Convertir 'Local' a 'UTC'
+    public static LocalTime toUTC(LocalTime lt, Integer gmt) {
+        if(lt == null) return null;
+        return lt.minusHours(Long.valueOf(gmt));
     }
-    // Validar
-    public static Boolean isOffset_DateTime(String dateTime, String dateTimeReference) {
-        LocalDateTime ldt = toDateTime(dateTime);
-        LocalDateTime ldt_ref = toDateTime(dateTimeReference);
-        return ldt.isBefore(ldt_ref);
+    // Convertir 'UTC' a 'Local'
+    public static LocalDateTime toLocal(LocalDateTime ldt, Integer gmt) {
+        if(ldt == null) return null;
+        return ldt.plusHours(Long.valueOf(gmt));
     }
-    // Agregar dia
-    public static String addDay(String dateTime) {
-        LocalDateTime ldt = toDateTime(dateTime);
-        return toDateTimeString(ldt.plusDays(1));
-    }
-    //
-    public static String addMinutes(String dateTime,Long minutes) {
-        LocalDateTime ldt = toDateTime(dateTime);
-        ldt = ldt.plusMinutes(minutes);
-        return toDateTimeString(ldt);
+    // Convertir 'UTC' a 'Local'
+    public static LocalTime toLocal(LocalTime lt, Integer gmt) {
+        return lt.plusHours(Long.valueOf(gmt));
     }
     // Calcular distancia geodesica
     public static Double calculateGeodesicDistance(Double origLat, Double origLon, Double destLat, Double destLon) {
@@ -145,17 +133,13 @@ public class G4D_Formatter {
         Double h = Math.pow(Math.sin(dLat / 2), 2) + Math.cos(lat1) * Math.cos(lat2) * Math.pow(Math.sin(dLon / 2), 2);
         return 2 * EARTH_RADIUS_KM * Math.asin(Math.sqrt(h));
     }
-    // Calcular tiempo transcurrido de origen a destino
-    public static Double calculateElapsed_Time(String origTime, String destTime) {
-        LocalTime ot = toTime(origTime), dt = toTime(destTime);
-        Long elapsed_minutes = Duration.between(ot, dt).toMinutes();
-        return elapsed_minutes / 60.0;
+    // Calcular horas transcurridas de origen a destino
+    public static Double calculateElapsedHours(LocalTime ltOrig,LocalTime ltDest) {
+        return Duration.between(ltOrig,ltDest).toMinutes() / 60.0;
     }
-    // Calcular tiempo transcurrido de origen a destino
-    public static Double calculateElapsed_DateTime(String origDateTime, String destDateTime) {
-        LocalDateTime odt = toDateTime(origDateTime), ddt = toDateTime(destDateTime);
-        Long elapsed_minutes = Duration.between(odt, ddt).toMinutes();
-        return elapsed_minutes / 60.0;
+    // Calcular horas transcurridas de origen a destino
+    public static Double calculateElapsedHours(LocalDateTime ldtOrig, LocalDateTime ldtDest) {
+        return Duration.between(ldtOrig,ldtDest).toMinutes() / 60.0;
     }
     // Generar identificador unico
     public static String generateIdentifier(String prefix) {

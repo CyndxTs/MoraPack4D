@@ -1,18 +1,23 @@
-/**]
+/**
  >> Project:    MoraPack
  >> Author:     Grupo 4D
  >> File:       Producto.java 
-[**/
+**/
 
 package pucp.grupo4d.modelo;
+
+import java.time.LocalDateTime;
+import java.util.List;
 
 import pucp.grupo4d.util.G4D_Formatter;
 import pucp.grupo4d.util.G4D_Formatter.Replicable;
 
 public class Producto implements Replicable<Producto> {
     private String id;
-    private String instanteLlegada;
-    private String instanteLimite;
+    private LocalDateTime fechaHoraLlegadaLocal;
+    private LocalDateTime fechaHoraLlegadaUTC;
+    private LocalDateTime fechaHoraLimiteLocal;
+    private LocalDateTime fechaHoraLimiteUTC;
     private Aeropuerto origen;
     private Aeropuerto destino;
     private Ruta ruta;
@@ -21,12 +26,27 @@ public class Producto implements Replicable<Producto> {
         this.id = G4D_Formatter.generateIdentifier("PRO");
     }
 
+    public void registrarRuta(LocalDateTime fechaHoraCreacion) {
+        List<Vuelo> vuelos = this.ruta.getVuelos();
+        LocalDateTime fechaHoraIngreso_Actual = fechaHoraCreacion,fechaHoraEgreso_Proximo;
+        for (int i = 0; i < vuelos.size(); i++) {
+            Vuelo vuelo = vuelos.get(i);
+            PlanDeVuelo plan = vuelo.getPlan();
+            plan.getOrigen().registrarProducto(this.id,fechaHoraIngreso_Actual,vuelo.getFechaHoraSalidaUTC());
+            fechaHoraEgreso_Proximo = (i < vuelos.size() - 1) ? vuelos.get(i + 1).getFechaHoraSalidaUTC() : null;
+            plan.getDestino().registrarProducto(this.id,vuelo.getFechaHoraLlegadaUTC(),fechaHoraEgreso_Proximo);
+            fechaHoraIngreso_Actual = vuelo.getFechaHoraLlegadaUTC();
+        }
+    }
+
     @Override
     public Producto replicar() {
         Producto producto = new Producto();
         producto.id = this.id;
-        producto.instanteLlegada = this.instanteLlegada;
-        producto.instanteLimite = this.instanteLimite;
+        producto.fechaHoraLlegadaLocal = this.fechaHoraLlegadaLocal;
+        producto.fechaHoraLlegadaUTC = this.fechaHoraLlegadaUTC;
+        producto.fechaHoraLimiteLocal = this.fechaHoraLimiteLocal;
+        producto.fechaHoraLimiteUTC = this.fechaHoraLimiteUTC;
         producto.origen = (this.origen != null) ? this.origen.replicar() : null;
         producto.destino = (this.destino != null) ? this.destino.replicar() : null;
         producto.ruta = (this.ruta != null) ? this.ruta.replicar() : null;
@@ -41,20 +61,36 @@ public class Producto implements Replicable<Producto> {
         this.id = id;
     }
 
-    public String getInstanteLlegada() {
-        return instanteLlegada;
+    public LocalDateTime getFechaHoraLlegadaLocal() {
+        return fechaHoraLlegadaLocal;
     }
 
-    public void setInstanteLlegada(String instanteLlegada) {
-        this.instanteLlegada = instanteLlegada;
+    public void setFechaHoraLlegadaLocal(LocalDateTime fechaHoraLlegadaLocal) {
+        this.fechaHoraLlegadaLocal = fechaHoraLlegadaLocal;
     }
 
-    public String getInstanteLimite() {
-        return instanteLimite;
+    public LocalDateTime getFechaHoraLlegadaUTC() {
+        return fechaHoraLlegadaUTC;
     }
 
-    public void setInstanteLimite(String instanteLimite) {
-        this.instanteLimite = instanteLimite;
+    public void setFechaHoraLlegadaUTC(LocalDateTime fechaHoraLlegadaUTC) {
+        this.fechaHoraLlegadaUTC = fechaHoraLlegadaUTC;
+    }
+
+    public LocalDateTime getFechaHoraLimiteLocal() {
+        return fechaHoraLimiteLocal;
+    }
+
+    public void setFechaHoraLimiteLocal(LocalDateTime fechaHoraLimiteLocal) {
+        this.fechaHoraLimiteLocal = fechaHoraLimiteLocal;
+    }
+
+    public LocalDateTime getFechaHoraLimiteUTC() {
+        return fechaHoraLimiteUTC;
+    }
+
+    public void setFechaHoraLimiteUTC(LocalDateTime fechaHoraLimiteUTC) {
+        this.fechaHoraLimiteUTC = fechaHoraLimiteUTC;
     }
 
     public Aeropuerto getOrigen() {

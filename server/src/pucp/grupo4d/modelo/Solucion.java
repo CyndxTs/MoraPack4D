@@ -6,18 +6,36 @@
 
 package pucp.grupo4d.modelo;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
+import pucp.grupo4d.util.G4D_Formatter;
 import pucp.grupo4d.util.G4D_Formatter.Replicable;
 
 public class Solucion implements Replicable<Solucion> {
+    private String id;
+    private Double fitness;
+    private Double duracionPromedio;
+    private static final Double f_DP = 1.25;
+    private Double distanciaRecorridaPromedio;
+    private static final Double f_DRP = 0.0065;
+    private Double capacidadDiponiblePromedioPorVuelo;
+    private static final Double f_CDPV = 0.35;
+    private Double capacidadDisponiblePromedioPorAeropuerto;
+    private static final Double f_CDPA = 0.25;
     private List<Pedido> pedidos;
-    private double fitness;
 
     public Solucion() {
-        this.pedidos = new ArrayList<>();
+        this.id = G4D_Formatter.generateIdentifier("SOL");
         this.fitness = 0.0;
+        this.duracionPromedio = 0.0;
+        this.distanciaRecorridaPromedio = 0.0;
+        this.capacidadDiponiblePromedioPorVuelo = 0.0;
+        this.capacidadDisponiblePromedioPorAeropuerto = 0.0;
+        this.pedidos = new ArrayList<>();
     }
 
     @Override
@@ -28,6 +46,120 @@ public class Solucion implements Replicable<Solucion> {
         return solucion;
     }
 
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public Double getFitness() {
+        return fitness;
+    }
+
+    public void setFitness() {
+        setDuracionPromedio();
+        setDistanciaRecorridaPromedio();
+        setCapacidadDiponiblePromedioPorVuelo();
+        setCapacidadDisponiblePromedioPorAeropuerto();
+        this.fitness = f_DP*this.duracionPromedio + f_DRP*this.distanciaRecorridaPromedio + f_CDPV*this.capacidadDiponiblePromedioPorVuelo + f_CDPA*this.capacidadDisponiblePromedioPorAeropuerto;
+    }
+
+    public Double getDuracionPromedio() {
+        return duracionPromedio;
+    }
+
+    public void setDuracionPromedio() {
+        Double duracion = 0.0;
+        Integer cantProd = 0;
+        for(Pedido ped : this.pedidos) {
+            List<Producto> productos = ped.getProductos();
+            for(Producto prod : productos) {
+                duracion += prod.getRuta().getDuracion();
+                cantProd++;
+            }
+        }
+        if(cantProd == 0) this.duracionPromedio = Double.MAX_VALUE;
+        else this.duracionPromedio = duracion/cantProd;
+    }
+
+    public Double getDistanciaRecorridaPromedio() {
+        return distanciaRecorridaPromedio;
+    }
+
+    public void setDistanciaRecorridaPromedio() {
+        Double distanciaRecorrida = 0.0;
+        Integer cantProd = 0;
+        for(Pedido ped : this.pedidos) {
+            List<Producto> productos = ped.getProductos();
+            for(Producto prod : productos) {
+                List<Vuelo> vuelos = prod.getRuta().getVuelos();
+                for(Vuelo vuel : vuelos) {
+                    Aeropuerto aOrig = vuel.getPlan().getOrigen(),aDest = vuel.getPlan().getDestino();
+                    distanciaRecorrida += aOrig.obtenerDistanciaHasta(aDest);
+                }
+                cantProd++;
+            }
+        }
+        if(cantProd == 0) this.distanciaRecorridaPromedio = Double.MAX_VALUE;
+        else this.distanciaRecorridaPromedio = distanciaRecorrida/cantProd;
+    }
+
+    public Double getCapacidadDiponiblePromedioPorVuelo() {
+        return capacidadDiponiblePromedioPorVuelo;
+    }
+
+    public void setCapacidadDiponiblePromedioPorVuelo() {
+        Integer capacidadDisponibleDeVuelos = 0;
+        Set<Vuelo> vuelosActivos = new HashSet<>();
+        for(Pedido ped : this.pedidos) {
+            List<Producto> productos = ped.getProductos();
+            for(Producto prod : productos) {
+                List<Vuelo> vuelos = prod.getRuta().getVuelos();
+                for(Vuelo vuel : vuelos) {
+                    if(!vuelosActivos.contains(vuel)) {
+                        vuelosActivos.add(vuel);
+                        capacidadDisponibleDeVuelos += vuel.getCapacidadDisponible();
+                    }
+                }
+            }
+        }
+        if(vuelosActivos.size() == 0) this.capacidadDiponiblePromedioPorVuelo = Double.MAX_VALUE;
+        else this.capacidadDiponiblePromedioPorVuelo = capacidadDisponibleDeVuelos/(double)vuelosActivos.size();
+    }
+
+    public Double getCapacidadDisponiblePromedioPorAeropuerto() {
+        return capacidadDisponiblePromedioPorAeropuerto;
+    }
+
+    public void setCapacidadDisponiblePromedioPorAeropuerto() {
+        Integer capacidadDisponibleDeAeropuertos = 0;
+        Set<Aeropuerto> aeropuertosOcupados = new HashSet<>();
+        LocalDateTime fechaHoraReferencia = this.pedidos.getLast().getProductos().getLast().getFechaHoraLlegadaUTC();
+        for(Pedido ped : this.pedidos) {
+            List<Producto> productos = ped.getProductos();
+            for(Producto prod : productos) {
+                List<Vuelo> vuelos = prod.getRuta().getVuelos();
+                for(int v = 0;v < vuelos.size();v++) {
+                    Vuelo vuel = vuelos.get(v);
+                    Aeropuerto aeropuerto = vuel.getPlan().getOrigen();
+                    if(!aeropuertosOcupados.contains(aeropuerto)) {
+                        aeropuertosOcupados.add(aeropuerto);
+                        capacidadDisponibleDeAeropuertos += aeropuerto.obtenerCapacidadDisponible(fechaHoraReferencia);
+                        if(v == vuelos.size() - 1) {
+                            aeropuerto = vuel.getPlan().getDestino();
+                            aeropuertosOcupados.add(aeropuerto);
+                            capacidadDisponibleDeAeropuertos += aeropuerto.obtenerCapacidadDisponible(fechaHoraReferencia);
+                        }
+                    }
+                }
+            }
+        }
+        if(aeropuertosOcupados.size() == 0) this.capacidadDisponiblePromedioPorAeropuerto = Double.MAX_VALUE;
+        else this.capacidadDisponiblePromedioPorAeropuerto = capacidadDisponibleDeAeropuertos/(double)aeropuertosOcupados.size();
+    }
+
     public List<Pedido> getPedidos() {
         return pedidos;
     }
@@ -36,21 +168,4 @@ public class Solucion implements Replicable<Solucion> {
         this.pedidos = pedidos;
     }
 
-    public double getFitness() {
-        return fitness;
-    }
-
-    public void setFitness(double fitness) {
-        this.fitness = fitness;
-    }
-
-    public void setFitness() {
-        double fitness = 0.0;
-        for(Pedido pedido : pedidos) {
-            for(Producto producto : pedido.getProductos()) {
-                fitness += producto.getRuta().getDuracion();
-            }
-        }
-        this.fitness = fitness;
-    }
 }

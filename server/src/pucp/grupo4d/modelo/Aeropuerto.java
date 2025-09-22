@@ -25,25 +25,39 @@ public class Aeropuerto implements Replicable<Aeropuerto> {
     private Double latitudDEC;
     private String longitudDMS;
     private Double longitudDEC;
-    private List<RegistroProducto> productosAlmacenados;
+    private List<RegistroDeProducto> historialDeProductos;
 
     public Aeropuerto() {
         this.id = G4D_Formatter.generateIdentifier("AER");
-        this.productosAlmacenados = new ArrayList<>();
+        this.historialDeProductos = new ArrayList<>();
     }
 
     public Double obtenerDistanciaHasta(Aeropuerto aDest) {
         return G4D_Formatter.calculateGeodesicDistance(latitudDEC,longitudDEC,aDest.latitudDEC,aDest.longitudDEC);
     }
 
-    public Integer obtenerCapacidadDisponible(String instanteDeRevision) {
+    public Integer obtenerCapacidadDisponible(LocalDateTime fechaHoraRevision) {
         Integer capacidadDisponible = this.capacidadMaxima;
-        LocalDateTime ldt_instanteDeRevision = G4D_Formatter.toDateTime(instanteDeRevision);
-        for(RegistroProducto rp : productosAlmacenados) {
-            LocalDateTime instanteSalida = G4D_Formatter.toDateTime(rp.getInstanteSalida());
-            if(instanteSalida.isAfter(ldt_instanteDeRevision)) capacidadDisponible--;
+        for(RegistroDeProducto registro : this.historialDeProductos) {
+            LocalDateTime fechaHoraEgresoUTC = registro.getFechaHoraEgresoUTC();
+            if(fechaHoraEgresoUTC == null) {
+                fechaHoraEgresoUTC = registro.getFechaHoraIngresoUTC().plusHours(Problematica.MAX_HORAS_RECOJO.longValue());
+            }
+            if(fechaHoraEgresoUTC.isAfter(fechaHoraRevision)) {
+                capacidadDisponible--;
+            }
         }
         return capacidadDisponible;
+    }
+
+    public void registrarProducto(String idProducto, LocalDateTime fechaHoraIngreso, LocalDateTime fechaHoraEgreso) {
+        RegistroDeProducto registro = new RegistroDeProducto();
+        registro.setId(idProducto);
+        registro.setFechaHoraIngresoUTC(fechaHoraIngreso);
+        registro.setFechaHoraIngresoLocal(G4D_Formatter.toLocal(fechaHoraIngreso,this.husoHorario));
+        registro.setFechaHoraEgresoUTC(fechaHoraEgreso);
+        registro.setFechaHoraEgresoLocal(G4D_Formatter.toLocal(fechaHoraEgreso,this.husoHorario));
+        historialDeProductos.add(registro);
     }
 
     @Override
@@ -61,7 +75,7 @@ public class Aeropuerto implements Replicable<Aeropuerto> {
         aeropuerto.latitudDEC = this.latitudDEC;
         aeropuerto.longitudDMS = this.longitudDMS;
         aeropuerto.longitudDEC = this.longitudDEC;
-        for(RegistroProducto rp : productosAlmacenados) aeropuerto.productosAlmacenados.add(rp.replicar());
+        for(RegistroDeProducto registro : this.historialDeProductos) aeropuerto.historialDeProductos.add(registro.replicar());
         return aeropuerto;
     }
 

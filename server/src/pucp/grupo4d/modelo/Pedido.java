@@ -6,6 +6,7 @@
 
 package pucp.grupo4d.modelo;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -14,27 +15,27 @@ import pucp.grupo4d.util.G4D_Formatter.Replicable;
 
 public class Pedido implements Replicable<Pedido> {
     private String id;
+    private Integer cantidad;
+    private LocalDateTime fechaHoraCreacion;
     private Cliente cliente;
     private Aeropuerto destino;
-    private Integer cantidad;
-    private String instanteCreacion;
     private List<Producto> productos;
 
     public Pedido() {
         this.id = G4D_Formatter.generateIdentifier("PED");
-        this.productos = new ArrayList<>();
         this.cantidad = 0;
+        this.productos = new ArrayList<>();
     }
 
     @Override
     public Pedido replicar() {
         Pedido pedido = new Pedido();
         pedido.id = this.id;
+        pedido.cantidad = this.cantidad;
+        pedido.fechaHoraCreacion = this.fechaHoraCreacion;
         pedido.cliente = (this.cliente != null) ? this.cliente.replicar() : null;
         pedido.destino = (this.destino != null) ? this.destino.replicar() : null;
-        pedido.cantidad = this.cantidad;
-        pedido.instanteCreacion = this.instanteCreacion;
-        for(Producto producto : productos) pedido.productos.add(producto.replicar());
+        for (Producto producto : this.productos) pedido.productos.add(producto.replicar());
         return pedido;
     }
 
@@ -44,6 +45,22 @@ public class Pedido implements Replicable<Pedido> {
 
     public void setId(String id) {
         this.id = id;
+    }
+
+    public Integer getCantidad() {
+        return cantidad;
+    }
+
+    public void setCantidad(Integer cantidad) {
+        this.cantidad = cantidad;
+    }
+
+    public LocalDateTime getFechaHoraCreacion() {
+        return fechaHoraCreacion;
+    }
+
+    public void setFechaHoraCreacion(LocalDateTime fechaHoraCreacion) {
+        this.fechaHoraCreacion = fechaHoraCreacion;
     }
 
     public Cliente getCliente() {
@@ -60,22 +77,6 @@ public class Pedido implements Replicable<Pedido> {
 
     public void setDestino(Aeropuerto destino) {
         this.destino = destino;
-    }
-
-    public int getCantidad() {
-        return cantidad;
-    }
-
-    public void setCantidad(int cantidad) {
-        this.cantidad = cantidad;
-    }
-
-    public String getInstanteCreacion() {
-        return instanteCreacion;
-    }
-
-    public void setInstanteCreacion(String instanteCreacion) {
-        this.instanteCreacion = instanteCreacion;
     }
 
     public List<Producto> getProductos() {
