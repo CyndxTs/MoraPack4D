@@ -9,6 +9,8 @@ package pucp.grupo4d.resolucion;
 import java.io.FileWriter;
 import java.io.PrintWriter;
 import java.sql.Time;
+import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -53,6 +55,16 @@ public class Algoritmo {
         // Solución inicial (Nearest Neighbor)
         solucionInicial(problematica, solucionAux);
         imprimirSolucion(solucionAux, "SolucionInicial.txt");
+        int numprod = 0;
+        for(Pedido ped : solucionAux.getPedidos()) numprod += ped.getProductos().size();
+        Instant inicio,fin;
+        inicio = Instant.now();
+        xBest = solucionAux.replicar();
+        fin = Instant.now();
+        Duration duracion = Duration.between(inicio, fin);
+        System.out.printf("Para una cantidad de %d productos..%n",numprod);
+        System.out.printf("Se realizó la copia exacta de la solucion en: %d segundos %d milisegundos%n", duracion.getSeconds(), duracion.toMillisPart());
+        
         /*
         // Optimización por VND
         VND(problematica, solucionAux);

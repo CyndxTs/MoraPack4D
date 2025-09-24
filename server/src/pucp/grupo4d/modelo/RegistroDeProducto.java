@@ -9,9 +9,8 @@ package pucp.grupo4d.modelo;
 import java.time.LocalDateTime;
 
 import pucp.grupo4d.util.G4D_Formatter;
-import pucp.grupo4d.util.G4D_Formatter.Replicable;
 
-public class RegistroDeProducto implements Replicable<RegistroDeProducto> {
+public class RegistroDeProducto {
     private String id;
     private String idProducto;
     private LocalDateTime fechaHoraIngresoLocal;
@@ -23,8 +22,8 @@ public class RegistroDeProducto implements Replicable<RegistroDeProducto> {
         this.id = G4D_Formatter.generateIdentifier("REG");
     }
 
-    @Override
     public RegistroDeProducto replicar() {
+        System.out.println(">>>>>>> R-REGISTRO");
         RegistroDeProducto registro = new RegistroDeProducto();
         registro.id = this.id;
         registro.idProducto = this.idProducto;

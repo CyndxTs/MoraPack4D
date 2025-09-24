@@ -8,14 +8,14 @@ package pucp.grupo4d.modelo;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
-
 import pucp.grupo4d.util.G4D_Formatter;
-import pucp.grupo4d.util.G4D_Formatter.Replicable;
 
-public class Solucion implements Replicable<Solucion> {
+public class Solucion {
     private String id;
     private Double fitness;
     private Double duracionPromedio;
@@ -38,11 +38,17 @@ public class Solucion implements Replicable<Solucion> {
         this.pedidos = new ArrayList<>();
     }
 
-    @Override
     public Solucion replicar() {
+        System.out.println("R-SOLUCION");
+        Map<String,Aeropuerto> poolAeropuertos = new HashMap<>();
+        Map<String,Vuelo> poolVuelos = new HashMap<>();
         Solucion solucion = new Solucion();
         solucion.fitness = this.fitness;
-        for (Pedido pedido : pedidos) solucion.pedidos.add(pedido.replicar());
+        solucion.duracionPromedio = this.duracionPromedio;
+        solucion.distanciaRecorridaPromedio = this.distanciaRecorridaPromedio;
+        solucion.capacidadDiponiblePromedioPorVuelo = this.capacidadDiponiblePromedioPorVuelo;
+        solucion.capacidadDisponiblePromedioPorAeropuerto = this.capacidadDisponiblePromedioPorAeropuerto;
+        for (Pedido pedido : this.pedidos) solucion.pedidos.add(pedido.replicar(poolAeropuertos,poolVuelos));
         return solucion;
     }
 

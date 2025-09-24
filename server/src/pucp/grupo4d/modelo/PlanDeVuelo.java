@@ -7,10 +7,11 @@
 package pucp.grupo4d.modelo;
 
 import java.time.LocalTime;
-import pucp.grupo4d.util.G4D_Formatter;
-import pucp.grupo4d.util.G4D_Formatter.Replicable;
+import java.util.Map;
 
-public class PlanDeVuelo implements Replicable<PlanDeVuelo> {
+import pucp.grupo4d.util.G4D_Formatter;
+
+public class PlanDeVuelo {
     private String id;
     private Integer capacidadMaxima;
     private LocalTime horaSalida;
@@ -23,16 +24,16 @@ public class PlanDeVuelo implements Replicable<PlanDeVuelo> {
         this.capacidadMaxima = 0;
     }
 
-    @Override
-    public PlanDeVuelo replicar() {
-        PlanDeVuelo vuelo = new PlanDeVuelo();
-        vuelo.id = this.id;
-        vuelo.capacidadMaxima = this.capacidadMaxima;
-        vuelo.horaSalida = this.horaSalida;
-        vuelo.horaLlegada = this.horaLlegada;
-        vuelo.origen = (this.origen != null) ? this.origen.replicar() : null;
-        vuelo.destino = (this.destino != null) ? this.destino.replicar() : null;
-        return vuelo;
+    public PlanDeVuelo replicar(Map<String,Aeropuerto> poolAeropuertos) {
+        System.out.println(">>>>> R-PLAN");
+        PlanDeVuelo plan = new PlanDeVuelo();
+        plan.id = this.id;
+        plan.capacidadMaxima = this.capacidadMaxima;
+        plan.horaSalida = this.horaSalida;
+        plan.horaLlegada = this.horaLlegada;
+        plan.origen = (this.origen != null) ? poolAeropuertos.computeIfAbsent(this.origen.getId(), id -> this.origen.replicar()) : null;
+        plan.destino = (this.destino != null) ? poolAeropuertos.computeIfAbsent(this.destino.getId(), id -> this.destino.replicar()) : null;
+        return plan;
     }
 
     public String getId() {

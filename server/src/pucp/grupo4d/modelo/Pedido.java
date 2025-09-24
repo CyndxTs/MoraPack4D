@@ -9,11 +9,11 @@ package pucp.grupo4d.modelo;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import pucp.grupo4d.util.G4D_Formatter;
-import pucp.grupo4d.util.G4D_Formatter.Replicable;
 
-public class Pedido implements Replicable<Pedido> {
+public class Pedido {
     private String id;
     private Integer cantidad;
     private LocalDateTime fechaHoraCreacion;
@@ -27,15 +27,15 @@ public class Pedido implements Replicable<Pedido> {
         this.productos = new ArrayList<>();
     }
 
-    @Override
-    public Pedido replicar() {
+    public Pedido replicar(Map<String,Aeropuerto> poolAeropuertos, Map<String,Vuelo> poolVuelos) {
+        System.out.println("> R-PEDIDO");
         Pedido pedido = new Pedido();
         pedido.id = this.id;
         pedido.cantidad = this.cantidad;
         pedido.fechaHoraCreacion = this.fechaHoraCreacion;
         pedido.cliente = (this.cliente != null) ? this.cliente.replicar() : null;
-        pedido.destino = (this.destino != null) ? this.destino.replicar() : null;
-        for (Producto producto : this.productos) pedido.productos.add(producto.replicar());
+        pedido.destino = (this.destino != null) ? poolAeropuertos.computeIfAbsent(this.destino.getId(), id -> this.destino.replicar()) : null;
+        for (Producto producto : this.productos) pedido.productos.add(producto.replicar(poolAeropuertos,poolVuelos));
         return pedido;
     }
 

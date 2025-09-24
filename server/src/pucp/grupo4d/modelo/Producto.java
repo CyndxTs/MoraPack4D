@@ -8,11 +8,11 @@ package pucp.grupo4d.modelo;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 import pucp.grupo4d.util.G4D_Formatter;
-import pucp.grupo4d.util.G4D_Formatter.Replicable;
 
-public class Producto implements Replicable<Producto> {
+public class Producto {
     private String id;
     private LocalDateTime fechaHoraLlegadaLocal;
     private LocalDateTime fechaHoraLlegadaUTC;
@@ -39,17 +39,17 @@ public class Producto implements Replicable<Producto> {
         }
     }
 
-    @Override
-    public Producto replicar() {
+    public Producto replicar(Map<String,Aeropuerto> poolAeropuertos, Map<String,Vuelo> poolVuelos) {
+        System.out.println(">> R-PRODUCTO");
         Producto producto = new Producto();
         producto.id = this.id;
         producto.fechaHoraLlegadaLocal = this.fechaHoraLlegadaLocal;
         producto.fechaHoraLlegadaUTC = this.fechaHoraLlegadaUTC;
         producto.fechaHoraLimiteLocal = this.fechaHoraLimiteLocal;
         producto.fechaHoraLimiteUTC = this.fechaHoraLimiteUTC;
-        producto.origen = (this.origen != null) ? this.origen.replicar() : null;
-        producto.destino = (this.destino != null) ? this.destino.replicar() : null;
-        producto.ruta = (this.ruta != null) ? this.ruta.replicar() : null;
+        producto.origen = (this.origen != null) ? poolAeropuertos.computeIfAbsent(this.origen.getId(), id -> this.origen.replicar()) : null;
+        producto.destino = (this.destino != null) ? poolAeropuertos.computeIfAbsent(this.destino.getId(), id -> this.destino.replicar()) : null;
+        producto.ruta = (this.ruta != null) ? this.ruta.replicar(poolAeropuertos,poolVuelos) : null;
         return producto;
     }
 

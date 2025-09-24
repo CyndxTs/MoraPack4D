@@ -18,10 +18,8 @@ import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Random;
 import java.util.Scanner;
-import java.util.Set;
 import java.util.Map;
 import java.util.HashMap;
-import java.util.HashSet;
 
 import pucp.grupo4d.util.G4D_Formatter;
 
@@ -29,8 +27,6 @@ public class Problematica {
     public static final Integer MAX_DIAS_ENTREGA_INTRACONTINENTAL = 2;
     public static final Integer MAX_DIAS_ENTREGA_INTERCONTINENTAL = 3;
     public static final Double MAX_HORAS_RECOJO = 2.0;
-    
-    public static final Set<Vuelo> vuelosActivos = new HashSet<>();
     private Map<String, Aeropuerto> sedes;
     private List<Aeropuerto> aeropuertos;
     private List<PlanDeVuelo> planes;

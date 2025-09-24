@@ -7,9 +7,8 @@
 package pucp.grupo4d.modelo;
 
 import pucp.grupo4d.util.G4D_Formatter;
-import pucp.grupo4d.util.G4D_Formatter.Replicable;
 
-public class Cliente implements Replicable<Cliente> {
+public class Cliente {
     private String id;
     private String nombre;
 
@@ -17,8 +16,8 @@ public class Cliente implements Replicable<Cliente> {
         this.id = G4D_Formatter.generateIdentifier("CLI");
     }
 
-    @Override
     public Cliente replicar() {
+        System.out.println("R-CLIENTE");
         Cliente cliente = new Cliente();
         cliente.id = this.id;
         cliente.nombre = this.nombre;

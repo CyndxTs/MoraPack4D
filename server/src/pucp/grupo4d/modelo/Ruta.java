@@ -8,10 +8,11 @@ package pucp.grupo4d.modelo;
 
 import java.util.ArrayList;
 import java.util.List;
-import pucp.grupo4d.util.G4D_Formatter;
-import pucp.grupo4d.util.G4D_Formatter.Replicable;
+import java.util.Map;
 
-public class Ruta implements Replicable<Ruta> {
+import pucp.grupo4d.util.G4D_Formatter;
+
+public class Ruta {
     private String id;
     private Double duracion;
     private TipoRuta tipo;
@@ -23,13 +24,13 @@ public class Ruta implements Replicable<Ruta> {
         this.vuelos = new ArrayList<>();
     }
 
-    @Override
-    public Ruta replicar() {
+    public Ruta replicar(Map<String,Aeropuerto> poolAeropuertos, Map<String,Vuelo> poolVuelos) {
+        System.out.println(">>> R-RUTA");
         Ruta ruta = new Ruta();
         ruta.id = this.id;
         ruta.duracion = this.duracion;
         ruta.tipo = this.tipo;
-        for (Vuelo vuelo : this.vuelos) ruta.vuelos.add(vuelo.replicar());
+        for (Vuelo vuelo : this.vuelos) ruta.vuelos.add(poolVuelos.computeIfAbsent(vuelo.getId(), id -> vuelo.replicar(poolAeropuertos)));
         return ruta;
     }
 

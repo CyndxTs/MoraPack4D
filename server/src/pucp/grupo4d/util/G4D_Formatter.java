@@ -17,8 +17,6 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.UUID;
 
 public class G4D_Formatter {
@@ -212,18 +210,5 @@ public class G4D_Formatter {
         public String toString() {
             return String.valueOf(this.value);
         }
-    }
-    // Interfaz de replicacion para modelo
-    public static interface Replicable<T> {
-        T replicar();
-    } 
-    // Replicar lista 'modelo' en otra
-    public static <T extends Replicable<T>> List<T> replicar(List<T> lista) {
-        List<T> replica = new ArrayList<>();
-        for (T e : lista) {
-            T ne = e.replicar();
-            replica.add(ne);
-        }
-        return replica;
     }
 }

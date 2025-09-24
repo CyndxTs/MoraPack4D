@@ -10,9 +10,8 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import pucp.grupo4d.util.G4D_Formatter;
-import pucp.grupo4d.util.G4D_Formatter.Replicable;
 
-public class Aeropuerto implements Replicable<Aeropuerto> {
+public class Aeropuerto {
     private String id;
     private String codigo;
     private String ciudad;
@@ -60,8 +59,8 @@ public class Aeropuerto implements Replicable<Aeropuerto> {
         historialDeProductos.add(registro);
     }
 
-    @Override
     public Aeropuerto replicar() {
+        System.out.println(">>>>>> R-AEROPUERTO");
         Aeropuerto aeropuerto = new Aeropuerto();
         aeropuerto.id = this.id;
         aeropuerto.codigo = this.codigo;
