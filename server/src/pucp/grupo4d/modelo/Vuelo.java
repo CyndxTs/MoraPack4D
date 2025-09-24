@@ -9,7 +9,7 @@ package pucp.grupo4d.modelo;
 import java.time.LocalDateTime;
 import java.util.Map;
 
-import pucp.grupo4d.util.G4D_Formatter;
+import pucp.grupo4d.util.G4D_Util;
 
 public class Vuelo {
     private String id;
@@ -22,16 +22,16 @@ public class Vuelo {
     private PlanDeVuelo plan;
 
     public Vuelo() {
-        this.id = G4D_Formatter.generateIdentifier("VUE");
+        this.id = G4D_Util.generateIdentifier("VUE");
         this.capacidadDisponible = 0;
         this.duracion = 0.0;
     }
 
     public void instanciarHorarios(LocalDateTime fechaHoraReferencia) {
-        this.fechaHoraSalidaLocal = G4D_Formatter.toDateTime(this.plan.getHoraSalida(),fechaHoraReferencia);
-        this.fechaHoraSalidaUTC = G4D_Formatter.toUTC(this.fechaHoraSalidaLocal,this.plan.getOrigen().getHusoHorario());
-        this.fechaHoraLlegadaLocal = G4D_Formatter.toDateTime(this.plan.getHoraLlegada(),fechaHoraReferencia);
-        this.fechaHoraLlegadaUTC = G4D_Formatter.toUTC(this.fechaHoraLlegadaLocal,this.plan.getDestino().getHusoHorario());
+        this.fechaHoraSalidaLocal = G4D_Util.toDateTime(this.plan.getHoraSalida(),fechaHoraReferencia);
+        this.fechaHoraSalidaUTC = G4D_Util.toUTC(this.fechaHoraSalidaLocal,this.plan.getOrigen().getHusoHorario());
+        this.fechaHoraLlegadaLocal = G4D_Util.toDateTime(this.plan.getHoraLlegada(),fechaHoraReferencia);
+        this.fechaHoraLlegadaUTC = G4D_Util.toUTC(this.fechaHoraLlegadaLocal,this.plan.getDestino().getHusoHorario());
         if(this.fechaHoraLlegadaUTC.isBefore(fechaHoraSalidaUTC)) {
             this.fechaHoraLlegadaLocal = this.fechaHoraLlegadaLocal.plusDays(1);
             this.fechaHoraLlegadaUTC = this.fechaHoraLlegadaUTC.plusDays(1);
@@ -92,7 +92,7 @@ public class Vuelo {
     }
 
     public void setDuracion() {
-        this.duracion = G4D_Formatter.calculateElapsedHours(this.fechaHoraSalidaUTC,this.fechaHoraLlegadaUTC);
+        this.duracion = G4D_Util.calculateElapsedHours(this.fechaHoraSalidaUTC,this.fechaHoraLlegadaUTC);
     }
 
     public LocalDateTime getFechaHoraSalidaLocal() {

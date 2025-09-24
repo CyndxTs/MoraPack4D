@@ -11,7 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import pucp.grupo4d.util.G4D_Formatter;
+import pucp.grupo4d.util.G4D_Util;
 
 public class Pedido {
     private String id;
@@ -22,7 +22,7 @@ public class Pedido {
     private List<Producto> productos;
 
     public Pedido() {
-        this.id = G4D_Formatter.generateIdentifier("PED");
+        this.id = G4D_Util.generateIdentifier("PED");
         this.cantidad = 0;
         this.productos = new ArrayList<>();
     }

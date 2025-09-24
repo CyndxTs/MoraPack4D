@@ -8,7 +8,7 @@ package pucp.grupo4d.modelo;
 
 import java.time.LocalDateTime;
 
-import pucp.grupo4d.util.G4D_Formatter;
+import pucp.grupo4d.util.G4D_Util;
 
 public class RegistroDeProducto {
     private String id;
@@ -19,7 +19,7 @@ public class RegistroDeProducto {
     private LocalDateTime fechaHoraEgresoUTC;
 
     public RegistroDeProducto() {
-        this.id = G4D_Formatter.generateIdentifier("REG");
+        this.id = G4D_Util.generateIdentifier("REG");
     }
 
     public RegistroDeProducto replicar() {

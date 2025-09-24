@@ -18,8 +18,12 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.UUID;
+import java.util.logging.ConsoleHandler;
+import java.util.logging.Level;
+import java.util.logging.LogRecord;
+import java.util.logging.SimpleFormatter;
 
-public class G4D_Formatter {
+public class G4D_Util {
     private static final double EARTH_RADIUS_KM = 6371.0;
     private static final String disp_ldt = "dd/MM/yyyy HH:mm";
     private static final String serv_ldt = "yyyy-MM-dd'T'HH:mm:ss";
@@ -209,6 +213,96 @@ public class G4D_Formatter {
         @Override
         public String toString() {
             return String.valueOf(this.value);
+        }
+    }
+    // Enum que contiene cadenas 'ANSI' para el uso de la consola
+    public static enum AnsiPosition {
+        UP("U","\033[1A"),
+        DOWN("D","\033[1B"),
+        RIGHT("R","\033[1C"),
+        LEFT("L","\033[1D"),
+        START_LINE("Sl","\033[1G"),
+        START_SCREEN("Ss","\033[1H"),
+        CLEAR_LINE("Cl","\033[2K"),
+        CLEAR_SCREEN("Cs","\033[2J");
+
+        private final String id;
+        private final String ansi;
+
+        AnsiPosition(String id,String ansi) {
+            this.id = id;
+            this.ansi = ansi;
+        }
+
+        // Función que recibe un "código" tipo AI, LR, etc y devuelve la secuencia ANSI combinada
+        public static String setPosition(String code) {
+            StringBuilder sb = new StringBuilder();
+            int i = 0;
+
+            while (i < code.length()) {
+                char c1 = code.charAt(i);
+
+                if (!Character.isUpperCase(c1)) {
+                    throw new IllegalArgumentException("Invalid start position: (c" + (i+1) + ": '" + c1 + "'");
+                }
+
+                String key;
+                if (i + 1 < code.length() && Character.isLowerCase(code.charAt(i + 1))) {
+                    key = "" + c1 + code.charAt(i + 1);
+                    i += 2;
+                } else {
+                    key = "" + c1;
+                    i += 1;
+                }
+
+                boolean matched = false;
+                for (AnsiPosition c : AnsiPosition.values()) {
+                    if (c.id.equals(key)) {
+                        sb.append(c.ansi);
+                        matched = true;
+                        break;
+                    }
+                }
+
+                if (!matched) {
+                    throw new IllegalArgumentException("Unknown code: '" + key + "'");
+                }
+            }
+
+            return sb.toString();
+        }
+    }
+
+    public static class Logger {
+        private static final java.util.logging.Logger logger;
+        private static final ConsoleHandler handler;
+        private static boolean enabled;
+
+        static {
+            logger = java.util.logging.Logger.getLogger("G4D_Logger");
+            handler = new ConsoleHandler();
+            enabled = true;
+            // Configuracion para que solo se imprima el mensaje
+            handler.setFormatter(new SimpleFormatter() {
+                @Override
+                public String format(LogRecord record) {
+                    return record.getMessage();
+                }
+            });
+            logger.setUseParentHandlers(false);
+            logger.addHandler(handler);
+            logger.setLevel(Level.INFO);
+        }
+
+        // Función para imprimir un mensaje (nivel INFO por defecto)
+        public static void log(String message) {
+            logger.info(message);
+        }
+
+        // Función para activar/desactivar logs
+        public static void toggleLog() {
+            enabled = !enabled;
+            logger.setLevel(enabled ? Level.INFO : Level.OFF);
         }
     }
 }

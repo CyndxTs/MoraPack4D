@@ -9,7 +9,7 @@ package pucp.grupo4d.modelo;
 import java.time.LocalTime;
 import java.util.Map;
 
-import pucp.grupo4d.util.G4D_Formatter;
+import pucp.grupo4d.util.G4D_Util;
 
 public class PlanDeVuelo {
     private String id;
@@ -20,7 +20,7 @@ public class PlanDeVuelo {
     private Aeropuerto destino;
 
     public PlanDeVuelo() {
-        this.id = G4D_Formatter.generateIdentifier("PLA");
+        this.id = G4D_Util.generateIdentifier("PLA");
         this.capacidadMaxima = 0;
     }
 

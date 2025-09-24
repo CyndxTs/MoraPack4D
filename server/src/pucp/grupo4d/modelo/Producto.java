@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
-import pucp.grupo4d.util.G4D_Formatter;
+import pucp.grupo4d.util.G4D_Util;
 
 public class Producto {
     private String id;
@@ -23,7 +23,7 @@ public class Producto {
     private Ruta ruta;
 
     public Producto() {
-        this.id = G4D_Formatter.generateIdentifier("PRO");
+        this.id = G4D_Util.generateIdentifier("PRO");
     }
 
     public void registrarRuta(LocalDateTime fechaHoraCreacion) {

@@ -9,7 +9,7 @@ package pucp.grupo4d.modelo;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import pucp.grupo4d.util.G4D_Formatter;
+import pucp.grupo4d.util.G4D_Util;
 
 public class Aeropuerto {
     private String id;
@@ -27,12 +27,12 @@ public class Aeropuerto {
     private List<RegistroDeProducto> historialDeProductos;
 
     public Aeropuerto() {
-        this.id = G4D_Formatter.generateIdentifier("AER");
+        this.id = G4D_Util.generateIdentifier("AER");
         this.historialDeProductos = new ArrayList<>();
     }
 
     public Double obtenerDistanciaHasta(Aeropuerto aDest) {
-        return G4D_Formatter.calculateGeodesicDistance(latitudDEC,longitudDEC,aDest.latitudDEC,aDest.longitudDEC);
+        return G4D_Util.calculateGeodesicDistance(latitudDEC,longitudDEC,aDest.latitudDEC,aDest.longitudDEC);
     }
 
     public Integer obtenerCapacidadDisponible(LocalDateTime fechaHoraRevision) {
@@ -53,9 +53,9 @@ public class Aeropuerto {
         RegistroDeProducto registro = new RegistroDeProducto();
         registro.setId(idProducto);
         registro.setFechaHoraIngresoUTC(fechaHoraIngreso);
-        registro.setFechaHoraIngresoLocal(G4D_Formatter.toLocal(fechaHoraIngreso,this.husoHorario));
+        registro.setFechaHoraIngresoLocal(G4D_Util.toLocal(fechaHoraIngreso,this.husoHorario));
         registro.setFechaHoraEgresoUTC(fechaHoraEgreso);
-        registro.setFechaHoraEgresoLocal(G4D_Formatter.toLocal(fechaHoraEgreso,this.husoHorario));
+        registro.setFechaHoraEgresoLocal(G4D_Util.toLocal(fechaHoraEgreso,this.husoHorario));
         historialDeProductos.add(registro);
     }
 
@@ -165,12 +165,12 @@ public class Aeropuerto {
 
     public void setLatitud(String latitudDMS) {
         this.latitudDMS = latitudDMS;
-        this.latitudDEC = G4D_Formatter.toLatDEC(latitudDMS);
+        this.latitudDEC = G4D_Util.toLatDEC(latitudDMS);
     }
 
     public void setLatitud(Double latitudDEC) {
         this.latitudDEC = latitudDEC;
-        this.latitudDMS = G4D_Formatter.toLatDMS(latitudDEC);
+        this.latitudDMS = G4D_Util.toLatDMS(latitudDEC);
     }
 
     public String getLongitudDMS() {
@@ -183,11 +183,11 @@ public class Aeropuerto {
 
     public void setLongitud(String longitudDMS) {
         this.longitudDMS = longitudDMS;
-        this.longitudDEC = G4D_Formatter.toLonDEC(longitudDMS);
+        this.longitudDEC = G4D_Util.toLonDEC(longitudDMS);
     }
 
     public void setLongitud(Double longitudDEC) {
         this.longitudDEC = longitudDEC;
-        this.longitudDMS = G4D_Formatter.toLonDMS(longitudDEC);
+        this.longitudDMS = G4D_Util.toLonDMS(longitudDEC);
     }
 }

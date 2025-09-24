@@ -10,7 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import pucp.grupo4d.util.G4D_Formatter;
+import pucp.grupo4d.util.G4D_Util;
 
 public class Ruta {
     private String id;
@@ -19,7 +19,7 @@ public class Ruta {
     private List<Vuelo> vuelos;
 
     public Ruta() {
-        this.id = G4D_Formatter.generateIdentifier("RUT");
+        this.id = G4D_Util.generateIdentifier("RUT");
         this.duracion = 0.0;
         this.vuelos = new ArrayList<>();
     }

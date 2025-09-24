@@ -21,7 +21,7 @@ import java.util.Scanner;
 import java.util.Map;
 import java.util.HashMap;
 
-import pucp.grupo4d.util.G4D_Formatter;
+import pucp.grupo4d.util.G4D_Util;
 
 public class Problematica {
     public static final Integer MAX_DIAS_ENTREGA_INTRACONTINENTAL = 2;
@@ -63,7 +63,7 @@ public class Problematica {
             System.out.println("Leyendo archivo de 'Aeropuertos' desde '" + rutaArchivo + "'..");
             // Inicializaion del archivo y scanner
             archivo = new File(rutaArchivo);
-            archivoSC = new Scanner(archivo,G4D_Formatter.getFileCharset(archivo));
+            archivoSC = new Scanner(archivo,G4D_Util.getFileCharset(archivo));
             // Descarte de cabezera
             if (archivoSC.hasNextLine()) archivoSC.nextLine();
             if (archivoSC.hasNextLine()) archivoSC.nextLine();
@@ -124,7 +124,7 @@ public class Problematica {
             System.out.println("Leyendo archivo de 'Planes' desde '" + rutaArchivo + "'..");
             // Inicializaion del archivo y scanner
             archivo = new File(rutaArchivo);
-            archivoSC = new Scanner(archivo,G4D_Formatter.getFileCharset(archivo));
+            archivoSC = new Scanner(archivo,G4D_Util.getFileCharset(archivo));
             // Iterativa de lectura y carga
             while (archivoSC.hasNextLine()) {
                 linea = archivoSC.nextLine().trim();
@@ -137,8 +137,8 @@ public class Problematica {
                 plan.setOrigen(buscarAeropuertoPorCodigo(codigoOrigen));
                 codigoDestino = lineaSC.next();
                 plan.setDestino(buscarAeropuertoPorCodigo(codigoDestino));
-                plan.setHoraSalida(G4D_Formatter.toTime(lineaSC.next()));
-                plan.setHoraLlegada(G4D_Formatter.toTime(lineaSC.next()));
+                plan.setHoraSalida(G4D_Util.toTime(lineaSC.next()));
+                plan.setHoraLlegada(G4D_Util.toTime(lineaSC.next()));
                 plan.setCapacidadMaxima(lineaSC.nextInt());
                 planes.add(plan);
                 lineaSC.close();
@@ -161,10 +161,10 @@ public class Problematica {
     private void cargarPedidos(String rutaArchivo) {
         System.out.println("Generando pedidos..");
         Random random = new Random();
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < 1; i++) {
             Cliente cliente = new Cliente();
             cliente.setNombre("Cli_" + (i + 1));
-            int numPedidos = 1 + random.nextInt(5);
+            int numPedidos = 1 + random.nextInt(1);
             for(int j = 0;j < numPedidos;j++) {
                 Pedido pedido = new Pedido();
                 pedido.setCliente(cliente);
@@ -174,7 +174,7 @@ public class Problematica {
                     LocalTime.of(random.nextInt(24),random.nextInt(60),0)
                 );
                 pedido.setFechaHoraCreacion(instanteCreacion);
-                int numProductos = 20 + random.nextInt(50);
+                int numProductos = 1 + random.nextInt(1);
                 pedido.setCantidad(numProductos);
                 for(int k = 0;k < numProductos;k++) {
                     Producto producto = new Producto();

@@ -13,7 +13,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import pucp.grupo4d.util.G4D_Formatter;
+import pucp.grupo4d.util.G4D_Util;
 
 public class Solucion {
     private String id;
@@ -29,7 +29,7 @@ public class Solucion {
     private List<Pedido> pedidos;
 
     public Solucion() {
-        this.id = G4D_Formatter.generateIdentifier("SOL");
+        this.id = G4D_Util.generateIdentifier("SOL");
         this.fitness = 0.0;
         this.duracionPromedio = 0.0;
         this.distanciaRecorridaPromedio = 0.0;
@@ -50,6 +50,15 @@ public class Solucion {
         solucion.capacidadDisponiblePromedioPorAeropuerto = this.capacidadDisponiblePromedioPorAeropuerto;
         for (Pedido pedido : this.pedidos) solucion.pedidos.add(pedido.replicar(poolAeropuertos,poolVuelos));
         return solucion;
+    }
+
+    public void reasignar(Solucion solucion) {
+        this.fitness = solucion.fitness;
+        this.duracionPromedio = solucion.duracionPromedio;
+        this.distanciaRecorridaPromedio = solucion.distanciaRecorridaPromedio;
+        this.capacidadDiponiblePromedioPorVuelo = solucion.capacidadDiponiblePromedioPorVuelo;
+        this.capacidadDisponiblePromedioPorAeropuerto = solucion.capacidadDisponiblePromedioPorAeropuerto;
+        this.pedidos = solucion.pedidos;
     }
 
     public String getId() {
