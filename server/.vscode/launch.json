@@ -9,6 +9,13 @@
             "name": "Main",
             "request": "launch",
             "mainClass": "pucp.grupo4d.programa.Main",
+            "projectName": "server_343e16c6"
+        },
+        {
+            "type": "java",
+            "name": "Main",
+            "request": "launch",
+            "mainClass": "pucp.grupo4d.programa.Main",
             "projectName": "server_298085c"
         },
         {
