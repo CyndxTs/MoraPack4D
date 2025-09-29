@@ -60,7 +60,6 @@ public class Aeropuerto {
     }
 
     public Aeropuerto replicar() {
-        System.out.println(">>>>>> R-AEROPUERTO");
         Aeropuerto aeropuerto = new Aeropuerto();
         aeropuerto.id = this.id;
         aeropuerto.codigo = this.codigo;

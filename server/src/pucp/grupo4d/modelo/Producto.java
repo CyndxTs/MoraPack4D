@@ -9,7 +9,6 @@ package pucp.grupo4d.modelo;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
-
 import pucp.grupo4d.util.G4D_Util;
 
 public class Producto {
@@ -32,6 +31,7 @@ public class Producto {
         for (int i = 0; i < vuelos.size(); i++) {
             Vuelo vuelo = vuelos.get(i);
             PlanDeVuelo plan = vuelo.getPlan();
+            vuelo.setCapacidadDisponible(vuelo.getCapacidadDisponible() - 1);
             plan.getOrigen().registrarProducto(this.id,fechaHoraIngreso_Actual,vuelo.getFechaHoraSalidaUTC());
             fechaHoraEgreso_Proximo = (i < vuelos.size() - 1) ? vuelos.get(i + 1).getFechaHoraSalidaUTC() : null;
             plan.getDestino().registrarProducto(this.id,vuelo.getFechaHoraLlegadaUTC(),fechaHoraEgreso_Proximo);
@@ -40,7 +40,6 @@ public class Producto {
     }
 
     public Producto replicar(Map<String,Aeropuerto> poolAeropuertos, Map<String,Vuelo> poolVuelos) {
-        System.out.println(">> R-PRODUCTO");
         Producto producto = new Producto();
         producto.id = this.id;
         producto.fechaHoraLlegadaLocal = this.fechaHoraLlegadaLocal;

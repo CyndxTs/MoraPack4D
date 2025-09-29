@@ -22,6 +22,8 @@ import java.util.logging.ConsoleHandler;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.SimpleFormatter;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class G4D_Util {
     private static final double EARTH_RADIUS_KM = 6371.0;
@@ -137,7 +139,9 @@ public class G4D_Util {
     }
     // Calcular horas transcurridas de origen a destino
     public static Double calculateElapsedHours(LocalTime ltOrig,LocalTime ltDest) {
-        return Duration.between(ltOrig,ltDest).toMinutes() / 60.0;
+        Double duration = Duration.between(ltOrig,ltDest).toMinutes() / 60.0;
+        if(duration < 0) duration += 24.0;
+        return duration;
     }
     // Calcular horas transcurridas de origen a destino
     public static Double calculateElapsedHours(LocalDateTime ldtOrig, LocalDateTime ldtDest) {
@@ -216,64 +220,85 @@ public class G4D_Util {
         }
     }
     // Enum que contiene cadenas 'ANSI' para el uso de la consola
-    public static enum AnsiPosition {
-        UP("U","\033[1A"),
-        DOWN("D","\033[1B"),
-        RIGHT("R","\033[1C"),
-        LEFT("L","\033[1D"),
-        START_LINE("Sl","\033[1G"),
-        START_SCREEN("Ss","\033[1H"),
-        CLEAR_LINE("Cl","\033[2K"),
-        CLEAR_SCREEN("Cs","\033[2J");
-
-        private final String id;
-        private final String ansi;
-
-        AnsiPosition(String id,String ansi) {
-            this.id = id;
-            this.ansi = ansi;
-        }
-
-        // Función que recibe un "código" tipo AI, LR, etc y devuelve la secuencia ANSI combinada
-        public static String setPosition(String code) {
-            StringBuilder sb = new StringBuilder();
-            int i = 0;
-
-            while (i < code.length()) {
-                char c1 = code.charAt(i);
-
-                if (!Character.isUpperCase(c1)) {
-                    throw new IllegalArgumentException("Invalid start position: (c" + (i+1) + ": '" + c1 + "'");
-                }
-
-                String key;
-                if (i + 1 < code.length() && Character.isLowerCase(code.charAt(i + 1))) {
-                    key = "" + c1 + code.charAt(i + 1);
-                    i += 2;
-                } else {
-                    key = "" + c1;
-                    i += 1;
-                }
-
-                boolean matched = false;
-                for (AnsiPosition c : AnsiPosition.values()) {
-                    if (c.id.equals(key)) {
-                        sb.append(c.ansi);
-                        matched = true;
-                        break;
-                    }
-                }
-
-                if (!matched) {
-                    throw new IllegalArgumentException("Unknown code: '" + key + "'");
-                }
-            }
-
-            return sb.toString();
-        }
-    }
 
     public static class Logger {
+        private static enum Action {
+            UP("U","A"),
+            DOWN("D","B"),
+            RIGHT("R","C"),
+            LEFT("L","D"),
+            CLEAR("C","P"),
+            CLEAR_LINE("Cl","K"),
+            CLEAR_SCREEN("Cs","J"),
+            POSITION_LINE("Pl","G");
+            
+            private final String id;
+            private final String ansiCode;
+
+            Action(String id,String ansiCode) {
+                this.id = id;
+                this.ansiCode = ansiCode;
+            }
+            //
+            public static String delete(int numChars) {
+                return getAnsiString("D",numChars) + getAnsiString("P",numChars);
+            }
+            //
+            public static String delete_line() {
+                return getAnsiString("K",2) + getAnsiString("G",1);
+            }
+            //
+            public static String to_ansi(String actionId,int mode) {
+                for(Action action : Action.values()) {
+                    if(actionId.compareTo(action.id) == 0) return getAnsiString(action.ansiCode, mode);
+                }
+                return "";
+            }
+            //
+            private static String getAnsiString(String ansiCode,int mode) {
+                return "\u001B[" + mode + ansiCode;
+            }
+        }
+
+        private static enum Color {
+            RESET("Rs",0),
+            RED("Rd",31),
+            GREEN("Gn",32),
+            BLUE("Bl",34),
+            YELLOW("Yl",33),
+            CYAN("Cy",36),
+            PURPLE("Pr",35),
+            WHITE("Wh",37),
+            BLACK("Bk",30);
+
+            private final String id;
+            private final int ansiCode;
+
+            Color(String id,int ansiCode) {
+                this.id = id;
+                this.ansiCode = ansiCode;
+            }
+            //
+            public static String set_color(String colorId) {
+                return to_ansi(colorId);
+            }
+            //
+            public static String reset_color() {
+                return getAnsiString(0);
+            }
+            //
+            public static String to_ansi(String colorId){
+                for(Color color : Color.values()) {
+                    if(colorId.compareTo(color.id) == 0) return getAnsiString(color.ansiCode);
+                }
+                return "";
+            }
+            //
+            private static String getAnsiString(int ansiCode) {
+                return "\u001B[" + ansiCode + "m";
+            }            
+        }
+
         private static final java.util.logging.Logger logger;
         private static final ConsoleHandler handler;
         private static boolean enabled;
@@ -293,14 +318,82 @@ public class G4D_Util {
             logger.addHandler(handler);
             logger.setLevel(Level.INFO);
         }
-
         // Función para imprimir un mensaje (nivel INFO por defecto)
-        public static void log(String message) {
-            logger.info(message);
+        public static void log(String msg) {
+            logger.info(String.format("%s",msg));
         }
-
+        //
+        public static void logln(String msg) {
+            logger.info(String.format("%s%n",msg));
+        }
+        //
+        public static void logf(String msgFormat, Object... args) {
+            logger.info(String.format(msgFormat, args));
+        }
+        //
+        public static void log_err(String msg) {
+            G4D_Util.Logger.Color.set_color("Rd");
+            log(msg);
+            G4D_Util.Logger.Color.set_color("Rs");
+        }
+        //
+        public static void logln_err(String msg) {
+            G4D_Util.Logger.Color.set_color("Rd");
+            logln(msg);
+            G4D_Util.Logger.Color.set_color("Rs");
+        }
+        //
+        public static void logf_err(String msgFormat, Object... args) {
+            G4D_Util.Logger.Color.set_color("Rd");
+            logf(msgFormat, args);
+            G4D_Util.Logger.Color.set_color("Rs");
+        }
+        //
+        public static void delete(int numChars) {
+            logger.info(G4D_Util.Logger.Action.delete(numChars));
+        }
+        //
+        public static void delete_line() {
+            logger.info(G4D_Util.Logger.Action.delete_line());
+        }
+        //
+        public static void delete_line(int numLines) {
+            for(int i = 0;i < numLines - 1;i++) {
+                logger.info(G4D_Util.Logger.Action.delete_line());
+                logger.info(G4D_Util.Logger.Action.to_ansi("U",1));
+            }
+            logger.info(G4D_Util.Logger.Action.delete_line());
+        }
+        //
+        public static void set_color(String colorId) {
+            logger.info(G4D_Util.Logger.Color.set_color(colorId));
+        }
+        //
+        public static void reset_color() {
+            logger.info(G4D_Util.Logger.Color.reset_color());
+        }
+        //
+        public static void custom_action(String actions) {
+            String ansiString = "";
+            Pattern pattern = Pattern.compile("[A-Z][a-z]?\\d*");
+            Matcher matcher = pattern.matcher(actions);
+            while (matcher.find()) {
+                int mode;
+                String action = matcher.group();
+                String id = String.valueOf(action.charAt(0));
+                if(action.length() > 1) {
+                    if(Character.isLowerCase(action.charAt(1))) {
+                        id += action.charAt(1);
+                        if(action.length() > 2) mode = Integer.valueOf(action.substring(2));
+                        else mode = 1;
+                    } else mode = Integer.valueOf(action.substring(1));
+                } else mode = 1;
+                ansiString += G4D_Util.Logger.Action.to_ansi(id, mode);
+            }
+            logger.info(ansiString);
+        }
         // Función para activar/desactivar logs
-        public static void toggleLog() {
+        public static void toggle_log() {
             enabled = !enabled;
             logger.setLevel(enabled ? Level.INFO : Level.OFF);
         }

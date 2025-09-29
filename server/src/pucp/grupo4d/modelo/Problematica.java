@@ -8,6 +8,8 @@ package pucp.grupo4d.modelo;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileWriter;
+import java.io.PrintWriter;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -15,7 +17,6 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.NoSuchElementException;
-import java.util.Objects;
 import java.util.Random;
 import java.util.Scanner;
 import java.util.Map;
@@ -27,35 +28,30 @@ public class Problematica {
     public static final Integer MAX_DIAS_ENTREGA_INTRACONTINENTAL = 2;
     public static final Integer MAX_DIAS_ENTREGA_INTERCONTINENTAL = 3;
     public static final Double MAX_HORAS_RECOJO = 2.0;
-    private Map<String, Aeropuerto> sedes;
-    private List<Aeropuerto> aeropuertos;
-    private List<PlanDeVuelo> planes;
-    private List<Pedido> pedidos;
+    public Map<String, Aeropuerto> origenes;
+    public List<Aeropuerto> destinos;
+    public List<PlanDeVuelo> planes;
+    public List<Pedido> pedidos;
 
     public Problematica() {
-        this.sedes = new HashMap<>();
-        this.aeropuertos = new ArrayList<>();
+        this.origenes = new HashMap<>();
+        this.origenes.put("SPIM", null);
+        this.origenes.put("EBCI", null);
+        this.origenes.put("UBBB", null);
+        this.destinos = new ArrayList<>();
         this.planes = new ArrayList<>();
         this.pedidos = new ArrayList<>();
     }
-
-    // Carga de elementos desde archivos
+    // Carga de datos para problematica
     public void cargarDatos(String rutaArchivoAeropuertos, String rutaArchivoVuelos, String rutaArchivoPedidos) {
-        cargarSedes(null);
         cargarAeropuertos(rutaArchivoAeropuertos);
-        cargarPlanesDeVuelos(rutaArchivoVuelos);
-        cargarPedidos(rutaArchivoPedidos);
+        cargarPlanesDeVuelo(rutaArchivoVuelos);
+        if(rutaArchivoPedidos == null) cargarPedidos(generarPedidos());
+        else cargarPedidos(rutaArchivoPedidos);
     }
-
-    // Carga de datos de sedes
-    private void cargarSedes(String rutaArchivo) {
-        this.sedes.put("SPIM", null);
-        this.sedes.put("EBCI", null);
-        this.sedes.put("UBBB", null);
-    }
-
     // Carga de datos de Aeropuertos
     private void cargarAeropuertos(String rutaArchivo) {
+        G4D_Util.Logger.logf("Leyendo archivo de 'Aeropuertos' desde '%s'..%n",rutaArchivo);
         // Declaracion de variables
         String continente = "", linea;
         File archivo;
@@ -63,20 +59,16 @@ public class Problematica {
         Aeropuerto aeropuerto;
         // Carga de datos
         try {
-            System.out.println("Leyendo archivo de 'Aeropuertos' desde '" + rutaArchivo + "'..");
             // Inicializaion del archivo y scanner
             archivo = new File(rutaArchivo);
             archivoSC = new Scanner(archivo, G4D_Util.getFileCharset(archivo));
             // Descarte de cabezera
-            if (archivoSC.hasNextLine())
-                archivoSC.nextLine();
-            if (archivoSC.hasNextLine())
-                archivoSC.nextLine();
+            if (archivoSC.hasNextLine()) archivoSC.nextLine();
+            if (archivoSC.hasNextLine()) archivoSC.nextLine();
             // Iterativa de lectura y carga
             while (archivoSC.hasNextLine()) {
                 linea = archivoSC.nextLine().trim();
-                if (linea.isEmpty())
-                    continue; // Validacion por linea vacia
+                if (linea.isEmpty()) continue; // Validacion por linea vacia
                 // Inicializacion de scanner de linea
                 lineaSC = new Scanner(linea);
                 lineaSC.useDelimiter("\\s{2,}"); // Configuracion de separador a "2 espacios"
@@ -93,40 +85,33 @@ public class Problematica {
                     aeropuerto.setCapacidadMaxima(lineaSC.nextInt());
                     lineaSC.useDelimiter("\\s+");
                     lineaSC.next();
-                    aeropuerto.setLatitud(
-                            lineaSC.next() + " " + lineaSC.next() + " " + lineaSC.next() + " " + lineaSC.next());
+                    aeropuerto.setLatitud(lineaSC.next() + " " + lineaSC.next() + " " + lineaSC.next() + " " + lineaSC.next());
                     lineaSC.next();
-                    aeropuerto.setLongitud(
-                            lineaSC.next() + " " + lineaSC.next() + " " + lineaSC.next() + " " + lineaSC.next());
-                    if (sedes.containsKey(aeropuerto.getCodigo()))
-                        sedes.put(aeropuerto.getCodigo(), aeropuerto);
-                    aeropuertos.add(aeropuerto);
-                } else
-                    continente = lineaSC.next();
+                    aeropuerto.setLongitud(lineaSC.next() + " " + lineaSC.next() + " " + lineaSC.next() + " " + lineaSC.next());
+                    if (origenes.containsKey(aeropuerto.getCodigo())) origenes.put(aeropuerto.getCodigo(), aeropuerto);
+                    else destinos.add(aeropuerto);
+                } else continente = lineaSC.next();
                 lineaSC.close();
             }
-            System.out.print("Se cargaron " + aeropuertos.size() + " aeropuertos.");
-            System.out.println(" (" + sedes.values().stream().filter(Objects::nonNull).count() + " de " + sedes.size()
-                    + " sedes cargadas)");
+            G4D_Util.Logger.logf("Se cargaron correctamente '%d' origenes y '%d' destinos.%n",origenes.size(),destinos.size());
         } catch (FileNotFoundException e) {
-            System.err.println("ERROR: No se encontró el archivo en la ruta '" + rutaArchivo + "'");
+            G4D_Util.Logger.logf_err("ERROR: No se encontró el archivo en la ruta '%s'%n",rutaArchivo);
             System.exit(1);
         } catch (NullPointerException e) {
-            System.err.println("ERROR: Se proporciono una ruta vacia." + e.getMessage());
+            G4D_Util.Logger.logln_err("ERROR: Se proporciono una ruta vacia." + e.getMessage());
             System.exit(1);
         } catch (NoSuchElementException e) {
-            System.err.println("ERROR: Formato del archivo inválido. " + e.getMessage());
+            G4D_Util.Logger.logln_err("ERROR: Formato del archivo inválido. " + e.getMessage());
         } catch (Exception e) {
             e.printStackTrace();
             System.exit(1);
         } finally {
-            if (archivoSC != null)
-                archivoSC.close();
+            if (archivoSC != null) archivoSC.close();
         }
     }
-
-    // Cargas de datos de vuelos
-    private void cargarPlanesDeVuelos(String rutaArchivo) {
+    // Cargas de datos de planes de vuelo
+    private void cargarPlanesDeVuelo(String rutaArchivo) {
+        G4D_Util.Logger.logf("Leyendo archivo de 'PlanesDeVuelo' desde '%s'..%n",rutaArchivo);
         // Declaracion de variables
         String linea, codigoOrigen, codigoDestino;
         File archivo;
@@ -134,15 +119,13 @@ public class Problematica {
         PlanDeVuelo plan;
         // Carga de datos
         try {
-            System.out.println("Leyendo archivo de 'Planes' desde '" + rutaArchivo + "'..");
             // Inicializaion del archivo y scanner
             archivo = new File(rutaArchivo);
             archivoSC = new Scanner(archivo, G4D_Util.getFileCharset(archivo));
             // Iterativa de lectura y carga
             while (archivoSC.hasNextLine()) {
                 linea = archivoSC.nextLine().trim();
-                if (linea.isEmpty())
-                    continue;
+                if (linea.isEmpty()) continue;
                 // Inicializacion de scanner de linea
                 lineaSC = new Scanner(linea);
                 lineaSC.useDelimiter("-");
@@ -153,94 +136,137 @@ public class Problematica {
                 plan.setDestino(buscarAeropuertoPorCodigo(codigoDestino));
                 plan.setHoraSalida(G4D_Util.toTime(lineaSC.next()));
                 plan.setHoraLlegada(G4D_Util.toTime(lineaSC.next()));
-                plan.setCapacidadMaxima(lineaSC.nextInt());
+                plan.setCapacidad(lineaSC.nextInt());
+                plan.setDuracion();
+                plan.setDistancia();
                 planes.add(plan);
                 lineaSC.close();
             }
-            System.out.println("Se cargaron " + planes.size() + " planes de vuelo.");
+            G4D_Util.Logger.logf("Se cargaron %d planes de vuelo.%n",planes.size());
         } catch (FileNotFoundException e) {
-            System.err.println("ERROR: No se encontró el archivo de vuelos en la ruta '" + rutaArchivo + "'");
+            G4D_Util.Logger.logln_err("ERROR: No se encontró el archivo de 'PlanesDeVuelo' en la ruta '" + rutaArchivo + "'");
             System.exit(1);
         } catch (NullPointerException e) {
-            System.err.println("ERROR: Se proporciono una ruta vacia." + e.getMessage());
+            G4D_Util.Logger.logln_err("ERROR: Se proporciono una ruta vacia." + e.getMessage());
             System.exit(1);
         } catch (Exception e) {
             e.printStackTrace();
             System.exit(1);
         } finally {
-            if (archivoSC != null)
-                archivoSC.close();
+            if (archivoSC != null) archivoSC.close();
         }
     }
-
+    //
+    private String generarPedidos() {
+        G4D_Util.Logger.logln("Generando archivo de 'Pedidos'..");
+        // Declaracion de variables
+        String rutaArchivo = "Pedidos.txt";
+        Random random = new Random();
+        int maxPed = 20, ped_maxNumProd = 200, ped_maxNumCli = 20;
+        // Generando archivo
+        try {
+            // Inicializaion del archivo y scanner
+            FileWriter archivo = new FileWriter(rutaArchivo);
+            PrintWriter archivoWriter = new PrintWriter(archivo);
+            //
+            for(int i = 0;i < maxPed;i++) {
+                int numProd = 1 + random.nextInt(ped_maxNumProd);
+                int numCli = 1 + random.nextInt(ped_maxNumCli);
+                String destino = this.destinos.get(random.nextInt(this.destinos.size())).getCodigo();
+                LocalDateTime fechaHoraCreacion = LocalDateTime.of(
+                    LocalDate.now().withDayOfMonth(1 + random.nextInt(LocalDate.now().lengthOfMonth())),
+                    LocalTime.of(
+                        random.nextInt(24),
+                        random.nextInt(60),
+                        0
+                    )
+                );
+                archivoWriter.printf("%02d-%02d-%02d-%s-%03d-%07d%n",
+                    fechaHoraCreacion.getDayOfMonth(),
+                    fechaHoraCreacion.getHour(),
+                    fechaHoraCreacion.getMinute(),
+                    destino,
+                    numProd,
+                    numCli     
+                );
+            }
+            archivoWriter.flush();
+            archivoWriter.close();
+            archivo.close();
+            G4D_Util.Logger.logf("Archivo de 'Pedidos' generado en la ruta '%s'.%n",rutaArchivo);
+        } catch (Exception e){
+            e.printStackTrace();
+        }
+        return rutaArchivo;
+    }
     // // PROVISIONAL HASTA TENER FORMATO DEL ARCHIVO DE PEDIDOS
     private void cargarPedidos(String rutaArchivo) {
-        System.out.println("Generando pedidos..");
-        Random random = new Random();
-        for (int i = 0; i < 1; i++) {
-            Cliente cliente = new Cliente();
-            cliente.setNombre("Cli_" + (i + 1));
-            int numPedidos = 1 + random.nextInt(2);
-            for (int j = 0; j < numPedidos; j++) {
+        G4D_Util.Logger.logf("Leyendo archivo de 'Pedidos' desde '%s'..%n",rutaArchivo);
+        // Declaracion de variables
+        String linea;
+        File archivo;
+        Scanner archivoSC = null, lineaSC;
+        // Carga de datos
+        try {
+            // Inicializaion del archivo y scanner
+            archivo = new File(rutaArchivo);
+            archivoSC = new Scanner(archivo, G4D_Util.getFileCharset(archivo));
+            // Iterativa de lectura y carga
+            while (archivoSC.hasNextLine()) {
+                linea = archivoSC.nextLine().trim();
+                // Inicializacion de scanner de linea
+                lineaSC = new Scanner(linea);
+                lineaSC.useDelimiter("-");
                 Pedido pedido = new Pedido();
-                pedido.setCliente(cliente);
-                pedido.setDestino(aeropuertos.get(random.nextInt(aeropuertos.size())));
-                LocalDateTime instanteCreacion = LocalDateTime.of(
-                        LocalDate.now().plusDays(random.nextInt(5)).minusDays(random.nextInt(5)),
-                        LocalTime.of(random.nextInt(24), random.nextInt(60), 0));
-                pedido.setFechaHoraCreacion(instanteCreacion);
-                int numProductos = 1 + random.nextInt(2);
-                pedido.setCantidad(numProductos);
-                for (int k = 0; k < numProductos; k++) {
-                    Producto producto = new Producto();
-                    producto.setDestino(pedido.getDestino());
-                    pedido.getProductos().add(producto);
-                }
-                pedidos.add(pedido);
+                LocalDateTime fechaHoraCreacionLocal = LocalDateTime.of(
+                    LocalDate.now().withDayOfMonth(lineaSC.nextInt()),
+                    LocalTime.of(
+                        lineaSC.nextInt(),
+                        lineaSC.nextInt(),
+                        0
+                    )
+                );
+                String codigoDestino = lineaSC.next();
+                int numProd = lineaSC.nextInt();
+                int codigoCli = lineaSC.nextInt();
+                Aeropuerto destino = buscarAeropuertoPorCodigo(codigoDestino);
+                pedido.setDestino(destino);
+                pedido.setFechaHoraCreacionLocal(fechaHoraCreacionLocal);
+                pedido.setFechaHoraCreacionUTC(G4D_Util.toUTC(fechaHoraCreacionLocal,destino.getHusoHorario()));
+                pedido.setCantidad(numProd);
+                pedido.setClienteId(codigoCli);
+                this.pedidos.add(pedido);
+                lineaSC.close();
             }
+        } catch (FileNotFoundException e) {
+            G4D_Util.Logger.logln_err("ERROR: No se encontró el archivo de 'Pedidos' en la ruta '" + rutaArchivo + "'");
+            System.exit(1);
+        } catch (NullPointerException e) {
+            G4D_Util.Logger.logln_err("ERROR: Se proporciono una ruta vacia." + e.getMessage());
+            System.exit(1);
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.exit(1);
+        } finally {
+            if (archivoSC != null) archivoSC.close();
         }
-        this.pedidos.sort(Comparator.comparing(Pedido::getFechaHoraCreacion));
+        this.pedidos.sort(Comparator.comparing(Pedido::getFechaHoraCreacionUTC));
         Integer numProd = 0;
-        for (Pedido p : pedidos)
-            numProd += p.getProductos().size();
-        System.out.println("Se cargaron " + pedidos.size() + " pedidos. (" + numProd + " productos)");
+        for (Pedido p : pedidos) numProd += p.getCantidad();
+        G4D_Util.Logger.logf("Se cargaron %d pedidos. (%d productos)%n",pedidos.size(),numProd);
     }
-
     //
     private Aeropuerto buscarAeropuertoPorCodigo(String codigo) {
-        for (Aeropuerto a : aeropuertos) {
-            if (a.getCodigo().equalsIgnoreCase(codigo)) {
-                return a;
+        for (Aeropuerto orig : this.origenes.values()) {
+            if (orig.getCodigo().compareTo(codigo) == 0) {
+                return orig;
+            }
+        }
+        for (Aeropuerto dest : this.destinos) {
+            if (dest.getCodigo().compareTo(codigo) == 0) {
+                return dest;
             }
         }
         return null;
-    }
-
-    public List<Aeropuerto> getSedes() {
-        return new ArrayList<>(sedes.values());
-    }
-
-    public List<Aeropuerto> getAeropuertos() {
-        return aeropuertos;
-    }
-
-    public void setAeropuertos(List<Aeropuerto> aeropuertos) {
-        this.aeropuertos = aeropuertos;
-    }
-
-    public List<PlanDeVuelo> getPlanes() {
-        return planes;
-    }
-
-    public void setPlanes(List<PlanDeVuelo> planes) {
-        this.planes = planes;
-    }
-
-    public List<Pedido> getPedidos() {
-        return pedidos;
-    }
-
-    public void setPedidos(List<Pedido> pedidos) {
-        this.pedidos = pedidos;
     }
 }

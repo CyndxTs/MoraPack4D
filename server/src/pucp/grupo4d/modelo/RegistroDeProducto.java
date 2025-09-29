@@ -23,7 +23,6 @@ public class RegistroDeProducto {
     }
 
     public RegistroDeProducto replicar() {
-        System.out.println(">>>>>>> R-REGISTRO");
         RegistroDeProducto registro = new RegistroDeProducto();
         registro.id = this.id;
         registro.idProducto = this.idProducto;

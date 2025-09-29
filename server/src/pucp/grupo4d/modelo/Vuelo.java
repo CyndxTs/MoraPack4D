@@ -15,6 +15,7 @@ public class Vuelo {
     private String id;
     private Integer capacidadDisponible;
     private Double duracion;
+    private Double distancia;
     private LocalDateTime fechaHoraSalidaLocal;
     private LocalDateTime fechaHoraSalidaUTC;
     private LocalDateTime fechaHoraLlegadaLocal;
@@ -25,6 +26,7 @@ public class Vuelo {
         this.id = G4D_Util.generateIdentifier("VUE");
         this.capacidadDisponible = 0;
         this.duracion = 0.0;
+        this.distancia = 0.0;
     }
 
     public void instanciarHorarios(LocalDateTime fechaHoraReferencia) {
@@ -45,11 +47,11 @@ public class Vuelo {
     }
 
     public Vuelo replicar(Map<String,Aeropuerto> poolAeropuertos) {
-        System.out.println(">>>> R-VUELO");
         Vuelo vuelo = new Vuelo();
         vuelo.id = this.id;
         vuelo.capacidadDisponible = this.capacidadDisponible;
         vuelo.duracion = this.duracion;
+        vuelo.distancia = this.distancia;
         vuelo.fechaHoraSalidaLocal = this.fechaHoraSalidaLocal;
         vuelo.fechaHoraSalidaUTC = this.fechaHoraSalidaUTC;
         vuelo.fechaHoraLlegadaLocal = this.fechaHoraLlegadaLocal;
@@ -92,7 +94,15 @@ public class Vuelo {
     }
 
     public void setDuracion() {
-        this.duracion = G4D_Util.calculateElapsedHours(this.fechaHoraSalidaUTC,this.fechaHoraLlegadaUTC);
+        this.duracion = this.plan.getDuracion();
+    }
+
+    public Double getDistancia() {
+        return distancia;
+    }
+
+    public void setDistancia() {
+        this.distancia = this.plan.getDistancia();
     }
 
     public LocalDateTime getFechaHoraSalidaLocal() {

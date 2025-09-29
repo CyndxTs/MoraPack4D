@@ -13,7 +13,9 @@ import pucp.grupo4d.util.G4D_Util;
 
 public class PlanDeVuelo {
     private String id;
-    private Integer capacidadMaxima;
+    private Integer capacidad;
+    private Double duracion;
+    private Double distancia;
     private LocalTime horaSalida;
     private LocalTime horaLlegada;
     private Aeropuerto origen;
@@ -21,14 +23,17 @@ public class PlanDeVuelo {
 
     public PlanDeVuelo() {
         this.id = G4D_Util.generateIdentifier("PLA");
-        this.capacidadMaxima = 0;
+        this.capacidad = 0;
+        this.duracion = 0.0;
+        this.distancia = 0.0;
     }
 
     public PlanDeVuelo replicar(Map<String,Aeropuerto> poolAeropuertos) {
-        System.out.println(">>>>> R-PLAN");
         PlanDeVuelo plan = new PlanDeVuelo();
         plan.id = this.id;
-        plan.capacidadMaxima = this.capacidadMaxima;
+        plan.capacidad = this.capacidad;
+        plan.duracion = this.duracion;
+        plan.distancia = this.distancia;
         plan.horaSalida = this.horaSalida;
         plan.horaLlegada = this.horaLlegada;
         plan.origen = (this.origen != null) ? poolAeropuertos.computeIfAbsent(this.origen.getId(), id -> this.origen.replicar()) : null;
@@ -44,12 +49,31 @@ public class PlanDeVuelo {
         this.id = id;
     }
 
-    public Integer getCapacidadMaxima() {
-        return capacidadMaxima;
+    public Integer getCapacidad() {
+        return capacidad;
     }
 
-    public void setCapacidadMaxima(Integer capacidadMaxima) {
-        this.capacidadMaxima = capacidadMaxima;
+    public void setCapacidad(Integer capacidad) {
+        this.capacidad = capacidad;
+    }
+
+    public Double getDuracion() {
+        return duracion;
+    }
+
+    public void setDuracion() {
+        this.duracion = G4D_Util.calculateElapsedHours(
+            G4D_Util.toUTC(this.horaSalida,this.origen.getHusoHorario()),
+            G4D_Util.toUTC(this.horaLlegada,this.destino.getHusoHorario())
+        );
+    }
+
+    public Double getDistancia() {
+        return distancia;
+    }
+
+    public void setDistancia() {
+        this.distancia = this.origen.obtenerDistanciaHasta(this.destino);
     }
 
     public LocalTime getHoraSalida() {

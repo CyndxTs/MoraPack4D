@@ -16,8 +16,9 @@ import pucp.grupo4d.util.G4D_Util;
 public class Pedido {
     private String id;
     private Integer cantidad;
-    private LocalDateTime fechaHoraCreacion;
-    private Cliente cliente;
+    private Integer clienteId;
+    private LocalDateTime fechaHoraCreacionLocal;
+    private LocalDateTime fechaHoraCreacionUTC;
     private Aeropuerto destino;
     private List<Producto> productos;
 
@@ -28,12 +29,12 @@ public class Pedido {
     }
 
     public Pedido replicar(Map<String,Aeropuerto> poolAeropuertos, Map<String,Vuelo> poolVuelos) {
-        System.out.println("> R-PEDIDO");
         Pedido pedido = new Pedido();
         pedido.id = this.id;
         pedido.cantidad = this.cantidad;
-        pedido.fechaHoraCreacion = this.fechaHoraCreacion;
-        pedido.cliente = (this.cliente != null) ? this.cliente.replicar() : null;
+        pedido.fechaHoraCreacionLocal = this.fechaHoraCreacionLocal;
+        pedido.fechaHoraCreacionUTC = this.fechaHoraCreacionUTC;
+        pedido.clienteId = this.clienteId;
         pedido.destino = (this.destino != null) ? poolAeropuertos.computeIfAbsent(this.destino.getId(), id -> this.destino.replicar()) : null;
         for (Producto producto : this.productos) pedido.productos.add(producto.replicar(poolAeropuertos,poolVuelos));
         return pedido;
@@ -55,20 +56,28 @@ public class Pedido {
         this.cantidad = cantidad;
     }
 
-    public LocalDateTime getFechaHoraCreacion() {
-        return fechaHoraCreacion;
+    public LocalDateTime getFechaHoraCreacionLocal() {
+        return fechaHoraCreacionLocal;
     }
 
-    public void setFechaHoraCreacion(LocalDateTime fechaHoraCreacion) {
-        this.fechaHoraCreacion = fechaHoraCreacion;
+    public void setFechaHoraCreacionLocal(LocalDateTime fechaHoraCreacionLocal) {
+        this.fechaHoraCreacionLocal = fechaHoraCreacionLocal;
     }
 
-    public Cliente getCliente() {
-        return cliente;
+    public LocalDateTime getFechaHoraCreacionUTC() {
+        return fechaHoraCreacionUTC;
     }
 
-    public void setCliente(Cliente cliente) {
-        this.cliente = cliente;
+    public void setFechaHoraCreacionUTC(LocalDateTime fechaHoraCreacionUTC) {
+        this.fechaHoraCreacionUTC = fechaHoraCreacionUTC;
+    }
+
+    public Integer getClienteId() {
+        return clienteId;
+    }
+
+    public void setClienteId(Integer clienteId) {
+        this.clienteId = clienteId;
     }
 
     public Aeropuerto getDestino() {

@@ -18,46 +18,49 @@ import pucp.grupo4d.util.G4D_Util;
 public class Solucion {
     private String id;
     private Double fitness;
-    private Double duracionPromedio;
-    private static final Double f_DP = 1.25;
-    private Double distanciaRecorridaPromedio;
-    private static final Double f_DRP = 0.0065;
-    private Double capacidadDiponiblePromedioPorVuelo;
-    private static final Double f_CDPV = 0.35;
-    private Double capacidadDisponiblePromedioPorAeropuerto;
-    private static final Double f_CDPA = 0.25;
+    private Double ratioPromedioDeCumplimientoTemporal;
+    private static final Double f_CT = 400.0;
+    private Double ratioPromedioDeOptimizacionEspacial;
+    private static final Double f_OE = 150.0;
+    private Double ratioPromedioDeDisponibilidadDeVuelos;
+    private static final Double f_DV = 2500.0;
+    private Double ratioPromedioDeDisponibilidadDeAeropuertos;
+    private static final Double f_DA = 2000.0;
     private List<Pedido> pedidos;
+    private Set<Vuelo> vuelosActivos;
+    private Set<Aeropuerto> aeropuertosOcupados;
 
     public Solucion() {
         this.id = G4D_Util.generateIdentifier("SOL");
         this.fitness = 0.0;
-        this.duracionPromedio = 0.0;
-        this.distanciaRecorridaPromedio = 0.0;
-        this.capacidadDiponiblePromedioPorVuelo = 0.0;
-        this.capacidadDisponiblePromedioPorAeropuerto = 0.0;
+        this.ratioPromedioDeCumplimientoTemporal = 0.0;
+        this.ratioPromedioDeOptimizacionEspacial = 0.0;
+        this.ratioPromedioDeDisponibilidadDeVuelos = 0.0;
+        this.ratioPromedioDeDisponibilidadDeAeropuertos = 0.0;
         this.pedidos = new ArrayList<>();
+        this.vuelosActivos = new HashSet<>();
+        this.aeropuertosOcupados = new HashSet<>();
     }
 
     public Solucion replicar() {
-        System.out.println("R-SOLUCION");
         Map<String,Aeropuerto> poolAeropuertos = new HashMap<>();
         Map<String,Vuelo> poolVuelos = new HashMap<>();
         Solucion solucion = new Solucion();
         solucion.fitness = this.fitness;
-        solucion.duracionPromedio = this.duracionPromedio;
-        solucion.distanciaRecorridaPromedio = this.distanciaRecorridaPromedio;
-        solucion.capacidadDiponiblePromedioPorVuelo = this.capacidadDiponiblePromedioPorVuelo;
-        solucion.capacidadDisponiblePromedioPorAeropuerto = this.capacidadDisponiblePromedioPorAeropuerto;
+        solucion.ratioPromedioDeCumplimientoTemporal = this.ratioPromedioDeCumplimientoTemporal;
+        solucion.ratioPromedioDeOptimizacionEspacial = this.ratioPromedioDeOptimizacionEspacial;
+        solucion.ratioPromedioDeDisponibilidadDeVuelos = this.ratioPromedioDeDisponibilidadDeVuelos;
+        solucion.ratioPromedioDeDisponibilidadDeAeropuertos = this.ratioPromedioDeDisponibilidadDeAeropuertos;
         for (Pedido pedido : this.pedidos) solucion.pedidos.add(pedido.replicar(poolAeropuertos,poolVuelos));
         return solucion;
     }
 
     public void reasignar(Solucion solucion) {
         this.fitness = solucion.fitness;
-        this.duracionPromedio = solucion.duracionPromedio;
-        this.distanciaRecorridaPromedio = solucion.distanciaRecorridaPromedio;
-        this.capacidadDiponiblePromedioPorVuelo = solucion.capacidadDiponiblePromedioPorVuelo;
-        this.capacidadDisponiblePromedioPorAeropuerto = solucion.capacidadDisponiblePromedioPorAeropuerto;
+        this.ratioPromedioDeCumplimientoTemporal = solucion.ratioPromedioDeCumplimientoTemporal;
+        this.ratioPromedioDeOptimizacionEspacial = solucion.ratioPromedioDeOptimizacionEspacial;
+        this.ratioPromedioDeDisponibilidadDeVuelos = solucion.ratioPromedioDeDisponibilidadDeVuelos;
+        this.ratioPromedioDeDisponibilidadDeAeropuertos = solucion.ratioPromedioDeDisponibilidadDeAeropuertos;
         this.pedidos = solucion.pedidos;
     }
 
@@ -74,105 +77,80 @@ public class Solucion {
     }
 
     public void setFitness() {
-        setDuracionPromedio();
-        setDistanciaRecorridaPromedio();
-        setCapacidadDiponiblePromedioPorVuelo();
-        setCapacidadDisponiblePromedioPorAeropuerto();
-        this.fitness = f_DP*this.duracionPromedio + f_DRP*this.distanciaRecorridaPromedio + f_CDPV*this.capacidadDiponiblePromedioPorVuelo + f_CDPA*this.capacidadDisponiblePromedioPorAeropuerto;
+        setRatioPromedioDeCumplimientoTemporal();
+        setRatioPromedioDeOptimizacionEspacial();
+        setRatioPromedioDeDisponibilidadDeVuelos();
+        setRatioPromedioDeDisponibilidadDeAeropuertos();
+        this.fitness = f_CT*this.ratioPromedioDeCumplimientoTemporal
+                     + f_OE*(this.ratioPromedioDeOptimizacionEspacial - 1)
+                     + f_DV*this.ratioPromedioDeDisponibilidadDeVuelos
+                     + f_DA*this.ratioPromedioDeDisponibilidadDeAeropuertos;
     }
 
-    public Double getDuracionPromedio() {
-        return duracionPromedio;
+    public Double getRatioPromedioDeCumplimientoTemporal() {
+        return ratioPromedioDeCumplimientoTemporal;
     }
 
-    public void setDuracionPromedio() {
-        Double duracion = 0.0;
+    public void setRatioPromedioDeCumplimientoTemporal() {
+        Double sumaRatios = 0.0;
         Integer cantProd = 0;
-        for(Pedido ped : this.pedidos) {
-            List<Producto> productos = ped.getProductos();
-            for(Producto prod : productos) {
-                duracion += prod.getRuta().getDuracion();
-                cantProd++;
+        for(Pedido pedido : this.pedidos) {
+            List<Producto> productos = pedido.getProductos();
+            cantProd += productos.size();
+            for(Producto producto : productos) {
+                sumaRatios += producto.getRuta().getDuracion() / producto.getRuta().getTipo().getMaxHorasParaEntrega();
             }
         }
-        if(cantProd == 0) this.duracionPromedio = Double.MAX_VALUE;
-        else this.duracionPromedio = duracion/cantProd;
+        if(cantProd == 0) this.ratioPromedioDeCumplimientoTemporal = Double.MAX_VALUE;
+        else this.ratioPromedioDeCumplimientoTemporal = sumaRatios/cantProd;
     }
 
-    public Double getDistanciaRecorridaPromedio() {
-        return distanciaRecorridaPromedio;
+    public Double getRatioPromedioDeOptimizacionEspacial() {
+        return ratioPromedioDeOptimizacionEspacial;
     }
 
-    public void setDistanciaRecorridaPromedio() {
-        Double distanciaRecorrida = 0.0;
+    public void setRatioPromedioDeOptimizacionEspacial() {
+        Double sumRatios = 0.0;
         Integer cantProd = 0;
-        for(Pedido ped : this.pedidos) {
-            List<Producto> productos = ped.getProductos();
-            for(Producto prod : productos) {
-                List<Vuelo> vuelos = prod.getRuta().getVuelos();
-                for(Vuelo vuel : vuelos) {
-                    Aeropuerto aOrig = vuel.getPlan().getOrigen(),aDest = vuel.getPlan().getDestino();
-                    distanciaRecorrida += aOrig.obtenerDistanciaHasta(aDest);
-                }
-                cantProd++;
+        for(Pedido pedido : this.pedidos) {
+            List<Producto> productos = pedido.getProductos();
+            cantProd += productos.size();
+            for(Producto producto : productos) {
+                List<Vuelo> vuelos = producto.getRuta().getVuelos();
+                Aeropuerto aOrig = vuelos.getFirst().getPlan().getOrigen();
+                Aeropuerto aDest = vuelos.getLast().getPlan().getDestino();
+                sumRatios += producto.getRuta().getDistancia() / aOrig.obtenerDistanciaHasta(aDest);
             }
         }
-        if(cantProd == 0) this.distanciaRecorridaPromedio = Double.MAX_VALUE;
-        else this.distanciaRecorridaPromedio = distanciaRecorrida/cantProd;
+        if(cantProd == 0) this.ratioPromedioDeOptimizacionEspacial = Double.MAX_VALUE;
+        else this.ratioPromedioDeOptimizacionEspacial = sumRatios/cantProd;
     }
 
-    public Double getCapacidadDiponiblePromedioPorVuelo() {
-        return capacidadDiponiblePromedioPorVuelo;
+    public Double getRatioPromedioDeDisponibilidadDeVuelos() {
+        return ratioPromedioDeDisponibilidadDeVuelos;
     }
 
-    public void setCapacidadDiponiblePromedioPorVuelo() {
-        Integer capacidadDisponibleDeVuelos = 0;
-        Set<Vuelo> vuelosActivos = new HashSet<>();
-        for(Pedido ped : this.pedidos) {
-            List<Producto> productos = ped.getProductos();
-            for(Producto prod : productos) {
-                List<Vuelo> vuelos = prod.getRuta().getVuelos();
-                for(Vuelo vuel : vuelos) {
-                    if(!vuelosActivos.contains(vuel)) {
-                        vuelosActivos.add(vuel);
-                        capacidadDisponibleDeVuelos += vuel.getCapacidadDisponible();
-                    }
-                }
-            }
+    public void setRatioPromedioDeDisponibilidadDeVuelos() {
+        Double sumaRatios = 0.0;
+        for(Vuelo vuelo : this.vuelosActivos) {
+            sumaRatios += vuelo.getCapacidadDisponible() /((double)vuelo.getPlan().getCapacidad());
         }
-        if(vuelosActivos.size() == 0) this.capacidadDiponiblePromedioPorVuelo = Double.MAX_VALUE;
-        else this.capacidadDiponiblePromedioPorVuelo = capacidadDisponibleDeVuelos/(double)vuelosActivos.size();
+        if(vuelosActivos.size() == 0) this.ratioPromedioDeDisponibilidadDeVuelos = Double.MAX_VALUE;
+        else this.ratioPromedioDeDisponibilidadDeVuelos = sumaRatios/((double)vuelosActivos.size());
     }
 
-    public Double getCapacidadDisponiblePromedioPorAeropuerto() {
-        return capacidadDisponiblePromedioPorAeropuerto;
+    public Double getRatioPromedioDeDisponibilidadDeAeropuertos() {
+        return ratioPromedioDeDisponibilidadDeAeropuertos;
     }
 
-    public void setCapacidadDisponiblePromedioPorAeropuerto() {
-        Integer capacidadDisponibleDeAeropuertos = 0;
-        Set<Aeropuerto> aeropuertosOcupados = new HashSet<>();
+    public void setRatioPromedioDeDisponibilidadDeAeropuertos() {
         LocalDateTime fechaHoraReferencia = this.pedidos.getLast().getProductos().getLast().getFechaHoraLlegadaUTC();
-        for(Pedido ped : this.pedidos) {
-            List<Producto> productos = ped.getProductos();
-            for(Producto prod : productos) {
-                List<Vuelo> vuelos = prod.getRuta().getVuelos();
-                for(int v = 0;v < vuelos.size();v++) {
-                    Vuelo vuel = vuelos.get(v);
-                    Aeropuerto aeropuerto = vuel.getPlan().getOrigen();
-                    if(!aeropuertosOcupados.contains(aeropuerto)) {
-                        aeropuertosOcupados.add(aeropuerto);
-                        capacidadDisponibleDeAeropuertos += aeropuerto.obtenerCapacidadDisponible(fechaHoraReferencia);
-                        if(v == vuelos.size() - 1) {
-                            aeropuerto = vuel.getPlan().getDestino();
-                            aeropuertosOcupados.add(aeropuerto);
-                            capacidadDisponibleDeAeropuertos += aeropuerto.obtenerCapacidadDisponible(fechaHoraReferencia);
-                        }
-                    }
-                }
-            }
+        Double sumaRatios = 0.0;
+        for(Aeropuerto aeropuerto : this.aeropuertosOcupados) {
+            sumaRatios += aeropuerto.obtenerCapacidadDisponible(fechaHoraReferencia) /((double)aeropuerto.getCapacidadMaxima());
         }
-        if(aeropuertosOcupados.size() == 0) this.capacidadDisponiblePromedioPorAeropuerto = Double.MAX_VALUE;
-        else this.capacidadDisponiblePromedioPorAeropuerto = capacidadDisponibleDeAeropuertos/(double)aeropuertosOcupados.size();
+        if(aeropuertosOcupados.size() == 0) this.ratioPromedioDeDisponibilidadDeAeropuertos = Double.MAX_VALUE;
+        else this.ratioPromedioDeDisponibilidadDeAeropuertos = sumaRatios/((double)this.aeropuertosOcupados.size());
     }
 
     public List<Pedido> getPedidos() {
@@ -183,4 +161,19 @@ public class Solucion {
         this.pedidos = pedidos;
     }
 
+    public Set<Vuelo> getVuelosActivos() {
+        return vuelosActivos;
+    }
+
+    public void setVuelosActivos(Set<Vuelo> vuelosActivos) {
+        this.vuelosActivos = vuelosActivos;
+    }
+
+    public Set<Aeropuerto> getAeropuertosOcupados() {
+        return aeropuertosOcupados;
+    }
+
+    public void setAeropuertosOcupados(Set<Aeropuerto> aeropuertosOcupados) {
+        this.aeropuertosOcupados = aeropuertosOcupados;
+    }
 }
