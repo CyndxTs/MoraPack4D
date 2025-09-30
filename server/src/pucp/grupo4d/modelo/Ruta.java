@@ -36,6 +36,21 @@ public class Ruta {
         return ruta;
     }
 
+    public void reasignar(Ruta ruta) {
+        this.id = ruta.id;
+        this.duracion = ruta.duracion;
+        this.distancia = ruta.distancia;
+        this.tipo = ruta.tipo;
+        this.vuelos = ruta.vuelos;
+    }
+
+    public List<Aeropuerto> obtenerSecuenciaDeAeropuertos() {
+        List<Aeropuerto> secuenciaDeAeropuertos = new ArrayList<>();
+        secuenciaDeAeropuertos.add(this.vuelos.getFirst().getPlan().getOrigen());
+        for(int i = 0;i < this.vuelos.size();i++) secuenciaDeAeropuertos.add(this.vuelos.get(i).getPlan().getDestino());
+        return secuenciaDeAeropuertos;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

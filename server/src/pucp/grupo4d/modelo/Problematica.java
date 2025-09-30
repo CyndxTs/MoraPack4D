@@ -162,15 +162,15 @@ public class Problematica {
         // Declaracion de variables
         String rutaArchivo = "Pedidos.txt";
         Random random = new Random();
-        int maxPed = 20, ped_maxNumProd = 200, ped_maxNumCli = 20;
+        int minPed = 1,maxPed = 2, ped_minNumProd = 35,ped_maxNumProd = 45, ped_maxNumCli = 5;
         // Generando archivo
         try {
             // Inicializaion del archivo y scanner
             FileWriter archivo = new FileWriter(rutaArchivo);
             PrintWriter archivoWriter = new PrintWriter(archivo);
             //
-            for(int i = 0;i < maxPed;i++) {
-                int numProd = 1 + random.nextInt(ped_maxNumProd);
+            for(int i = 0,cantPed = random.nextInt(minPed,maxPed);i < cantPed;i++) {
+                int numProd = random.nextInt(ped_minNumProd,ped_maxNumProd);
                 int numCli = 1 + random.nextInt(ped_maxNumCli);
                 String destino = this.destinos.get(random.nextInt(this.destinos.size())).getCodigo();
                 LocalDateTime fechaHoraCreacion = LocalDateTime.of(

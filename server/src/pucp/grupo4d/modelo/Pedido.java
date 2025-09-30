@@ -28,7 +28,7 @@ public class Pedido {
         this.productos = new ArrayList<>();
     }
 
-    public Pedido replicar(Map<String,Aeropuerto> poolAeropuertos, Map<String,Vuelo> poolVuelos) {
+    public Pedido replicar(Map<String,Aeropuerto> poolAeropuertos, Map<String,Vuelo> poolVuelos, Map<String, Ruta> poolRutas) {
         Pedido pedido = new Pedido();
         pedido.id = this.id;
         pedido.cantidad = this.cantidad;
@@ -36,7 +36,7 @@ public class Pedido {
         pedido.fechaHoraCreacionUTC = this.fechaHoraCreacionUTC;
         pedido.clienteId = this.clienteId;
         pedido.destino = (this.destino != null) ? poolAeropuertos.computeIfAbsent(this.destino.getId(), id -> this.destino.replicar()) : null;
-        for (Producto producto : this.productos) pedido.productos.add(producto.replicar(poolAeropuertos,poolVuelos));
+        for (Producto producto : this.productos) pedido.productos.add(producto.replicar(poolAeropuertos,poolVuelos,poolRutas));
         return pedido;
     }
 

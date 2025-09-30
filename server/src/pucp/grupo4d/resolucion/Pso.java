@@ -4,7 +4,7 @@
  >> Author:     Grupo 4D
  >> File:       Algoritmo.java 
 [**/
-/*
+/*  // solo falta agregar logica para las rutasAsignadas y quitar la de aeropuertos ocupados
 package pucp.grupo4d.resolucion;
 
 import java.io.FileWriter;
@@ -31,82 +31,22 @@ import pucp.grupo4d.modelo.TipoRuta;
 import pucp.grupo4d.modelo.Vuelo;
 import pucp.grupo4d.util.G4D_Util;
 
-public class Pso {
-    private static final Integer L_MIN = 1;
-    private static final Integer L_MAX = 2;
-    private static final Integer K_MIN = 3;
-    private static final Integer K_MAX = 5;
-    private static final Integer T_MAX = 10;
-    private static final Integer MAX_INTENTOS = 10;
-    private static final Integer NO_ENCONTRADO = -1;
-    private static final Double PEOR_FITNESS = 9999.99;
+public class PSO extends Algoritmo {
     private static final Random random = new Random();
-    private Solucion solucionGVNS;
-    private Solucion solucionPSO;
     private double PSO_W_TIME = 1.0; // peso del tiempo transcurrido
     private double PSO_W_DIST = 0.003; // peso de la distancia (km)
     private double PSO_W_CAP = 0.010; // peso (beneficio) de capacidad disponible (resta en proximidad)
+    private Solucion solucion;
 
-    public Pso() {
-        this.solucionGVNS = null;
-        this.solucionPSO = null;
+    public PSO() {
+        this.solucion = null;
     }
 
     //
-    public void imprimirSolucionPSO(String rutaArchivo) {
-        imprimirSolucion(solucionPSO, rutaArchivo);
-    }
-
-    private Solucion construirSolucionPSO(Problematica problematica, double wTime, double wDist, double wCap) {
-
-        this.PSO_W_TIME = wTime;
-        this.PSO_W_DIST = wDist;
-        this.PSO_W_CAP = wCap;
-
-        // Clonar pedidos para no modificar los de 'problematica'
-        Map<String, Aeropuerto> poolA = new HashMap<>();
-        Map<String, Vuelo> poolV = new HashMap<>();
-        List<Pedido> pedidosClon = new ArrayList<>();
-        for (Pedido p : problematica.getPedidos())
-            pedidosClon.add(p.replicar(poolA, poolV));
-
-        List<PlanDeVuelo> planes = problematica.getPlanes();
-        List<Aeropuerto> sedes = problematica.getSedes();
-
-        // Armar solución (igual a solucionInicial, pero sin registrar en aeropuertos)
-        Set<Vuelo> vuelosActivos = new HashSet<>();
-        for (Pedido pedido : pedidosClon) {
-            LocalDateTime t0 = pedido.getFechaHoraCreacion();
-            List<Producto> productos = pedido.getProductos();
-            int cant = productos.size(), i = 1;
-            for (Producto prod : productos) {
-                Ruta ruta = obtenerMejorRuta(t0, prod.getDestino(), sedes, planes, vuelosActivos);
-                if (ruta == null) {
-                    // producto no atendido: deja origen/destino en null y ruta null
-                    prod.setOrigen(null);
-                    prod.setDestino(null);
-                    prod.setRuta(null);
-                    continue;
-                }
-                prod.setOrigen(ruta.getVuelos().getFirst().getPlan().getOrigen());
-                prod.setDestino(ruta.getVuelos().getLast().getPlan().getDestino());
-                prod.setFechaHoraLlegadaLocal(ruta.getVuelos().getLast().getFechaHoraLlegadaLocal());
-                prod.setFechaHoraLlegadaUTC(ruta.getVuelos().getLast().getFechaHoraLlegadaUTC());
-                LocalDateTime limiteUTC = t0.plusMinutes((long) (60 * ruta.getTipo().getMaxHorasParaEntrega()));
-                prod.setFechaHoraLimiteLocal(G4D_Util.toLocal(limiteUTC, prod.getDestino().getHusoHorario()));
-                prod.setFechaHoraLimiteUTC(limiteUTC);
-                prod.setRuta(ruta);
-
-                i++;
-            }
-        }
-        Solucion sol = new Solucion();
-        sol.setPedidos(pedidosClon);
-        sol.setFitness(); // usa tu función objetivo tal cual
-        return sol;
-    }
-
-    public void PSO(Problematica problematica) {
+    public void imprimirSolucion(String rutaArchivo) { super.imprimirSolucion(solucion, rutaArchivo); }
+    // PSO
+    @Override
+    public void planificar(Problematica problematica) {
         final int SWARM = 12; // número de partículas
         final int ITER = 20; // iteraciones
         final double INERTIA = 0.7; // inercia
@@ -203,19 +143,19 @@ public class Pso {
         // Ahora sí: construir solución “oficial” (registrando en aeropuertos)
         Solucion finalSol = new Solucion();
         {
-            List<PlanDeVuelo> planes = problematica.getPlanes();
-            List<Aeropuerto> sedes = problematica.getSedes();
+            List<PlanDeVuelo> planes = problematica.planes;
+            List<Aeropuerto> sedes = new ArrayList<>(problematica.origenes.values());
             Set<Vuelo> vuelosActivos = new HashSet<>();
 
             // Clona pedidos para construir y registrar sin tocar originales
             Map<String, Aeropuerto> poolA = new HashMap<>();
             Map<String, Vuelo> poolV = new HashMap<>();
             List<Pedido> pedidosClon = new ArrayList<>();
-            for (Pedido p : problematica.getPedidos())
+            for (Pedido p : problematica.pedidos)
                 pedidosClon.add(p.replicar(poolA, poolV));
 
             for (Pedido pedido : pedidosClon) {
-                LocalDateTime t0 = pedido.getFechaHoraCreacion();
+                LocalDateTime t0 = pedido.getFechaHoraCreacionUTC();
                 for (Producto prod : pedido.getProductos()) {
                     Ruta ruta = obtenerMejorRuta(t0, prod.getDestino(), sedes, planes, vuelosActivos);
                     if (ruta == null)
@@ -231,11 +171,201 @@ public class Pso {
                     prod.registrarRuta(t0); // ahora sí registramos
                 }
             }
-            finalSol.setPedidos(pedidosClon);
+            finalSol.setPedidosAtendidos(pedidosClon);
             finalSol.setFitness();
         }
-        this.solucionPSO = finalSol;
+        this.solucion = finalSol;
+    }
+    private Solucion construirSolucionPSO(Problematica problematica, double wTime, double wDist, double wCap) {
+
+        this.PSO_W_TIME = wTime;
+        this.PSO_W_DIST = wDist;
+        this.PSO_W_CAP = wCap;
+
+        // Clonar pedidos para no modificar los de 'problematica'
+        Map<String, Aeropuerto> poolA = new HashMap<>();
+        Map<String, Vuelo> poolV = new HashMap<>();
+        List<Pedido> pedidosClon = new ArrayList<>();
+        for (Pedido p : problematica.pedidos)
+            pedidosClon.add(p.replicar(poolA, poolV));
+
+        List<PlanDeVuelo> planes = problematica.planes;
+        List<Aeropuerto> sedes = new ArrayList<>(problematica.origenes.values());
+
+        // Armar solución (igual a solucionInicial, pero sin registrar en aeropuertos)
+        Set<Vuelo> vuelosActivos = new HashSet<>();
+        for (Pedido pedido : pedidosClon) {
+            LocalDateTime t0 = pedido.getFechaHoraCreacionUTC();
+            List<Producto> productos = pedido.getProductos();
+            int cant = productos.size(), i = 1;
+            for (Producto prod : productos) {
+                Ruta ruta = obtenerMejorRuta(t0, prod.getDestino(), sedes, planes, vuelosActivos);
+                if (ruta == null) {
+                    // producto no atendido: deja origen/destino en null y ruta null
+                    prod.setOrigen(null);
+                    prod.setDestino(null);
+                    prod.setRuta(null);
+                    continue;
+                }
+                prod.setOrigen(ruta.getVuelos().getFirst().getPlan().getOrigen());
+                prod.setDestino(ruta.getVuelos().getLast().getPlan().getDestino());
+                prod.setFechaHoraLlegadaLocal(ruta.getVuelos().getLast().getFechaHoraLlegadaLocal());
+                prod.setFechaHoraLlegadaUTC(ruta.getVuelos().getLast().getFechaHoraLlegadaUTC());
+                LocalDateTime limiteUTC = t0.plusMinutes((long) (60 * ruta.getTipo().getMaxHorasParaEntrega()));
+                prod.setFechaHoraLimiteLocal(G4D_Util.toLocal(limiteUTC, prod.getDestino().getHusoHorario()));
+                prod.setFechaHoraLimiteUTC(limiteUTC);
+                prod.setRuta(ruta);
+                i++;
+            }
+        }
+        Solucion sol = new Solucion();
+        sol.setPedidosAtendidos(pedidosClon);
+        sol.setRutasAsignadas(null); // agregar
+        sol.setVuelosActivos(null); // agregar
+        sol.setFitness();
+        return sol;
     }
 
+    //
+    private Ruta obtenerMejorRuta(LocalDateTime fechaHoraCreacion, Aeropuerto destino, List<Aeropuerto> origenes,
+                                  List<PlanDeVuelo> planes, Set<Aeropuerto> aeropuertosTransitados, Set<Vuelo> vuelosEnTransito, Set<Ruta> rutasAsignadas) {
+        // Declaracion de Variables
+        Ruta ruta,mejorRuta = null;
+        Set<Aeropuerto> aeropuertosVisitadosEnRuta,aeropuertosVisitadosEnMejorRuta = new HashSet<>();
+        Set<Vuelo> vuelosActivosDeRuta,vuelosActivosDeMejorRuta = new HashSet<>();
+        //
+        for(Aeropuerto origen : origenes) {
+            TipoRuta tipoRuta = (origen.getContinente().compareTo(destino.getContinente()) == 0) ? TipoRuta.INTRACONTINENTAL : TipoRuta.INTERCONTINENTAL;
+            LocalDateTime fechaHoraLimite = fechaHoraCreacion.plusMinutes(60*tipoRuta.getMaxHorasParaEntrega().longValue());
+            aeropuertosVisitadosEnRuta = new HashSet<>();
+            vuelosActivosDeRuta = new HashSet<>(vuelosEnTransito);
+            ruta = buscarRutaVoraz(rutasAsignadas,fechaHoraCreacion,fechaHoraLimite,origen,destino,vuelosActivosDeRuta);
+            if(ruta == null) {
+                ruta = construirRutaVoraz(fechaHoraCreacion,fechaHoraLimite,origen,destino,planes,aeropuertosVisitadosEnRuta,vuelosActivosDeRuta);
+                if(ruta == null) {
+                    continue;
+                }else ruta.setTipo(tipoRuta);
+            }
+            if(mejorRuta == null || ruta.getDuracion() < mejorRuta.getDuracion()) {
+                aeropuertosVisitadosEnMejorRuta = aeropuertosVisitadosEnRuta;
+                vuelosActivosDeMejorRuta = vuelosActivosDeRuta;
+                if(mejorRuta != null) rutasAsignadas.remove(mejorRuta);
+                mejorRuta = ruta;
+                rutasAsignadas.add(mejorRuta);
+            }
+        }
+        aeropuertosTransitados.addAll(aeropuertosVisitadosEnMejorRuta);
+        vuelosEnTransito.addAll(vuelosActivosDeMejorRuta);
+        return mejorRuta;
+    }
+    //
+    private Ruta buscarRutaVoraz(Set<Ruta> rutasAsignadas,LocalDateTime fechaHoraCreacion,LocalDateTime fechaHoraLimite,Aeropuerto origen,Aeropuerto destino,Set<Vuelo> vuelosActivos) {
+        boolean rutaValida;
+        //
+        if(origen.equals(destino)) {
+            G4D_Util.Logger.delete_current_line();
+            return null;
+        }
+        for(Ruta ruta : rutasAsignadas) {
+            List<Vuelo> secuenciaDeVuelos = ruta.getVuelos();
+            if(secuenciaDeVuelos.getFirst().getPlan().getOrigen() != origen) continue;
+            LocalDateTime fechaHoraSalida = secuenciaDeVuelos.getFirst().getFechaHoraSalidaUTC();
+            if(fechaHoraSalida.isBefore(fechaHoraCreacion)) continue;
+            LocalDateTime fechaHoraLlegada = secuenciaDeVuelos.getLast().getFechaHoraLlegadaUTC();
+            if(fechaHoraLlegada.isAfter(fechaHoraLimite)) continue;
+            rutaValida = true;
+            for(Vuelo vuelo : secuenciaDeVuelos) {
+                if(vuelo.getCapacidadDisponible() < 1) {
+                    rutaValida = false;
+                    break;
+                }
+            }
+            if(rutaValida) {
+                return ruta;
+            }
+        }
+        return null;
+    }
+    //
+    private Ruta construirRutaVoraz(LocalDateTime fechaHoraCreacion,LocalDateTime fechaHoraLimite,Aeropuerto origen,Aeropuerto destino,
+                                    List<PlanDeVuelo>planes,Set<Aeropuerto> aeropuertosVisitados,Set<Vuelo> vuelosActivos) {
+        //
+        Ruta ruta = new Ruta();
+        List<Vuelo> secuenciaDeVuelos = new ArrayList<>();
+        Aeropuerto actual = origen;
+        LocalDateTime fechaHoraActual = fechaHoraCreacion;
+        //
+        if(actual.equals(destino)) return null;
+        //
+        while (!actual.equals(destino)) {
+            aeropuertosVisitados.add(actual);
+            PlanDeVuelo mejorPlan = obtenerPlanMasProximo(actual,destino,fechaHoraActual,fechaHoraLimite,planes,aeropuertosVisitados);
+            if(mejorPlan == null) {
+                for(Vuelo vuelo : secuenciaDeVuelos) {
+                    if(vuelo.getCapacidadDisponible() == vuelo.getPlan().getCapacidad()) vuelosActivos.remove(vuelo);
+                }
+                G4D_Util.Logger.delete_lines(4);
+                return null;
+            }
+            Vuelo vuelo = obtenerVueloActivo(mejorPlan,fechaHoraActual,fechaHoraLimite,vuelosActivos);
+            if(vuelo == null) {
+                vuelo = new Vuelo();
+                vuelo.setPlan(mejorPlan);
+                vuelo.setCapacidadDisponible(vuelo.getPlan().getCapacidad());
+                vuelo.instanciarHorarios(fechaHoraActual);
+                vuelo.setDuracion();
+                vuelo.setDistancia();
+                vuelosActivos.add(vuelo);
+            }
+            secuenciaDeVuelos.add(vuelo);
+            fechaHoraActual = vuelo.getFechaHoraLlegadaUTC();
+            actual = vuelo.getPlan().getDestino();
+        }
+        ruta.setVuelos(secuenciaDeVuelos);
+        ruta.setDuracion();
+        ruta.setDistancia();
+        return ruta;
+    }
+    //
+    private PlanDeVuelo obtenerPlanMasProximo(Aeropuerto origen, Aeropuerto destino, LocalDateTime fechaHoraActual,LocalDateTime fechaHoraLimite, List<PlanDeVuelo> planes,
+                                              Set<Aeropuerto> visitados) {
+        Double mejorProximidad = Double.MAX_VALUE;
+        PlanDeVuelo planMaxProximo = null;
+        List<PlanDeVuelo> planesPosibles = planes.stream().filter(p -> p.getOrigen().equals(origen))
+                                                          .filter(p -> !visitados.contains(p.getDestino()))
+                                                          .toList();
+        for(PlanDeVuelo plan : planesPosibles) {
+            if(!plan.esAlcanzable(fechaHoraActual, fechaHoraLimite)) continue;
+            Double proximidad = plan.calcularProximidad(fechaHoraActual, destino);
+            if(proximidad < mejorProximidad) {
+                mejorProximidad = proximidad;
+                planMaxProximo = plan;
+            }
+        }
+        return planMaxProximo;
+    }
+    //
+    private Vuelo obtenerVueloActivo(PlanDeVuelo plan, LocalDateTime fechaHoraActual,LocalDateTime fechaHoraLimite, Set<Vuelo> vuelosActivos) {
+        List<Vuelo> vuelosPosibles = vuelosActivos.stream().filter(v -> v.getPlan().getOrigen() == plan.getOrigen())
+                                                           .filter(v -> v.getPlan().getDestino() == plan.getDestino())
+                                                           .filter(v -> v.getPlan().getHoraSalida().equals(plan.getHoraSalida()))
+                                                           .filter(v -> v.getPlan().getHoraLlegada().equals(plan.getHoraLlegada()))
+                                                           .filter(v -> v.getFechaHoraLlegadaUTC().isBefore(fechaHoraLimite))
+                                                           .filter(v -> v.getCapacidadDisponible() > 1)
+                                                           .toList();
+        LocalDateTime fechaHoraSalida = G4D_Util.toUTC(
+                G4D_Util.toDateTime(plan.getHoraSalida(),fechaHoraActual),
+                plan.getOrigen().getHusoHorario()
+        );
+        if(fechaHoraSalida.isBefore(fechaHoraActual)) {
+            fechaHoraSalida = fechaHoraSalida.plusDays(1);
+        }
+        for(Vuelo vuelo : vuelosPosibles) {
+            if(fechaHoraSalida.equals(vuelo.getFechaHoraSalidaUTC())) {
+                return vuelo;
+            }
+        }
+        return null;
+    }
 }
 */

@@ -6,6 +6,7 @@
 
 package pucp.grupo4d.modelo;
 
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.Map;
 
@@ -39,6 +40,50 @@ public class PlanDeVuelo {
         plan.origen = (this.origen != null) ? poolAeropuertos.computeIfAbsent(this.origen.getId(), id -> this.origen.replicar()) : null;
         plan.destino = (this.destino != null) ? poolAeropuertos.computeIfAbsent(this.destino.getId(), id -> this.destino.replicar()) : null;
         return plan;
+    }
+
+    public Double calcularProximidad(LocalDateTime fechaHoraActual,Aeropuerto aDest) {
+        Double transcurrido = calcularTranscurridoHastaLlegada(fechaHoraActual);
+        Double distancia = this.destino.obtenerDistanciaHasta(aDest);
+        Integer destCapDisp = this.destino.obtenerCapacidadDisponible(G4D_Util.toUTC(G4D_Util.toDateTime(this.horaLlegada,fechaHoraActual),this.destino.getHusoHorario()));
+        return transcurrido + 0.005 * distancia + 0.01 * destCapDisp;
+    }
+
+    public Boolean esAlcanzable(LocalDateTime fechaHoraActual,LocalDateTime fechaHoraLimite) {
+        LocalDateTime fechaHoraSalidaUTC =  G4D_Util.toUTC(
+            G4D_Util.toDateTime(this.horaSalida,fechaHoraActual),
+            this.origen.getHusoHorario()
+        );
+        LocalDateTime fechaHoraLlegadaUTC =  G4D_Util.toUTC(
+            G4D_Util.toDateTime(this.horaLlegada,fechaHoraActual),
+            this.destino.getHusoHorario()
+        );
+        if(fechaHoraLlegadaUTC.isBefore(fechaHoraSalidaUTC)) fechaHoraLlegadaUTC = fechaHoraLlegadaUTC.plusDays(1);
+        if(fechaHoraSalidaUTC.isBefore(fechaHoraActual)) {
+            fechaHoraSalidaUTC = fechaHoraSalidaUTC.plusDays(1);
+            fechaHoraLlegadaUTC = fechaHoraLlegadaUTC.plusDays(1);
+        }
+        if(fechaHoraLlegadaUTC.isAfter(fechaHoraLimite)) return false;
+        Integer destCapDisp = this.destino.obtenerCapacidadDisponible(G4D_Util.toUTC(G4D_Util.toDateTime(this.horaLlegada,fechaHoraActual),this.destino.getHusoHorario()));
+        if(destCapDisp < 1) return false;
+        return true;
+    }
+
+    public Double calcularTranscurridoHastaLlegada(LocalDateTime fechaHoraActual) {
+        LocalDateTime fechaHoraSalidaUTC =  G4D_Util.toUTC(
+            G4D_Util.toDateTime(this.horaSalida,fechaHoraActual),
+            this.origen.getHusoHorario()
+        );
+        LocalDateTime fechaHoraLlegadaUTC =  G4D_Util.toUTC(
+            G4D_Util.toDateTime(this.horaLlegada,fechaHoraActual),
+            this.destino.getHusoHorario()
+        );
+        if(fechaHoraLlegadaUTC.isBefore(fechaHoraSalidaUTC)) fechaHoraLlegadaUTC = fechaHoraLlegadaUTC.plusDays(1);
+        if(fechaHoraSalidaUTC.isBefore(fechaHoraActual)) {
+            fechaHoraSalidaUTC = fechaHoraSalidaUTC.plusDays(1);
+            fechaHoraLlegadaUTC = fechaHoraLlegadaUTC.plusDays(1);
+        }
+        return G4D_Util.calculateElapsedHours(fechaHoraActual,fechaHoraLlegadaUTC);
     }
 
     public String getId() {

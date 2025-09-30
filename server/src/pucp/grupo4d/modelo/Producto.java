@@ -39,7 +39,7 @@ public class Producto {
         }
     }
 
-    public Producto replicar(Map<String,Aeropuerto> poolAeropuertos, Map<String,Vuelo> poolVuelos) {
+    public Producto replicar(Map<String,Aeropuerto> poolAeropuertos, Map<String,Vuelo> poolVuelos, Map<String, Ruta> poolRutas) {
         Producto producto = new Producto();
         producto.id = this.id;
         producto.fechaHoraLlegadaLocal = this.fechaHoraLlegadaLocal;
@@ -48,7 +48,7 @@ public class Producto {
         producto.fechaHoraLimiteUTC = this.fechaHoraLimiteUTC;
         producto.origen = (this.origen != null) ? poolAeropuertos.computeIfAbsent(this.origen.getId(), id -> this.origen.replicar()) : null;
         producto.destino = (this.destino != null) ? poolAeropuertos.computeIfAbsent(this.destino.getId(), id -> this.destino.replicar()) : null;
-        producto.ruta = (this.ruta != null) ? this.ruta.replicar(poolAeropuertos,poolVuelos) : null;
+        producto.ruta = (this.ruta != null) ? poolRutas.computeIfAbsent(this.ruta.getId(), id -> this.ruta.replicar(poolAeropuertos, poolVuelos)) : null;
         return producto;
     }
 

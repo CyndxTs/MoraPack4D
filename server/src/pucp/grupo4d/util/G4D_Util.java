@@ -214,13 +214,28 @@ public class G4D_Util {
             this.value = value;
         }
 
+        public void increment() {
+            this.value++;
+        }
+
+        public void increment(int value) {
+            this.value += value;
+        }
+
+        public void decrement() {
+            this.value--;
+        }
+
+        public void decrement(int value) {
+            this.value-=value;
+        }
+
         @Override
         public String toString() {
             return String.valueOf(this.value);
         }
     }
     // Enum que contiene cadenas 'ANSI' para el uso de la consola
-
     public static class Logger {
         private static enum Action {
             UP("U","A"),
@@ -353,11 +368,15 @@ public class G4D_Util {
             logger.info(G4D_Util.Logger.Action.delete(numChars));
         }
         //
-        public static void delete_line() {
+        public static void delete_current_line() {
             logger.info(G4D_Util.Logger.Action.delete_line());
         }
         //
-        public static void delete_line(int numLines) {
+        public static void delete_upper_line() {
+            custom_action("U1Cl2");
+        }
+        //
+        public static void delete_lines(int numLines) {
             for(int i = 0;i < numLines - 1;i++) {
                 logger.info(G4D_Util.Logger.Action.delete_line());
                 logger.info(G4D_Util.Logger.Action.to_ansi("U",1));
