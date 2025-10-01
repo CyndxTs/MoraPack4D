@@ -1,313 +1,361 @@
 =======================================================================================================================================
                                                         FITNESS DE LA SOLUCIÓN
-                                                                4167.25
+                                                                4108.41
 
                          RP. CUMPLIMIENTO TEMPORAL          RP. DESVIACION ESPACIAL        RP. DISPONIBILIDAD
-                                  0.041                            0.000                   V: 0.891 | A: 0.961
+                                  0.080                            0.000                   V: 0.874 | A: 0.946
 =======================================================================================================================================
                                                                PEDIDO #1
     -------------------------------------------------------------------------------------------------------------------------------
      CLIENTE                                DESTINO        NUM. PRODUCTOS MPE      INSTANTE DE REGISTRO
-     0000002                                EKCH                  037                06/09/2025 08:32
+     0000002                                OSDI                  043                20/10/2025 23:06
 
                                                  > SECUENCIA DE VUELOS PLANIFICADOS <
         ***********************************************************************************************************************
-        >> PRODUCTO #001  |  ORIGEN: EBCI  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 06/09/2025 10:45
+        >> PRODUCTO #001  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 21/10/2025 01:51
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                EBCI  06/09/2025 08:47  -->  EKCH  06/09/2025 10:45  ==  1.97 hrs.
+                                UBBB  20/10/2025 22:00  -->  OSDI  21/10/2025 01:51  ==  3.85 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 1.97 hrs.
+        >> Duración de la ruta: 3.85 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #002  |  ORIGEN: EBCI  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 06/09/2025 10:45
+        >> PRODUCTO #002  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 21/10/2025 01:51
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                EBCI  06/09/2025 08:47  -->  EKCH  06/09/2025 10:45  ==  1.97 hrs.
+                                UBBB  20/10/2025 22:00  -->  OSDI  21/10/2025 01:51  ==  3.85 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 1.97 hrs.
+        >> Duración de la ruta: 3.85 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #003  |  ORIGEN: EBCI  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 06/09/2025 10:45
+        >> PRODUCTO #003  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 21/10/2025 01:51
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                EBCI  06/09/2025 08:47  -->  EKCH  06/09/2025 10:45  ==  1.97 hrs.
+                                UBBB  20/10/2025 22:00  -->  OSDI  21/10/2025 01:51  ==  3.85 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 1.97 hrs.
+        >> Duración de la ruta: 3.85 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #004  |  ORIGEN: EBCI  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 06/09/2025 10:45
+        >> PRODUCTO #004  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 21/10/2025 01:51
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                EBCI  06/09/2025 08:47  -->  EKCH  06/09/2025 10:45  ==  1.97 hrs.
+                                UBBB  20/10/2025 22:00  -->  OSDI  21/10/2025 01:51  ==  3.85 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 1.97 hrs.
+        >> Duración de la ruta: 3.85 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #005  |  ORIGEN: EBCI  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 06/09/2025 10:45
+        >> PRODUCTO #005  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 21/10/2025 01:51
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                EBCI  06/09/2025 08:47  -->  EKCH  06/09/2025 10:45  ==  1.97 hrs.
+                                UBBB  20/10/2025 22:00  -->  OSDI  21/10/2025 01:51  ==  3.85 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 1.97 hrs.
+        >> Duración de la ruta: 3.85 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #006  |  ORIGEN: EBCI  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 06/09/2025 10:45
+        >> PRODUCTO #006  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 21/10/2025 01:51
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                EBCI  06/09/2025 08:47  -->  EKCH  06/09/2025 10:45  ==  1.97 hrs.
+                                UBBB  20/10/2025 22:00  -->  OSDI  21/10/2025 01:51  ==  3.85 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 1.97 hrs.
+        >> Duración de la ruta: 3.85 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #007  |  ORIGEN: EBCI  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 06/09/2025 10:45
+        >> PRODUCTO #007  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 21/10/2025 01:51
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                EBCI  06/09/2025 08:47  -->  EKCH  06/09/2025 10:45  ==  1.97 hrs.
+                                UBBB  20/10/2025 22:00  -->  OSDI  21/10/2025 01:51  ==  3.85 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 1.97 hrs.
+        >> Duración de la ruta: 3.85 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #008  |  ORIGEN: EBCI  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 06/09/2025 10:45
+        >> PRODUCTO #008  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 21/10/2025 01:51
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                EBCI  06/09/2025 08:47  -->  EKCH  06/09/2025 10:45  ==  1.97 hrs.
+                                UBBB  20/10/2025 22:00  -->  OSDI  21/10/2025 01:51  ==  3.85 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 1.97 hrs.
+        >> Duración de la ruta: 3.85 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #009  |  ORIGEN: EBCI  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 06/09/2025 10:45
+        >> PRODUCTO #009  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 21/10/2025 01:51
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                EBCI  06/09/2025 08:47  -->  EKCH  06/09/2025 10:45  ==  1.97 hrs.
+                                UBBB  20/10/2025 22:00  -->  OSDI  21/10/2025 01:51  ==  3.85 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 1.97 hrs.
+        >> Duración de la ruta: 3.85 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #010  |  ORIGEN: EBCI  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 06/09/2025 10:45
+        >> PRODUCTO #010  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 21/10/2025 01:51
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                EBCI  06/09/2025 08:47  -->  EKCH  06/09/2025 10:45  ==  1.97 hrs.
+                                UBBB  20/10/2025 22:00  -->  OSDI  21/10/2025 01:51  ==  3.85 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 1.97 hrs.
+        >> Duración de la ruta: 3.85 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #011  |  ORIGEN: EBCI  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 06/09/2025 10:45
+        >> PRODUCTO #011  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 21/10/2025 01:51
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                EBCI  06/09/2025 08:47  -->  EKCH  06/09/2025 10:45  ==  1.97 hrs.
+                                UBBB  20/10/2025 22:00  -->  OSDI  21/10/2025 01:51  ==  3.85 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 1.97 hrs.
+        >> Duración de la ruta: 3.85 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #012  |  ORIGEN: EBCI  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 06/09/2025 10:45
+        >> PRODUCTO #012  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 21/10/2025 01:51
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                EBCI  06/09/2025 08:47  -->  EKCH  06/09/2025 10:45  ==  1.97 hrs.
+                                UBBB  20/10/2025 22:00  -->  OSDI  21/10/2025 01:51  ==  3.85 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 1.97 hrs.
+        >> Duración de la ruta: 3.85 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #013  |  ORIGEN: EBCI  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 06/09/2025 10:45
+        >> PRODUCTO #013  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 21/10/2025 01:51
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                EBCI  06/09/2025 08:47  -->  EKCH  06/09/2025 10:45  ==  1.97 hrs.
+                                UBBB  20/10/2025 22:00  -->  OSDI  21/10/2025 01:51  ==  3.85 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 1.97 hrs.
+        >> Duración de la ruta: 3.85 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #014  |  ORIGEN: EBCI  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 06/09/2025 10:45
+        >> PRODUCTO #014  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 21/10/2025 01:51
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                EBCI  06/09/2025 08:47  -->  EKCH  06/09/2025 10:45  ==  1.97 hrs.
+                                UBBB  20/10/2025 22:00  -->  OSDI  21/10/2025 01:51  ==  3.85 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 1.97 hrs.
+        >> Duración de la ruta: 3.85 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #015  |  ORIGEN: EBCI  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 06/09/2025 10:45
+        >> PRODUCTO #015  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 21/10/2025 01:51
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                EBCI  06/09/2025 08:47  -->  EKCH  06/09/2025 10:45  ==  1.97 hrs.
+                                UBBB  20/10/2025 22:00  -->  OSDI  21/10/2025 01:51  ==  3.85 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 1.97 hrs.
+        >> Duración de la ruta: 3.85 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #016  |  ORIGEN: EBCI  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 06/09/2025 10:45
+        >> PRODUCTO #016  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 21/10/2025 01:51
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                EBCI  06/09/2025 08:47  -->  EKCH  06/09/2025 10:45  ==  1.97 hrs.
+                                UBBB  20/10/2025 22:00  -->  OSDI  21/10/2025 01:51  ==  3.85 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 1.97 hrs.
+        >> Duración de la ruta: 3.85 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #017  |  ORIGEN: EBCI  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 06/09/2025 10:45
+        >> PRODUCTO #017  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 21/10/2025 01:51
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                EBCI  06/09/2025 08:47  -->  EKCH  06/09/2025 10:45  ==  1.97 hrs.
+                                UBBB  20/10/2025 22:00  -->  OSDI  21/10/2025 01:51  ==  3.85 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 1.97 hrs.
+        >> Duración de la ruta: 3.85 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #018  |  ORIGEN: EBCI  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 06/09/2025 10:45
+        >> PRODUCTO #018  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 21/10/2025 01:51
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                EBCI  06/09/2025 08:47  -->  EKCH  06/09/2025 10:45  ==  1.97 hrs.
+                                UBBB  20/10/2025 22:00  -->  OSDI  21/10/2025 01:51  ==  3.85 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 1.97 hrs.
+        >> Duración de la ruta: 3.85 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #019  |  ORIGEN: EBCI  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 06/09/2025 10:45
+        >> PRODUCTO #019  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 21/10/2025 01:51
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                EBCI  06/09/2025 08:47  -->  EKCH  06/09/2025 10:45  ==  1.97 hrs.
+                                UBBB  20/10/2025 22:00  -->  OSDI  21/10/2025 01:51  ==  3.85 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 1.97 hrs.
+        >> Duración de la ruta: 3.85 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #020  |  ORIGEN: EBCI  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 06/09/2025 10:45
+        >> PRODUCTO #020  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 21/10/2025 01:51
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                EBCI  06/09/2025 08:47  -->  EKCH  06/09/2025 10:45  ==  1.97 hrs.
+                                UBBB  20/10/2025 22:00  -->  OSDI  21/10/2025 01:51  ==  3.85 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 1.97 hrs.
+        >> Duración de la ruta: 3.85 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #021  |  ORIGEN: EBCI  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 06/09/2025 10:45
+        >> PRODUCTO #021  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 21/10/2025 01:51
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                EBCI  06/09/2025 08:47  -->  EKCH  06/09/2025 10:45  ==  1.97 hrs.
+                                UBBB  20/10/2025 22:00  -->  OSDI  21/10/2025 01:51  ==  3.85 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 1.97 hrs.
+        >> Duración de la ruta: 3.85 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #022  |  ORIGEN: EBCI  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 06/09/2025 10:45
+        >> PRODUCTO #022  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 21/10/2025 01:51
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                EBCI  06/09/2025 08:47  -->  EKCH  06/09/2025 10:45  ==  1.97 hrs.
+                                UBBB  20/10/2025 22:00  -->  OSDI  21/10/2025 01:51  ==  3.85 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 1.97 hrs.
+        >> Duración de la ruta: 3.85 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #023  |  ORIGEN: EBCI  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 06/09/2025 10:45
+        >> PRODUCTO #023  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 21/10/2025 01:51
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                EBCI  06/09/2025 08:47  -->  EKCH  06/09/2025 10:45  ==  1.97 hrs.
+                                UBBB  20/10/2025 22:00  -->  OSDI  21/10/2025 01:51  ==  3.85 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 1.97 hrs.
+        >> Duración de la ruta: 3.85 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #024  |  ORIGEN: EBCI  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 06/09/2025 10:45
+        >> PRODUCTO #024  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 21/10/2025 01:51
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                EBCI  06/09/2025 08:47  -->  EKCH  06/09/2025 10:45  ==  1.97 hrs.
+                                UBBB  20/10/2025 22:00  -->  OSDI  21/10/2025 01:51  ==  3.85 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 1.97 hrs.
+        >> Duración de la ruta: 3.85 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #025  |  ORIGEN: EBCI  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 06/09/2025 10:45
+        >> PRODUCTO #025  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 21/10/2025 01:51
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                EBCI  06/09/2025 08:47  -->  EKCH  06/09/2025 10:45  ==  1.97 hrs.
+                                UBBB  20/10/2025 22:00  -->  OSDI  21/10/2025 01:51  ==  3.85 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 1.97 hrs.
+        >> Duración de la ruta: 3.85 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #026  |  ORIGEN: EBCI  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 06/09/2025 10:45
+        >> PRODUCTO #026  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 21/10/2025 01:51
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                EBCI  06/09/2025 08:47  -->  EKCH  06/09/2025 10:45  ==  1.97 hrs.
+                                UBBB  20/10/2025 22:00  -->  OSDI  21/10/2025 01:51  ==  3.85 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 1.97 hrs.
+        >> Duración de la ruta: 3.85 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #027  |  ORIGEN: EBCI  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 06/09/2025 10:45
+        >> PRODUCTO #027  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 21/10/2025 01:51
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                EBCI  06/09/2025 08:47  -->  EKCH  06/09/2025 10:45  ==  1.97 hrs.
+                                UBBB  20/10/2025 22:00  -->  OSDI  21/10/2025 01:51  ==  3.85 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 1.97 hrs.
+        >> Duración de la ruta: 3.85 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #028  |  ORIGEN: EBCI  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 06/09/2025 10:45
+        >> PRODUCTO #028  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 21/10/2025 01:51
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                EBCI  06/09/2025 08:47  -->  EKCH  06/09/2025 10:45  ==  1.97 hrs.
+                                UBBB  20/10/2025 22:00  -->  OSDI  21/10/2025 01:51  ==  3.85 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 1.97 hrs.
+        >> Duración de la ruta: 3.85 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #029  |  ORIGEN: EBCI  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 06/09/2025 10:45
+        >> PRODUCTO #029  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 21/10/2025 01:51
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                EBCI  06/09/2025 08:47  -->  EKCH  06/09/2025 10:45  ==  1.97 hrs.
+                                UBBB  20/10/2025 22:00  -->  OSDI  21/10/2025 01:51  ==  3.85 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 1.97 hrs.
+        >> Duración de la ruta: 3.85 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #030  |  ORIGEN: EBCI  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 06/09/2025 10:45
+        >> PRODUCTO #030  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 21/10/2025 01:51
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                EBCI  06/09/2025 08:47  -->  EKCH  06/09/2025 10:45  ==  1.97 hrs.
+                                UBBB  20/10/2025 22:00  -->  OSDI  21/10/2025 01:51  ==  3.85 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 1.97 hrs.
+        >> Duración de la ruta: 3.85 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #031  |  ORIGEN: EBCI  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 06/09/2025 10:45
+        >> PRODUCTO #031  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 21/10/2025 01:51
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                EBCI  06/09/2025 08:47  -->  EKCH  06/09/2025 10:45  ==  1.97 hrs.
+                                UBBB  20/10/2025 22:00  -->  OSDI  21/10/2025 01:51  ==  3.85 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 1.97 hrs.
+        >> Duración de la ruta: 3.85 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #032  |  ORIGEN: EBCI  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 06/09/2025 10:45
+        >> PRODUCTO #032  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 21/10/2025 01:51
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                EBCI  06/09/2025 08:47  -->  EKCH  06/09/2025 10:45  ==  1.97 hrs.
+                                UBBB  20/10/2025 22:00  -->  OSDI  21/10/2025 01:51  ==  3.85 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 1.97 hrs.
+        >> Duración de la ruta: 3.85 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #033  |  ORIGEN: EBCI  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 06/09/2025 10:45
+        >> PRODUCTO #033  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 21/10/2025 01:51
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                EBCI  06/09/2025 08:47  -->  EKCH  06/09/2025 10:45  ==  1.97 hrs.
+                                UBBB  20/10/2025 22:00  -->  OSDI  21/10/2025 01:51  ==  3.85 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 1.97 hrs.
+        >> Duración de la ruta: 3.85 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #034  |  ORIGEN: EBCI  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 06/09/2025 10:45
+        >> PRODUCTO #034  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 21/10/2025 01:51
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                EBCI  06/09/2025 08:47  -->  EKCH  06/09/2025 10:45  ==  1.97 hrs.
+                                UBBB  20/10/2025 22:00  -->  OSDI  21/10/2025 01:51  ==  3.85 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 1.97 hrs.
+        >> Duración de la ruta: 3.85 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #035  |  ORIGEN: EBCI  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 06/09/2025 10:45
+        >> PRODUCTO #035  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 21/10/2025 01:51
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                EBCI  06/09/2025 08:47  -->  EKCH  06/09/2025 10:45  ==  1.97 hrs.
+                                UBBB  20/10/2025 22:00  -->  OSDI  21/10/2025 01:51  ==  3.85 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 1.97 hrs.
+        >> Duración de la ruta: 3.85 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #036  |  ORIGEN: EBCI  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 06/09/2025 10:45
+        >> PRODUCTO #036  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 21/10/2025 01:51
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                EBCI  06/09/2025 08:47  -->  EKCH  06/09/2025 10:45  ==  1.97 hrs.
+                                UBBB  20/10/2025 22:00  -->  OSDI  21/10/2025 01:51  ==  3.85 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 1.97 hrs.
+        >> Duración de la ruta: 3.85 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #037  |  ORIGEN: EBCI  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 06/09/2025 10:45
+        >> PRODUCTO #037  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 21/10/2025 01:51
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                EBCI  06/09/2025 08:47  -->  EKCH  06/09/2025 10:45  ==  1.97 hrs.
+                                UBBB  20/10/2025 22:00  -->  OSDI  21/10/2025 01:51  ==  3.85 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 1.97 hrs.
+        >> Duración de la ruta: 3.85 hrs.
+        ***********************************************************************************************************************
+        >> PRODUCTO #038  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 21/10/2025 01:51
+
+                                        ORIGEN                       DESTINO           TRANSCURRIDO
+                                UBBB  20/10/2025 22:00  -->  OSDI  21/10/2025 01:51  ==  3.85 hrs.
+        .......................................................................................................................
+        Resumen de la ruta:
+        >> Duración de la ruta: 3.85 hrs.
+        ***********************************************************************************************************************
+        >> PRODUCTO #039  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 21/10/2025 01:51
+
+                                        ORIGEN                       DESTINO           TRANSCURRIDO
+                                UBBB  20/10/2025 22:00  -->  OSDI  21/10/2025 01:51  ==  3.85 hrs.
+        .......................................................................................................................
+        Resumen de la ruta:
+        >> Duración de la ruta: 3.85 hrs.
+        ***********************************************************************************************************************
+        >> PRODUCTO #040  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 21/10/2025 01:51
+
+                                        ORIGEN                       DESTINO           TRANSCURRIDO
+                                UBBB  20/10/2025 22:00  -->  OSDI  21/10/2025 01:51  ==  3.85 hrs.
+        .......................................................................................................................
+        Resumen de la ruta:
+        >> Duración de la ruta: 3.85 hrs.
+        ***********************************************************************************************************************
+        >> PRODUCTO #041  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 21/10/2025 01:51
+
+                                        ORIGEN                       DESTINO           TRANSCURRIDO
+                                UBBB  20/10/2025 22:00  -->  OSDI  21/10/2025 01:51  ==  3.85 hrs.
+        .......................................................................................................................
+        Resumen de la ruta:
+        >> Duración de la ruta: 3.85 hrs.
+        ***********************************************************************************************************************
+        >> PRODUCTO #042  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 21/10/2025 01:51
+
+                                        ORIGEN                       DESTINO           TRANSCURRIDO
+                                UBBB  20/10/2025 22:00  -->  OSDI  21/10/2025 01:51  ==  3.85 hrs.
+        .......................................................................................................................
+        Resumen de la ruta:
+        >> Duración de la ruta: 3.85 hrs.
+        ***********************************************************************************************************************
+        >> PRODUCTO #043  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 21/10/2025 01:51
+
+                                        ORIGEN                       DESTINO           TRANSCURRIDO
+                                UBBB  20/10/2025 22:00  -->  OSDI  21/10/2025 01:51  ==  3.85 hrs.
+        .......................................................................................................................
+        Resumen de la ruta:
+        >> Duración de la ruta: 3.85 hrs.
     -------------------------------------------------------------------------------------------------------------------------------
     Resumen del pedido:
-    >> Tiempo optimizado: 1693.98 hrs.
+    >> Tiempo optimizado: 1945.75 hrs.
 =======================================================================================================================================
