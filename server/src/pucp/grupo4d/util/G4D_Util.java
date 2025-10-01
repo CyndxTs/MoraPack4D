@@ -26,7 +26,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class G4D_Util {
-    private static final double EARTH_RADIUS_KM = 6371.0;
+    private static final Double EARTH_RADIUS_KM = 6371.0;
     private static final String disp_ldt = "dd/MM/yyyy HH:mm";
     private static final String serv_ldt = "yyyy-MM-dd'T'HH:mm:ss";
     private static final String disp_lt = "HH:mm";
@@ -161,7 +161,6 @@ public class G4D_Util {
         try (FileInputStream fis = new FileInputStream(file)) {
             byte[] bom = new byte[3];
             Integer n = fis.read(bom, 0, bom.length);
-
             if (n >= 2) {
                 if ((bom[0] & 0xFF) == 0xFF && (bom[1] & 0xFF) == 0xFE) {
                     return StandardCharsets.UTF_16LE; // UTF-16 Little Endian
@@ -311,7 +310,7 @@ public class G4D_Util {
             //
             private static String getAnsiString(int ansiCode) {
                 return "\u001B[" + ansiCode + "m";
-            }            
+            }
         }
 
         private static final java.util.logging.Logger logger;
@@ -347,21 +346,21 @@ public class G4D_Util {
         }
         //
         public static void log_err(String msg) {
-            G4D_Util.Logger.Color.set_color("Rd");
+            set_color("Rd");
             log(msg);
-            G4D_Util.Logger.Color.set_color("Rs");
+            set_color("Rs");
         }
         //
         public static void logln_err(String msg) {
-            G4D_Util.Logger.Color.set_color("Rd");
+            set_color("Rd");
             logln(msg);
-            G4D_Util.Logger.Color.set_color("Rs");
+            set_color("Rs");
         }
         //
         public static void logf_err(String msgFormat, Object... args) {
-            G4D_Util.Logger.Color.set_color("Rd");
+            set_color("Rd");
             logf(msgFormat, args);
-            G4D_Util.Logger.Color.set_color("Rs");
+            set_color("Rs");
         }
         //
         public static void delete(int numChars) {
@@ -377,11 +376,11 @@ public class G4D_Util {
         }
         //
         public static void delete_lines(int numLines) {
-            for(int i = 0;i < numLines - 1;i++) {
-                logger.info(G4D_Util.Logger.Action.delete_line());
-                logger.info(G4D_Util.Logger.Action.to_ansi("U",1));
-            }
             logger.info(G4D_Util.Logger.Action.delete_line());
+            for(int i = 0;i < numLines - 1;i++) {
+                logger.info(G4D_Util.Logger.Action.to_ansi("U",1));
+                logger.info(G4D_Util.Logger.Action.delete_line());
+            }
         }
         //
         public static void set_color(String colorId) {

@@ -131,7 +131,9 @@ public class Solucion {
                 List<Vuelo> vuelos = producto.getRuta().getVuelos();
                 Aeropuerto aOrig = vuelos.getFirst().getPlan().getOrigen();
                 Aeropuerto aDest = vuelos.getLast().getPlan().getDestino();
-                sumaRatios += (producto.getRuta().getDistancia() / aOrig.obtenerDistanciaHasta(aDest)) - 1;
+                Double dRecorrida = producto.getRuta().getDistancia();
+                Double dIdeal = aOrig.obtenerDistanciaHasta(aDest);
+                sumaRatios += (dRecorrida / dIdeal) - 1;
             }
         }
         if (cantProd == 0)

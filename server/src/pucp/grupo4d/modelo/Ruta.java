@@ -30,7 +30,7 @@ public class Ruta {
         Ruta ruta = new Ruta();
         ruta.id = this.id;
         ruta.duracion = this.duracion;
-        ruta.distancia = this.duracion;
+        ruta.distancia = this.distancia;
         ruta.tipo = this.tipo;
         for (Vuelo vuelo : this.vuelos) ruta.vuelos.add(poolVuelos.computeIfAbsent(vuelo.getId(), id -> vuelo.replicar(poolAeropuertos)));
         return ruta;
@@ -106,5 +106,7 @@ public class Ruta {
 
     public void setVuelos(List<Vuelo> vuelos) {
         this.vuelos = vuelos;
+        setDistancia();
+        setDuracion();
     }
 }

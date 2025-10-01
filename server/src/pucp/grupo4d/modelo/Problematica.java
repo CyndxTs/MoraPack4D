@@ -28,6 +28,7 @@ public class Problematica {
     public static final Integer MAX_DIAS_ENTREGA_INTRACONTINENTAL = 2;
     public static final Integer MAX_DIAS_ENTREGA_INTERCONTINENTAL = 3;
     public static final Double MAX_HORAS_RECOJO = 2.0;
+    public static final Double MIN_HORAS_ESTANCIA = 0.5;
     public Map<String, Aeropuerto> origenes;
     public List<Aeropuerto> destinos;
     public List<PlanDeVuelo> planes;
@@ -162,7 +163,7 @@ public class Problematica {
         // Declaracion de variables
         String rutaArchivo = "Pedidos.txt";
         Random random = new Random();
-        int minPed = 1,maxPed = 2, ped_minNumProd = 35,ped_maxNumProd = 45, ped_maxNumCli = 5;
+        int minPed = 5,maxPed = 6, ped_minNumProd = 250,ped_maxNumProd = 265, ped_maxNumCli = 20;
         // Generando archivo
         try {
             // Inicializaion del archivo y scanner
