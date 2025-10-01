@@ -1,864 +1,834 @@
 =======================================================================================================================================
                                                         FITNESS DE LA SOLUCIÓN
-                                                                4555.88
+                                                                3842.60
 
                          RP. CUMPLIMIENTO TEMPORAL          RP. DESVIACION ESPACIAL        RP. DISPONIBILIDAD
-                                  0.229                            2.133                   V: 0.957 | A: 0.876
+                                  0.201                            0.155                   V: 0.868 | A: 0.785
 =======================================================================================================================================
                                                                PEDIDO #1
     -------------------------------------------------------------------------------------------------------------------------------
      CLIENTE                                DESTINO        NUM. PRODUCTOS MPE      INSTANTE DE REGISTRO
-     0000002                                OSDI                  043                20/10/2025 23:06
+     0000002                                SGAS                  043                12/10/2025 08:10
 
                                                  > SECUENCIA DE VUELOS PLANIFICADOS <
         ***********************************************************************************************************************
-        >> PRODUCTO #001  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 21/10/2025 01:51
+        >> PRODUCTO #001  |  ORIGEN: SPIM  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 12/10/2025 20:40
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                UBBB  20/10/2025 22:00  -->  OSDI  21/10/2025 01:51  ==  3.85 hrs.
+                                SPIM  12/10/2025 10:20  -->  SABE  12/10/2025 15:14  ==  4.90 hrs.
+                                SABE  12/10/2025 17:25  -->  SGAS  12/10/2025 20:40  ==  3.25 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 3.85 hrs.
+        >> Duración de la ruta: 8.15 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #002  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 21/10/2025 01:51
+        >> PRODUCTO #002  |  ORIGEN: SPIM  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 12/10/2025 20:40
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                UBBB  20/10/2025 22:00  -->  OSDI  21/10/2025 01:51  ==  3.85 hrs.
+                                SPIM  12/10/2025 10:20  -->  SABE  12/10/2025 15:14  ==  4.90 hrs.
+                                SABE  12/10/2025 17:25  -->  SGAS  12/10/2025 20:40  ==  3.25 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 3.85 hrs.
+        >> Duración de la ruta: 8.15 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #003  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 21/10/2025 01:51
+        >> PRODUCTO #003  |  ORIGEN: SPIM  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 12/10/2025 20:40
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                UBBB  20/10/2025 22:00  -->  OSDI  21/10/2025 01:51  ==  3.85 hrs.
+                                SPIM  12/10/2025 10:20  -->  SABE  12/10/2025 15:14  ==  4.90 hrs.
+                                SABE  12/10/2025 17:25  -->  SGAS  12/10/2025 20:40  ==  3.25 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 3.85 hrs.
+        >> Duración de la ruta: 8.15 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #004  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 21/10/2025 01:51
+        >> PRODUCTO #004  |  ORIGEN: SPIM  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 12/10/2025 20:40
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                UBBB  20/10/2025 22:00  -->  OSDI  21/10/2025 01:51  ==  3.85 hrs.
+                                SPIM  12/10/2025 10:20  -->  SABE  12/10/2025 15:14  ==  4.90 hrs.
+                                SABE  12/10/2025 17:25  -->  SGAS  12/10/2025 20:40  ==  3.25 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 3.85 hrs.
+        >> Duración de la ruta: 8.15 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #005  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 21/10/2025 01:51
+        >> PRODUCTO #005  |  ORIGEN: SPIM  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 12/10/2025 20:40
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                UBBB  20/10/2025 22:00  -->  OSDI  21/10/2025 01:51  ==  3.85 hrs.
+                                SPIM  12/10/2025 10:20  -->  SABE  12/10/2025 15:14  ==  4.90 hrs.
+                                SABE  12/10/2025 17:25  -->  SGAS  12/10/2025 20:40  ==  3.25 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 3.85 hrs.
+        >> Duración de la ruta: 8.15 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #006  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 21/10/2025 01:51
+        >> PRODUCTO #006  |  ORIGEN: SPIM  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 12/10/2025 20:40
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                UBBB  20/10/2025 22:00  -->  OSDI  21/10/2025 01:51  ==  3.85 hrs.
+                                SPIM  12/10/2025 10:20  -->  SABE  12/10/2025 15:14  ==  4.90 hrs.
+                                SABE  12/10/2025 17:25  -->  SGAS  12/10/2025 20:40  ==  3.25 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 3.85 hrs.
+        >> Duración de la ruta: 8.15 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #007  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 21/10/2025 01:51
+        >> PRODUCTO #007  |  ORIGEN: SPIM  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 12/10/2025 20:40
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                UBBB  20/10/2025 22:00  -->  OSDI  21/10/2025 01:51  ==  3.85 hrs.
+                                SPIM  12/10/2025 10:20  -->  SABE  12/10/2025 15:14  ==  4.90 hrs.
+                                SABE  12/10/2025 17:25  -->  SGAS  12/10/2025 20:40  ==  3.25 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 3.85 hrs.
+        >> Duración de la ruta: 8.15 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #008  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 21/10/2025 01:51
+        >> PRODUCTO #008  |  ORIGEN: SPIM  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 12/10/2025 20:40
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                UBBB  20/10/2025 22:00  -->  OSDI  21/10/2025 01:51  ==  3.85 hrs.
+                                SPIM  12/10/2025 10:20  -->  SABE  12/10/2025 15:14  ==  4.90 hrs.
+                                SABE  12/10/2025 17:25  -->  SGAS  12/10/2025 20:40  ==  3.25 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 3.85 hrs.
+        >> Duración de la ruta: 8.15 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #009  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 21/10/2025 01:51
+        >> PRODUCTO #009  |  ORIGEN: SPIM  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 12/10/2025 20:40
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                UBBB  20/10/2025 22:00  -->  OSDI  21/10/2025 01:51  ==  3.85 hrs.
+                                SPIM  12/10/2025 10:20  -->  SABE  12/10/2025 15:14  ==  4.90 hrs.
+                                SABE  12/10/2025 17:25  -->  SGAS  12/10/2025 20:40  ==  3.25 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 3.85 hrs.
+        >> Duración de la ruta: 8.15 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #010  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 21/10/2025 01:51
+        >> PRODUCTO #010  |  ORIGEN: SPIM  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 12/10/2025 20:40
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                UBBB  20/10/2025 22:00  -->  OSDI  21/10/2025 01:51  ==  3.85 hrs.
+                                SPIM  12/10/2025 10:20  -->  SABE  12/10/2025 15:14  ==  4.90 hrs.
+                                SABE  12/10/2025 17:25  -->  SGAS  12/10/2025 20:40  ==  3.25 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 3.85 hrs.
+        >> Duración de la ruta: 8.15 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #011  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 21/10/2025 01:51
+        >> PRODUCTO #011  |  ORIGEN: SPIM  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 12/10/2025 20:40
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                UBBB  20/10/2025 22:00  -->  OSDI  21/10/2025 01:51  ==  3.85 hrs.
+                                SPIM  12/10/2025 10:20  -->  SABE  12/10/2025 15:14  ==  4.90 hrs.
+                                SABE  12/10/2025 17:25  -->  SGAS  12/10/2025 20:40  ==  3.25 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 3.85 hrs.
+        >> Duración de la ruta: 8.15 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #012  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 21/10/2025 01:51
+        >> PRODUCTO #012  |  ORIGEN: SPIM  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 12/10/2025 20:40
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                UBBB  20/10/2025 22:00  -->  OSDI  21/10/2025 01:51  ==  3.85 hrs.
+                                SPIM  12/10/2025 10:20  -->  SABE  12/10/2025 15:14  ==  4.90 hrs.
+                                SABE  12/10/2025 17:25  -->  SGAS  12/10/2025 20:40  ==  3.25 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 3.85 hrs.
+        >> Duración de la ruta: 8.15 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #013  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 21/10/2025 01:51
+        >> PRODUCTO #013  |  ORIGEN: SPIM  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 12/10/2025 20:40
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                UBBB  20/10/2025 22:00  -->  OSDI  21/10/2025 01:51  ==  3.85 hrs.
+                                SPIM  12/10/2025 10:20  -->  SABE  12/10/2025 15:14  ==  4.90 hrs.
+                                SABE  12/10/2025 17:25  -->  SGAS  12/10/2025 20:40  ==  3.25 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 3.85 hrs.
+        >> Duración de la ruta: 8.15 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #014  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 21/10/2025 01:51
+        >> PRODUCTO #014  |  ORIGEN: SPIM  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 12/10/2025 20:40
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                UBBB  20/10/2025 22:00  -->  OSDI  21/10/2025 01:51  ==  3.85 hrs.
+                                SPIM  12/10/2025 10:20  -->  SABE  12/10/2025 15:14  ==  4.90 hrs.
+                                SABE  12/10/2025 17:25  -->  SGAS  12/10/2025 20:40  ==  3.25 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 3.85 hrs.
+        >> Duración de la ruta: 8.15 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #015  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 21/10/2025 01:51
+        >> PRODUCTO #015  |  ORIGEN: SPIM  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 12/10/2025 20:40
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                UBBB  20/10/2025 22:00  -->  OSDI  21/10/2025 01:51  ==  3.85 hrs.
+                                SPIM  12/10/2025 10:20  -->  SABE  12/10/2025 15:14  ==  4.90 hrs.
+                                SABE  12/10/2025 17:25  -->  SGAS  12/10/2025 20:40  ==  3.25 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 3.85 hrs.
+        >> Duración de la ruta: 8.15 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #016  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 21/10/2025 01:51
+        >> PRODUCTO #016  |  ORIGEN: SPIM  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 12/10/2025 20:40
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                UBBB  20/10/2025 22:00  -->  OSDI  21/10/2025 01:51  ==  3.85 hrs.
+                                SPIM  12/10/2025 10:20  -->  SABE  12/10/2025 15:14  ==  4.90 hrs.
+                                SABE  12/10/2025 17:25  -->  SGAS  12/10/2025 20:40  ==  3.25 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 3.85 hrs.
+        >> Duración de la ruta: 8.15 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #017  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 21/10/2025 01:51
+        >> PRODUCTO #017  |  ORIGEN: SPIM  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 12/10/2025 20:40
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                UBBB  20/10/2025 22:00  -->  OSDI  21/10/2025 01:51  ==  3.85 hrs.
+                                SPIM  12/10/2025 10:20  -->  SABE  12/10/2025 15:14  ==  4.90 hrs.
+                                SABE  12/10/2025 17:25  -->  SGAS  12/10/2025 20:40  ==  3.25 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 3.85 hrs.
+        >> Duración de la ruta: 8.15 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #018  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 21/10/2025 01:51
+        >> PRODUCTO #018  |  ORIGEN: SPIM  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 12/10/2025 20:40
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                UBBB  20/10/2025 22:00  -->  OSDI  21/10/2025 01:51  ==  3.85 hrs.
+                                SPIM  12/10/2025 10:20  -->  SABE  12/10/2025 15:14  ==  4.90 hrs.
+                                SABE  12/10/2025 17:25  -->  SGAS  12/10/2025 20:40  ==  3.25 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 3.85 hrs.
+        >> Duración de la ruta: 8.15 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #019  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 21/10/2025 01:51
+        >> PRODUCTO #019  |  ORIGEN: SPIM  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 12/10/2025 20:40
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                UBBB  20/10/2025 22:00  -->  OSDI  21/10/2025 01:51  ==  3.85 hrs.
+                                SPIM  12/10/2025 10:20  -->  SABE  12/10/2025 15:14  ==  4.90 hrs.
+                                SABE  12/10/2025 17:25  -->  SGAS  12/10/2025 20:40  ==  3.25 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 3.85 hrs.
+        >> Duración de la ruta: 8.15 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #020  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 21/10/2025 01:51
+        >> PRODUCTO #020  |  ORIGEN: SPIM  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 12/10/2025 20:40
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                UBBB  20/10/2025 22:00  -->  OSDI  21/10/2025 01:51  ==  3.85 hrs.
+                                SPIM  12/10/2025 10:20  -->  SABE  12/10/2025 15:14  ==  4.90 hrs.
+                                SABE  12/10/2025 17:25  -->  SGAS  12/10/2025 20:40  ==  3.25 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 3.85 hrs.
+        >> Duración de la ruta: 8.15 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #021  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 21/10/2025 01:51
+        >> PRODUCTO #021  |  ORIGEN: SPIM  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 12/10/2025 20:40
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                UBBB  20/10/2025 22:00  -->  OSDI  21/10/2025 01:51  ==  3.85 hrs.
+                                SPIM  12/10/2025 10:20  -->  SABE  12/10/2025 15:14  ==  4.90 hrs.
+                                SABE  12/10/2025 17:25  -->  SGAS  12/10/2025 20:40  ==  3.25 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 3.85 hrs.
+        >> Duración de la ruta: 8.15 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #022  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 21/10/2025 01:51
+        >> PRODUCTO #022  |  ORIGEN: SPIM  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 12/10/2025 20:40
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                UBBB  20/10/2025 22:00  -->  OSDI  21/10/2025 01:51  ==  3.85 hrs.
+                                SPIM  12/10/2025 10:20  -->  SABE  12/10/2025 15:14  ==  4.90 hrs.
+                                SABE  12/10/2025 17:25  -->  SGAS  12/10/2025 20:40  ==  3.25 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 3.85 hrs.
+        >> Duración de la ruta: 8.15 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #023  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 21/10/2025 01:51
+        >> PRODUCTO #023  |  ORIGEN: SPIM  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 12/10/2025 20:40
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                UBBB  20/10/2025 22:00  -->  OSDI  21/10/2025 01:51  ==  3.85 hrs.
+                                SPIM  12/10/2025 10:20  -->  SABE  12/10/2025 15:14  ==  4.90 hrs.
+                                SABE  12/10/2025 17:25  -->  SGAS  12/10/2025 20:40  ==  3.25 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 3.85 hrs.
+        >> Duración de la ruta: 8.15 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #024  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 21/10/2025 01:51
+        >> PRODUCTO #024  |  ORIGEN: SPIM  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 12/10/2025 20:40
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                UBBB  20/10/2025 22:00  -->  OSDI  21/10/2025 01:51  ==  3.85 hrs.
+                                SPIM  12/10/2025 10:20  -->  SABE  12/10/2025 15:14  ==  4.90 hrs.
+                                SABE  12/10/2025 17:25  -->  SGAS  12/10/2025 20:40  ==  3.25 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 3.85 hrs.
+        >> Duración de la ruta: 8.15 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #025  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 21/10/2025 01:51
+        >> PRODUCTO #025  |  ORIGEN: SPIM  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 12/10/2025 20:40
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                UBBB  20/10/2025 22:00  -->  OSDI  21/10/2025 01:51  ==  3.85 hrs.
+                                SPIM  12/10/2025 10:20  -->  SABE  12/10/2025 15:14  ==  4.90 hrs.
+                                SABE  12/10/2025 17:25  -->  SGAS  12/10/2025 20:40  ==  3.25 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 3.85 hrs.
+        >> Duración de la ruta: 8.15 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #026  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 21/10/2025 01:51
+        >> PRODUCTO #026  |  ORIGEN: SPIM  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 12/10/2025 20:40
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                UBBB  20/10/2025 22:00  -->  OSDI  21/10/2025 01:51  ==  3.85 hrs.
+                                SPIM  12/10/2025 10:20  -->  SABE  12/10/2025 15:14  ==  4.90 hrs.
+                                SABE  12/10/2025 17:25  -->  SGAS  12/10/2025 20:40  ==  3.25 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 3.85 hrs.
+        >> Duración de la ruta: 8.15 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #027  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 21/10/2025 01:51
+        >> PRODUCTO #027  |  ORIGEN: SPIM  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 12/10/2025 20:40
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                UBBB  20/10/2025 22:00  -->  OSDI  21/10/2025 01:51  ==  3.85 hrs.
+                                SPIM  12/10/2025 10:20  -->  SABE  12/10/2025 15:14  ==  4.90 hrs.
+                                SABE  12/10/2025 17:25  -->  SGAS  12/10/2025 20:40  ==  3.25 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 3.85 hrs.
+        >> Duración de la ruta: 8.15 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #028  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 21/10/2025 01:51
+        >> PRODUCTO #028  |  ORIGEN: SPIM  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 12/10/2025 20:40
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                UBBB  20/10/2025 22:00  -->  OSDI  21/10/2025 01:51  ==  3.85 hrs.
+                                SPIM  12/10/2025 10:20  -->  SABE  12/10/2025 15:14  ==  4.90 hrs.
+                                SABE  12/10/2025 17:25  -->  SGAS  12/10/2025 20:40  ==  3.25 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 3.85 hrs.
+        >> Duración de la ruta: 8.15 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #029  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 21/10/2025 01:51
+        >> PRODUCTO #029  |  ORIGEN: SPIM  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 12/10/2025 20:40
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                UBBB  20/10/2025 22:00  -->  OSDI  21/10/2025 01:51  ==  3.85 hrs.
+                                SPIM  12/10/2025 10:20  -->  SABE  12/10/2025 15:14  ==  4.90 hrs.
+                                SABE  12/10/2025 17:25  -->  SGAS  12/10/2025 20:40  ==  3.25 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 3.85 hrs.
+        >> Duración de la ruta: 8.15 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #030  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 21/10/2025 01:51
+        >> PRODUCTO #030  |  ORIGEN: SPIM  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 12/10/2025 20:40
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                UBBB  20/10/2025 22:00  -->  OSDI  21/10/2025 01:51  ==  3.85 hrs.
+                                SPIM  12/10/2025 10:20  -->  SABE  12/10/2025 15:14  ==  4.90 hrs.
+                                SABE  12/10/2025 17:25  -->  SGAS  12/10/2025 20:40  ==  3.25 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 3.85 hrs.
+        >> Duración de la ruta: 8.15 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #031  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 21/10/2025 01:51
+        >> PRODUCTO #031  |  ORIGEN: SPIM  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 12/10/2025 20:40
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                UBBB  20/10/2025 22:00  -->  OSDI  21/10/2025 01:51  ==  3.85 hrs.
+                                SPIM  12/10/2025 10:20  -->  SABE  12/10/2025 15:14  ==  4.90 hrs.
+                                SABE  12/10/2025 17:25  -->  SGAS  12/10/2025 20:40  ==  3.25 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 3.85 hrs.
+        >> Duración de la ruta: 8.15 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #032  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 21/10/2025 01:51
+        >> PRODUCTO #032  |  ORIGEN: SPIM  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 12/10/2025 20:40
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                UBBB  20/10/2025 22:00  -->  OSDI  21/10/2025 01:51  ==  3.85 hrs.
+                                SPIM  12/10/2025 10:20  -->  SABE  12/10/2025 15:14  ==  4.90 hrs.
+                                SABE  12/10/2025 17:25  -->  SGAS  12/10/2025 20:40  ==  3.25 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 3.85 hrs.
+        >> Duración de la ruta: 8.15 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #033  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 21/10/2025 01:51
+        >> PRODUCTO #033  |  ORIGEN: SPIM  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 12/10/2025 20:40
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                UBBB  20/10/2025 22:00  -->  OSDI  21/10/2025 01:51  ==  3.85 hrs.
+                                SPIM  12/10/2025 10:20  -->  SABE  12/10/2025 15:14  ==  4.90 hrs.
+                                SABE  12/10/2025 17:25  -->  SGAS  12/10/2025 20:40  ==  3.25 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 3.85 hrs.
+        >> Duración de la ruta: 8.15 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #034  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 21/10/2025 01:51
+        >> PRODUCTO #034  |  ORIGEN: SPIM  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 12/10/2025 20:40
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                UBBB  20/10/2025 22:00  -->  OSDI  21/10/2025 01:51  ==  3.85 hrs.
+                                SPIM  12/10/2025 10:20  -->  SABE  12/10/2025 15:14  ==  4.90 hrs.
+                                SABE  12/10/2025 17:25  -->  SGAS  12/10/2025 20:40  ==  3.25 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 3.85 hrs.
+        >> Duración de la ruta: 8.15 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #035  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 21/10/2025 01:51
+        >> PRODUCTO #035  |  ORIGEN: SPIM  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 12/10/2025 20:40
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                UBBB  20/10/2025 22:00  -->  OSDI  21/10/2025 01:51  ==  3.85 hrs.
+                                SPIM  12/10/2025 10:20  -->  SABE  12/10/2025 15:14  ==  4.90 hrs.
+                                SABE  12/10/2025 17:25  -->  SGAS  12/10/2025 20:40  ==  3.25 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 3.85 hrs.
+        >> Duración de la ruta: 8.15 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #036  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 21/10/2025 01:51
+        >> PRODUCTO #036  |  ORIGEN: SPIM  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 12/10/2025 20:40
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                UBBB  20/10/2025 22:00  -->  OSDI  21/10/2025 01:51  ==  3.85 hrs.
+                                SPIM  12/10/2025 10:20  -->  SABE  12/10/2025 15:14  ==  4.90 hrs.
+                                SABE  12/10/2025 17:25  -->  SGAS  12/10/2025 20:40  ==  3.25 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 3.85 hrs.
+        >> Duración de la ruta: 8.15 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #037  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 21/10/2025 01:51
+        >> PRODUCTO #037  |  ORIGEN: SPIM  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 12/10/2025 20:40
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                UBBB  20/10/2025 22:00  -->  OSDI  21/10/2025 01:51  ==  3.85 hrs.
+                                SPIM  12/10/2025 10:20  -->  SABE  12/10/2025 15:14  ==  4.90 hrs.
+                                SABE  12/10/2025 17:25  -->  SGAS  12/10/2025 20:40  ==  3.25 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 3.85 hrs.
+        >> Duración de la ruta: 8.15 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #038  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 21/10/2025 01:51
+        >> PRODUCTO #038  |  ORIGEN: SPIM  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 12/10/2025 20:40
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                UBBB  20/10/2025 22:00  -->  OSDI  21/10/2025 01:51  ==  3.85 hrs.
+                                SPIM  12/10/2025 10:20  -->  SABE  12/10/2025 15:14  ==  4.90 hrs.
+                                SABE  12/10/2025 17:25  -->  SGAS  12/10/2025 20:40  ==  3.25 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 3.85 hrs.
+        >> Duración de la ruta: 8.15 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #039  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 21/10/2025 01:51
+        >> PRODUCTO #039  |  ORIGEN: SPIM  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 12/10/2025 20:40
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                UBBB  20/10/2025 22:00  -->  OSDI  21/10/2025 01:51  ==  3.85 hrs.
+                                SPIM  12/10/2025 10:20  -->  SABE  12/10/2025 15:14  ==  4.90 hrs.
+                                SABE  12/10/2025 17:25  -->  SGAS  12/10/2025 20:40  ==  3.25 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 3.85 hrs.
+        >> Duración de la ruta: 8.15 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #040  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 21/10/2025 01:51
+        >> PRODUCTO #040  |  ORIGEN: SPIM  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 12/10/2025 20:40
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                UBBB  20/10/2025 22:00  -->  OSDI  21/10/2025 01:51  ==  3.85 hrs.
+                                SPIM  12/10/2025 10:20  -->  SABE  12/10/2025 15:14  ==  4.90 hrs.
+                                SABE  12/10/2025 17:25  -->  SGAS  12/10/2025 20:40  ==  3.25 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 3.85 hrs.
+        >> Duración de la ruta: 8.15 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #041  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 21/10/2025 01:51
+        >> PRODUCTO #041  |  ORIGEN: SPIM  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 12/10/2025 20:40
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                UBBB  20/10/2025 22:00  -->  OSDI  21/10/2025 01:51  ==  3.85 hrs.
+                                SPIM  12/10/2025 10:20  -->  SABE  12/10/2025 15:14  ==  4.90 hrs.
+                                SABE  12/10/2025 17:25  -->  SGAS  12/10/2025 20:40  ==  3.25 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 3.85 hrs.
+        >> Duración de la ruta: 8.15 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #042  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 21/10/2025 01:51
+        >> PRODUCTO #042  |  ORIGEN: SPIM  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 12/10/2025 20:40
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                UBBB  20/10/2025 22:00  -->  OSDI  21/10/2025 01:51  ==  3.85 hrs.
+                                SPIM  12/10/2025 10:20  -->  SABE  12/10/2025 15:14  ==  4.90 hrs.
+                                SABE  12/10/2025 17:25  -->  SGAS  12/10/2025 20:40  ==  3.25 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 3.85 hrs.
+        >> Duración de la ruta: 8.15 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #043  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 21/10/2025 01:51
+        >> PRODUCTO #043  |  ORIGEN: SPIM  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 12/10/2025 20:40
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                UBBB  20/10/2025 22:00  -->  OSDI  21/10/2025 01:51  ==  3.85 hrs.
+                                SPIM  12/10/2025 10:20  -->  SABE  12/10/2025 15:14  ==  4.90 hrs.
+                                SABE  12/10/2025 17:25  -->  SGAS  12/10/2025 20:40  ==  3.25 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 3.85 hrs.
+        >> Duración de la ruta: 8.15 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #044  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 22/10/2025 16:26
+        >> PRODUCTO #044  |  ORIGEN: SPIM  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 13/10/2025 20:27
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                UBBB  20/10/2025 22:24  -->  OAKB  21/10/2025 02:40  ==  4.27 hrs.
-                                OAKB  21/10/2025 11:37  -->  OJAI  21/10/2025 17:37  ==  6.00 hrs.
-                                OJAI  22/10/2025 03:51  -->  OYSN  22/10/2025 07:22  ==  3.52 hrs.
-                                OYSN  22/10/2025 12:44  -->  OSDI  22/10/2025 16:26  ==  3.70 hrs.
+                                SPIM  12/10/2025 13:10  -->  SEQM  12/10/2025 16:51  ==  3.68 hrs.
+                                SEQM  13/10/2025 00:55  -->  SKBO  13/10/2025 02:42  ==  1.78 hrs.
+                                SKBO  13/10/2025 14:47  -->  SGAS  13/10/2025 20:27  ==  5.67 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 17.48 hrs.
+        >> Duración de la ruta: 11.13 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #045  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 22/10/2025 16:26
+        >> PRODUCTO #045  |  ORIGEN: SPIM  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 13/10/2025 20:27
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                UBBB  20/10/2025 22:24  -->  OAKB  21/10/2025 02:40  ==  4.27 hrs.
-                                OAKB  21/10/2025 11:37  -->  OJAI  21/10/2025 17:37  ==  6.00 hrs.
-                                OJAI  22/10/2025 03:51  -->  OYSN  22/10/2025 07:22  ==  3.52 hrs.
-                                OYSN  22/10/2025 12:44  -->  OSDI  22/10/2025 16:26  ==  3.70 hrs.
+                                SPIM  12/10/2025 13:10  -->  SEQM  12/10/2025 16:51  ==  3.68 hrs.
+                                SEQM  13/10/2025 00:55  -->  SKBO  13/10/2025 02:42  ==  1.78 hrs.
+                                SKBO  13/10/2025 14:47  -->  SGAS  13/10/2025 20:27  ==  5.67 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 17.48 hrs.
+        >> Duración de la ruta: 11.13 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #046  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 22/10/2025 16:26
+        >> PRODUCTO #046  |  ORIGEN: SPIM  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 13/10/2025 20:27
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                UBBB  20/10/2025 22:24  -->  OAKB  21/10/2025 02:40  ==  4.27 hrs.
-                                OAKB  21/10/2025 11:37  -->  OJAI  21/10/2025 17:37  ==  6.00 hrs.
-                                OJAI  22/10/2025 03:51  -->  OYSN  22/10/2025 07:22  ==  3.52 hrs.
-                                OYSN  22/10/2025 12:44  -->  OSDI  22/10/2025 16:26  ==  3.70 hrs.
+                                SPIM  12/10/2025 13:10  -->  SEQM  12/10/2025 16:51  ==  3.68 hrs.
+                                SEQM  13/10/2025 00:55  -->  SKBO  13/10/2025 02:42  ==  1.78 hrs.
+                                SKBO  13/10/2025 14:47  -->  SGAS  13/10/2025 20:27  ==  5.67 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 17.48 hrs.
+        >> Duración de la ruta: 11.13 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #047  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 22/10/2025 16:26
+        >> PRODUCTO #047  |  ORIGEN: SPIM  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 13/10/2025 20:27
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                UBBB  20/10/2025 22:24  -->  OAKB  21/10/2025 02:40  ==  4.27 hrs.
-                                OAKB  21/10/2025 11:37  -->  OJAI  21/10/2025 17:37  ==  6.00 hrs.
-                                OJAI  22/10/2025 03:51  -->  OYSN  22/10/2025 07:22  ==  3.52 hrs.
-                                OYSN  22/10/2025 12:44  -->  OSDI  22/10/2025 16:26  ==  3.70 hrs.
+                                SPIM  12/10/2025 13:10  -->  SEQM  12/10/2025 16:51  ==  3.68 hrs.
+                                SEQM  13/10/2025 00:55  -->  SKBO  13/10/2025 02:42  ==  1.78 hrs.
+                                SKBO  13/10/2025 14:47  -->  SGAS  13/10/2025 20:27  ==  5.67 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 17.48 hrs.
+        >> Duración de la ruta: 11.13 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #048  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 22/10/2025 16:26
+        >> PRODUCTO #048  |  ORIGEN: SPIM  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 13/10/2025 20:27
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                UBBB  20/10/2025 22:24  -->  OAKB  21/10/2025 02:40  ==  4.27 hrs.
-                                OAKB  21/10/2025 11:37  -->  OJAI  21/10/2025 17:37  ==  6.00 hrs.
-                                OJAI  22/10/2025 03:51  -->  OYSN  22/10/2025 07:22  ==  3.52 hrs.
-                                OYSN  22/10/2025 12:44  -->  OSDI  22/10/2025 16:26  ==  3.70 hrs.
+                                SPIM  12/10/2025 13:10  -->  SEQM  12/10/2025 16:51  ==  3.68 hrs.
+                                SEQM  13/10/2025 00:55  -->  SKBO  13/10/2025 02:42  ==  1.78 hrs.
+                                SKBO  13/10/2025 14:47  -->  SGAS  13/10/2025 20:27  ==  5.67 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 17.48 hrs.
+        >> Duración de la ruta: 11.13 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #049  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 22/10/2025 16:26
+        >> PRODUCTO #049  |  ORIGEN: SPIM  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 13/10/2025 20:27
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                UBBB  20/10/2025 22:24  -->  OAKB  21/10/2025 02:40  ==  4.27 hrs.
-                                OAKB  21/10/2025 11:37  -->  OJAI  21/10/2025 17:37  ==  6.00 hrs.
-                                OJAI  22/10/2025 03:51  -->  OYSN  22/10/2025 07:22  ==  3.52 hrs.
-                                OYSN  22/10/2025 12:44  -->  OSDI  22/10/2025 16:26  ==  3.70 hrs.
+                                SPIM  12/10/2025 13:10  -->  SEQM  12/10/2025 16:51  ==  3.68 hrs.
+                                SEQM  13/10/2025 00:55  -->  SKBO  13/10/2025 02:42  ==  1.78 hrs.
+                                SKBO  13/10/2025 14:47  -->  SGAS  13/10/2025 20:27  ==  5.67 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 17.48 hrs.
+        >> Duración de la ruta: 11.13 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #050  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 22/10/2025 16:26
+        >> PRODUCTO #050  |  ORIGEN: SPIM  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 13/10/2025 20:27
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                UBBB  20/10/2025 22:24  -->  OAKB  21/10/2025 02:40  ==  4.27 hrs.
-                                OAKB  21/10/2025 11:37  -->  OJAI  21/10/2025 17:37  ==  6.00 hrs.
-                                OJAI  22/10/2025 03:51  -->  OYSN  22/10/2025 07:22  ==  3.52 hrs.
-                                OYSN  22/10/2025 12:44  -->  OSDI  22/10/2025 16:26  ==  3.70 hrs.
+                                SPIM  12/10/2025 13:10  -->  SEQM  12/10/2025 16:51  ==  3.68 hrs.
+                                SEQM  13/10/2025 00:55  -->  SKBO  13/10/2025 02:42  ==  1.78 hrs.
+                                SKBO  13/10/2025 14:47  -->  SGAS  13/10/2025 20:27  ==  5.67 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 17.48 hrs.
+        >> Duración de la ruta: 11.13 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #051  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 22/10/2025 16:26
+        >> PRODUCTO #051  |  ORIGEN: SPIM  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 13/10/2025 20:27
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                UBBB  20/10/2025 22:24  -->  OAKB  21/10/2025 02:40  ==  4.27 hrs.
-                                OAKB  21/10/2025 11:37  -->  OJAI  21/10/2025 17:37  ==  6.00 hrs.
-                                OJAI  22/10/2025 03:51  -->  OYSN  22/10/2025 07:22  ==  3.52 hrs.
-                                OYSN  22/10/2025 12:44  -->  OSDI  22/10/2025 16:26  ==  3.70 hrs.
+                                SPIM  12/10/2025 13:10  -->  SEQM  12/10/2025 16:51  ==  3.68 hrs.
+                                SEQM  13/10/2025 00:55  -->  SKBO  13/10/2025 02:42  ==  1.78 hrs.
+                                SKBO  13/10/2025 14:47  -->  SGAS  13/10/2025 20:27  ==  5.67 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 17.48 hrs.
+        >> Duración de la ruta: 11.13 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #052  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 22/10/2025 16:26
+        >> PRODUCTO #052  |  ORIGEN: SPIM  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 13/10/2025 20:27
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                UBBB  20/10/2025 22:24  -->  OAKB  21/10/2025 02:40  ==  4.27 hrs.
-                                OAKB  21/10/2025 11:37  -->  OJAI  21/10/2025 17:37  ==  6.00 hrs.
-                                OJAI  22/10/2025 03:51  -->  OYSN  22/10/2025 07:22  ==  3.52 hrs.
-                                OYSN  22/10/2025 12:44  -->  OSDI  22/10/2025 16:26  ==  3.70 hrs.
+                                SPIM  12/10/2025 13:10  -->  SEQM  12/10/2025 16:51  ==  3.68 hrs.
+                                SEQM  13/10/2025 00:55  -->  SKBO  13/10/2025 02:42  ==  1.78 hrs.
+                                SKBO  13/10/2025 14:47  -->  SGAS  13/10/2025 20:27  ==  5.67 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 17.48 hrs.
+        >> Duración de la ruta: 11.13 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #053  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 22/10/2025 16:26
+        >> PRODUCTO #053  |  ORIGEN: SPIM  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 13/10/2025 20:27
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                UBBB  20/10/2025 22:24  -->  OAKB  21/10/2025 02:40  ==  4.27 hrs.
-                                OAKB  21/10/2025 11:37  -->  OJAI  21/10/2025 17:37  ==  6.00 hrs.
-                                OJAI  22/10/2025 03:51  -->  OYSN  22/10/2025 07:22  ==  3.52 hrs.
-                                OYSN  22/10/2025 12:44  -->  OSDI  22/10/2025 16:26  ==  3.70 hrs.
+                                SPIM  12/10/2025 13:10  -->  SEQM  12/10/2025 16:51  ==  3.68 hrs.
+                                SEQM  13/10/2025 00:55  -->  SKBO  13/10/2025 02:42  ==  1.78 hrs.
+                                SKBO  13/10/2025 14:47  -->  SGAS  13/10/2025 20:27  ==  5.67 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 17.48 hrs.
+        >> Duración de la ruta: 11.13 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #054  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 22/10/2025 16:26
+        >> PRODUCTO #054  |  ORIGEN: SPIM  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 13/10/2025 20:27
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                UBBB  20/10/2025 22:24  -->  OAKB  21/10/2025 02:40  ==  4.27 hrs.
-                                OAKB  21/10/2025 11:37  -->  OJAI  21/10/2025 17:37  ==  6.00 hrs.
-                                OJAI  22/10/2025 03:51  -->  OYSN  22/10/2025 07:22  ==  3.52 hrs.
-                                OYSN  22/10/2025 12:44  -->  OSDI  22/10/2025 16:26  ==  3.70 hrs.
+                                SPIM  12/10/2025 13:10  -->  SEQM  12/10/2025 16:51  ==  3.68 hrs.
+                                SEQM  13/10/2025 00:55  -->  SKBO  13/10/2025 02:42  ==  1.78 hrs.
+                                SKBO  13/10/2025 14:47  -->  SGAS  13/10/2025 20:27  ==  5.67 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 17.48 hrs.
+        >> Duración de la ruta: 11.13 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #055  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 22/10/2025 16:26
+        >> PRODUCTO #055  |  ORIGEN: SPIM  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 13/10/2025 20:27
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                UBBB  20/10/2025 22:24  -->  OAKB  21/10/2025 02:40  ==  4.27 hrs.
-                                OAKB  21/10/2025 11:37  -->  OJAI  21/10/2025 17:37  ==  6.00 hrs.
-                                OJAI  22/10/2025 03:51  -->  OYSN  22/10/2025 07:22  ==  3.52 hrs.
-                                OYSN  22/10/2025 12:44  -->  OSDI  22/10/2025 16:26  ==  3.70 hrs.
+                                SPIM  12/10/2025 13:10  -->  SEQM  12/10/2025 16:51  ==  3.68 hrs.
+                                SEQM  13/10/2025 00:55  -->  SKBO  13/10/2025 02:42  ==  1.78 hrs.
+                                SKBO  13/10/2025 14:47  -->  SGAS  13/10/2025 20:27  ==  5.67 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 17.48 hrs.
+        >> Duración de la ruta: 11.13 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #056  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 22/10/2025 16:26
+        >> PRODUCTO #056  |  ORIGEN: SPIM  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 13/10/2025 20:27
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                UBBB  20/10/2025 22:24  -->  OAKB  21/10/2025 02:40  ==  4.27 hrs.
-                                OAKB  21/10/2025 11:37  -->  OJAI  21/10/2025 17:37  ==  6.00 hrs.
-                                OJAI  22/10/2025 03:51  -->  OYSN  22/10/2025 07:22  ==  3.52 hrs.
-                                OYSN  22/10/2025 12:44  -->  OSDI  22/10/2025 16:26  ==  3.70 hrs.
+                                SPIM  12/10/2025 13:10  -->  SEQM  12/10/2025 16:51  ==  3.68 hrs.
+                                SEQM  13/10/2025 00:55  -->  SKBO  13/10/2025 02:42  ==  1.78 hrs.
+                                SKBO  13/10/2025 14:47  -->  SGAS  13/10/2025 20:27  ==  5.67 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 17.48 hrs.
+        >> Duración de la ruta: 11.13 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #057  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 22/10/2025 16:26
+        >> PRODUCTO #057  |  ORIGEN: SPIM  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 13/10/2025 20:27
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                UBBB  20/10/2025 22:24  -->  OAKB  21/10/2025 02:40  ==  4.27 hrs.
-                                OAKB  21/10/2025 11:37  -->  OJAI  21/10/2025 17:37  ==  6.00 hrs.
-                                OJAI  22/10/2025 03:51  -->  OYSN  22/10/2025 07:22  ==  3.52 hrs.
-                                OYSN  22/10/2025 12:44  -->  OSDI  22/10/2025 16:26  ==  3.70 hrs.
+                                SPIM  12/10/2025 13:10  -->  SEQM  12/10/2025 16:51  ==  3.68 hrs.
+                                SEQM  13/10/2025 00:55  -->  SKBO  13/10/2025 02:42  ==  1.78 hrs.
+                                SKBO  13/10/2025 14:47  -->  SGAS  13/10/2025 20:27  ==  5.67 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 17.48 hrs.
+        >> Duración de la ruta: 11.13 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #058  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 22/10/2025 16:26
+        >> PRODUCTO #058  |  ORIGEN: SPIM  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 13/10/2025 20:27
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                UBBB  20/10/2025 22:24  -->  OAKB  21/10/2025 02:40  ==  4.27 hrs.
-                                OAKB  21/10/2025 11:37  -->  OJAI  21/10/2025 17:37  ==  6.00 hrs.
-                                OJAI  22/10/2025 03:51  -->  OYSN  22/10/2025 07:22  ==  3.52 hrs.
-                                OYSN  22/10/2025 12:44  -->  OSDI  22/10/2025 16:26  ==  3.70 hrs.
+                                SPIM  12/10/2025 13:10  -->  SEQM  12/10/2025 16:51  ==  3.68 hrs.
+                                SEQM  13/10/2025 00:55  -->  SKBO  13/10/2025 02:42  ==  1.78 hrs.
+                                SKBO  13/10/2025 14:47  -->  SGAS  13/10/2025 20:27  ==  5.67 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 17.48 hrs.
+        >> Duración de la ruta: 11.13 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #059  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 22/10/2025 16:26
+        >> PRODUCTO #059  |  ORIGEN: SPIM  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 13/10/2025 20:27
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                UBBB  20/10/2025 22:24  -->  OAKB  21/10/2025 02:40  ==  4.27 hrs.
-                                OAKB  21/10/2025 11:37  -->  OJAI  21/10/2025 17:37  ==  6.00 hrs.
-                                OJAI  22/10/2025 03:51  -->  OYSN  22/10/2025 07:22  ==  3.52 hrs.
-                                OYSN  22/10/2025 12:44  -->  OSDI  22/10/2025 16:26  ==  3.70 hrs.
+                                SPIM  12/10/2025 13:10  -->  SEQM  12/10/2025 16:51  ==  3.68 hrs.
+                                SEQM  13/10/2025 00:55  -->  SKBO  13/10/2025 02:42  ==  1.78 hrs.
+                                SKBO  13/10/2025 14:47  -->  SGAS  13/10/2025 20:27  ==  5.67 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 17.48 hrs.
+        >> Duración de la ruta: 11.13 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #060  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 22/10/2025 16:26
+        >> PRODUCTO #060  |  ORIGEN: SPIM  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 13/10/2025 20:27
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                UBBB  20/10/2025 22:24  -->  OAKB  21/10/2025 02:40  ==  4.27 hrs.
-                                OAKB  21/10/2025 11:37  -->  OJAI  21/10/2025 17:37  ==  6.00 hrs.
-                                OJAI  22/10/2025 03:51  -->  OYSN  22/10/2025 07:22  ==  3.52 hrs.
-                                OYSN  22/10/2025 12:44  -->  OSDI  22/10/2025 16:26  ==  3.70 hrs.
+                                SPIM  12/10/2025 13:10  -->  SEQM  12/10/2025 16:51  ==  3.68 hrs.
+                                SEQM  13/10/2025 00:55  -->  SKBO  13/10/2025 02:42  ==  1.78 hrs.
+                                SKBO  13/10/2025 14:47  -->  SGAS  13/10/2025 20:27  ==  5.67 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 17.48 hrs.
+        >> Duración de la ruta: 11.13 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #061  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 22/10/2025 16:26
+        >> PRODUCTO #061  |  ORIGEN: SPIM  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 13/10/2025 20:27
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                UBBB  20/10/2025 22:24  -->  OAKB  21/10/2025 02:40  ==  4.27 hrs.
-                                OAKB  21/10/2025 11:37  -->  OJAI  21/10/2025 17:37  ==  6.00 hrs.
-                                OJAI  22/10/2025 03:51  -->  OYSN  22/10/2025 07:22  ==  3.52 hrs.
-                                OYSN  22/10/2025 12:44  -->  OSDI  22/10/2025 16:26  ==  3.70 hrs.
+                                SPIM  12/10/2025 13:10  -->  SEQM  12/10/2025 16:51  ==  3.68 hrs.
+                                SEQM  13/10/2025 00:55  -->  SKBO  13/10/2025 02:42  ==  1.78 hrs.
+                                SKBO  13/10/2025 14:47  -->  SGAS  13/10/2025 20:27  ==  5.67 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 17.48 hrs.
+        >> Duración de la ruta: 11.13 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #062  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 22/10/2025 16:26
+        >> PRODUCTO #062  |  ORIGEN: SPIM  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 13/10/2025 20:27
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                UBBB  20/10/2025 22:24  -->  OAKB  21/10/2025 02:40  ==  4.27 hrs.
-                                OAKB  21/10/2025 11:37  -->  OJAI  21/10/2025 17:37  ==  6.00 hrs.
-                                OJAI  22/10/2025 03:51  -->  OYSN  22/10/2025 07:22  ==  3.52 hrs.
-                                OYSN  22/10/2025 12:44  -->  OSDI  22/10/2025 16:26  ==  3.70 hrs.
+                                SPIM  12/10/2025 13:10  -->  SEQM  12/10/2025 16:51  ==  3.68 hrs.
+                                SEQM  13/10/2025 00:55  -->  SKBO  13/10/2025 02:42  ==  1.78 hrs.
+                                SKBO  13/10/2025 14:47  -->  SGAS  13/10/2025 20:27  ==  5.67 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 17.48 hrs.
+        >> Duración de la ruta: 11.13 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #063  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 22/10/2025 16:26
+        >> PRODUCTO #063  |  ORIGEN: SPIM  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 13/10/2025 20:27
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                UBBB  20/10/2025 22:24  -->  OAKB  21/10/2025 02:40  ==  4.27 hrs.
-                                OAKB  21/10/2025 11:37  -->  OJAI  21/10/2025 17:37  ==  6.00 hrs.
-                                OJAI  22/10/2025 03:51  -->  OYSN  22/10/2025 07:22  ==  3.52 hrs.
-                                OYSN  22/10/2025 12:44  -->  OSDI  22/10/2025 16:26  ==  3.70 hrs.
+                                SPIM  12/10/2025 13:10  -->  SEQM  12/10/2025 16:51  ==  3.68 hrs.
+                                SEQM  13/10/2025 00:55  -->  SKBO  13/10/2025 02:42  ==  1.78 hrs.
+                                SKBO  13/10/2025 14:47  -->  SGAS  13/10/2025 20:27  ==  5.67 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 17.48 hrs.
+        >> Duración de la ruta: 11.13 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #064  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 22/10/2025 16:26
+        >> PRODUCTO #064  |  ORIGEN: SPIM  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 13/10/2025 20:27
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                UBBB  20/10/2025 22:24  -->  OAKB  21/10/2025 02:40  ==  4.27 hrs.
-                                OAKB  21/10/2025 11:37  -->  OJAI  21/10/2025 17:37  ==  6.00 hrs.
-                                OJAI  22/10/2025 03:51  -->  OYSN  22/10/2025 07:22  ==  3.52 hrs.
-                                OYSN  22/10/2025 12:44  -->  OSDI  22/10/2025 16:26  ==  3.70 hrs.
+                                SPIM  12/10/2025 13:10  -->  SEQM  12/10/2025 16:51  ==  3.68 hrs.
+                                SEQM  13/10/2025 00:55  -->  SKBO  13/10/2025 02:42  ==  1.78 hrs.
+                                SKBO  13/10/2025 14:47  -->  SGAS  13/10/2025 20:27  ==  5.67 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 17.48 hrs.
+        >> Duración de la ruta: 11.13 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #065  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 22/10/2025 16:26
+        >> PRODUCTO #065  |  ORIGEN: SPIM  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 13/10/2025 20:27
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                UBBB  20/10/2025 22:24  -->  OAKB  21/10/2025 02:40  ==  4.27 hrs.
-                                OAKB  21/10/2025 11:37  -->  OJAI  21/10/2025 17:37  ==  6.00 hrs.
-                                OJAI  22/10/2025 03:51  -->  OYSN  22/10/2025 07:22  ==  3.52 hrs.
-                                OYSN  22/10/2025 12:44  -->  OSDI  22/10/2025 16:26  ==  3.70 hrs.
+                                SPIM  12/10/2025 13:10  -->  SEQM  12/10/2025 16:51  ==  3.68 hrs.
+                                SEQM  13/10/2025 00:55  -->  SKBO  13/10/2025 02:42  ==  1.78 hrs.
+                                SKBO  13/10/2025 14:47  -->  SGAS  13/10/2025 20:27  ==  5.67 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 17.48 hrs.
+        >> Duración de la ruta: 11.13 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #066  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 22/10/2025 16:26
+        >> PRODUCTO #066  |  ORIGEN: SPIM  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 13/10/2025 20:27
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                UBBB  20/10/2025 22:24  -->  OAKB  21/10/2025 02:40  ==  4.27 hrs.
-                                OAKB  21/10/2025 11:37  -->  OJAI  21/10/2025 17:37  ==  6.00 hrs.
-                                OJAI  22/10/2025 03:51  -->  OYSN  22/10/2025 07:22  ==  3.52 hrs.
-                                OYSN  22/10/2025 12:44  -->  OSDI  22/10/2025 16:26  ==  3.70 hrs.
+                                SPIM  12/10/2025 13:10  -->  SEQM  12/10/2025 16:51  ==  3.68 hrs.
+                                SEQM  13/10/2025 00:55  -->  SKBO  13/10/2025 02:42  ==  1.78 hrs.
+                                SKBO  13/10/2025 14:47  -->  SGAS  13/10/2025 20:27  ==  5.67 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 17.48 hrs.
+        >> Duración de la ruta: 11.13 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #067  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 22/10/2025 16:26
+        >> PRODUCTO #067  |  ORIGEN: SPIM  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 13/10/2025 20:27
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                UBBB  20/10/2025 22:24  -->  OAKB  21/10/2025 02:40  ==  4.27 hrs.
-                                OAKB  21/10/2025 11:37  -->  OJAI  21/10/2025 17:37  ==  6.00 hrs.
-                                OJAI  22/10/2025 03:51  -->  OYSN  22/10/2025 07:22  ==  3.52 hrs.
-                                OYSN  22/10/2025 12:44  -->  OSDI  22/10/2025 16:26  ==  3.70 hrs.
+                                SPIM  12/10/2025 13:10  -->  SEQM  12/10/2025 16:51  ==  3.68 hrs.
+                                SEQM  13/10/2025 00:55  -->  SKBO  13/10/2025 02:42  ==  1.78 hrs.
+                                SKBO  13/10/2025 14:47  -->  SGAS  13/10/2025 20:27  ==  5.67 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 17.48 hrs.
+        >> Duración de la ruta: 11.13 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #068  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 22/10/2025 16:26
+        >> PRODUCTO #068  |  ORIGEN: SPIM  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 13/10/2025 20:27
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                UBBB  20/10/2025 22:24  -->  OAKB  21/10/2025 02:40  ==  4.27 hrs.
-                                OAKB  21/10/2025 11:37  -->  OJAI  21/10/2025 17:37  ==  6.00 hrs.
-                                OJAI  22/10/2025 03:51  -->  OYSN  22/10/2025 07:22  ==  3.52 hrs.
-                                OYSN  22/10/2025 12:44  -->  OSDI  22/10/2025 16:26  ==  3.70 hrs.
+                                SPIM  12/10/2025 13:10  -->  SEQM  12/10/2025 16:51  ==  3.68 hrs.
+                                SEQM  13/10/2025 00:55  -->  SKBO  13/10/2025 02:42  ==  1.78 hrs.
+                                SKBO  13/10/2025 14:47  -->  SGAS  13/10/2025 20:27  ==  5.67 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 17.48 hrs.
+        >> Duración de la ruta: 11.13 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #069  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 22/10/2025 16:26
+        >> PRODUCTO #069  |  ORIGEN: SPIM  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 13/10/2025 20:27
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                UBBB  20/10/2025 22:24  -->  OAKB  21/10/2025 02:40  ==  4.27 hrs.
-                                OAKB  21/10/2025 11:37  -->  OJAI  21/10/2025 17:37  ==  6.00 hrs.
-                                OJAI  22/10/2025 03:51  -->  OYSN  22/10/2025 07:22  ==  3.52 hrs.
-                                OYSN  22/10/2025 12:44  -->  OSDI  22/10/2025 16:26  ==  3.70 hrs.
+                                SPIM  12/10/2025 13:10  -->  SEQM  12/10/2025 16:51  ==  3.68 hrs.
+                                SEQM  13/10/2025 00:55  -->  SKBO  13/10/2025 02:42  ==  1.78 hrs.
+                                SKBO  13/10/2025 14:47  -->  SGAS  13/10/2025 20:27  ==  5.67 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 17.48 hrs.
+        >> Duración de la ruta: 11.13 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #070  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 22/10/2025 16:26
+        >> PRODUCTO #070  |  ORIGEN: SPIM  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 13/10/2025 20:27
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                UBBB  20/10/2025 22:24  -->  OAKB  21/10/2025 02:40  ==  4.27 hrs.
-                                OAKB  21/10/2025 11:37  -->  OJAI  21/10/2025 17:37  ==  6.00 hrs.
-                                OJAI  22/10/2025 03:51  -->  OYSN  22/10/2025 07:22  ==  3.52 hrs.
-                                OYSN  22/10/2025 12:44  -->  OSDI  22/10/2025 16:26  ==  3.70 hrs.
+                                SPIM  12/10/2025 13:10  -->  SEQM  12/10/2025 16:51  ==  3.68 hrs.
+                                SEQM  13/10/2025 00:55  -->  SKBO  13/10/2025 02:42  ==  1.78 hrs.
+                                SKBO  13/10/2025 14:47  -->  SGAS  13/10/2025 20:27  ==  5.67 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 17.48 hrs.
+        >> Duración de la ruta: 11.13 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #071  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 22/10/2025 16:26
+        >> PRODUCTO #071  |  ORIGEN: SPIM  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 13/10/2025 20:27
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                UBBB  20/10/2025 22:24  -->  OAKB  21/10/2025 02:40  ==  4.27 hrs.
-                                OAKB  21/10/2025 11:37  -->  OJAI  21/10/2025 17:37  ==  6.00 hrs.
-                                OJAI  22/10/2025 03:51  -->  OYSN  22/10/2025 07:22  ==  3.52 hrs.
-                                OYSN  22/10/2025 12:44  -->  OSDI  22/10/2025 16:26  ==  3.70 hrs.
+                                SPIM  12/10/2025 13:10  -->  SEQM  12/10/2025 16:51  ==  3.68 hrs.
+                                SEQM  13/10/2025 00:55  -->  SKBO  13/10/2025 02:42  ==  1.78 hrs.
+                                SKBO  13/10/2025 14:47  -->  SGAS  13/10/2025 20:27  ==  5.67 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 17.48 hrs.
+        >> Duración de la ruta: 11.13 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #072  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 22/10/2025 13:47
+        >> PRODUCTO #072  |  ORIGEN: SPIM  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 13/10/2025 20:27
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                UBBB  20/10/2025 22:24  -->  OAKB  21/10/2025 02:40  ==  4.27 hrs.
-                                OAKB  21/10/2025 04:17  -->  OYSN  21/10/2025 10:24  ==  6.12 hrs.
-                                OYSN  21/10/2025 11:10  -->  OMDB  21/10/2025 15:10  ==  4.00 hrs.
-                                OMDB  21/10/2025 16:36  -->  EDDI  21/10/2025 23:25  ==  6.82 hrs.
-                                EDDI  22/10/2025 03:45  -->  LOWW  22/10/2025 05:22  ==  1.62 hrs.
-                                LOWW  22/10/2025 09:49  -->  OSDI  22/10/2025 13:47  ==  3.97 hrs.
+                                SPIM  12/10/2025 13:10  -->  SEQM  12/10/2025 16:51  ==  3.68 hrs.
+                                SEQM  13/10/2025 00:55  -->  SKBO  13/10/2025 02:42  ==  1.78 hrs.
+                                SKBO  13/10/2025 14:47  -->  SGAS  13/10/2025 20:27  ==  5.67 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 26.78 hrs.
+        >> Duración de la ruta: 11.13 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #073  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 22/10/2025 13:47
+        >> PRODUCTO #073  |  ORIGEN: SPIM  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 13/10/2025 20:27
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                UBBB  20/10/2025 22:24  -->  OAKB  21/10/2025 02:40  ==  4.27 hrs.
-                                OAKB  21/10/2025 04:17  -->  OYSN  21/10/2025 10:24  ==  6.12 hrs.
-                                OYSN  21/10/2025 11:10  -->  OMDB  21/10/2025 15:10  ==  4.00 hrs.
-                                OMDB  21/10/2025 16:36  -->  EDDI  21/10/2025 23:25  ==  6.82 hrs.
-                                EDDI  22/10/2025 03:45  -->  LOWW  22/10/2025 05:22  ==  1.62 hrs.
-                                LOWW  22/10/2025 09:49  -->  OSDI  22/10/2025 13:47  ==  3.97 hrs.
+                                SPIM  12/10/2025 13:10  -->  SEQM  12/10/2025 16:51  ==  3.68 hrs.
+                                SEQM  13/10/2025 00:55  -->  SKBO  13/10/2025 02:42  ==  1.78 hrs.
+                                SKBO  13/10/2025 14:47  -->  SGAS  13/10/2025 20:27  ==  5.67 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 26.78 hrs.
+        >> Duración de la ruta: 11.13 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #074  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 22/10/2025 13:47
+        >> PRODUCTO #074  |  ORIGEN: SPIM  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 13/10/2025 20:27
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                UBBB  20/10/2025 22:24  -->  OAKB  21/10/2025 02:40  ==  4.27 hrs.
-                                OAKB  21/10/2025 04:17  -->  OYSN  21/10/2025 10:24  ==  6.12 hrs.
-                                OYSN  21/10/2025 11:10  -->  OMDB  21/10/2025 15:10  ==  4.00 hrs.
-                                OMDB  21/10/2025 16:36  -->  EDDI  21/10/2025 23:25  ==  6.82 hrs.
-                                EDDI  22/10/2025 03:45  -->  LOWW  22/10/2025 05:22  ==  1.62 hrs.
-                                LOWW  22/10/2025 09:49  -->  OSDI  22/10/2025 13:47  ==  3.97 hrs.
+                                SPIM  12/10/2025 13:10  -->  SEQM  12/10/2025 16:51  ==  3.68 hrs.
+                                SEQM  13/10/2025 00:55  -->  SKBO  13/10/2025 02:42  ==  1.78 hrs.
+                                SKBO  13/10/2025 14:47  -->  SGAS  13/10/2025 20:27  ==  5.67 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 26.78 hrs.
+        >> Duración de la ruta: 11.13 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #075  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 22/10/2025 13:47
+        >> PRODUCTO #075  |  ORIGEN: SPIM  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 13/10/2025 20:27
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                UBBB  20/10/2025 22:24  -->  OAKB  21/10/2025 02:40  ==  4.27 hrs.
-                                OAKB  21/10/2025 04:17  -->  OYSN  21/10/2025 10:24  ==  6.12 hrs.
-                                OYSN  21/10/2025 11:10  -->  OMDB  21/10/2025 15:10  ==  4.00 hrs.
-                                OMDB  21/10/2025 16:36  -->  EDDI  21/10/2025 23:25  ==  6.82 hrs.
-                                EDDI  22/10/2025 03:45  -->  LOWW  22/10/2025 05:22  ==  1.62 hrs.
-                                LOWW  22/10/2025 09:49  -->  OSDI  22/10/2025 13:47  ==  3.97 hrs.
+                                SPIM  12/10/2025 13:10  -->  SEQM  12/10/2025 16:51  ==  3.68 hrs.
+                                SEQM  13/10/2025 00:55  -->  SKBO  13/10/2025 02:42  ==  1.78 hrs.
+                                SKBO  13/10/2025 14:47  -->  SGAS  13/10/2025 20:27  ==  5.67 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 26.78 hrs.
+        >> Duración de la ruta: 11.13 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #076  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 22/10/2025 13:47
+        >> PRODUCTO #076  |  ORIGEN: SPIM  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 13/10/2025 20:27
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                UBBB  20/10/2025 22:24  -->  OAKB  21/10/2025 02:40  ==  4.27 hrs.
-                                OAKB  21/10/2025 04:17  -->  OYSN  21/10/2025 10:24  ==  6.12 hrs.
-                                OYSN  21/10/2025 11:10  -->  OMDB  21/10/2025 15:10  ==  4.00 hrs.
-                                OMDB  21/10/2025 16:36  -->  EDDI  21/10/2025 23:25  ==  6.82 hrs.
-                                EDDI  22/10/2025 03:45  -->  LOWW  22/10/2025 05:22  ==  1.62 hrs.
-                                LOWW  22/10/2025 09:49  -->  OSDI  22/10/2025 13:47  ==  3.97 hrs.
+                                SPIM  12/10/2025 13:10  -->  SEQM  12/10/2025 16:51  ==  3.68 hrs.
+                                SEQM  13/10/2025 00:55  -->  SKBO  13/10/2025 02:42  ==  1.78 hrs.
+                                SKBO  13/10/2025 14:47  -->  SGAS  13/10/2025 20:27  ==  5.67 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 26.78 hrs.
+        >> Duración de la ruta: 11.13 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #077  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 22/10/2025 13:47
+        >> PRODUCTO #077  |  ORIGEN: SPIM  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 13/10/2025 20:27
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                UBBB  20/10/2025 22:24  -->  OAKB  21/10/2025 02:40  ==  4.27 hrs.
-                                OAKB  21/10/2025 04:17  -->  OYSN  21/10/2025 10:24  ==  6.12 hrs.
-                                OYSN  21/10/2025 11:10  -->  OMDB  21/10/2025 15:10  ==  4.00 hrs.
-                                OMDB  21/10/2025 16:36  -->  EDDI  21/10/2025 23:25  ==  6.82 hrs.
-                                EDDI  22/10/2025 03:45  -->  LOWW  22/10/2025 05:22  ==  1.62 hrs.
-                                LOWW  22/10/2025 09:49  -->  OSDI  22/10/2025 13:47  ==  3.97 hrs.
+                                SPIM  12/10/2025 13:10  -->  SEQM  12/10/2025 16:51  ==  3.68 hrs.
+                                SEQM  13/10/2025 00:55  -->  SKBO  13/10/2025 02:42  ==  1.78 hrs.
+                                SKBO  13/10/2025 14:47  -->  SGAS  13/10/2025 20:27  ==  5.67 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 26.78 hrs.
+        >> Duración de la ruta: 11.13 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #078  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 22/10/2025 13:47
+        >> PRODUCTO #078  |  ORIGEN: SPIM  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 13/10/2025 20:27
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                UBBB  20/10/2025 22:24  -->  OAKB  21/10/2025 02:40  ==  4.27 hrs.
-                                OAKB  21/10/2025 04:17  -->  OYSN  21/10/2025 10:24  ==  6.12 hrs.
-                                OYSN  21/10/2025 11:10  -->  OMDB  21/10/2025 15:10  ==  4.00 hrs.
-                                OMDB  21/10/2025 16:36  -->  EDDI  21/10/2025 23:25  ==  6.82 hrs.
-                                EDDI  22/10/2025 03:45  -->  LOWW  22/10/2025 05:22  ==  1.62 hrs.
-                                LOWW  22/10/2025 09:49  -->  OSDI  22/10/2025 13:47  ==  3.97 hrs.
+                                SPIM  12/10/2025 13:10  -->  SEQM  12/10/2025 16:51  ==  3.68 hrs.
+                                SEQM  13/10/2025 00:55  -->  SKBO  13/10/2025 02:42  ==  1.78 hrs.
+                                SKBO  13/10/2025 14:47  -->  SGAS  13/10/2025 20:27  ==  5.67 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 26.78 hrs.
+        >> Duración de la ruta: 11.13 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #079  |  ORIGEN: UBBB  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 22/10/2025 13:47
+        >> PRODUCTO #079  |  ORIGEN: SPIM  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 13/10/2025 20:27
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                UBBB  20/10/2025 22:24  -->  OAKB  21/10/2025 02:40  ==  4.27 hrs.
-                                OAKB  21/10/2025 04:17  -->  OYSN  21/10/2025 10:24  ==  6.12 hrs.
-                                OYSN  21/10/2025 11:10  -->  OMDB  21/10/2025 15:10  ==  4.00 hrs.
-                                OMDB  21/10/2025 16:36  -->  EDDI  21/10/2025 23:25  ==  6.82 hrs.
-                                EDDI  22/10/2025 03:45  -->  LOWW  22/10/2025 05:22  ==  1.62 hrs.
-                                LOWW  22/10/2025 09:49  -->  OSDI  22/10/2025 13:47  ==  3.97 hrs.
+                                SPIM  12/10/2025 13:10  -->  SEQM  12/10/2025 16:51  ==  3.68 hrs.
+                                SEQM  13/10/2025 00:55  -->  SKBO  13/10/2025 02:42  ==  1.78 hrs.
+                                SKBO  13/10/2025 14:47  -->  SGAS  13/10/2025 20:27  ==  5.67 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 26.78 hrs.
+        >> Duración de la ruta: 11.13 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #080  |  ORIGEN: EBCI  |  TIPO DE ENVIO:  INTERCONTINENTAL  |  ENTREGA PLANIFICADA: 22/10/2025 13:47
+        >> PRODUCTO #080  |  ORIGEN: SPIM  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 13/10/2025 20:27
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                EBCI  21/10/2025 02:41  -->  EDDI  21/10/2025 04:31  ==  1.83 hrs.
-                                EDDI  21/10/2025 07:19  -->  LATI  21/10/2025 10:57  ==  3.63 hrs.
-                                LATI  21/10/2025 13:33  -->  LDZA  21/10/2025 15:11  ==  1.63 hrs.
-                                LDZA  21/10/2025 15:45  -->  LBSF  21/10/2025 17:34  ==  1.82 hrs.
-                                LBSF  22/10/2025 01:54  -->  LOWW  22/10/2025 04:59  ==  3.08 hrs.
-                                LOWW  22/10/2025 09:49  -->  OSDI  22/10/2025 13:47  ==  3.97 hrs.
+                                SPIM  12/10/2025 13:10  -->  SEQM  12/10/2025 16:51  ==  3.68 hrs.
+                                SEQM  13/10/2025 00:55  -->  SKBO  13/10/2025 02:42  ==  1.78 hrs.
+                                SKBO  13/10/2025 14:47  -->  SGAS  13/10/2025 20:27  ==  5.67 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 15.97 hrs.
+        >> Duración de la ruta: 11.13 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #081  |  ORIGEN: EBCI  |  TIPO DE ENVIO:  INTERCONTINENTAL  |  ENTREGA PLANIFICADA: 22/10/2025 13:47
+        >> PRODUCTO #081  |  ORIGEN: SPIM  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 13/10/2025 20:27
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                EBCI  21/10/2025 02:41  -->  EDDI  21/10/2025 04:31  ==  1.83 hrs.
-                                EDDI  21/10/2025 07:19  -->  LATI  21/10/2025 10:57  ==  3.63 hrs.
-                                LATI  21/10/2025 13:33  -->  LDZA  21/10/2025 15:11  ==  1.63 hrs.
-                                LDZA  21/10/2025 15:45  -->  LBSF  21/10/2025 17:34  ==  1.82 hrs.
-                                LBSF  22/10/2025 01:54  -->  LOWW  22/10/2025 04:59  ==  3.08 hrs.
-                                LOWW  22/10/2025 09:49  -->  OSDI  22/10/2025 13:47  ==  3.97 hrs.
+                                SPIM  12/10/2025 13:10  -->  SEQM  12/10/2025 16:51  ==  3.68 hrs.
+                                SEQM  13/10/2025 00:55  -->  SKBO  13/10/2025 02:42  ==  1.78 hrs.
+                                SKBO  13/10/2025 14:47  -->  SGAS  13/10/2025 20:27  ==  5.67 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 15.97 hrs.
+        >> Duración de la ruta: 11.13 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #082  |  ORIGEN: EBCI  |  TIPO DE ENVIO:  INTERCONTINENTAL  |  ENTREGA PLANIFICADA: 22/10/2025 13:47
+        >> PRODUCTO #082  |  ORIGEN: SPIM  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 13/10/2025 20:27
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                EBCI  21/10/2025 02:41  -->  EDDI  21/10/2025 04:31  ==  1.83 hrs.
-                                EDDI  21/10/2025 07:19  -->  LATI  21/10/2025 10:57  ==  3.63 hrs.
-                                LATI  21/10/2025 13:33  -->  LDZA  21/10/2025 15:11  ==  1.63 hrs.
-                                LDZA  21/10/2025 15:45  -->  LBSF  21/10/2025 17:34  ==  1.82 hrs.
-                                LBSF  22/10/2025 01:54  -->  LOWW  22/10/2025 04:59  ==  3.08 hrs.
-                                LOWW  22/10/2025 09:49  -->  OSDI  22/10/2025 13:47  ==  3.97 hrs.
+                                SPIM  12/10/2025 13:10  -->  SEQM  12/10/2025 16:51  ==  3.68 hrs.
+                                SEQM  13/10/2025 00:55  -->  SKBO  13/10/2025 02:42  ==  1.78 hrs.
+                                SKBO  13/10/2025 14:47  -->  SGAS  13/10/2025 20:27  ==  5.67 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 15.97 hrs.
+        >> Duración de la ruta: 11.13 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #083  |  ORIGEN: EBCI  |  TIPO DE ENVIO:  INTERCONTINENTAL  |  ENTREGA PLANIFICADA: 22/10/2025 13:47
+        >> PRODUCTO #083  |  ORIGEN: SPIM  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 13/10/2025 20:27
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                EBCI  21/10/2025 02:41  -->  EDDI  21/10/2025 04:31  ==  1.83 hrs.
-                                EDDI  21/10/2025 07:19  -->  LATI  21/10/2025 10:57  ==  3.63 hrs.
-                                LATI  21/10/2025 13:33  -->  LDZA  21/10/2025 15:11  ==  1.63 hrs.
-                                LDZA  21/10/2025 15:45  -->  LBSF  21/10/2025 17:34  ==  1.82 hrs.
-                                LBSF  22/10/2025 01:54  -->  LOWW  22/10/2025 04:59  ==  3.08 hrs.
-                                LOWW  22/10/2025 09:49  -->  OSDI  22/10/2025 13:47  ==  3.97 hrs.
+                                SPIM  12/10/2025 13:10  -->  SEQM  12/10/2025 16:51  ==  3.68 hrs.
+                                SEQM  13/10/2025 00:55  -->  SKBO  13/10/2025 02:42  ==  1.78 hrs.
+                                SKBO  13/10/2025 14:47  -->  SGAS  13/10/2025 20:27  ==  5.67 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 15.97 hrs.
+        >> Duración de la ruta: 11.13 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #084  |  ORIGEN: EBCI  |  TIPO DE ENVIO:  INTERCONTINENTAL  |  ENTREGA PLANIFICADA: 22/10/2025 13:47
+        >> PRODUCTO #084  |  ORIGEN: SPIM  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 13/10/2025 20:27
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                EBCI  21/10/2025 02:41  -->  EDDI  21/10/2025 04:31  ==  1.83 hrs.
-                                EDDI  21/10/2025 07:19  -->  LATI  21/10/2025 10:57  ==  3.63 hrs.
-                                LATI  21/10/2025 13:33  -->  LDZA  21/10/2025 15:11  ==  1.63 hrs.
-                                LDZA  21/10/2025 15:45  -->  LBSF  21/10/2025 17:34  ==  1.82 hrs.
-                                LBSF  22/10/2025 01:54  -->  LOWW  22/10/2025 04:59  ==  3.08 hrs.
-                                LOWW  22/10/2025 09:49  -->  OSDI  22/10/2025 13:47  ==  3.97 hrs.
+                                SPIM  12/10/2025 13:10  -->  SEQM  12/10/2025 16:51  ==  3.68 hrs.
+                                SEQM  13/10/2025 00:55  -->  SKBO  13/10/2025 02:42  ==  1.78 hrs.
+                                SKBO  13/10/2025 14:47  -->  SGAS  13/10/2025 20:27  ==  5.67 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 15.97 hrs.
+        >> Duración de la ruta: 11.13 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #085  |  ORIGEN: EBCI  |  TIPO DE ENVIO:  INTERCONTINENTAL  |  ENTREGA PLANIFICADA: 22/10/2025 13:47
+        >> PRODUCTO #085  |  ORIGEN: SPIM  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 13/10/2025 20:27
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                EBCI  21/10/2025 02:41  -->  EDDI  21/10/2025 04:31  ==  1.83 hrs.
-                                EDDI  21/10/2025 07:19  -->  LATI  21/10/2025 10:57  ==  3.63 hrs.
-                                LATI  21/10/2025 13:33  -->  LDZA  21/10/2025 15:11  ==  1.63 hrs.
-                                LDZA  21/10/2025 15:45  -->  LBSF  21/10/2025 17:34  ==  1.82 hrs.
-                                LBSF  22/10/2025 01:54  -->  LOWW  22/10/2025 04:59  ==  3.08 hrs.
-                                LOWW  22/10/2025 09:49  -->  OSDI  22/10/2025 13:47  ==  3.97 hrs.
+                                SPIM  12/10/2025 13:10  -->  SEQM  12/10/2025 16:51  ==  3.68 hrs.
+                                SEQM  13/10/2025 00:55  -->  SKBO  13/10/2025 02:42  ==  1.78 hrs.
+                                SKBO  13/10/2025 14:47  -->  SGAS  13/10/2025 20:27  ==  5.67 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 15.97 hrs.
+        >> Duración de la ruta: 11.13 hrs.
         ***********************************************************************************************************************
-        >> PRODUCTO #086  |  ORIGEN: EBCI  |  TIPO DE ENVIO:  INTERCONTINENTAL  |  ENTREGA PLANIFICADA: 22/10/2025 13:47
+        >> PRODUCTO #086  |  ORIGEN: SPIM  |  TIPO DE ENVIO:  INTRACONTINENTAL  |  ENTREGA PLANIFICADA: 13/10/2025 20:27
 
                                         ORIGEN                       DESTINO           TRANSCURRIDO
-                                EBCI  21/10/2025 02:41  -->  EDDI  21/10/2025 04:31  ==  1.83 hrs.
-                                EDDI  21/10/2025 07:19  -->  LATI  21/10/2025 10:57  ==  3.63 hrs.
-                                LATI  21/10/2025 13:33  -->  LDZA  21/10/2025 15:11  ==  1.63 hrs.
-                                LDZA  21/10/2025 15:45  -->  LBSF  21/10/2025 17:34  ==  1.82 hrs.
-                                LBSF  22/10/2025 01:54  -->  LOWW  22/10/2025 04:59  ==  3.08 hrs.
-                                LOWW  22/10/2025 09:49  -->  OSDI  22/10/2025 13:47  ==  3.97 hrs.
+                                SPIM  12/10/2025 13:10  -->  SEQM  12/10/2025 16:51  ==  3.68 hrs.
+                                SEQM  13/10/2025 00:55  -->  SKBO  13/10/2025 02:42  ==  1.78 hrs.
+                                SKBO  13/10/2025 14:47  -->  SGAS  13/10/2025 20:27  ==  5.67 hrs.
         .......................................................................................................................
         Resumen de la ruta:
-        >> Duración de la ruta: 15.97 hrs.
+        >> Duración de la ruta: 11.13 hrs.
     -------------------------------------------------------------------------------------------------------------------------------
     Resumen del pedido:
-    >> Tiempo optimizado: 2440.17 hrs.
+    >> Tiempo optimizado: 2030.32 hrs.
 =======================================================================================================================================

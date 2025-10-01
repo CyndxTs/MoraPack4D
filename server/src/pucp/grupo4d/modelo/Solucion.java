@@ -112,7 +112,7 @@ public class Solucion {
             }
         }
         if (cantProd == 0)
-            this.ratioPromedioDeCumplimientoTemporal = 1.0;
+            this.ratioPromedioDeCumplimientoTemporal = Double.MAX_VALUE;
         else
             this.ratioPromedioDeCumplimientoTemporal = sumaRatios / cantProd;
     }
@@ -135,7 +135,7 @@ public class Solucion {
             }
         }
         if (cantProd == 0)
-            this.ratioPromedioDeDesviacionEspacial = 1.0;
+            this.ratioPromedioDeDesviacionEspacial = Double.MAX_VALUE;
         else
             this.ratioPromedioDeDesviacionEspacial = sumaRatios / cantProd;
     }
@@ -150,7 +150,7 @@ public class Solucion {
             sumaRatios += vuelo.getCapacidadDisponible() / ((double) vuelo.getPlan().getCapacidad());
         }
         if (vuelosActivos.size() == 0)
-            this.ratioPromedioDeDisponibilidadDeVuelos = 1.0;
+            this.ratioPromedioDeDisponibilidadDeVuelos = Double.MAX_VALUE;
         else
             this.ratioPromedioDeDisponibilidadDeVuelos = sumaRatios / ((double) vuelosActivos.size());
     }
@@ -161,15 +161,6 @@ public class Solucion {
 
     public void setRatioPromedioDeDisponibilidadDeAeropuertos() {
 
-        if (this.pedidosAtendidos == null || this.pedidosAtendidos.isEmpty()) {
-            this.ratioPromedioDeDisponibilidadDeAeropuertos = 1.0;
-            return;
-        }
-        if (this.pedidosAtendidos.getLast().getProductos() == null
-                || this.pedidosAtendidos.getLast().getProductos().isEmpty()) {
-            this.ratioPromedioDeDisponibilidadDeAeropuertos = 1.0;
-            return;
-        }
         LocalDateTime fechaHoraReferencia = this.pedidosAtendidos.getLast().getProductos().getLast()
                 .getFechaHoraLlegadaUTC();
         Double sumaRatios = 0.0;
@@ -183,7 +174,7 @@ public class Solucion {
                     / ((double) aeropuerto.getCapacidadMaxima());
         }
         if (aeropuertosOcupados.size() == 0)
-            this.ratioPromedioDeDisponibilidadDeAeropuertos = 1.0;
+            this.ratioPromedioDeDisponibilidadDeAeropuertos = Double.MAX_VALUE;
         else
             this.ratioPromedioDeDisponibilidadDeAeropuertos = sumaRatios / ((double) aeropuertosOcupados.size());
     }
