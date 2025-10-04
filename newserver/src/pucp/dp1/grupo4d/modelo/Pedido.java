@@ -4,25 +4,31 @@
  >> File:       Pedido.java 
 [**/
 
-package pucp.grupo4d.modelo;
+package pucp.dp1.grupo4d.modelo;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-
-import pucp.grupo4d.util.G4D_Util;
+import java.util.Objects;
+import pucp.dp1.grupo4d.util.G4D;
 
 public class Pedido {
     private String id;
     private Integer cantidad;
-    private Integer clienteId;
+    private Cliente cliente;
     private LocalDateTime fechaHoraCreacionLocal;
     private LocalDateTime fechaHoraCreacionUTC;
     private Aeropuerto destino;
     private List<Producto> productos;
 
-    public int obtenerCantidadDeProductosEnRuta(Ruta ruta) {
+    public Pedido() {
+        this.id = G4D.getUniqueString("PED");
+        this.cantidad = 0;
+        this.productos = new ArrayList<>();
+    }
+
+    public Integer obtenerCantidadDeProductosEnRuta(Ruta ruta) {
         int cantProd = 0;
         for(Producto producto : this.productos) {
             if(producto.getRuta().equals(ruta)) {
@@ -32,22 +38,29 @@ public class Pedido {
         return cantProd;
     }
 
-    public Pedido() {
-        this.id = G4D_Util.generateIdentifier("PED");
-        this.cantidad = 0;
-        this.productos = new ArrayList<>();
-    }
-
     public Pedido replicar(Map<String,Aeropuerto> poolAeropuertos, Map<String,Vuelo> poolVuelos, Map<String, Ruta> poolRutas) {
         Pedido pedido = new Pedido();
         pedido.id = this.id;
         pedido.cantidad = this.cantidad;
         pedido.fechaHoraCreacionLocal = this.fechaHoraCreacionLocal;
         pedido.fechaHoraCreacionUTC = this.fechaHoraCreacionUTC;
-        pedido.clienteId = this.clienteId;
+        pedido.cliente = (this.cliente != null) ? this.cliente.replicar() : null;
         pedido.destino = (this.destino != null) ? poolAeropuertos.computeIfAbsent(this.destino.getId(), id -> this.destino.replicar()) : null;
         for (Producto producto : this.productos) pedido.productos.add(producto.replicar(poolAeropuertos,poolVuelos,poolRutas));
         return pedido;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Pedido pedido = (Pedido) o;
+        return Objects.equals(id, pedido.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
     }
 
     public String getId() {
@@ -66,6 +79,14 @@ public class Pedido {
         this.cantidad = cantidad;
     }
 
+    public Cliente getCliente() {
+        return cliente;
+    }
+
+    public void setCliente(Cliente cliente) {
+        this.cliente = cliente;
+    }
+
     public LocalDateTime getFechaHoraCreacionLocal() {
         return fechaHoraCreacionLocal;
     }
@@ -80,14 +101,6 @@ public class Pedido {
 
     public void setFechaHoraCreacionUTC(LocalDateTime fechaHoraCreacionUTC) {
         this.fechaHoraCreacionUTC = fechaHoraCreacionUTC;
-    }
-
-    public Integer getClienteId() {
-        return clienteId;
-    }
-
-    public void setClienteId(Integer clienteId) {
-        this.clienteId = clienteId;
     }
 
     public Aeropuerto getDestino() {

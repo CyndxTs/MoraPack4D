@@ -4,12 +4,10 @@
  >> File:       Main.java 
 [**/
 
-package pucp.grupo4d.programa;
+package pucp.dp1.grupo4d.programa;
 
-import pucp.grupo4d.modelo.Problematica;
-import pucp.grupo4d.resolucion.Algoritmo;
-import pucp.grupo4d.resolucion.GVNS;
-import pucp.grupo4d.resolucion.PSO;
+import pucp.dp1.grupo4d.algoritmo.GVNS;
+import pucp.dp1.grupo4d.modelo.Problematica;
 
 public class Main {
     public static void main(String[] args) {
@@ -21,9 +19,9 @@ public class Main {
                 "c.1inf54.25.2.planes_vuelo.v4.20250818.txt",
                 null);
         // Declaracion de algoritmo
-        Algoritmo algoritmo1 = new GVNS(); // new PSO();
-        // Optimizacion
+        GVNS gvns = new GVNS();
+        // planificacion
         GVNS.fastSearch = true;
-        algoritmo1.planificar(problematica);
+        gvns.planificar(problematica);
     }
 }
