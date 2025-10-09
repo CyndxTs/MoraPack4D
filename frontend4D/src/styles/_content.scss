@@ -1,0 +1,111 @@
+
+.sidebar {
+    background-color: var(--color-light-grey);
+    width: 250px; /* ancho normal */
+    transition: width 0.3s ease;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.sidebar.collapsed {
+    width: 50px; /* ancho reducido cuando se colapsa */
+}
+
+.contenido {
+    flex: 4; /* ocupa 3 partes (ajustable) */
+    padding: 20px;
+    display: flex;
+    flex-direction: column;  
+}
+
+/* Grupos de filtros */
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;              /* espacio entre label y campo */
+  margin-bottom: 16px;   /* separación entre cada grupo */
+}
+
+/*BARRA IZQUIERDA*/
+
+/*HERRAMIENTAS*/
+/* Header de la franja izquierda */
+.sidebar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+}
+
+.sidebar-title {
+    font-size: 16px;
+    color: var(--color-grey);
+    transition: opacity 0.3s ease;
+    white-space: nowrap; /* evita salto de línea */
+}
+
+/* Cuando la sidebar esté colapsada */
+.sidebar.collapsed .sidebar-title,
+.sidebar.collapsed .sidebar-content {
+    opacity: 0;          /* lo oculta visualmente */
+    pointer-events: none; /* evita que se pueda interactuar */
+    width: 0;
+    height: 0;
+    overflow: hidden;
+    padding: 0;
+    margin: 0;
+}
+
+.sidebar-icon {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+}
+
+/* Contenido de la barra lateral */
+.sidebar-content {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch; /* centra horizontalmente */
+    justify-content: flex-start;
+    gap: 12px;
+    padding: 20px;
+}
+
+/* Subtítulos */
+.sidebar-subtitle {
+    font-size: 14px;
+    color: var(--color-grey); /* más claro */
+}
+
+.sidebar-subtitle-strong {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--color-negro); /* negro */
+}
+
+
+/* Ajuste del input en la sidebar */
+.sidebar-content .custom-input {
+    width: 100%; /* mantiene el ancho relativo */
+    text-align: left;
+}
+
+/* Ícono */
+.hide-icon {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    transition: transform 0.3s ease;
+    flex-shrink: 0; /* asegura que nunca desaparezca */
+}
+
+.sidebar.collapsed .hide-icon {
+    transform: rotate(180deg); /* voltea el ícono cuando está colapsado */
+}
+
+.page {
+  display: flex;
+  min-height: 100vh; /* toda la altura de la ventana */
+}

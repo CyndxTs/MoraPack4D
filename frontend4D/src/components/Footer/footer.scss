@@ -1,0 +1,25 @@
+#main-footer {
+  background-color: var(--color-dark-blue);
+  color: var(--color-gris-claro);
+  padding-top: 45px;
+  padding-bottom: 45px;
+  text-align: center;
+}
+
+#main-footer .container {
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 0 12px;
+}
+
+#main-footer .row {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+#main-footer .col {
+  flex: 1;
+  text-align: left;
+  font-size: 16px;
+}

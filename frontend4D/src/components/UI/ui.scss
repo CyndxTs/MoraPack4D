@@ -1,0 +1,487 @@
+/* src/components/ui/ui.scss */
+
+/* === Botón === */
+.btn-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--color-azul);
+  color: #fff;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+.btn-icon:hover {
+  background: var(--color-azul-oscuro);
+}
+.btn-icon img {
+  width: 16px;
+  height: 16px;
+}
+
+/* === Input === */
+/* Componente input */
+.custom-input {
+    height: 36px;
+    width: 100%;
+    padding: 0 12px;
+    font-size: 16px;
+    line-height: 1.4;           /* igualamos espaciado */
+    font-weight: 400;           /* mismo grosor */
+    letter-spacing: normal;     /* sin separación extra */
+    border: 1px solid var(--color-grey);
+    border-radius: 8px;
+    background-color: var(--color-blanco);
+    color: var(--color-negro);
+    outline: none;
+    transition: border-color 0.3s ease;
+    font-family: inherit;       /* misma fuente en todo */
+}
+
+/* Placeholder en gris claro */
+.custom-input::placeholder {
+    color: var(--color-light-grey);
+}
+
+/* Estado de foco */
+.custom-input:focus {
+    border-color: var(--color-dark-blue);
+    box-shadow: 0 0 4px rgba(0, 0, 0, 0.1);
+}
+
+/* === Boton Agregar === */
+.content-header {
+  display: flex;
+  justify-content: space-between; /* separa título a la izq y botón a la der */
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.btnAdd-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px; /* espacio entre icono y texto */
+  background-color: #007bff; /* azul */
+  color: #fff; /* texto blanco */
+  font-size: 14px;
+  font-weight: bold;
+  border: none;
+  border-radius: 6px;
+  padding: 0 16px;
+  height: 48px; /* altura fija */
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.btnAdd-icon img {
+  width: 20px;
+  height: 20px;
+  filter: brightness(0) invert(1); /* icono blanco */
+}
+
+.btnAdd-icon:hover {
+  background-color: #0056b3; /* azul más oscuro al pasar */
+}
+
+/* === Checkbox === */
+/* Grupo de opciones cuadradas */
+.checkbox-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px; /* espacio entre opciones */
+}
+
+.checkbox-item {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  font-size: 15px;
+  color: var(--color-negro);
+  position: relative;
+  padding-left: 32px; /* espacio para el cuadrado */
+  user-select: none;
+}
+
+/* Ocultamos el checkbox nativo */
+.checkbox-item input {
+  display: none;
+}
+
+/* Cuadrado base */
+.checkbox-item .checkmark {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 18px;
+  width: 18px;
+  border: 2px solid var(--color-gold);
+  background-color: var(--color-blanco);
+}
+
+/* Cuadrado interno dorado al seleccionar */
+.checkbox-item input:checked ~ .checkmark::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 10px;
+  height: 10px;
+  background-color: var(--color-gold);
+  transform: translate(-50%, -50%);
+}
+
+/* === Radio === */
+/* Grupo de radio */
+.radio-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.radio-item {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  font-size: 15px;
+  color: var(--color-negro);
+  position: relative;
+  padding-left: 32px; /* espacio para el círculo */
+  user-select: none;
+}
+
+/* Ocultamos el radio nativo */
+.radio-item input {
+  display: none;
+}
+
+/* Círculo base */
+.radio-item .radiomark {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 18px;
+  width: 18px;
+  border: 2px solid var(--color-gold);
+  border-radius: 50%; /* 👈 diferencia respecto al checkbox */
+  background-color: var(--color-blanco);
+}
+
+/* Círculo interno dorado cuando está seleccionado */
+.radio-item input:checked ~ .radiomark::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 10px;
+  height: 10px;
+  background-color: var(--color-gold);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+}
+
+/* === File Input === */
+/* Ocultamos el input original */
+.file-input {
+  display: none;
+}
+
+/* Botón estilizado */
+.file-label {
+  display: inline-block;       
+  padding: 8px 16px;           
+  border: 1px solid var(--color-grey);
+  border-radius: 8px;
+  background-color: var(--color-blanco);
+  color: var(--color-negro);
+  cursor: pointer;
+  font-size: 14px;
+  font-family: inherit;
+  transition: all 0.2s ease;  
+  text-align: center;
+}
+
+
+.file-label:hover {
+  background-color: var(--color-blue);
+  color: var(--color-blanco);
+}
+
+/* Nombre del archivo debajo */
+.file-name {
+  margin-top: 6px;
+  font-size: 13px;
+  color: var(--color-grey);
+  font-style: italic;
+  text-align: left; /* queda alineado al botón */
+}
+
+/* === Dropdown === */
+/* Estilo del select */
+.custom-dropdown {
+  position: relative;
+  width: 100%;
+  border: 1px solid var(--color-grey);
+  border-radius: 8px;
+  background: var(--color-blanco);
+  cursor: pointer;
+  height: 36px;
+  font-size: 16px;
+  line-height: 1.4;
+  font-weight: 400;
+  letter-spacing: normal;
+  font-family: inherit; /* asegura misma tipografía */
+}
+
+.custom-dropdown .selected {
+  padding: 8px 32px 8px 12px; /* espacio extra a la derecha para la flecha */
+  font-size: 16px;
+  line-height: 1.4;
+  font-weight: 400;
+  color: var(--color-negro);
+  white-space: nowrap;       /* no permite salto de línea */
+  overflow: hidden;          /* oculta lo que se desborda */
+  text-overflow: ellipsis;   /* agrega los "..." */
+}
+
+.custom-dropdown .options {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: var(--color-blanco);
+  border: 1px solid var(--color-grey);
+  border-radius: 8px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  font-size: 16px;
+  line-height: 1.4;
+  font-weight: 400;
+  font-family: inherit;
+  z-index: 999;
+  max-height: calc(36px * 5); // 5 opciones visibles
+  overflow-y: auto;          // scroll si hay más
+}
+
+.custom-dropdown.open .options {
+  display: block;
+}
+
+.custom-dropdown .options li {
+  padding: 8px 12px;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--color-negro);
+}
+
+.custom-dropdown .options li.placeholder-option {
+  color: var(--color-light-grey);
+}
+
+.custom-dropdown .options li:hover {
+  background: var(--color-blue);
+  color: var(--color-blanco);
+}
+
+.custom-dropdown .options li:not(.placeholder-option):hover {
+  background: var(--color-blue);
+  color: var(--color-blanco);
+}
+
+.custom-dropdown::after {
+  content: "▼";
+  font-size: 14px;
+  color: var(--color-grey);
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none; /* para que no bloquee el click */
+}
+
+.selected {
+  padding: 8px;
+}
+.options {
+  position: absolute;
+  background: white;
+  width: 100%;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  top: 100%;
+  left: 0;
+  z-index: 10;
+  list-style: none;
+  padding: 4px 0;
+  margin: 0;
+}
+.options li {
+  padding: 8px;
+}
+.options li:hover {
+  background: var(--color-light-grey);
+}
+
+/* === Tabla === */
+.table-container {
+  margin-top: 16px;
+  overflow-x: auto; /* scroll horizontal si es necesario */
+}
+
+.custom-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.custom-table thead th {
+  color: grey;
+  font-weight: bold;
+  text-align: left;
+  padding: 12px 8px;
+  border-bottom: 1px solid #ddd; /* línea light-grey */
+}
+
+.custom-table tbody td {
+  color: black;
+  padding: 12px 8px;
+  border-bottom: 1px solid #eee; /* línea light-grey */
+}
+
+.custom-table .no-data {
+  text-align: center;
+  color: grey;
+  font-style: italic;
+}
+
+/* === Leyenda === */
+.legend-list {
+  list-style: none;
+  padding: 0;
+  margin: 8px 0 0;
+}
+
+.legend-list li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+  font-size: 0.9rem;
+}
+
+.legend-text {
+  color: #000; /* texto negro fijo */
+}
+
+/* Tamaño de los íconos */
+.legend-icon {
+  width: 18px;
+  height: 18px;
+}
+
+/* Colores solo para el avión */
+.en-curso {
+  filter: invert(62%) sepia(86%) saturate(421%) hue-rotate(356deg) brightness(94%) contrast(92%);
+}
+.finalizado {
+  filter: invert(35%) sepia(82%) saturate(1595%) hue-rotate(185deg) brightness(94%) contrast(92%);
+}
+.cancelado {
+  filter: invert(28%) sepia(78%) saturate(1946%) hue-rotate(337deg) brightness(92%) contrast(92%);
+}
+
+/* === Modal === */
+.modal {
+  display: flex;
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background-color: rgba(0,0,0,0.5);
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: var(--color-blanco, #fff);
+  border-radius: 10px;
+  padding: 20px;
+  min-width: 300px;
+  max-width: 500px;
+  width: 80%;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  animation: fadeIn 0.3s ease;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-title {
+  font-size: 18px;
+  font-weight: bold;
+  margin: 0;
+}
+
+.modal-body label {
+  font-size: 14px;
+  font-weight: 500;
+  margin-top: 10px;
+  margin-bottom: 4px;
+  display: block;
+}
+
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.btn {
+  height: 40px;
+  min-width: 140px;
+  padding: 0 16px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: bold;
+  color: white;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.btn.green {
+  background-color: #28a745;
+  color: #fff;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+.btn.green:hover { background-color: #218838; }
+
+.btn.red {
+  background-color: #dc3545;
+  color: #fff;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+.btn.red:hover { background-color: #c82333; }
+
+@keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
