@@ -31,7 +31,7 @@ public class Solucion {
     private static final Double f_DA = 2000.0;
     private List<Pedido> pedidosAtendidos;
     private Set<Vuelo> vuelosEnTransito;
-    private Set<Ruta> rutasAsignadas;
+    private Set<Ruta> rutasEnOperacion;
 
     public Solucion() {
         this.id = G4D.getUniqueString("SOL");
@@ -42,7 +42,7 @@ public class Solucion {
         this.ratioPromedioDeDisponibilidadDeAeropuertos = 1.0;
         this.pedidosAtendidos = new ArrayList<>();
         this.vuelosEnTransito = new HashSet<>();
-        this.rutasAsignadas = new HashSet<>();
+        this.rutasEnOperacion = new HashSet<>();
     }
 
     public Solucion replicar() {
@@ -57,7 +57,7 @@ public class Solucion {
         solucion.ratioPromedioDeDisponibilidadDeAeropuertos = this.ratioPromedioDeDisponibilidadDeAeropuertos;
         for (Pedido pedido : this.pedidosAtendidos) solucion.pedidosAtendidos.add(pedido.replicar(poolAeropuertos, poolVuelos, poolRutas));
         for (Vuelo vuelo : this.vuelosEnTransito) solucion.vuelosEnTransito.add(poolVuelos.computeIfAbsent(vuelo.getId(), id -> vuelo.replicar(poolAeropuertos)));
-        for (Ruta ruta : this.rutasAsignadas) solucion.rutasAsignadas.add(poolRutas.computeIfAbsent(ruta.getId(), id -> ruta.replicar(poolAeropuertos, poolVuelos)));
+        for (Ruta ruta : this.rutasEnOperacion) solucion.rutasEnOperacion.add(poolRutas.computeIfAbsent(ruta.getId(), id -> ruta.replicar(poolAeropuertos, poolVuelos)));
         return solucion;
     }
 
@@ -69,7 +69,7 @@ public class Solucion {
         this.ratioPromedioDeDisponibilidadDeAeropuertos = solucion.ratioPromedioDeDisponibilidadDeAeropuertos;
         this.pedidosAtendidos = solucion.pedidosAtendidos;
         this.vuelosEnTransito = solucion.vuelosEnTransito;
-        this.rutasAsignadas = solucion.rutasAsignadas;
+        this.rutasEnOperacion = solucion.rutasEnOperacion;
     }
 
     @Override
@@ -191,19 +191,27 @@ public class Solucion {
 
     public void setRatioPromedioDeDisponibilidadDeAeropuertos() {
         double sumaRatios = 0.0;
-        Map<LocalDate, Integer> itinerarioDeCapacidad = new HashMap<>();
-        for (Vuelo vuelo : this.vuelosEnTransito) {
-            LocalDateTime fechaHoraSalidaUTC = vuelo.getFechaHoraSalidaUTC(), fechaHoraLlegadaUTC = vuelo.getFechaHoraLlegadaUTC();
-            LocalDateTime fechaHoraLimiteSalida = fechaHoraSalidaUTC.plusDays(1).withHour(0).withMinute(0).withSecond(0);
-            LocalDateTime fechaHoraLimiteLlegada = fechaHoraLlegadaUTC.plusDays(1).withHour(0).withMinute(0).withSecond(0);
-            LocalDate fechaSalida = fechaHoraSalidaUTC.toLocalDate(), fechaLLegada = fechaHoraLlegadaUTC.toLocalDate();
-            Aeropuerto aOrig = vuelo.getPlan().getOrigen(), aDest = vuelo.getPlan().getDestino();
-            int origCapDisp = aOrig.obtenerCapacidadDisponible(fechaHoraSalidaUTC, fechaHoraLimiteSalida);
-            int destCapDisp = aDest.obtenerCapacidadDisponible(fechaHoraLlegadaUTC, fechaHoraLimiteLlegada);
-            itinerarioDeCapacidad.merge(fechaSalida, origCapDisp, Math::min);
-            itinerarioDeCapacidad.merge(fechaLLegada, destCapDisp, Math::min);
+        Map<LocalDate, Double> itinerarioDeCapacidad = new HashMap<>();
+        for(Ruta ruta : this.rutasEnOperacion) {
+            List<Vuelo> vuelos = ruta.getVuelos();
+            for(int i = 0; i < vuelos.size() ; i++) {
+                Vuelo vuelo = vuelos.get(i);
+                LocalDateTime vFechaHoraSalida = vuelo.getFechaHoraSalidaUTC(), vFechaHoraLlegada = vuelo.getFechaHoraLlegadaUTC();
+                LocalDate fechaSalida = vFechaHoraSalida.toLocalDate(), fechaLLegada = vFechaHoraLlegada.toLocalDate();
+                Aeropuerto aOrig = vuelo.getPlan().getOrigen(), aDest = vuelo.getPlan().getDestino();
+                LocalDateTime origFechaHoraRevision = vFechaHoraSalida.plusDays(1).withHour(0).withMinute(0).withSecond(0);
+                LocalDateTime destFechaHoraRevision = vFechaHoraLlegada.plusDays(1).withHour(0).withMinute(0).withSecond(0);
+                if(i != 0) {
+                    int origCapDisp = aOrig.obtenerCapacidadDisponible(origFechaHoraRevision, origFechaHoraRevision);
+                    int origCapMax = aOrig.getCapacidadMaxima();
+                    itinerarioDeCapacidad.merge(fechaSalida, (origCapDisp/((double)(origCapMax))), Math::min);
+                }
+                int destCapDisp = aDest.obtenerCapacidadDisponible(destFechaHoraRevision, destFechaHoraRevision);
+                int destCapMax = aDest.getCapacidadMaxima();
+                itinerarioDeCapacidad.merge(fechaLLegada, (destCapDisp/((double)(destCapMax))), Math::min);
+            }
         }
-        for (Integer capacidadDisponible : itinerarioDeCapacidad.values()) {
+        for (Double capacidadDisponible : itinerarioDeCapacidad.values()) {
             sumaRatios += capacidadDisponible;
         }
         if (itinerarioDeCapacidad.size() == 0) {
@@ -227,11 +235,11 @@ public class Solucion {
         this.vuelosEnTransito = vuelosEnTransito;
     }
 
-    public Set<Ruta> getRutasAsignadas() {
-        return rutasAsignadas;
+    public Set<Ruta> getRutasEnOperacion() {
+        return rutasEnOperacion;
     }
 
-    public void setRutasAsignadas(Set<Ruta> rutasAsignadas) {
-        this.rutasAsignadas = rutasAsignadas;
+    public void setRutasEnOperacion(Set<Ruta> rutasEnOperacion) {
+        this.rutasEnOperacion = rutasEnOperacion;
     }
 }

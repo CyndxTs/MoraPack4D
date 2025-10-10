@@ -9,6 +9,7 @@ package pucp.dp1.grupo4d.modelo;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+
 import pucp.dp1.grupo4d.util.G4D;
 
 public class Aeropuerto {
@@ -24,7 +25,7 @@ public class Aeropuerto {
     private Double latitudDEC;
     private String longitudDMS;
     private Double longitudDEC;
-    private List<RegistroDeProducto> historialDeProductos;
+    private List<RegistroDeAlmacen> historialDeProductos;
 
     public Aeropuerto() {
         this.id = G4D.getUniqueString("AER");
@@ -35,29 +36,68 @@ public class Aeropuerto {
         return G4D.getGeodesicDistance(this.latitudDEC,this.longitudDEC,destino.latitudDEC,destino.longitudDEC);
     }
 
-    public Integer obtenerCapacidadDisponible(LocalDateTime fechaHoraIngresoUTC, LocalDateTime fechaHoraEgresoUTC) {
+    public Integer obtenerCapacidadDisponible(LocalDateTime fechaHoraInicio, LocalDateTime fechaHoraFin) {
         int capacidadDisponible = this.capacidadMaxima;
-        for(RegistroDeProducto registro : this.historialDeProductos) {
-            LocalDateTime auxFechaHoraIngresoUTC = registro.getFechaHoraIngresoUTC();
-            LocalDateTime auxfechaHoraEgresoUTC = registro.getFechaHoraEgresoUTC();
-            if(auxfechaHoraEgresoUTC == null) {
-                auxfechaHoraEgresoUTC = auxFechaHoraIngresoUTC.plusHours(Problematica.MAX_HORAS_RECOJO.longValue());
+        if(fechaHoraFin == null) {
+            fechaHoraFin = fechaHoraInicio.plusMinutes((long)(60*Problematica.MAX_HORAS_RECOJO));
+        }
+        for(RegistroDeAlmacen registro : this.historialDeProductos) {
+            LocalDateTime rFechaHoraIngreso = registro.getFechaHoraIngresoUTC(), rFechaHoraEgreso = registro.getFechaHoraEgresoUTC();
+            if(rFechaHoraEgreso.isBefore(fechaHoraInicio) || rFechaHoraIngreso.isAfter(fechaHoraFin)) {
+                continue;
             }
-            if(auxFechaHoraIngresoUTC.isAfter(fechaHoraEgresoUTC) || auxfechaHoraEgresoUTC.isBefore(fechaHoraIngresoUTC)) {
-                capacidadDisponible--;
-            }
+            capacidadDisponible -= registro.getCantidad();
         }
         return capacidadDisponible;
     }
 
-    public void registrarProducto(String idProducto, LocalDateTime fechaHoraIngresoUTC, LocalDateTime fechaHoraEgresoUTC) {
-        RegistroDeProducto registro = new RegistroDeProducto();
-        registro.setIdProducto(idProducto);
+    public List<Producto> generarLoteDeProductos(int numProd, Ruta ruta) {
+        List<Producto> productos = new ArrayList<>();
+        for(int i = 0; i < numProd; i++) {
+            Producto producto = new Producto();
+            producto.setRuta(ruta);
+            productos.add(producto);
+        }
+        return productos;
+    }
+
+    public void registrarLote(List<String> productos, String idRuta, LocalDateTime fechaHoraIngresoUTC, LocalDateTime fechaHoraEgresoUTC) {
+        if(agregarProductosEnLote(productos, idRuta, fechaHoraIngresoUTC)) return;
+        RegistroDeAlmacen registro = new RegistroDeAlmacen();
+        registro.setIdRuta(idRuta);
+        registro.setCantidad(productos.size());
         registro.setFechaHoraIngresoUTC(fechaHoraIngresoUTC);
         registro.setFechaHoraIngresoLocal(G4D.toLocal(fechaHoraIngresoUTC,this.husoHorario));
         registro.setFechaHoraEgresoUTC(fechaHoraEgresoUTC);
         registro.setFechaHoraEgresoLocal(G4D.toLocal(fechaHoraEgresoUTC,this.husoHorario));
+        registro.setProductos(productos);
         this.historialDeProductos.add(registro);
+    }
+
+    public Boolean agregarProductosEnLote(List<String> productos, String idRuta, LocalDateTime fechaHoraIngreso) {
+        for(RegistroDeAlmacen registro : this.historialDeProductos) {
+            if(registro.getFechaHoraIngresoUTC().equals(fechaHoraIngreso) && registro.getIdRuta().compareTo(idRuta) == 0) {
+                registro.setCantidad(registro.getCantidad() + productos.size());
+                registro.getProductos().addAll(productos);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public Boolean eliminarProductosDeLote(List<String> productos, String idRuta, LocalDateTime fechaHoraIngreso) {
+        for(RegistroDeAlmacen registro : this.historialDeProductos) {
+            if(registro.getFechaHoraIngresoUTC().equals(fechaHoraIngreso) && registro.getIdRuta().compareTo(idRuta) == 0) {
+                registro.setCantidad(registro.getCantidad() - productos.size());
+                if(registro.getCantidad() != 0) {
+                    registro.getProductos().removeAll(productos);
+                } else {
+                    this.historialDeProductos.remove(registro);
+                }
+                return true;
+            }
+        }
+        return false;
     }
 
     public void limpiarHistorial(LocalDateTime fechaHoraLimiteUTC) {
@@ -78,7 +118,7 @@ public class Aeropuerto {
         aeropuerto.latitudDEC = this.latitudDEC;
         aeropuerto.longitudDMS = this.longitudDMS;
         aeropuerto.longitudDEC = this.longitudDEC;
-        for(RegistroDeProducto registro : this.historialDeProductos) aeropuerto.historialDeProductos.add(registro.replicar());
+        for(RegistroDeAlmacen registro : this.historialDeProductos) aeropuerto.historialDeProductos.add(registro.replicar());
         return aeropuerto;
     }
 
@@ -207,11 +247,11 @@ public class Aeropuerto {
         this.longitudDEC = G4D.toLonDEC(this.longitudDMS);
     }
 
-    public List<RegistroDeProducto> getHistorialDeProductos() {
+    public List<RegistroDeAlmacen> getHistorialDeProductos() {
         return historialDeProductos;
     }
 
-    public void setHistorialDeProductos(List<RegistroDeProducto> historialDeProductos) {
+    public void setHistorialDeProductos(List<RegistroDeAlmacen> historialDeProductos) {
         this.historialDeProductos = historialDeProductos;
     }
 }

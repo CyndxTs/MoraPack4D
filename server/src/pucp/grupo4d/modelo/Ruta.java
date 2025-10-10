@@ -77,9 +77,7 @@ public class Ruta {
     }
 
     public void setDuracion() {
-        Double duracion = 0.0;
-        for(Vuelo vuelo : this.vuelos) duracion += vuelo.getDuracion();
-        this.duracion = duracion;
+        this.duracion = G4D_Util.calculateElapsedHours(this.vuelos.getFirst().getFechaHoraSalidaUTC(), this.vuelos.getLast().getFechaHoraLlegadaUTC());
     }
 
     public Double getDistancia() {

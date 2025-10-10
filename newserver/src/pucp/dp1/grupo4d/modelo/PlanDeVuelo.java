@@ -8,14 +8,16 @@ package pucp.dp1.grupo4d.modelo;
 
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
+
 import pucp.dp1.grupo4d.util.G4D;
 
 public class PlanDeVuelo {
     private String id;
     private Integer capacidad;
-    private Double duracion;
     private Double distancia;
     private LocalTime horaSalidaLocal;
     private LocalTime horaSalidaUTC;
@@ -27,7 +29,6 @@ public class PlanDeVuelo {
     public PlanDeVuelo() {
         this.id = G4D.getUniqueString("PLA");
         this.capacidad = 0;
-        this.duracion = 0.0;
         this.distancia = 0.0;
     }
 
@@ -43,21 +44,40 @@ public class PlanDeVuelo {
         return G4D.getElapsedHours(fechaHoraActual,fechaHoraLlegadaUTC);
     }
 
-    public Boolean esAlcanzable(LocalDateTime fechaHoraActual, LocalDateTime fechaHoraLimite) {
+    public Boolean esAlcanzable(LocalDateTime fechaHoraActual, LocalDateTime fechaHoraLimite, Set<Vuelo> vuelosActivos) {
+        if(fechaHoraLimite == null) fechaHoraLimite = fechaHoraActual.plusMinutes((long)(60*Problematica.MAX_HORAS_RECOJO));
         LocalDateTime[] rango = G4D.getDateTimeRange(this.horaSalidaUTC,this.horaLlegadaUTC,fechaHoraActual);
-        LocalDateTime fechaHoraSalidaUTC = rango[0], fechaHoraLlegadaUTC = rango[1];
-        if(fechaHoraSalidaUTC.isBefore(fechaHoraActual.plusMinutes((long)(60*Problematica.MIN_HORAS_ESTANCIA)))) return false;
-        if(fechaHoraLlegadaUTC.isAfter(fechaHoraLimite)) return false;
-        int destCapDisp = this.destino.obtenerCapacidadDisponible(fechaHoraLlegadaUTC,fechaHoraLimite);
+        LocalDateTime vFechaHoraSalida = rango[0], vFechaHoraLlegada = rango[1];
+        LocalDateTime origFechaHoraMinEgreso = fechaHoraActual.plusMinutes((long)(60*Problematica.MIN_HORAS_ESTANCIA));
+        if(vFechaHoraSalida.isBefore(origFechaHoraMinEgreso)) return false;
+        LocalDateTime destFechaHoraMaxEgreso = vFechaHoraLlegada.plusMinutes((long)(60*Problematica.MAX_HORAS_ESTANCIA));
+        destFechaHoraMaxEgreso = (destFechaHoraMaxEgreso.isBefore(fechaHoraLimite)) ? destFechaHoraMaxEgreso : fechaHoraLimite;
+        if(vFechaHoraLlegada.isAfter(destFechaHoraMaxEgreso)) return false;
+        int destCapDisp = this.destino.obtenerCapacidadDisponible(vFechaHoraLlegada,destFechaHoraMaxEgreso);
         if(destCapDisp < 1) return false;
+        Vuelo vuelo = obtenerVueloActivo(fechaHoraActual, fechaHoraLimite, vuelosActivos);
+        if(vuelo != null && vuelo.getCapacidadDisponible() < 1) return false;
         return true;
+    }
+    
+    public Vuelo obtenerVueloActivo(LocalDateTime fechaHoraActual,LocalDateTime fechaHoraLimite,Set<Vuelo> vuelosActivos) {
+        List<Vuelo> vuelosPosibles = vuelosActivos.stream().filter(v -> this.equals(v.getPlan()))
+                                                           .filter(v -> v.getFechaHoraLlegadaUTC().isBefore(fechaHoraLimite))
+                                                           .toList();
+        LocalDateTime[] rango = G4D.getDateTimeRange(this.horaSalidaUTC, this.horaLlegadaUTC, fechaHoraActual);
+        LocalDateTime fechaHoraSalidaUTC = rango[0];
+        for(Vuelo vuelo : vuelosPosibles) {
+            if(fechaHoraSalidaUTC.equals(vuelo.getFechaHoraSalidaUTC())) {
+                return vuelo;
+            }
+        }
+        return null;
     }
 
     public PlanDeVuelo replicar(Map<String,Aeropuerto> poolAeropuertos) {
         PlanDeVuelo plan = new PlanDeVuelo();
         plan.id = this.id;
         plan.capacidad = this.capacidad;
-        plan.duracion = this.duracion;
         plan.distancia = this.distancia;
         plan.horaSalidaLocal = this.horaSalidaLocal;
         plan.horaSalidaUTC = this.horaSalidaUTC;
@@ -99,19 +119,7 @@ public class PlanDeVuelo {
     public void setCapacidad(Integer capacidad) {
         this.capacidad = capacidad;
     }
-
-    public Double getDuracion() {
-        return duracion;
-    }
-
-    public void setDuracion(Double duracion) {
-        this.duracion = duracion;
-    }
-
-    public void setDuracion() {
-        this.duracion = G4D.getElapsedHours(this.horaSalidaUTC, this.horaLlegadaUTC);
-    }
-
+    
     public Double getDistancia() {
         return distancia;
     }

@@ -15,6 +15,7 @@ import java.math.BigInteger;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
@@ -496,6 +497,58 @@ public class G4D {
                 ansiString += Action.to_ansi(id, mode);
             }
             return ansiString;
+        }
+        //
+        public static class Stats {
+            private static Instant start;
+            private static Instant end;
+            private static long duration;
+            public static int posPed = 0;
+            public static int numPed = 1;
+            public static int totalPed = 0;
+            public static int posProd = 0;
+            public static int numProd = 1;
+            public static int totalProd = 0;
+
+            public static void set_start() {
+                start = Instant.now();
+            }
+
+            public static void set_end() {
+                end = Instant.now();
+            }
+
+            public static void set_duration() {
+                duration = Duration.between(start, end).toNanos();
+            }
+
+            public static double get_mean_time_by_ped() {
+                return duration/(1000000.0*posPed);
+            }
+
+            public static double get_mean_time_by_prod() {
+                return duration/(1000.0*posProd);
+            }
+
+            public static void log_ped_stat() {
+                G4D.Logger.logf("[#] TOTAL DE PEDIDOS ATENDIDOS: %d de' %d'%n",posPed,totalPed);
+                G4D.Logger.logf("[#] TIEMPO PROMEDIO DE ATENCION POR PEDIDO: %.3f ms.%n",get_mean_time_by_ped());
+            }
+
+            public static void log_prod_stat() {
+                G4D.Logger.logf("[#] TOTAL DE PRODUCTOS ENRUTADOS: %d de '%d'%n",posProd,totalProd);
+                G4D.Logger.logf("[#] TIEMPO PROMEDIO DE ENRUTAMIENTO POR PRODUCTO: %.3f us.%n",get_mean_time_by_prod());
+            }
+
+            public static void next_lot(int cantProd) {
+                posProd += cantProd;
+                numProd += cantProd;
+            }
+
+            public static void next_ped() {
+                posPed++;
+                numPed++;
+            }
         }
     }
 }

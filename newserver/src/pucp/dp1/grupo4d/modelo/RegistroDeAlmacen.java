@@ -7,29 +7,35 @@
 package pucp.dp1.grupo4d.modelo;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import pucp.dp1.grupo4d.util.G4D;
 
-public class RegistroDeProducto {
+public class RegistroDeAlmacen {
     private String id;
-    private String idProducto;
+    private String idRuta;
+    private Integer cantidad;
     private LocalDateTime fechaHoraIngresoLocal;
     private LocalDateTime fechaHoraIngresoUTC;
     private LocalDateTime fechaHoraEgresoLocal;
     private LocalDateTime fechaHoraEgresoUTC;
+    private List<String> productos;
 
-    public RegistroDeProducto() {
+    public RegistroDeAlmacen() {
         this.id = G4D.getUniqueString("REG");
     }
 
-    public RegistroDeProducto replicar() {
-        RegistroDeProducto registro = new RegistroDeProducto();
+    public RegistroDeAlmacen replicar() {
+        RegistroDeAlmacen registro = new RegistroDeAlmacen();
         registro.id = this.id;
-        registro.idProducto = this.idProducto;
+        registro.idRuta = this.idRuta;
+        registro.cantidad = this.cantidad;
         registro.fechaHoraIngresoLocal = this.fechaHoraIngresoLocal;
         registro.fechaHoraIngresoUTC = this.fechaHoraIngresoUTC;
         registro.fechaHoraEgresoLocal = this.fechaHoraEgresoLocal;
         registro.fechaHoraEgresoUTC = this.fechaHoraEgresoUTC;
+        registro.productos = new ArrayList<>(this.productos);
         return registro;
     }
 
@@ -37,7 +43,7 @@ public class RegistroDeProducto {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        RegistroDeProducto that = (RegistroDeProducto) o;
+        RegistroDeAlmacen that = (RegistroDeAlmacen) o;
         return Objects.equals(id, that.id);
     }
 
@@ -54,12 +60,20 @@ public class RegistroDeProducto {
         this.id = id;
     }
 
-    public String getIdProducto() {
-        return idProducto;
+    public String getIdRuta() {
+        return idRuta;
     }
 
-    public void setIdProducto(String idProducto) {
-        this.idProducto = idProducto;
+    public void setIdRuta(String idRuta) {
+        this.idRuta = idRuta;
+    }
+
+    public Integer getCantidad() {
+        return cantidad;
+    }
+
+    public void setCantidad(Integer cantidad) {
+        this.cantidad = cantidad;
     }
 
     public LocalDateTime getFechaHoraIngresoLocal() {
@@ -92,5 +106,13 @@ public class RegistroDeProducto {
 
     public void setFechaHoraEgresoUTC(LocalDateTime fechaHoraEgresoUTC) {
         this.fechaHoraEgresoUTC = fechaHoraEgresoUTC;
+    }
+
+    public List<String> getProductos() {
+        return productos;
+    }
+
+    public void setProductos(List<String> productos) {
+        this.productos = productos;
     }
 }

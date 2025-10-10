@@ -88,7 +88,7 @@ public class Vuelo {
     }
 
     public void setDuracion() {
-        this.duracion = this.plan.getDuracion();
+        this.duracion = G4D.getElapsedHours(this.fechaHoraSalidaUTC, this.fechaHoraLlegadaUTC);
     }
 
     public Double getDistancia() {

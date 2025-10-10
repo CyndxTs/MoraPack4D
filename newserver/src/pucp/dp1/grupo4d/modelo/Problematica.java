@@ -28,6 +28,7 @@ public class Problematica {
     public static final Integer MAX_DIAS_ENTREGA_INTERCONTINENTAL = 3;
     public static final Double MAX_HORAS_RECOJO = 2.0;
     public static final Double MIN_HORAS_ESTANCIA = 0.5;
+    public static final Double MAX_HORAS_ESTANCIA = 8.0;
     public Map<String, Aeropuerto> origenes;
     public List<Aeropuerto> destinos;
     public List<PlanDeVuelo> planes;
@@ -42,6 +43,8 @@ public class Problematica {
         this.planes = new ArrayList<>();
         this.pedidos = new ArrayList<>();
     }
+
+
     // Carga de datos para problematica
     public void cargarDatos(String rutaArchivoAeropuertos, String rutaArchivoVuelos, String rutaArchivoPedidos) {
         cargarAeropuertos(rutaArchivoAeropuertos);
@@ -142,7 +145,6 @@ public class Problematica {
                 plan.setHoraLlegadaLocal(G4D.toTime(lineaSC.next()));
                 plan.setHoraLlegadaUTC();
                 plan.setCapacidad(lineaSC.nextInt());
-                plan.setDuracion();
                 plan.setDistancia();
                 planes.add(plan);
                 lineaSC.close();
@@ -167,7 +169,7 @@ public class Problematica {
         // Declaracion de variables
         String rutaArchivo = "Pedidos.txt";
         Random random = new Random();
-        int minPed = 5,maxPed = 6, ped_minNumProd = 250,ped_maxNumProd = 265, ped_maxNumCli = 20;
+        int minPed = 250,maxPed = 350, ped_minNumProd = 650,ped_maxNumProd = 750, ped_maxNumCli = 189;
         // Generando archivo
         try {
             // Inicializaion del archivo y scanner

@@ -19,7 +19,7 @@ public class Main {
         problematica.cargarDatos(
                 "c.1inf54.25.2.Aeropuerto.husos.v1.20250818__estudiantes.txt",
                 "c.1inf54.25.2.planes_vuelo.v4.20250818.txt",
-                null);
+                "Pedidos.txt");
         // Declaracion de algoritmo
         Algoritmo algoritmo1 = new GVNS(); // new PSO();
         // Optimizacion
