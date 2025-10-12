@@ -35,7 +35,7 @@ public class PlanDeVuelo {
     public Double obtenerLejania(LocalDateTime fechaHoraActual,Aeropuerto aDest) {
         double transcurrido = obtenerHorasTranscurridasHastaLlegada(fechaHoraActual);
         double distanciaFinal = this.destino.obtenerDistanciaHasta(aDest);
-        return transcurrido + 0.005 * distanciaFinal;
+        return transcurrido + 0.0075 * distanciaFinal;
     }
 
     public Double obtenerHorasTranscurridasHastaLlegada(LocalDateTime fechaHoraActual) {
@@ -44,15 +44,16 @@ public class PlanDeVuelo {
         return G4D.getElapsedHours(fechaHoraActual,fechaHoraLlegadaUTC);
     }
 
-    public Boolean esAlcanzable(LocalDateTime fechaHoraActual, LocalDateTime fechaHoraLimite, Set<Vuelo> vuelosActivos) {
+    public Boolean esAlcanzable(LocalDateTime fechaHoraActual, LocalDateTime fechaHoraLimite, Aeropuerto destino, Set<Vuelo> vuelosActivos) {
         if(fechaHoraLimite == null) fechaHoraLimite = fechaHoraActual.plusMinutes((long)(60*Problematica.MAX_HORAS_RECOJO));
         LocalDateTime[] rango = G4D.getDateTimeRange(this.horaSalidaUTC,this.horaLlegadaUTC,fechaHoraActual);
         LocalDateTime vFechaHoraSalida = rango[0], vFechaHoraLlegada = rango[1];
         LocalDateTime origFechaHoraMinEgreso = fechaHoraActual.plusMinutes((long)(60*Problematica.MIN_HORAS_ESTANCIA));
-        if(vFechaHoraSalida.isBefore(origFechaHoraMinEgreso)) return false;
-        LocalDateTime destFechaHoraMaxEgreso = vFechaHoraLlegada.plusMinutes((long)(60*Problematica.MAX_HORAS_ESTANCIA));
-        destFechaHoraMaxEgreso = (destFechaHoraMaxEgreso.isBefore(fechaHoraLimite)) ? destFechaHoraMaxEgreso : fechaHoraLimite;
-        if(vFechaHoraLlegada.isAfter(destFechaHoraMaxEgreso)) return false;
+        LocalDateTime origFechaHoraMaxEgreso = fechaHoraActual.plusMinutes((long)(60*Problematica.MAX_HORAS_ESTANCIA));
+        if(vFechaHoraSalida.isBefore(origFechaHoraMinEgreso) || vFechaHoraSalida.isAfter(origFechaHoraMaxEgreso)) return false;
+        LocalDateTime destFechaHoraMinEgreso = vFechaHoraLlegada.plusMinutes((long)(60*Problematica.MIN_HORAS_ESTANCIA));
+        if(destFechaHoraMinEgreso.isAfter(fechaHoraLimite)) return false;
+        LocalDateTime destFechaHoraMaxEgreso = vFechaHoraLlegada.plusMinutes((long)(60*((!this.destino.equals(destino)) ? Problematica.MAX_HORAS_ESTANCIA : Problematica.MAX_HORAS_RECOJO)));
         int destCapDisp = this.destino.obtenerCapacidadDisponible(vFechaHoraLlegada,destFechaHoraMaxEgreso);
         if(destCapDisp < 1) return false;
         Vuelo vuelo = obtenerVueloActivo(fechaHoraActual, fechaHoraLimite, vuelosActivos);

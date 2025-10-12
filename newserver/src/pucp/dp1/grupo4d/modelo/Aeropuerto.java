@@ -20,7 +20,7 @@ public class Aeropuerto {
     private String continente;
     private String alias;
     private Integer husoHorario;
-    private Integer capacidadMaxima;
+    private Integer capacidad;
     private String latitudDMS;
     private Double latitudDEC;
     private String longitudDMS;
@@ -37,16 +37,15 @@ public class Aeropuerto {
     }
 
     public Integer obtenerCapacidadDisponible(LocalDateTime fechaHoraInicio, LocalDateTime fechaHoraFin) {
-        int capacidadDisponible = this.capacidadMaxima;
+        int capacidadDisponible = this.capacidad;
         if(fechaHoraFin == null) {
             fechaHoraFin = fechaHoraInicio.plusMinutes((long)(60*Problematica.MAX_HORAS_RECOJO));
         }
         for(RegistroDeAlmacen registro : this.historialDeProductos) {
             LocalDateTime rFechaHoraIngreso = registro.getFechaHoraIngresoUTC(), rFechaHoraEgreso = registro.getFechaHoraEgresoUTC();
-            if(rFechaHoraEgreso.isBefore(fechaHoraInicio) || rFechaHoraIngreso.isAfter(fechaHoraFin)) {
-                continue;
+            if(rFechaHoraIngreso.isBefore(fechaHoraFin) && rFechaHoraEgreso.isAfter(fechaHoraInicio)) {
+                capacidadDisponible -= registro.getCantidad();
             }
-            capacidadDisponible -= registro.getCantidad();
         }
         return capacidadDisponible;
     }
@@ -62,7 +61,7 @@ public class Aeropuerto {
     }
 
     public void registrarLote(List<String> productos, String idRuta, LocalDateTime fechaHoraIngresoUTC, LocalDateTime fechaHoraEgresoUTC) {
-        if(agregarProductosEnLote(productos, idRuta, fechaHoraIngresoUTC)) return;
+        if(agregarProductosEnLote(productos, idRuta)) return;
         RegistroDeAlmacen registro = new RegistroDeAlmacen();
         registro.setIdRuta(idRuta);
         registro.setCantidad(productos.size());
@@ -74,9 +73,9 @@ public class Aeropuerto {
         this.historialDeProductos.add(registro);
     }
 
-    public Boolean agregarProductosEnLote(List<String> productos, String idRuta, LocalDateTime fechaHoraIngreso) {
+    public Boolean agregarProductosEnLote(List<String> productos, String idRuta) {
         for(RegistroDeAlmacen registro : this.historialDeProductos) {
-            if(registro.getFechaHoraIngresoUTC().equals(fechaHoraIngreso) && registro.getIdRuta().compareTo(idRuta) == 0) {
+            if(registro.getIdRuta().compareTo(idRuta) == 0) {
                 registro.setCantidad(registro.getCantidad() + productos.size());
                 registro.getProductos().addAll(productos);
                 return true;
@@ -85,11 +84,11 @@ public class Aeropuerto {
         return false;
     }
 
-    public Boolean eliminarProductosDeLote(List<String> productos, String idRuta, LocalDateTime fechaHoraIngreso) {
+    public Boolean eliminarProductosDeLote(List<String> productos, String idRuta) {
         for(RegistroDeAlmacen registro : this.historialDeProductos) {
-            if(registro.getFechaHoraIngresoUTC().equals(fechaHoraIngreso) && registro.getIdRuta().compareTo(idRuta) == 0) {
+            if(registro.getIdRuta().compareTo(idRuta) == 0) {
                 registro.setCantidad(registro.getCantidad() - productos.size());
-                if(registro.getCantidad() != 0) {
+                if(registro.getCantidad() > 0) {
                     registro.getProductos().removeAll(productos);
                 } else {
                     this.historialDeProductos.remove(registro);
@@ -98,10 +97,6 @@ public class Aeropuerto {
             }
         }
         return false;
-    }
-
-    public void limpiarHistorial(LocalDateTime fechaHoraLimiteUTC) {
-        this.historialDeProductos.removeIf(r -> r.getFechaHoraEgresoUTC() != null  && r.getFechaHoraEgresoUTC().isBefore(fechaHoraLimiteUTC));
     }
 
     public Aeropuerto replicar() {
@@ -113,7 +108,7 @@ public class Aeropuerto {
         aeropuerto.continente = this.continente;
         aeropuerto.alias = this.alias;
         aeropuerto.husoHorario = this.husoHorario;
-        aeropuerto.capacidadMaxima = this.capacidadMaxima;
+        aeropuerto.capacidad = this.capacidad;
         aeropuerto.latitudDMS = this.latitudDMS;
         aeropuerto.latitudDEC = this.latitudDEC;
         aeropuerto.longitudDMS = this.longitudDMS;
@@ -191,60 +186,60 @@ public class Aeropuerto {
         this.husoHorario = husoHorario;
     }
 
-    public Integer getCapacidadMaxima() {
-        return capacidadMaxima;
+    public Integer getCapacidad() {
+        return capacidad;
     }
 
-    public void setCapacidadMaxima(Integer capacidadMaxima) {
-        this.capacidadMaxima = capacidadMaxima;
+    public void setCapacidad(Integer capacidad) {
+        this.capacidad = capacidad;
     }
 
     public String getLatitudDMS() {
         return latitudDMS;
     }
 
-    public void setLatitudDMS(String latitudDMS) {
-        this.latitudDMS = latitudDMS;
-    }
-
     public void setLatitudDMS() {
         this.latitudDMS = G4D.toLatDMS(this.latitudDEC);
+    }
+
+    public void setLatitudDMS(String latitudDMS) {
+        this.latitudDMS = latitudDMS;
     }
 
     public Double getLatitudDEC() {
         return latitudDEC;
     }
 
-    public void setLatitudDEC(Double latitudDEC) {
-        this.latitudDEC = latitudDEC;
-    }
-
     public void setLatitudDEC() {
         this.latitudDEC = G4D.toLatDEC(this.latitudDMS);
+    }
+
+    public void setLatitudDEC(Double latitudDEC) {
+        this.latitudDEC = latitudDEC;
     }
 
     public String getLongitudDMS() {
         return longitudDMS;
     }
 
-    public void setLongitudDMS(String longitudDMS) {
-        this.longitudDMS = longitudDMS;
-    }
-
     public void setLongitudDMS() {
         this.longitudDMS = G4D.toLonDMS(this.longitudDEC);
+    }
+
+    public void setLongitudDMS(String longitudDMS) {
+        this.longitudDMS = longitudDMS;
     }
 
     public Double getLongitudDEC() {
         return longitudDEC;
     }
 
-    public void setLongitudDEC(Double longitudDEC) {
-        this.longitudDEC = longitudDEC;
-    }
-
     public void setLongitudDEC() {
         this.longitudDEC = G4D.toLonDEC(this.longitudDMS);
+    }
+
+    public void setLongitudDEC(Double longitudDEC) {
+        this.longitudDEC = longitudDEC;
     }
 
     public List<RegistroDeAlmacen> getHistorialDeProductos() {

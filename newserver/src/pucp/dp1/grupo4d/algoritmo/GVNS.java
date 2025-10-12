@@ -10,8 +10,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
@@ -130,24 +128,22 @@ public class GVNS {
     // Solución Inicial: Nearest Neighbor [FAST GREEDY]
     private void solucionInicial_FastGreedy(Problematica problematica, Solucion solucion) {
         G4D.Logger.logln("[FAST GREEDY]");
-        // Declaracion & Inicialización de variables
-        List<Aeropuerto> origenes = new ArrayList<>(problematica.origenes.values());
+        // Declaracion de variables
+        List<Aeropuerto> origenes = new ArrayList<>(Problematica.origenes.values());
         List<PlanDeVuelo> planes = problematica.planes;
         List<Pedido> pedidos = problematica.pedidos;
+        Set<Aeropuerto> aeropuertosEnUso = new HashSet<>();
         Set<Vuelo> vuelosEnTransito = new HashSet<>();
         Set<Ruta> rutasEnOperacion = new HashSet<>();
+        //
         G4D.Logger.Stats.totalPed = pedidos.size();
         for(Pedido p : pedidos) G4D.Logger.Stats.totalProd += p.getCantidad();
         // 
         for (Pedido pedido : pedidos) {
-            if(G4D.Logger.Stats.numPed == 198) {
-                G4D.Logger.log("Debugging..");
-                G4D.Logger.delete_current_line();
-            }
             G4D.Logger.Stats.numProd = 1;
             G4D.Logger.Stats.log_ped_stat();
             G4D.Logger.Stats.set_start();
-            boolean pedidoAtendido = atenderPedido(pedido, origenes, planes, vuelosEnTransito, rutasEnOperacion);
+            boolean pedidoAtendido = atenderPedido(pedido, origenes, planes, aeropuertosEnUso, vuelosEnTransito, rutasEnOperacion);
             if(!pedidoAtendido) {
                 G4D.Logger.logf_err("[ERROR] No se pudo enrutar el producto #%d del pedido #%s.%n", G4D.Logger.Stats.numProd, G4D.Logger.Stats.numPed);
                 G4D.Logger.logf_err("[ERROR] Solo se atendieron %d de '%d' pedidos. (%d de '%d' productos)%n",G4D.Logger.Stats.posPed,G4D.Logger.Stats.totalPed,G4D.Logger.Stats.posProd,G4D.Logger.Stats.totalProd);
@@ -159,49 +155,56 @@ public class GVNS {
         }
         // 
         solucion.setPedidosAtendidos(pedidos);
+        solucion.setAeropuertosEnUso(aeropuertosEnUso);
         solucion.setVuelosEnTransito(vuelosEnTransito);
         solucion.setRutasEnOperacion(rutasEnOperacion);
         solucion.setFitness();
     }
     //
     private boolean atenderPedido(Pedido pedido, List<Aeropuerto> origenes, List<PlanDeVuelo> planes,
-                                  Set<Vuelo> vuelosEnTransito, Set<Ruta> rutasEnOperacion) {
+                                  Set<Aeropuerto> aeropuertosEnUso, Set<Vuelo> vuelosEnTransito, Set<Ruta> rutasEnOperacion) {
         //
-        int cantPorEnrutar = pedido.getCantidad(), numOrig = 1, totalOrig = origenes.size();
+        int cantPorEnrutar = pedido.getCantidad();
         LocalDateTime fechaHoraInicial = pedido.getFechaHoraCreacionUTC();
         Aeropuerto destino = pedido.getDestino();
+        List<Aeropuerto> origenesDisponibles = new ArrayList<>(origenes);
+        Set<Aeropuerto> aeropuertosVisitados = new HashSet<>();
         Set<Vuelo> vuelosActivados = new HashSet<>(vuelosEnTransito);
         Set<Ruta> rutasAsignadas = new HashSet<>(rutasEnOperacion);
-        //
-        for(int posOrig = 0; posOrig < totalOrig; posOrig++, numOrig++) {
+        while(!origenesDisponibles.isEmpty()) {
             G4D.Logger.Stats.log_prod_stat();
             G4D.Logger.logf(">>> ATENDIENDO PEDIDO #%d | %d de '%d' productos enrutados.%n",G4D.Logger.Stats.numPed,G4D.Logger.Stats.numProd,pedido.getCantidad());
-            Aeropuerto origen = origenes.get(posOrig);
-            G4D.Logger.logf("ORIGEN #%d de '%d' | (%s)%n", numOrig, totalOrig, origen.getCodigo());
+            Aeropuerto origen = origenesDisponibles.get(random.nextInt(origenesDisponibles.size()));
+            G4D.Logger.logf("PARTIENDO DESDE ORIGEN '%s' | %s%n", origen.getCodigo(), origen.getCiudad());
             TipoRuta tipoRuta = (origen.getContinente().compareTo(destino.getContinente()) == 0) ? TipoRuta.INTRACONTINENTAL : TipoRuta.INTERCONTINENTAL;
             LocalDateTime fechaHoraLimite = fechaHoraInicial.plusMinutes(tipoRuta.getMaxMinutosParaEntrega());
             Ruta ruta = buscarRutaVoraz(fechaHoraInicial, fechaHoraLimite, origen, destino, rutasAsignadas);
             G4D.Logger.delete_current_line();
             if(ruta == null) {
-                Set<Aeropuerto> aeropuertosVisitados = new HashSet<>();
-                ruta = construirRutaVoraz(fechaHoraInicial, fechaHoraLimite, origen, destino, planes, aeropuertosVisitados, vuelosActivados);
+                Set<Aeropuerto> aeropuertosVisitadosEnRuta = new HashSet<>();
+                ruta = construirRutaVoraz(fechaHoraInicial, fechaHoraLimite, origen, destino, planes, aeropuertosVisitadosEnRuta, vuelosActivados);
                 if(ruta == null) {
                     G4D.Logger.log("No es posible generar una ruta a partir de este origen.");
+                    origenesDisponibles.remove(origen);
                     G4D.Logger.delete_lines(5);
                     continue;
                 }
                 ruta.setTipo(tipoRuta);
+                aeropuertosVisitados.addAll(aeropuertosVisitadosEnRuta);
             }
-            int rCapDisp = ruta.obtenerCapacidadDisponible(fechaHoraInicial);
-            if(rCapDisp == 0) {
-                G4D.Logger.logln_err("ERROR: RUTA SIN DISPONIBILIDAD WTF");
-                System.exit(1);
+            int rCapDisp = ruta.obtenerCapacidadDisponible();
+            if(rCapDisp < 1) {
+                ruta.obtenerCapacidadDisponible();
             }
             int cantEnrutables = Math.min(rCapDisp, cantPorEnrutar);
-            G4D.Logger.logf("Enrutando %d productos.. {%s}", cantEnrutables, cantPorEnrutar, ruta.getId());
+            G4D.Logger.logf("Enrutando %d productos.. {%s}", cantEnrutables, ruta.getId());
             List<Producto> productos = origen.generarLoteDeProductos(cantEnrutables, ruta);
             List<String> ids = productos.stream().map(Producto::getId).collect(Collectors.toList());
-            ruta.registraLote(ids, fechaHoraInicial);
+            ruta.registraLote(ids);
+            rCapDisp = ruta.obtenerCapacidadDisponible();
+            if(rCapDisp < 0) {
+                ruta.obtenerCapacidadDisponible();
+            }
             rutasAsignadas.add(ruta);
             pedido.getProductos().addAll(productos);
             cantPorEnrutar -= cantEnrutables;
@@ -212,13 +215,12 @@ public class GVNS {
             if(cantPorEnrutar == 0) {
                 G4D.Logger.delete_lines(3);
                 G4D.Logger.log(">>> PEDIDO ATENDIDO.");
+                aeropuertosEnUso.addAll(aeropuertosVisitados);
                 vuelosEnTransito.addAll(vuelosActivados);
                 rutasEnOperacion.addAll(rutasAsignadas);
                 G4D.Logger.delete_lines(5);
                 return true;
             }
-            posOrig--;
-            numOrig--;
             G4D.Logger.delete_lines(5);
         }
         return false;
@@ -237,11 +239,17 @@ public class GVNS {
         List<Ruta> rutasPosibles = rutasAsignadas.stream().filter(r -> r.getOrigen().equals(origen) && r.getDestino().equals(destino)).toList();
         for(Ruta ruta : rutasPosibles) {
             LocalDateTime fechaHoraSalida = ruta.getFechaHoraSalidaUTC();
-            if(fechaHoraSalida.isBefore(fechaHoraInicial)) continue;
+            if(fechaHoraSalida.isBefore(fechaHoraInicial)) {
+                continue;
+            }
             LocalDateTime fechaHoraLlegada = ruta.getFechaHoraLlegadaUTC();
-            if(fechaHoraLlegada.isAfter(fechaHoraLimite)) continue;
-            int rCapDisp = ruta.obtenerCapacidadDisponible(fechaHoraInicial);
-            if(rCapDisp < 1) continue;
+            if(fechaHoraLlegada.isAfter(fechaHoraLimite)) {
+                continue;
+            }
+            int rCapDisp = ruta.obtenerCapacidadDisponible();
+            if(rCapDisp < 1) {
+                continue;
+            }
             G4D.Logger.log(" [ENCONTRADA]");
             return ruta;
         }
@@ -271,7 +279,7 @@ public class GVNS {
             PlanDeVuelo mejorPlan = obtenerPlanMasProximo(actual, destino, fechaHoraActual, fechaHoraLimite, planes, aeropuertosVisitados, vuelosActivados);
             if(mejorPlan == null) {
                 G4D.Logger.logln(" [NO ENCONTRADO] | Deadline..");
-                G4D.Logger.delete_lines(3);
+                G4D.Logger.delete_lines(4);
                 return null;
             }
             G4D.Logger.logln(" [ENCONTRADO]");
@@ -314,7 +322,7 @@ public class GVNS {
                                                           .filter(p -> !visitados.contains(p.getDestino()))
                                                           .toList();
         for(PlanDeVuelo plan : planesPosibles) {
-            if(!plan.esAlcanzable(fechaHoraActual, fechaHoraLimite, vuelosActivados)) continue;
+            if(!plan.esAlcanzable(fechaHoraActual, fechaHoraLimite, destino, vuelosActivados)) continue;
             Double lejania = plan.obtenerLejania(fechaHoraActual, destino);
             if(lejania < menorLejania) {
                 menorLejania = lejania;
@@ -323,7 +331,6 @@ public class GVNS {
         }
         return planMasProximo;
     }
-    
 /* 
     // Solución Inicial: Adaptative Nearest Neighbor [ROBUST GREEDY]
     private void solucionInicial_RobustGreedy(Problematica problematica, Solucion solucion) {
@@ -946,18 +953,16 @@ public class GVNS {
             G4D.Printer.print_centered(String.format("%.2f", solucion.getFitness()), dimLinea);
             G4D.Printer.println();
             G4D.Printer.print_centered(
-                String.format("%s%33s%26s",
-                    "RP. CUMPLIMIENTO TEMPORAL",
-                    "RP. DESVIACION ESPACIAL",
-                    "RP. DISPONIBILIDAD"
+                String.format("%s%35s%39s",
+                    "UTILIZACION TEMPORAL",
+                    "DESVIACION ESPACIAL",
+                    "DISPOSICION OPERACIONAL"
                 ), dimLinea);
             G4D.Printer.print_centered(
-                String.format("%14s%33s%19s%s | %s",
-                    String.format("%.3f", solucion.getRatioPromedioDeCumplimientoTemporal()),
-                    String.format("%.3f", solucion.getRatioPromedioDeDesviacionEspacial()),
-                    " ",
-                    String.format("V: %.3f", solucion.getRatioPromedioDeDisponibilidadDeVuelos()),
-                    String.format("A: %.3f", solucion.getRatioPromedioDeDisponibilidadDeAeropuertos())
+                String.format("%s%35s%37s",
+                    String.format("%.2f%%", 100*solucion.getRatioPromedioDeUtilizacionTemporal()),
+                    String.format("%.2f%%", 100*solucion.getRatioPromedioDeDesviacionEspacial()),
+                    String.format("%.2f%%", 100*solucion.getRatioPromedioDeDisposicionOperacional())
                 ), dimLinea);
             G4D.Printer.fill_line('=', dimLinea);
             for (Pedido pedido : solucion.getPedidosAtendidos()) {
@@ -987,7 +992,7 @@ public class GVNS {
                 tiempoOptimizadoDePedido = 0.0;
                 for (Ruta ruta : rutasPlanificadas) {
                     int cantAsignados = pedido.obtenerCantidadDeProductosEnRuta(ruta);
-                    G4D.Printer.printf("%10s RUTA #%s  |  ORIGEN: %s  |  TIPO DE ENVIO:  %s  |  ENTREGA PLANIFICADA: %s | NUM. PRODUCTOS ASIGNADOS: %d%n",
+                    G4D.Printer.printf("%10s RUTA #%s  |  ORIGEN: %s  |  TIPO DE ENVIO:  %s  |  ENTREGA PLANIFICADA: %s  |  PRODUCTOS ASIGNADOS: %d%n",
                         ">>",
                         String.format("%03d", posRuta + 1),
                         ruta.getOrigen().getCodigo(),

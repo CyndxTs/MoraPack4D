@@ -44,37 +44,30 @@ public class Ruta {
         this.fechaHoraLimiteLocal = G4D.toLocal(this.fechaHoraLimiteUTC, destino.getHusoHorario());
     }
 
-    public void registraLote(List<String> productos, LocalDateTime fechaHoraInicial) {
+    public void registraLote(List<String> productos) {
         for(int i = 0; i < this.vuelos.size(); i++) {
             Vuelo vuelo = vuelos.get(i);
             vuelo.setCapacidadDisponible(vuelo.getCapacidadDisponible() - productos.size());
-            if(i == 0) {
-                vuelo.getPlan().getOrigen().registrarLote(productos, this.id, fechaHoraInicial, vuelo.getFechaHoraSalidaUTC());
-            }
-            LocalDateTime fechaHoraEgreso = (i < vuelos.size() - 1) ? vuelos.get(i + 1).getFechaHoraSalidaUTC() : vuelo.getFechaHoraLlegadaUTC().plusMinutes((long)(60*Problematica.MAX_HORAS_RECOJO));
+            LocalDateTime fechaHoraEgreso = (i + 1 < vuelos.size()) ? vuelos.get(i + 1).getFechaHoraSalidaUTC() : vuelo.getFechaHoraLlegadaUTC().plusMinutes((long)(60*Problematica.MAX_HORAS_RECOJO));
             vuelo.getPlan().getDestino().registrarLote(productos, this.id, vuelo.getFechaHoraLlegadaUTC(), fechaHoraEgreso);
         }
     }
 
-    public void agregarProductosEnLote(List<String> productos, LocalDateTime fechaHoraInicial) {
-        this.vuelos.getFirst().getPlan().getOrigen().agregarProductosEnLote(productos, this.id, fechaHoraInicial);
+    public void agregarProductosEnLote(List<String> productos) {
         for(Vuelo vuelo : this.vuelos) {
             vuelo.setCapacidadDisponible(vuelo.getCapacidadDisponible() - productos.size());
-            LocalDateTime fechaHoraLlegada = vuelo.getFechaHoraLlegadaUTC();
-            vuelo.getPlan().getDestino().agregarProductosEnLote(productos, this.id, fechaHoraLlegada);
+            vuelo.getPlan().getDestino().agregarProductosEnLote(productos, this.id);
         }
     }
 
-    public void eliminarProductosDeLote(List<String> productos, LocalDateTime fechaHoraInicial) {
-        this.vuelos.getFirst().getPlan().getOrigen().eliminarProductosDeLote(productos, this.id, fechaHoraInicial);
+    public void eliminarProductosDeLote(List<String> productos) {
         for(Vuelo vuelo : this.vuelos) {
             vuelo.setCapacidadDisponible(vuelo.getCapacidadDisponible() + productos.size());
-            LocalDateTime fechaHoraLlegada = vuelo.getFechaHoraLlegadaUTC();
-            vuelo.getPlan().getDestino().eliminarProductosDeLote(productos, this.id, fechaHoraLlegada);
+            vuelo.getPlan().getDestino().eliminarProductosDeLote(productos, this.id);
         }
     }
 
-    public Integer obtenerCapacidadDisponible(LocalDateTime fechaHoraInicial) {
+    public Integer obtenerCapacidadDisponible() {
         int minCapDisp = Integer.MAX_VALUE;
         for(int i = 0; i < this.vuelos.size(); i++) {
             Vuelo vActual = this.vuelos.get(i);
@@ -82,6 +75,17 @@ public class Ruta {
             int aDestCapDisp = vActual.getPlan().getDestino().obtenerCapacidadDisponible(destFechaHoraIngreso, destFechaHoraEgreso);
             int vCapDisp = vActual.getCapacidadDisponible();
             minCapDisp = Math.min(minCapDisp, Math.min(aDestCapDisp, vCapDisp));
+        }
+        return minCapDisp;
+    }
+
+    public Integer obtenerCapacidad() {
+        int minCapDisp = Integer.MAX_VALUE;
+        for(int i = 0; i < this.vuelos.size(); i++) {
+            PlanDeVuelo plan = this.vuelos.get(i).getPlan();
+            int aDestCap = plan.getDestino().getCapacidad();
+            int vCap = plan.getCapacidad();
+            minCapDisp = Math.min(minCapDisp, Math.min(aDestCap, vCap));
         }
         return minCapDisp;
     }

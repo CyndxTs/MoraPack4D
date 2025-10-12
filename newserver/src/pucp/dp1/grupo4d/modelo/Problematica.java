@@ -27,18 +27,20 @@ public class Problematica {
     public static final Integer MAX_DIAS_ENTREGA_INTRACONTINENTAL = 2;
     public static final Integer MAX_DIAS_ENTREGA_INTERCONTINENTAL = 3;
     public static final Double MAX_HORAS_RECOJO = 2.0;
-    public static final Double MIN_HORAS_ESTANCIA = 0.5;
-    public static final Double MAX_HORAS_ESTANCIA = 8.0;
-    public Map<String, Aeropuerto> origenes;
+    public static final Double MIN_HORAS_ESTANCIA = 1.0;
+    public static final Double MAX_HORAS_ESTANCIA = 12.0;
+    public static final Map<String, Aeropuerto> origenes = new HashMap<>();
     public List<Aeropuerto> destinos;
     public List<PlanDeVuelo> planes;
     public List<Pedido> pedidos;
 
+    static {
+        origenes.put("SPIM", null);
+        origenes.put("EBCI", null);
+        origenes.put("UBBB", null);
+    }
+
     public Problematica() {
-        this.origenes = new HashMap<>();
-        this.origenes.put("SPIM", null);
-        this.origenes.put("EBCI", null);
-        this.origenes.put("UBBB", null);
         this.destinos = new ArrayList<>();
         this.planes = new ArrayList<>();
         this.pedidos = new ArrayList<>();
@@ -85,7 +87,7 @@ public class Problematica {
                     aeropuerto.setContinente(continente);
                     aeropuerto.setAlias(lineaSC.next());
                     aeropuerto.setHusoHorario(lineaSC.nextInt());
-                    aeropuerto.setCapacidadMaxima(lineaSC.nextInt());
+                    aeropuerto.setCapacidad(lineaSC.nextInt());
                     lineaSC.useDelimiter("\\s+");
                     lineaSC.next();
                     aeropuerto.setLatitudDMS(lineaSC.next() + " " + lineaSC.next() + " " + lineaSC.next() + " " + lineaSC.next());
@@ -169,7 +171,7 @@ public class Problematica {
         // Declaracion de variables
         String rutaArchivo = "Pedidos.txt";
         Random random = new Random();
-        int minPed = 250,maxPed = 350, ped_minNumProd = 650,ped_maxNumProd = 750, ped_maxNumCli = 189;
+        int minPed = 350,maxPed = 400, ped_minNumProd = 950,ped_maxNumProd = 999, ped_maxNumCli = 100;
         // Generando archivo
         try {
             // Inicializaion del archivo y scanner
@@ -265,7 +267,7 @@ public class Problematica {
     }
     //
     private Aeropuerto obtenerAeropuertoPorCodigo(String codigo) {
-        for (Aeropuerto orig : this.origenes.values()) {
+        for (Aeropuerto orig : origenes.values()) {
             if (orig.getCodigo().compareTo(codigo) == 0) {
                 return orig;
             }
