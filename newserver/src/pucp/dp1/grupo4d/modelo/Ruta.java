@@ -41,15 +41,15 @@ public class Ruta {
         this.fechaHoraLlegadaUTC = this.vuelos.getLast().getFechaHoraLlegadaUTC();
         this.fechaHoraLlegadaLocal = this.vuelos.getLast().getFechaHoraLlegadaLocal();
         this.fechaHoraLimiteUTC = fechaHoraLimite;
-        this.fechaHoraLimiteLocal = G4D.toLocal(this.fechaHoraLimiteUTC, destino.getHusoHorario());
+        this.fechaHoraLimiteLocal = G4D.toLocal(this.fechaHoraLimiteUTC, this.destino.getHusoHorario());
     }
 
     public void registraLote(List<String> productos) {
         for(int i = 0; i < this.vuelos.size(); i++) {
             Vuelo vuelo = vuelos.get(i);
             vuelo.setCapacidadDisponible(vuelo.getCapacidadDisponible() - productos.size());
-            LocalDateTime fechaHoraEgreso = (i + 1 < vuelos.size()) ? vuelos.get(i + 1).getFechaHoraSalidaUTC() : vuelo.getFechaHoraLlegadaUTC().plusMinutes((long)(60*Problematica.MAX_HORAS_RECOJO));
-            vuelo.getPlan().getDestino().registrarLote(productos, this.id, vuelo.getFechaHoraLlegadaUTC(), fechaHoraEgreso);
+            LocalDateTime  destFechaHoraIngreso = vuelo.getFechaHoraLlegadaUTC(), destFechaHoraEgreso = (i + 1 < vuelos.size()) ? this.vuelos.get(i + 1).getFechaHoraSalidaUTC() : destFechaHoraIngreso.plusMinutes((long)(60*Problematica.MAX_HORAS_RECOJO));
+            vuelo.getPlan().getDestino().registrarLote(productos, this.id, destFechaHoraIngreso, destFechaHoraEgreso);
         }
     }
 
@@ -71,7 +71,7 @@ public class Ruta {
         int minCapDisp = Integer.MAX_VALUE;
         for(int i = 0; i < this.vuelos.size(); i++) {
             Vuelo vActual = this.vuelos.get(i);
-            LocalDateTime destFechaHoraIngreso = vActual.getFechaHoraLlegadaUTC(), destFechaHoraEgreso =  (i + 1 < this.vuelos.size()) ? this.vuelos.get(i+1).getFechaHoraSalidaUTC() : null;
+            LocalDateTime destFechaHoraIngreso = vActual.getFechaHoraLlegadaUTC(), destFechaHoraEgreso =  (i + 1 < this.vuelos.size()) ? this.vuelos.get(i+1).getFechaHoraSalidaUTC() : destFechaHoraIngreso.plusMinutes((long)(60*Problematica.MAX_HORAS_RECOJO));
             int aDestCapDisp = vActual.getPlan().getDestino().obtenerCapacidadDisponible(destFechaHoraIngreso, destFechaHoraEgreso);
             int vCapDisp = vActual.getCapacidadDisponible();
             minCapDisp = Math.min(minCapDisp, Math.min(aDestCapDisp, vCapDisp));
@@ -80,14 +80,14 @@ public class Ruta {
     }
 
     public Integer obtenerCapacidad() {
-        int minCapDisp = Integer.MAX_VALUE;
+        int minCap= Integer.MAX_VALUE;
         for(int i = 0; i < this.vuelos.size(); i++) {
             PlanDeVuelo plan = this.vuelos.get(i).getPlan();
             int aDestCap = plan.getDestino().getCapacidad();
             int vCap = plan.getCapacidad();
-            minCapDisp = Math.min(minCapDisp, Math.min(aDestCap, vCap));
+            minCap = Math.min(minCap, Math.min(aDestCap, vCap));
         }
-        return minCapDisp;
+        return minCap;
     }
 
     public Ruta replicar(Map<String,Aeropuerto> poolAeropuertos, Map<String,Vuelo> poolVuelos) {

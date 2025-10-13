@@ -44,31 +44,27 @@ public class PlanDeVuelo {
         return G4D.getElapsedHours(fechaHoraActual,fechaHoraLlegadaUTC);
     }
 
-    public Boolean esAlcanzable(LocalDateTime fechaHoraActual, LocalDateTime fechaHoraLimite, Aeropuerto destino, Set<Vuelo> vuelosActivos) {
+    public Boolean esAlcanzable(LocalDateTime fechaHoraActual, LocalDateTime fechaHoraLimite, Aeropuerto aDest, Set<Vuelo> vuelosActivos) {
         if(fechaHoraLimite == null) fechaHoraLimite = fechaHoraActual.plusMinutes((long)(60*Problematica.MAX_HORAS_RECOJO));
-        LocalDateTime[] rango = G4D.getDateTimeRange(this.horaSalidaUTC,this.horaLlegadaUTC,fechaHoraActual);
-        LocalDateTime vFechaHoraSalida = rango[0], vFechaHoraLlegada = rango[1];
         LocalDateTime origFechaHoraMinEgreso = fechaHoraActual.plusMinutes((long)(60*Problematica.MIN_HORAS_ESTANCIA));
         LocalDateTime origFechaHoraMaxEgreso = fechaHoraActual.plusMinutes((long)(60*Problematica.MAX_HORAS_ESTANCIA));
-        if(vFechaHoraSalida.isBefore(origFechaHoraMinEgreso) || vFechaHoraSalida.isAfter(origFechaHoraMaxEgreso)) return false;
-        LocalDateTime destFechaHoraMinEgreso = vFechaHoraLlegada.plusMinutes((long)(60*Problematica.MIN_HORAS_ESTANCIA));
-        if(destFechaHoraMinEgreso.isAfter(fechaHoraLimite)) return false;
-        LocalDateTime destFechaHoraMaxEgreso = vFechaHoraLlegada.plusMinutes((long)(60*((!this.destino.equals(destino)) ? Problematica.MAX_HORAS_ESTANCIA : Problematica.MAX_HORAS_RECOJO)));
+        LocalDateTime[] rango = G4D.getDateTimeRange(this.horaSalidaUTC,this.horaLlegadaUTC,fechaHoraActual);
+        LocalDateTime vFechaHoraSalida = rango[0], vFechaHoraLlegada = rango[1];
+        if(vFechaHoraSalida.isBefore(origFechaHoraMinEgreso) || vFechaHoraSalida.isAfter(origFechaHoraMaxEgreso) || vFechaHoraLlegada.isAfter(fechaHoraLimite)) return false;
+        LocalDateTime destFechaHoraMaxEgreso = vFechaHoraLlegada.plusMinutes((long)(60*((!this.destino.equals(aDest)) ? Problematica.MAX_HORAS_ESTANCIA : Problematica.MAX_HORAS_RECOJO)));
         int destCapDisp = this.destino.obtenerCapacidadDisponible(vFechaHoraLlegada,destFechaHoraMaxEgreso);
         if(destCapDisp < 1) return false;
-        Vuelo vuelo = obtenerVueloActivo(fechaHoraActual, fechaHoraLimite, vuelosActivos);
+        Vuelo vuelo = obtenerVueloActivo(fechaHoraActual, vuelosActivos);
         if(vuelo != null && vuelo.getCapacidadDisponible() < 1) return false;
         return true;
     }
     
-    public Vuelo obtenerVueloActivo(LocalDateTime fechaHoraActual,LocalDateTime fechaHoraLimite,Set<Vuelo> vuelosActivos) {
-        List<Vuelo> vuelosPosibles = vuelosActivos.stream().filter(v -> this.equals(v.getPlan()))
-                                                           .filter(v -> v.getFechaHoraLlegadaUTC().isBefore(fechaHoraLimite))
-                                                           .toList();
+    public Vuelo obtenerVueloActivo(LocalDateTime fechaHoraActual,Set<Vuelo> vuelosActivos) {
+        List<Vuelo> vuelosPosibles = vuelosActivos.stream().filter(v -> this.equals(v.getPlan())).toList();
         LocalDateTime[] rango = G4D.getDateTimeRange(this.horaSalidaUTC, this.horaLlegadaUTC, fechaHoraActual);
-        LocalDateTime fechaHoraSalidaUTC = rango[0];
+        LocalDateTime fechaHoraSalida = rango[0], fechaHoraLlegada = rango[1];
         for(Vuelo vuelo : vuelosPosibles) {
-            if(fechaHoraSalidaUTC.equals(vuelo.getFechaHoraSalidaUTC())) {
+            if(fechaHoraSalida.equals(vuelo.getFechaHoraSalidaUTC()) && fechaHoraLlegada.equals(vuelo.getFechaHoraLlegadaUTC())) {
                 return vuelo;
             }
         }

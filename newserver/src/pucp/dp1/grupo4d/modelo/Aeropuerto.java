@@ -9,6 +9,8 @@ package pucp.dp1.grupo4d.modelo;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 import pucp.dp1.grupo4d.util.G4D;
 
@@ -37,17 +39,20 @@ public class Aeropuerto {
     }
 
     public Integer obtenerCapacidadDisponible(LocalDateTime fechaHoraInicio, LocalDateTime fechaHoraFin) {
-        int capacidadDisponible = this.capacidad;
-        if(fechaHoraFin == null) {
-            fechaHoraFin = fechaHoraInicio.plusMinutes((long)(60*Problematica.MAX_HORAS_RECOJO));
-        }
+        Map<LocalDateTime, Integer> eventos = new TreeMap<>();
         for(RegistroDeAlmacen registro : this.historialDeProductos) {
-            LocalDateTime rFechaHoraIngreso = registro.getFechaHoraIngresoUTC(), rFechaHoraEgreso = registro.getFechaHoraEgresoUTC();
-            if(rFechaHoraIngreso.isBefore(fechaHoraFin) && rFechaHoraEgreso.isAfter(fechaHoraInicio)) {
-                capacidadDisponible -= registro.getCantidad();
+            if(registro.getFechaHoraIngresoUTC().isBefore(fechaHoraFin) && 
+            registro.getFechaHoraEgresoUTC().isAfter(fechaHoraInicio)) {
+                eventos.merge(registro.getFechaHoraIngresoUTC(), -registro.getCantidad(), Integer::sum);
+                eventos.merge(registro.getFechaHoraEgresoUTC(), +registro.getCantidad(), Integer::sum);
             }
         }
-        return capacidadDisponible;
+        int disponibilidadActual = this.capacidad, minimaDisponibilidad = this.capacidad;
+        for(int canProd : eventos.values()) {
+            disponibilidadActual += canProd;
+            minimaDisponibilidad = Math.min(minimaDisponibilidad, disponibilidadActual);
+        }
+        return minimaDisponibilidad;
     }
 
     public List<Producto> generarLoteDeProductos(int numProd, Ruta ruta) {

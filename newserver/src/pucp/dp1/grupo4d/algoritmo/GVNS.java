@@ -239,17 +239,11 @@ public class GVNS {
         List<Ruta> rutasPosibles = rutasAsignadas.stream().filter(r -> r.getOrigen().equals(origen) && r.getDestino().equals(destino)).toList();
         for(Ruta ruta : rutasPosibles) {
             LocalDateTime fechaHoraSalida = ruta.getFechaHoraSalidaUTC();
-            if(fechaHoraSalida.isBefore(fechaHoraInicial)) {
-                continue;
-            }
+            if(fechaHoraSalida.isBefore(fechaHoraInicial)) continue;
             LocalDateTime fechaHoraLlegada = ruta.getFechaHoraLlegadaUTC();
-            if(fechaHoraLlegada.isAfter(fechaHoraLimite)) {
-                continue;
-            }
+            if(fechaHoraLlegada.isAfter(fechaHoraLimite)) continue;
             int rCapDisp = ruta.obtenerCapacidadDisponible();
-            if(rCapDisp < 1) {
-                continue;
-            }
+            if(rCapDisp < 1) continue;
             G4D.Logger.log(" [ENCONTRADA]");
             return ruta;
         }
@@ -283,9 +277,9 @@ public class GVNS {
                 return null;
             }
             G4D.Logger.logln(" [ENCONTRADO]");
-            G4D.Logger.log("Bucando vuelo en tránsito con disponibilidad..");
-            Vuelo vuelo = mejorPlan.obtenerVueloActivo(fechaHoraActual, fechaHoraLimite, vuelosActivados);
-            if(vuelo == null || vuelo.getCapacidadDisponible() < 1) {
+            G4D.Logger.log("Bucando vuelo en tránsito..");
+            Vuelo vuelo = mejorPlan.obtenerVueloActivo(fechaHoraActual, vuelosActivados);
+            if(vuelo == null) {
                 G4D.Logger.logln(" [NO_ENCONTRADO] | Activando nuevo vuelo..");
                 vuelo = new Vuelo();
                 vuelo.setPlan(mejorPlan);
@@ -302,6 +296,7 @@ public class GVNS {
         }
         G4D.Logger.delete_upper_line();
         G4D.Logger.log("DESTINO ALCANZADO. Guardando ruta..");
+        aeropuertosVisitados.add(actual);
         vuelosActivados.addAll(secuenciaDeVuelos);
         ruta.setOrigen(origen);
         ruta.setDestino(destino);

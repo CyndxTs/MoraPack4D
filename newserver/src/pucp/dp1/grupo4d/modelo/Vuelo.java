@@ -83,24 +83,24 @@ public class Vuelo {
         return duracion;
     }
 
-    public void setDuracion(Double duracion) {
-        this.duracion = duracion;
-    }
-
     public void setDuracion() {
         this.duracion = G4D.getElapsedHours(this.fechaHoraSalidaUTC, this.fechaHoraLlegadaUTC);
+    }
+
+    public void setDuracion(Double duracion) {
+        this.duracion = duracion;
     }
 
     public Double getDistancia() {
         return distancia;
     }
 
-    public void setDistancia(Double distancia) {
-        this.distancia = distancia;
-    }
-
     public void setDistancia() {
         this.distancia = this.plan.getDistancia();
+    }
+
+    public void setDistancia(Double distancia) {
+        this.distancia = distancia;
     }
 
     public LocalDateTime getFechaHoraSalidaLocal() {
