@@ -27,11 +27,11 @@ public class Aeropuerto {
     private Double latitudDEC;
     private String longitudDMS;
     private Double longitudDEC;
-    private List<RegistroDeAlmacen> historialDeProductos;
+    private List<RegistroDeAlmacen> registros;
 
     public Aeropuerto() {
         this.id = G4D.getUniqueString("AER");
-        this.historialDeProductos = new ArrayList<>();
+        this.registros = new ArrayList<>();
     }
 
     public Double obtenerDistanciaHasta(Aeropuerto destino) {
@@ -39,72 +39,54 @@ public class Aeropuerto {
     }
 
     public Integer obtenerCapacidadDisponible(LocalDateTime fechaHoraInicio, LocalDateTime fechaHoraFin) {
+        int disp = this.capacidad, minDisp = this.capacidad;
         Map<LocalDateTime, Integer> eventos = new TreeMap<>();
-        for(RegistroDeAlmacen registro : this.historialDeProductos) {
-            if(registro.getFechaHoraIngresoUTC().isBefore(fechaHoraFin) && 
-            registro.getFechaHoraEgresoUTC().isAfter(fechaHoraInicio)) {
-                eventos.merge(registro.getFechaHoraIngresoUTC(), -registro.getCantidad(), Integer::sum);
-                eventos.merge(registro.getFechaHoraEgresoUTC(), +registro.getCantidad(), Integer::sum);
+        for(RegistroDeAlmacen registro : this.registros) {
+            LocalDateTime rFechaHoraIngreso = registro.getFechaHoraIngresoUTC(), rFechaHoraEgreso = registro.getFechaHoraEgresoUTC();
+            if(rFechaHoraIngreso.isBefore(fechaHoraFin) && rFechaHoraEgreso.isAfter(fechaHoraInicio)) {
+                eventos.merge(rFechaHoraIngreso, -registro.getTamanio(), Integer::sum);
+                eventos.merge(rFechaHoraEgreso, +registro.getTamanio(), Integer::sum);
             }
         }
-        int disponibilidadActual = this.capacidad, minimaDisponibilidad = this.capacidad;
         for(int canProd : eventos.values()) {
-            disponibilidadActual += canProd;
-            minimaDisponibilidad = Math.min(minimaDisponibilidad, disponibilidadActual);
+            disp += canProd;
+            minDisp = Math.min(minDisp, disp);
         }
-        return minimaDisponibilidad;
+        return minDisp;
     }
 
-    public List<Producto> generarLoteDeProductos(int numProd, Ruta ruta) {
-        List<Producto> productos = new ArrayList<>();
-        for(int i = 0; i < numProd; i++) {
-            Producto producto = new Producto();
-            producto.setRuta(ruta);
-            productos.add(producto);
-        }
-        return productos;
+    public LoteDeProductos generarLoteDeProductos(int cantProd) {
+        LoteDeProductos lote = new LoteDeProductos();
+        lote.setTamanio(cantProd);
+        lote.setProductos();
+        return lote;
     }
 
-    public void registrarLote(List<String> productos, String idRuta, LocalDateTime fechaHoraIngresoUTC, LocalDateTime fechaHoraEgresoUTC) {
-        if(agregarProductosEnLote(productos, idRuta)) return;
+    public void registrarLoteDeProductos(LoteDeProductos lote, String idRuta, LocalDateTime fechaHoraIngresoUTC, LocalDateTime fechaHoraEgresoUTC) {
+        if(agregarLoteDeProductos(lote, idRuta)) return;
         RegistroDeAlmacen registro = new RegistroDeAlmacen();
         registro.setIdRuta(idRuta);
-        registro.setCantidad(productos.size());
+        registro.setTamanio(lote.getTamanio());
         registro.setFechaHoraIngresoUTC(fechaHoraIngresoUTC);
-        registro.setFechaHoraIngresoLocal(G4D.toLocal(fechaHoraIngresoUTC,this.husoHorario));
+        registro.setFechaHoraIngresoLocal(G4D.toLocal(fechaHoraIngresoUTC, this.husoHorario));
         registro.setFechaHoraEgresoUTC(fechaHoraEgresoUTC);
-        registro.setFechaHoraEgresoLocal(G4D.toLocal(fechaHoraEgresoUTC,this.husoHorario));
-        registro.setProductos(productos);
-        this.historialDeProductos.add(registro);
+        registro.setFechaHoraEgresoLocal(G4D.toLocal(fechaHoraEgresoUTC, this.husoHorario));
+        registro.getLotes().add(lote);
+        this.registros.add(registro);
     }
 
-    public Boolean agregarProductosEnLote(List<String> productos, String idRuta) {
-        for(RegistroDeAlmacen registro : this.historialDeProductos) {
+    public Boolean agregarLoteDeProductos(LoteDeProductos lote, String idRuta) {
+        for(RegistroDeAlmacen registro : this.registros) {
             if(registro.getIdRuta().compareTo(idRuta) == 0) {
-                registro.setCantidad(registro.getCantidad() + productos.size());
-                registro.getProductos().addAll(productos);
+                registro.setTamanio(registro.getTamanio() + lote.getTamanio());
+                registro.getLotes().add(lote);
                 return true;
             }
         }
         return false;
     }
 
-    public Boolean eliminarProductosDeLote(List<String> productos, String idRuta) {
-        for(RegistroDeAlmacen registro : this.historialDeProductos) {
-            if(registro.getIdRuta().compareTo(idRuta) == 0) {
-                registro.setCantidad(registro.getCantidad() - productos.size());
-                if(registro.getCantidad() > 0) {
-                    registro.getProductos().removeAll(productos);
-                } else {
-                    this.historialDeProductos.remove(registro);
-                }
-                return true;
-            }
-        }
-        return false;
-    }
-
-    public Aeropuerto replicar() {
+    public Aeropuerto replicar(Map<String, LoteDeProductos> poolLotes) {
         Aeropuerto aeropuerto = new Aeropuerto();
         aeropuerto.id = this.id;
         aeropuerto.codigo = this.codigo;
@@ -118,7 +100,7 @@ public class Aeropuerto {
         aeropuerto.latitudDEC = this.latitudDEC;
         aeropuerto.longitudDMS = this.longitudDMS;
         aeropuerto.longitudDEC = this.longitudDEC;
-        for(RegistroDeAlmacen registro : this.historialDeProductos) aeropuerto.historialDeProductos.add(registro.replicar());
+        for(RegistroDeAlmacen registro : this.registros) aeropuerto.registros.add(registro.replicar(poolLotes));
         return aeropuerto;
     }
 
@@ -252,11 +234,11 @@ public class Aeropuerto {
         this.longitudDEC = longitudDEC;
     }
 
-    public List<RegistroDeAlmacen> getHistorialDeProductos() {
-        return historialDeProductos;
+    public List<RegistroDeAlmacen> getRegistros() {
+        return registros;
     }
 
-    public void setHistorialDeProductos(List<RegistroDeAlmacen> historialDeProductos) {
-        this.historialDeProductos = historialDeProductos;
+    public void setRegistros(List<RegistroDeAlmacen> registros) {
+        this.registros = registros;
     }
 }

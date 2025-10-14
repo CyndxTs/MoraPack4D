@@ -10,6 +10,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
@@ -18,6 +19,7 @@ import java.util.stream.Collectors;
 
 import pucp.dp1.grupo4d.modelo.Aeropuerto;
 import pucp.dp1.grupo4d.modelo.Cliente;
+import pucp.dp1.grupo4d.modelo.LoteDeProductos;
 import pucp.dp1.grupo4d.modelo.Pedido;
 import pucp.dp1.grupo4d.modelo.PlanDeVuelo;
 import pucp.dp1.grupo4d.modelo.Problematica;
@@ -136,9 +138,6 @@ public class GVNS {
         Set<Aeropuerto> aeropuertosEnUso = new HashSet<>();
         Set<Vuelo> vuelosEnTransito = new HashSet<>();
         Set<Ruta> rutasEnOperacion = new HashSet<>();
-        //
-        G4D.Logger.Stats.totalPed = pedidos.size();
-        for(Pedido p : pedidos) G4D.Logger.Stats.totalProd += p.getCantidad();
         // 
         for (Pedido pedido : pedidos) {
             G4D.Logger.Stats.numProd = 1;
@@ -165,7 +164,7 @@ public class GVNS {
     private boolean atenderPedido(Pedido pedido, List<Aeropuerto> origenes, List<PlanDeVuelo> planes,
                                   Set<Aeropuerto> aeropuertosEnUso, Set<Vuelo> vuelosEnTransito, Set<Ruta> rutasEnOperacion) {
         //
-        int cantPorEnrutar = pedido.getCantidad();
+        int cantPorEnrutar = pedido.getCantidadDeProductosSolicitados();
         LocalDateTime fechaHoraInicial = pedido.getFechaHoraGeneracionUTC();
         Aeropuerto destino = pedido.getDestino();
         List<Aeropuerto> origenesDisponibles = new ArrayList<>(origenes);
@@ -174,7 +173,7 @@ public class GVNS {
         Set<Ruta> rutasAsignadas = new HashSet<>(rutasEnOperacion);
         while(!origenesDisponibles.isEmpty()) {
             G4D.Logger.Stats.log_prod_stat();
-            G4D.Logger.logf(">>> ATENDIENDO PEDIDO #%d | %d de '%d' productos enrutados.%n",G4D.Logger.Stats.numPed,G4D.Logger.Stats.numProd,pedido.getCantidad());
+            G4D.Logger.logf(">>> ATENDIENDO PEDIDO #%d | %d de '%d' productos enrutados.%n", G4D.Logger.Stats.numPed, G4D.Logger.Stats.numProd, pedido.getCantidadDeProductosSolicitados());
             Aeropuerto origen = origenesDisponibles.get(random.nextInt(origenesDisponibles.size()));
             G4D.Logger.logf("PARTIENDO DESDE ORIGEN '%s' | %s%n", origen.getCodigo(), origen.getCiudad());
             TipoRuta tipoRuta = (origen.getContinente().compareTo(destino.getContinente()) == 0) ? TipoRuta.INTRACONTINENTAL : TipoRuta.INTERCONTINENTAL;
@@ -196,12 +195,10 @@ public class GVNS {
             int rCapDisp = ruta.obtenerCapacidadDisponible();
             int cantEnrutables = Math.min(rCapDisp, cantPorEnrutar);
             G4D.Logger.logf("Enrutando %d productos.. {%s}", cantEnrutables, ruta.getId());
-            List<Producto> productos = origen.generarLoteDeProductos(cantEnrutables, ruta);
-            List<String> ids = productos.stream().map(Producto::getId).collect(Collectors.toList());
-            ruta.registraLote(ids);
-            rCapDisp = ruta.obtenerCapacidadDisponible();
+            LoteDeProductos lote = origen.generarLoteDeProductos(cantEnrutables);
+            ruta.registraLoteDeProductos(lote);
             rutasAsignadas.add(ruta);
-            pedido.getProductos().addAll(productos);
+            pedido.getLotesPorRuta().put(ruta, lote);
             cantPorEnrutar -= cantEnrutables;
             G4D.Logger.Stats.set_end();
             G4D.Logger.Stats.next_lot(cantEnrutables);
@@ -297,7 +294,7 @@ public class GVNS {
         ruta.setOrigen(origen);
         ruta.setDestino(destino);
         ruta.setVuelos(secuenciaDeVuelos);
-        ruta.instanciarHorarios(fechaHoraLimite);
+        ruta.instanciarHorarios();
         ruta.setDuracion();
         ruta.setDistancia();
         G4D.Logger.delete_current_line();
@@ -747,7 +744,7 @@ public class GVNS {
                     ped_cli,
                     " ",
                     ped_aDest,
-                    String.format("%03d", pedido.getCantidad()),
+                    String.format("%03d", pedido.getCantidadDeProductosSolicitados()),
                     G4D.toDisplayString(ped_fechaHoraGeneracion),
                     G4D.toDisplayString(ped_fechaHoraExpiracion)
                 );
@@ -755,7 +752,8 @@ public class GVNS {
                 G4D.Printer.print_centered(">> RUTAS PLANIFICADAS PARA EL PEDIDO <<", dimLinea);
                 G4D.Printer.println();
                 G4D.Printer.fill_line('*', dimLinea, 8);
-                List<Ruta> ped_rutas = pedido.obtenerRutas();
+                List<Ruta> ped_rutas = new ArrayList<>(pedido.getLotesPorRuta().keySet());
+                ped_rutas.sort(Comparator.comparing(Ruta::getFechaHoraSalidaUTC));
                 int cantRutas = ped_rutas.size();
                 for (int posRuta = 0; posRuta < cantRutas; posRuta++) {
                     Ruta ruta = ped_rutas.get(posRuta);

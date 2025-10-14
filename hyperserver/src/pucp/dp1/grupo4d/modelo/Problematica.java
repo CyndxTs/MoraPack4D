@@ -244,7 +244,7 @@ public class Problematica {
                 pedido.setDestino(destino);
                 pedido.setFechaHoraGeneracionLocal(fechaHoraCreacionLocal);;
                 pedido.setFechaHoraGeneracionUTC(G4D.toUTC(fechaHoraCreacionLocal,destino.getHusoHorario()));
-                pedido.setCantidad(numProd);
+                pedido.setCantidadDeProductosSolicitados(numProd);
                 pedido.setCliente(cliente);
                 this.pedidos.add(pedido);
                 lineaSC.close();
@@ -262,9 +262,9 @@ public class Problematica {
             if (archivoSC != null) archivoSC.close();
         }
         this.pedidos.sort(Comparator.comparing(Pedido::getFechaHoraGeneracionUTC));
-        Integer numProd = 0;
-        for (Pedido p : pedidos) numProd += p.getCantidad();
-        G4D.Logger.logf("Se cargaron %d pedidos. (%d productos)%n",pedidos.size(),numProd);
+        G4D.Logger.Stats.totalPed = pedidos.size();
+        for (Pedido p : pedidos) G4D.Logger.Stats.totalProd += p.getCantidadDeProductosSolicitados();
+        G4D.Logger.logf("Se cargaron %d pedidos. (%d productos)%n", G4D.Logger.Stats.totalPed, G4D.Logger.Stats.totalProd);
     }
     //
     private Aeropuerto obtenerAeropuertoPorCodigo(String codigo) {

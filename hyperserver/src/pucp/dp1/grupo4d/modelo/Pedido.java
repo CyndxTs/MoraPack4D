@@ -7,64 +7,49 @@
 package pucp.dp1.grupo4d.modelo;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 
 import pucp.dp1.grupo4d.util.G4D;
 
 public class Pedido {
     private String id;
-    private Integer cantidad;
     private Cliente cliente;
+    private Integer cantidadDeProductosSolicitados;
     private LocalDateTime fechaHoraGeneracionLocal;
     private LocalDateTime fechaHoraGeneracionUTC;
     private LocalDateTime fechaHoraExpiracionLocal;
     private LocalDateTime fechaHoraExpiracionUTC;
     private Aeropuerto destino;
-    private List<Producto> productos;
-    
+    private Map<Ruta, LoteDeProductos> lotesPorRuta;
+
     public Pedido() {
         this.id = G4D.getUniqueString("PED");
-        this.cantidad = 0;
-        this.productos = new ArrayList<>();
+        this.cantidadDeProductosSolicitados = 0;
+        this.lotesPorRuta = new HashMap<>();
     }
 
     public Integer obtenerCantidadDeProductosEnRuta(Ruta ruta) {
-        int cantProd = 0;
-        for(Producto producto : this.productos) {
-            if(producto.getRuta().equals(ruta)) {
-                cantProd++;
-            }
-        }
-        return cantProd;
+        LoteDeProductos lote = lotesPorRuta.get(ruta);
+        return (lote != null) ? lote.getTamanio() : 0;
     }
 
-    public List<Ruta> obtenerRutas() {
-        Set<Ruta> rutas = new HashSet<>();
-        for(Producto p : this.productos) {
-            Ruta ruta = p.getRuta();
-            if(!rutas.contains(ruta)) {
-                rutas.add(ruta);
-            }
-        }
-        return new ArrayList<>(rutas);
-    }
-
-    public Pedido replicar(Map<String,Aeropuerto> poolAeropuertos, Map<String,Vuelo> poolVuelos, Map<String, Ruta> poolRutas) {
+    public Pedido replicar(Map<String,Aeropuerto> poolAeropuertos, Map<String,Vuelo> poolVuelos, Map<String, Ruta> poolRutas, Map<String, LoteDeProductos> poolLotes) {
         Pedido pedido = new Pedido();
         pedido.id = this.id;
-        pedido.cantidad = this.cantidad;
+        pedido.cliente = (this.cliente != null) ? this.cliente.replicar() : null;
+        pedido.cantidadDeProductosSolicitados = this.cantidadDeProductosSolicitados;
         pedido.fechaHoraGeneracionLocal = this.fechaHoraGeneracionLocal;
         pedido.fechaHoraGeneracionUTC = this.fechaHoraGeneracionUTC;
         pedido.fechaHoraExpiracionLocal = this.fechaHoraExpiracionLocal;
         pedido.fechaHoraExpiracionUTC = this.fechaHoraExpiracionUTC;
-        pedido.cliente = (this.cliente != null) ? this.cliente.replicar() : null;
-        pedido.destino = (this.destino != null) ? poolAeropuertos.computeIfAbsent(this.destino.getId(), id -> this.destino.replicar()) : null;
-        for (Producto producto : this.productos) pedido.productos.add(producto.replicar(poolAeropuertos,poolVuelos,poolRutas));
+        pedido.destino = (this.destino != null) ? poolAeropuertos.computeIfAbsent(this.destino.getId(), id -> this.destino.replicar(poolLotes)) : null;
+        for(Map.Entry<Ruta, LoteDeProductos> entry : this.lotesPorRuta.entrySet()) {
+            Ruta rut = poolRutas.computeIfAbsent(entry.getKey().getId(), id -> entry.getKey().replicar(poolAeropuertos, poolVuelos, poolLotes));
+            LoteDeProductos lot = entry.getValue().replicar();
+            lotesPorRuta.put(rut, lot);
+        }
         return pedido;
     }
 
@@ -89,20 +74,20 @@ public class Pedido {
         this.id = id;
     }
 
-    public Integer getCantidad() {
-        return cantidad;
-    }
-
-    public void setCantidad(Integer cantidad) {
-        this.cantidad = cantidad;
-    }
-
     public Cliente getCliente() {
         return cliente;
     }
 
     public void setCliente(Cliente cliente) {
         this.cliente = cliente;
+    }
+
+    public Integer getCantidadDeProductosSolicitados() {
+        return cantidadDeProductosSolicitados;
+    }
+
+    public void setCantidadDeProductosSolicitados(Integer cantidadDeProductosSolicitados) {
+        this.cantidadDeProductosSolicitados = cantidadDeProductosSolicitados;
     }
 
     public LocalDateTime getFechaHoraGeneracionLocal() {
@@ -122,13 +107,10 @@ public class Pedido {
     }
 
     public void setFechaHoraExpiracion() {
-        this.fechaHoraExpiracionUTC = this.fechaHoraGeneracionUTC.plusMinutes(TipoRuta.INTRACONTINENTAL.getMaxMinutosParaEntrega());
-        for(Producto producto : this.productos) {
-            if(producto.getRuta().getTipo().equals(TipoRuta.INTERCONTINENTAL)) {
-                this.fechaHoraExpiracionUTC = this.fechaHoraGeneracionUTC.plusMinutes(TipoRuta.INTERCONTINENTAL.getMaxMinutosParaEntrega());
-                break;
-            }
-        }
+        boolean tieneIntercontinental = this.lotesPorRuta.keySet().stream()
+                                                                  .anyMatch(r -> r.getTipo().equals(TipoRuta.INTERCONTINENTAL));
+        TipoRuta tipo = tieneIntercontinental ? TipoRuta.INTERCONTINENTAL : TipoRuta.INTRACONTINENTAL;
+        this.fechaHoraExpiracionUTC = this.fechaHoraGeneracionUTC.plusMinutes(tipo.getMaxMinutosParaEntrega());
         this.fechaHoraExpiracionLocal = G4D.toLocal(this.fechaHoraExpiracionUTC, this.destino.getHusoHorario());
     }
 
@@ -156,11 +138,11 @@ public class Pedido {
         this.destino = destino;
     }
 
-    public List<Producto> getProductos() {
-        return productos;
+    public Map<Ruta, LoteDeProductos> getLotesPorRuta() {
+        return lotesPorRuta;
     }
 
-    public void setProductos(List<Producto> productos) {
-        this.productos = productos;
+    public void setLotesPorRuta(Map<Ruta, LoteDeProductos> lotesPorRuta) {
+        this.lotesPorRuta = lotesPorRuta;
     }
 }
