@@ -30,7 +30,7 @@ public class Aeropuerto {
     private List<RegistroDeAlmacen> registros;
 
     public Aeropuerto() {
-        this.id = G4D.getUniqueString("AER");
+        this.id = G4D.Generator.getUniqueString("AER");
         this.registros = new ArrayList<>();
     }
 

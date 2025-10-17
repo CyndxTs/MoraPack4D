@@ -15,13 +15,13 @@ public class Cliente {
     private String correo;
 
     public Cliente() {
-        this.id = G4D.getUniqueString("CLI");
-        this.nombre = G4D.getUniqueName();
+        this.id = G4D.Generator.getUniqueString("CLI");
     }
 
     public Cliente replicar() {
         Cliente cliente = new Cliente();
         cliente.id = this.id;
+        cliente.codigo = this.codigo;
         cliente.nombre = this.nombre;
         cliente.correo = this.correo;
         return cliente;

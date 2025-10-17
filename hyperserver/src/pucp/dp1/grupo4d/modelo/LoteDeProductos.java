@@ -10,7 +10,7 @@ public class LoteDeProductos {
     private List<Producto> productos;
 
     public LoteDeProductos() {
-        this.id = G4D.getUniqueString("LOT");
+        this.id = G4D.Generator.getUniqueString("LOT");
         this.tamanio = 0;
         this.productos = new ArrayList<>();
     }

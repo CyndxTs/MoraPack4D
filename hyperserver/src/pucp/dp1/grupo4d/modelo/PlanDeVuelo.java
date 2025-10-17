@@ -27,7 +27,7 @@ public class PlanDeVuelo {
     private Aeropuerto destino;
 
     public PlanDeVuelo() {
-        this.id = G4D.getUniqueString("PLA");
+        this.id = G4D.Generator.getUniqueString("PLA");
         this.capacidad = 0;
         this.distancia = 0.0;
     }
@@ -52,7 +52,7 @@ public class PlanDeVuelo {
         LocalDateTime fechaHoraLlegadaUTC = rango[1];
         double transcurrido = G4D.getElapsedHours(fechaHoraActual, fechaHoraLlegadaUTC);
         double distanciaFinal = this.destino.obtenerDistanciaHasta(aDest);
-        return transcurrido + 0.0075 * distanciaFinal;
+        return transcurrido + 0.0085 * distanciaFinal;
     }
     
     public Vuelo obtenerVueloActivo(LocalDateTime fechaHoraActual, Set<Vuelo> vuelosActivos) {
@@ -76,8 +76,8 @@ public class PlanDeVuelo {
         plan.horaSalidaUTC = this.horaSalidaUTC;
         plan.horaLlegadaLocal = this.horaLlegadaLocal;
         plan.horaLlegadaUTC = this.horaLlegadaUTC;
-        plan.origen = (this.origen != null) ? poolAeropuertos.computeIfAbsent(this.origen.getId(), id -> this.origen.replicar(poolLotes)) : null;
-        plan.destino = (this.destino != null) ? poolAeropuertos.computeIfAbsent(this.destino.getId(), id -> this.destino.replicar(poolLotes)) : null;
+        plan.origen = (this.origen != null) ? poolAeropuertos.computeIfAbsent(this.origen.getCodigo(), id -> this.origen.replicar(poolLotes)) : null;
+        plan.destino = (this.destino != null) ? poolAeropuertos.computeIfAbsent(this.destino.getCodigo(), id -> this.destino.replicar(poolLotes)) : null;
         return plan;
     }
 

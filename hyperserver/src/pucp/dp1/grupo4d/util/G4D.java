@@ -19,6 +19,9 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
 import java.util.UUID;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Level;
@@ -112,6 +115,12 @@ public class G4D {
     public static String toServerString(LocalTime t) {
         return t.format(tf_server);
     }
+    // Obtener 'TimeDisplayString' a partir de 'TimeDEC'
+    public static String toTimeDisplayString(double tDEC) {
+        int total = (int) (tDEC * 60);
+        int dias = total / 1440, horas = (total % 1440) / 60, minutos = total % 60;
+        return dias > 0 ? String.format("%dd %2dh %2dm", dias, horas, minutos) : String.format("%2dh %2dm", horas, minutos);
+    }
     // Obtener 'Time' a partir de 'TimeString'
     public static LocalTime toTime(String ts) {
         try {
@@ -173,19 +182,6 @@ public class G4D {
         double duration = Duration.between(tOrig, tDest).toMinutes() / 60.0;
         if (duration < 0) duration += 24.0;
         return duration;
-    }
-    // Obtener 'UniqueString' a partir de prefijo
-    public static String getUniqueString(String prefix) {
-        long millis = System.currentTimeMillis();
-        String base36Millis = Long.toString(millis, 36);
-        String uuid = UUID.randomUUID().toString().replace("-", "").substring(0, 8);
-        BigInteger uuidNum = new BigInteger(uuid, 16);
-        String base36Uuid = uuidNum.toString(36);
-        return prefix + "-" + base36Millis + base36Uuid;
-    }
-    // Obtener 'UniqueString' como nombre de cliente
-    public static String getUniqueName() {
-        return "Candy Tasty Hyper Candy";
     }
     // Obtener 'Charset' de un archivo
     public static Charset getFileCharset(File file) {
@@ -504,8 +500,9 @@ public class G4D {
         }
         //
         public static class Stats {
-            private static Instant start;
-            private static Instant end;
+            private static Instant g_start;
+            private static Instant l_start;
+            private static Instant p_start;
             private static long duration;
             public static int posPed = 0;
             public static int numPed = 1;
@@ -514,34 +511,66 @@ public class G4D {
             public static int numProd = 1;
             public static int totalProd = 0;
 
-            public static void set_start() {
-                start = Instant.now();
+            public static void set_global_start() {
+                g_start = Instant.now();
             }
 
-            public static void set_end() {
-                end = Instant.now();
+            public static void set_local_start() {
+                l_start = Instant.now();
             }
 
-            public static void set_duration() {
-                duration = Duration.between(start, end).toNanos();
+            public static void set_process_start() {
+                p_start = Instant.now();
             }
 
-            public static double get_mean_time_by_ped() {
+            public static void set_global_duration() {
+                Instant end = Instant.now();
+                duration = Duration.between(g_start, end).toNanos();
+            }
+
+            public static void set_local_duration() {
+                Instant end = Instant.now();
+                duration = Duration.between(l_start, end).toNanos();
+            }
+
+            public static void set_proccess_duration() {
+                Instant end = Instant.now();
+                duration = Duration.between(p_start, end).toNanos();
+            }
+
+            private static double get_mean_time_by_ped() {
                 return duration/(1000000.0*posPed);
             }
 
-            public static double get_mean_time_by_prod() {
+            private static double get_mean_time_by_prod() {
                 return duration/(1000.0*posProd);
             }
 
-            public static void log_ped_stat() {
-                G4D.Logger.logf("[#] TOTAL DE PEDIDOS ATENDIDOS: %d de' %d'%n",posPed,totalPed);
-                G4D.Logger.logf("[#] TIEMPO PROMEDIO DE ATENCION POR PEDIDO: %.3f ms.%n",get_mean_time_by_ped());
+            private static double get_convergence_time() {
+                return duration/1000000000.0;
             }
 
-            public static void log_prod_stat() {
-                G4D.Logger.logf("[#] TOTAL DE PRODUCTOS ENRUTADOS: %d de '%d'%n",posProd,totalProd);
-                G4D.Logger.logf("[#] TIEMPO PROMEDIO DE ENRUTAMIENTO POR PRODUCTO: %.3f us.%n",get_mean_time_by_prod());
+            public static void log_stat_ped() {
+                G4D.Logger.logf("[#] TOTAL DE PEDIDOS ATENDIDOS: %d de' %d'%n",posPed,totalPed);
+                G4D.Logger.logf("[#] TIEMPO PROMEDIO DE ATENCION DE PEDIDO: %.3f ms.%n",get_mean_time_by_ped());
+            }
+
+            public static void log_stat_prod() {
+                G4D.Logger.logf("[#] TOTAL DE PRODUCTOS ENRUTADOS: %d de '%d'%n", posProd, totalProd);
+                G4D.Logger.logf("[#] TIEMPO PROMEDIO DE ENRUTAMIENTO DE PRODUCTO: %.3f us.%n", get_mean_time_by_prod());
+            }
+
+            public static void log_stat_local_sol() {
+                G4D.Logger.logf("[#] TIEMPO DE CONVERGENCIA: %.2f seg.%n", get_convergence_time());
+            }
+
+            public static void log_stat_global_sol() {
+                G4D.Logger.logf("[#] TIEMPO TOTAL DE REALIZACION: %.2f seg.%n", get_convergence_time());
+            }
+
+            public static void log_err_stat() {
+                G4D.Logger.logf_err("[ERROR] No se pudo enrutar el producto #%d del pedido #%s.%n", numProd, numPed);
+                G4D.Logger.logf_err("[ERROR] Solo se atendieron %d de '%d' pedidos. (%d de '%d' productos)%n", posPed, totalPed, posProd, totalProd);
             }
 
             public static void next_lot(int cantProd) {
@@ -553,6 +582,262 @@ public class G4D {
                 posPed++;
                 numPed++;
             }
+        }
+    }
+    //
+    public static class Generator {
+        public static final String[] NOMBRES_ES_H = {
+            "Mateo", "Santiago", "Sebastián", "Diego", "Daniel",
+            "Gabriel", "Andrés", "Carlos", "Tomás", "Alejandro",
+            "Javier", "Luis", "Martín", "Fernando", "Raúl",
+            "Ricardo", "Antonio", "Juan", "Hugo", "Pablo"
+        };
+        public static final String[] NOMBRES_ES_M = {
+            "Sofía", "Valentina", "Lucía", "Camila", "Martina",
+            "Isabella", "Elena", "Paula", "Victoria", "María",
+            "Alejandra", "Clara", "Gabriela", "Carla", "Laura",
+            "Daniela", "Marta", "Irene", "Julieta", "Noelia"
+        };
+        public static final String[] APELLIDOS_ES = {
+            "García", "Martínez", "López", "Hernández", "González",
+            "Pérez", "Rodríguez", "Sánchez", "Ramírez", "Torres",
+            "Flores", "Rivera", "Vargas", "Castro", "Ramos",
+            "Morales", "Cruz", "Ortega", "Reyes", "Jiménez",
+            "Mendoza", "Romero", "Silva", "Navarro", "Delgado",
+            "Molina", "Suárez", "Campos", "Vega", "Aguilar",
+            "Carrillo", "Iglesias", "Fuentes", "Herrera", "Núñez",
+            "Valdez", "Pacheco", "Salazar", "Soto", "Peña"
+        };
+        public static final String[] NOMBRES_BR_H = {
+            "João", "Gabriel", "Pedro", "Lucas", "Rafael",
+            "Gustavo", "Caio", "Thiago", "Felipe", "Daniel",
+            "Vinícius", "Leonardo", "André", "Bruno", "Eduardo",
+            "Rodrigo", "Vitor", "Henrique", "Matheus", "Fernando"
+        };
+        public static final String[] NOMBRES_BR_M = {
+            "Ana", "Mariana", "Beatriz", "Camila", "Letícia",
+            "Larissa", "Julia", "Fernanda", "Carolina", "Bruna",
+            "Isabela", "Patrícia", "Luana", "Amanda", "Clara",
+            "Rafaela", "Helena", "Renata", "Tatiane", "Sabrina"
+        };
+        public static final String[] APELLIDOS_BR = {
+            "Silva", "Santos", "Oliveira", "Souza", "Rodrigues",
+            "Ferreira", "Almeida", "Costa", "Gomes", "Martins",
+            "Araújo", "Barbosa", "Ribeiro", "Carvalho", "Teixeira",
+            "Lima", "Pereira", "Nascimento", "Melo", "Correia",
+            "Dias", "Moreira", "Cardoso", "Campos", "Batista",
+            "Reis", "Andrade", "Fernandes", "Cavalcante", "Monteiro",
+            "Rocha", "Freitas", "Mendes", "Ramos", "Sales",
+            "Castro", "Duarte", "Barros", "Vieira", "Nogueira"
+        };
+        public static final String[] NOMBRES_EN_H = {
+            "Oliver", "Noah", "Liam", "James", "William",
+            "Benjamin", "Elijah", "Ethan", "Logan", "Jacob",
+            "Alexander", "Henry", "Samuel", "Michael", "David",
+            "Daniel", "Joseph", "Matthew", "Luke", "Jack"
+        };
+        public static final String[] NOMBRES_EN_M = {
+            "Emma", "Olivia", "Ava", "Charlotte", "Amelia",
+            "Isabella", "Mia", "Harper", "Evelyn", "Abigail",
+            "Emily", "Elizabeth", "Sofia", "Ella", "Scarlett",
+            "Grace", "Victoria", "Chloe", "Lily", "Hannah"
+        };
+        public static final String[] APELLIDOS_EN = {
+            "Smith", "Johnson", "Williams", "Brown", "Jones",
+            "Garcia", "Miller", "Davis", "Rodriguez", "Martinez",
+            "Hernandez", "Lopez", "Gonzalez", "Wilson", "Anderson",
+            "Thomas", "Taylor", "Moore", "Jackson", "Martin",
+            "Lee", "Perez", "Thompson", "White", "Harris",
+            "Sanchez", "Clark", "Lewis", "Robinson", "Walker",
+            "Young", "Allen", "King", "Wright", "Scott",
+            "Torres", "Nguyen", "Hill", "Flores", "Green"
+        };
+        public static final String[] NOMBRES_RU_H = {
+            "Alexander", "Dmitri", "Ivan", "Nikolai", "Sergei",
+            "Mikhail", "Andrei", "Vladimir", "Pavel", "Yuri",
+            "Maxim", "Alexei", "Kirill", "Oleg", "Denis",
+            "Roman", "Egor", "Artem", "Grigori", "Viktor"
+        };
+        public static final String[] NOMBRES_RU_M = {
+            "Anastasia", "Maria", "Elena", "Natalia", "Olga",
+            "Tatiana", "Irina", "Svetlana", "Ekaterina", "Daria",
+            "Alina", "Polina", "Ksenia", "Galina", "Marina",
+            "Yulia", "Veronika", "Valentina", "Vera", "Ludmila"
+        };
+        public static final String[] APELLIDOS_RU_H = {
+            "Ivanov", "Petrov", "Sidorov", "Smirnov", "Kuznetsov",
+            "Popov", "Vasiliev", "Volkov", "Fedorov", "Morozov",
+            "Pavlov", "Romanov", "Stepanov", "Nikolaev", "Orlov",
+            "Egorov", "Lebedev", "Semenov", "Vinogradov", "Bogdanov",
+            "Zaitsev", "Sobolev", "Makarov", "Belov", "Antonov",
+            "Tarasov", "Gusev", "Titov", "Mironov", "Karpov",
+            "Chernov", "Abramov", "Melnikov", "Belyaev", "Gavrilov",
+            "Danilov", "Kiselev", "Frolov", "Kalinov", "Ermolov"
+        };
+        public static final String[] APELLIDOS_RU_M = {
+            "Ivanova", "Petrova", "Sidorova", "Smirnova", "Kuznetsova",
+            "Popova", "Vasilieva", "Volkova", "Fedorova", "Morozova",
+            "Pavlova", "Romanova", "Stepanova", "Nikolaeva", "Orlova",
+            "Egorova", "Lebedeva", "Semenova", "Vinogradova", "Bogdanova",
+            "Zaitseva", "Soboleva", "Makarova", "Belova", "Antonova",
+            "Tarasova", "Guseva", "Titova", "Mironova", "Karpova",
+            "Chernova", "Abramova", "Melnikova", "Belyaeva", "Gavrilova",
+            "Danilova", "Kiseleva", "Frolova", "Kalinova", "Ermolova"
+        };
+        public static final String[] NOMBRES_KR_H = {
+            "Min-jun", "Ji-ho", "Ha-joon", "Ye-jun", "Eun-woo",
+            "Hyun-jin", "Tae-hyun", "Jae-min", "Dong-hyun", "Hyeon-woo",
+            "Sung-min", "Ji-hun", "Jin-woo", "Seo-jun", "Do-hyun",
+            "Woo-jin", "Jun-seo", "Sang-hoon", "Seung-hyun", "Gun-woo"
+        };
+        public static final String[] NOMBRES_KR_M = {
+            "Seo-yeon", "Yuna", "Ji-won", "Jisoo", "Hana",
+            "Nari", "Ara", "Soo-min", "Yoon-seo", "Min-seo",
+            "Ha-eun", "Ye-seo", "Eun-ji", "Hye-jin", "Da-eun",
+            "Ji-yoo", "Chae-won", "Bo-young", "Na-young", "Ga-eun"
+        };
+        public static final String[] APELLIDOS_KR = {
+            "Kim", "Lee", "Park", "Choi", "Jung",
+            "Kang", "Cho", "Yoon", "Jang", "Lim",
+            "Han", "Shin", "Seo", "Kwon", "Hwang",
+            "Ahn", "Oh", "Song", "Jeon", "Hong",
+            "Yang", "Go", "Bae", "Im", "Ha",
+            "Nam", "Yoo", "Joo", "Ryu", "Baek",
+            "Cha", "Na", "Moon", "Sim", "Seok",
+            "Eom", "Gu", "Ma", "Huh", "Byun"
+        };
+        public static final String[] NOMBRES_JP_H = {
+            "Haruto", "Ren", "Sota", "Kaito", "Itsuki",
+            "Riku", "Naoki", "Tsubasa", "Daiki", "Takumi",
+            "Yuto", "Ryo", "Sho", "Hayato", "Haruki",
+            "Kenta", "Shun", "Taichi", "Ryota", "Yuuki"
+        };
+        public static final String[] NOMBRES_JP_M = {
+            "Yui", "Aoi", "Hana", "Mio", "Sakura",
+            "Yuna", "Aya", "Koharu", "Emi", "Hina",
+            "Rin", "Nanami", "Nozomi", "Haruka", "Mei",
+            "Saki", "Asuka", "Sayaka", "Mika", "Reina"
+        };
+        public static final String[] APELLIDOS_JP = {
+            "Sato", "Suzuki", "Takahashi", "Tanaka", "Watanabe",
+            "Ito", "Yamamoto", "Nakamura", "Kobayashi", "Kato",
+            "Yoshida", "Yamada", "Sasaki", "Yamaguchi", "Matsumoto",
+            "Inoue", "Kimura", "Hayashi", "Shimizu", "Mori",
+            "Abe", "Ikeda", "Hashimoto", "Yamashita", "Ishikawa",
+            "Nakajima", "Okada", "Maeda", "Fujita", "Goto",
+            "Endo", "Sakamoto", "Murakami", "Kaneko", "Hara",
+            "Tada", "Ando", "Takeda", "Miyazaki", "Nishimura"
+        };
+        public static final String[] morfemas = {
+            "zap","lux","neo","sky","fox","cat","red","blu","sun","moon",
+            "star","fly","run","joy","ice","gem","arc","wave","ray","nova",
+            "blink","spark","drift","myst","puff","glow","whiz","dash","frost","blink",
+            "quake","ember","flare","blink","shine","blink","gale","mist","cinder","lume",
+            "flare","draco","glint","pulse","shade","drift","breeze","gleam","echo","nimbus",
+            "aero","vibe","crux","zen","tide","fizz","whirl","blink","sparkle","rift",
+            "halo","dusk","lunar","sol","nova","orbit","fable","glyph","tango","vortex",
+            "flux","onyx","jade","sable","aether","blink","quark","zephyr","drift","cove",
+            "pixel","roam","blink","nova","prism","blink","ember","blink","pico","flare",
+            "glow","myst","echo","frost","vibe","lume","arc","shade","pulse","draco"
+        };
+        // Obtener 'UniqueString' a partir de prefijo
+        public static String getUniqueString(String prefix) {
+            long millis = System.currentTimeMillis();
+            String base36Millis = Long.toString(millis, 36);
+            String uuid = UUID.randomUUID().toString().replace("-", "").substring(0, 8);
+            BigInteger uuidNum = new BigInteger(uuid, 16);
+            String base36Uuid = uuidNum.toString(36);
+            return prefix + "-" + base36Millis + base36Uuid;
+        }
+        //
+        public static String getUniqueName() {
+            Random random = new Random();    
+            int idioma = random.nextInt(6);
+            int cantNombres, cantApellidos;
+            char genero = (random.nextBoolean()) ? 'F' : 'H';
+            String[] nombresPosibles;
+            String[] apellidosPosibles;
+            switch (idioma) {
+                case 0 -> { // ES
+                    nombresPosibles = (genero == 'H') ? NOMBRES_ES_H : NOMBRES_ES_M;
+                    apellidosPosibles = APELLIDOS_ES;
+                    cantNombres = 2 + random.nextInt(2); // 2 o 3 nombres
+                }
+                case 1 -> { // BR
+                    nombresPosibles = (genero == 'H') ? NOMBRES_BR_H : NOMBRES_BR_M;
+                    apellidosPosibles = APELLIDOS_BR;
+                    cantNombres = 2 + random.nextInt(2);
+                }
+                case 2 -> { // EN
+                    nombresPosibles = (genero == 'H') ? NOMBRES_EN_H : NOMBRES_EN_M;
+                    apellidosPosibles = APELLIDOS_EN;
+                    cantNombres = 2 + random.nextInt(2);
+                }
+                case 3 -> { // RU
+                    nombresPosibles = (genero == 'H') ? NOMBRES_RU_H : NOMBRES_RU_M;
+                    apellidosPosibles = (genero == 'H') ? APELLIDOS_RU_H : APELLIDOS_RU_M;
+                    cantNombres = 1 + random.nextInt(2); // 1 o 2 nombres + patronimico
+                }
+                case 4 -> { // KR
+                    nombresPosibles = (genero == 'H') ? NOMBRES_KR_H : NOMBRES_KR_M;
+                    apellidosPosibles = APELLIDOS_KR;
+                    cantNombres = 1 + random.nextInt(2);
+                }
+                default -> { // JP
+                    nombresPosibles = (genero == 'H') ? NOMBRES_JP_H : NOMBRES_JP_M;
+                    apellidosPosibles = APELLIDOS_JP;
+                    cantNombres = 1 + random.nextInt(2);
+                }
+            }
+            if(idioma < 3) {
+                cantNombres = 2 + random.nextInt(2);
+                cantApellidos = 2;
+            } else {
+                cantNombres = 1 + random.nextInt(2);
+                cantApellidos = 1;
+            }
+            List<String> partes = new ArrayList<>();
+            while (partes.size() < cantNombres) {
+                partes.add(nombresPosibles[random.nextInt(nombresPosibles.length)]);
+            }
+            // Patronímico ruso
+            if (idioma == 3) {
+                String padre = NOMBRES_RU_H[random.nextInt(NOMBRES_RU_H.length)];
+                String patronimico = (genero == 'H') ? padre + "ovich" : padre + "ovna";
+                partes.add(patronimico);
+            }
+            // Apellidos
+            while (partes.size() < cantNombres + cantApellidos) {
+                partes.add(apellidosPosibles[random.nextInt(apellidosPosibles.length)]);
+            }
+
+            return String.join(" ", partes);
+        }
+        //
+        public static String getUniqueEmail() {
+            Random random = new Random();
+            StringBuilder usuario = new StringBuilder();
+            int longitudObjetivo = 8 + random.nextInt(13);
+
+            while (usuario.length() < longitudObjetivo) {
+                String morfema = morfemas[random.nextInt(morfemas.length)];
+                if (usuario.length() > 0 && usuario.length() + morfema.length() + 1 <= 20) {
+                    char separador = random.nextBoolean() ? '.' : '_';
+                    usuario.append(separador);
+                }
+                if (usuario.length() + morfema.length() <= 20) {
+                    usuario.append(morfema);
+                } else {
+                    break;
+                }
+            }
+            if (usuario.length() < 20 && random.nextBoolean()) {
+                int num = random.nextInt(100); // 0–99
+                if (usuario.length() + String.valueOf(num).length() <= 20) {
+                    usuario.append(num);
+                }
+            }
+            return usuario.toString() + "@G4D.com";
         }
     }
 }

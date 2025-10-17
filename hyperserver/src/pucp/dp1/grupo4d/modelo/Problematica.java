@@ -29,34 +29,33 @@ public class Problematica {
     public static final Double MAX_HORAS_RECOJO = 2.0;
     public static final Double MIN_HORAS_ESTANCIA = 1.0;
     public static final Double MAX_HORAS_ESTANCIA = 12.0;
-    public static final Map<String, Aeropuerto> origenes = new HashMap<>();
+    public Map<String, Aeropuerto> origenes;
     public List<Aeropuerto> destinos;
     public List<PlanDeVuelo> planes;
+    public List<Cliente> clientes;
     public List<Pedido> pedidos;
 
-    static {
-        origenes.put("SPIM", null);
-        origenes.put("EBCI", null);
-        origenes.put("UBBB", null);
-    }
-
     public Problematica() {
+        this.origenes = new HashMap<>();
+        this.origenes.put("SPIM", null);
+        this.origenes.put("EBCI", null);
+        this.origenes.put("UBBB", null);
         this.destinos = new ArrayList<>();
         this.planes = new ArrayList<>();
+        this.clientes = new ArrayList<>();
         this.pedidos = new ArrayList<>();
     }
 
-
     // Carga de datos para problematica
-    public void cargarDatos(String rutaArchivoAeropuertos, String rutaArchivoVuelos, String rutaArchivoPedidos) {
+    public void cargarDatos(String rutaArchivoAeropuertos, String rutaArchivoVuelos, String rutaArchivoClientes, String rutaArchivoPedidos) {
         cargarAeropuertos(rutaArchivoAeropuertos);
         cargarPlanesDeVuelo(rutaArchivoVuelos);
-        if(rutaArchivoPedidos == null) cargarPedidos(generarPedidos());
-        else cargarPedidos(rutaArchivoPedidos);
+        cargarClientes((rutaArchivoClientes != null) ? rutaArchivoClientes : generarClientes());
+        cargarPedidos((rutaArchivoPedidos != null) ?  rutaArchivoPedidos : generarPedidos());
     }
     // Carga de datos de Aeropuertos
     private void cargarAeropuertos(String rutaArchivo) {
-        G4D.Logger.logf("Leyendo archivo de 'Aeropuertos' desde '%s'..%n",rutaArchivo);
+        G4D.Logger.logf("Cargando aeropuertos desde '%s'..%n",rutaArchivo);
         // Declaracion de variables
         String continente = "", linea;
         File archivo;
@@ -95,21 +94,19 @@ public class Problematica {
                     lineaSC.next();
                     aeropuerto.setLongitudDMS(lineaSC.next() + " " + lineaSC.next() + " " + lineaSC.next() + " " + lineaSC.next());
                     aeropuerto.setLongitudDEC();
-                    if (origenes.containsKey(aeropuerto.getCodigo())) {
-                        origenes.put(aeropuerto.getCodigo(), aeropuerto);
-                    } else destinos.add(aeropuerto);
+                    if (this.origenes.containsKey(aeropuerto.getCodigo())) {
+                        this.origenes.put(aeropuerto.getCodigo(), aeropuerto);
+                    } else this.destinos.add(aeropuerto);
                 } else continente = lineaSC.next();
                 lineaSC.close();
             }
-            G4D.Logger.logf("Se cargaron correctamente '%d' origenes y '%d' destinos.%n",origenes.size(),destinos.size());
-        } catch (FileNotFoundException e) {
-            G4D.Logger.logf_err("ERROR: No se encontró el archivo en la ruta '%s'%n",rutaArchivo);
-            System.exit(1);
-        } catch (NullPointerException e) {
-            G4D.Logger.logln_err("ERROR: Se proporciono una ruta vacia." + e.getMessage());
+            G4D.Logger.logf("[<] AEROPUERTOS CARGADOS! ('%d' origenes | '%d' destinos)%n", this.origenes.size(), this.destinos.size());
+        } catch (FileNotFoundException | NullPointerException e) {
+            G4D.Logger.logf_err("[X] ARCHIVO DE 'AEROPUERTOS' NO ENCONTRADO! (RUTA: '%s')%n", rutaArchivo);
             System.exit(1);
         } catch (NoSuchElementException e) {
-            G4D.Logger.logln_err("ERROR: Formato del archivo inválido. " + e.getMessage());
+            G4D.Logger.logf_err("[X] FORMATO DE ARCHIVO INVALIDO! (RUTA: '%s')%n", rutaArchivo);
+            System.exit(1);
         } catch (Exception e) {
             e.printStackTrace();
             System.exit(1);
@@ -119,9 +116,9 @@ public class Problematica {
     }
     // Cargas de datos de planes de vuelo
     private void cargarPlanesDeVuelo(String rutaArchivo) {
-        G4D.Logger.logf("Leyendo archivo de 'PlanesDeVuelo' desde '%s'..%n",rutaArchivo);
+        G4D.Logger.logf("Cargando planes de vuelo desde '%s'..%n",rutaArchivo);
         // Declaracion de variables
-        String linea, codigoOrigen, codigoDestino;
+        String linea;
         File archivo;
         Scanner archivoSC = null, lineaSC;
         PlanDeVuelo plan;
@@ -138,25 +135,29 @@ public class Problematica {
                 lineaSC = new Scanner(linea);
                 lineaSC.useDelimiter("-");
                 plan = new PlanDeVuelo();
-                codigoOrigen = lineaSC.next();
-                plan.setOrigen(obtenerAeropuertoPorCodigo(codigoOrigen));
-                codigoDestino = lineaSC.next();
-                plan.setDestino(obtenerAeropuertoPorCodigo(codigoDestino));
-                plan.setHoraSalidaLocal(G4D.toTime(lineaSC.next()));
-                plan.setHoraSalidaUTC();
-                plan.setHoraLlegadaLocal(G4D.toTime(lineaSC.next()));
-                plan.setHoraLlegadaUTC();
-                plan.setCapacidad(lineaSC.nextInt());
-                plan.setDistancia();
-                planes.add(plan);
+                Aeropuerto aOrig = obtenerAeropuertoPorCodigo(lineaSC.next());
+                if(aOrig != null) {
+                    plan.setOrigen(aOrig);
+                    Aeropuerto aDest = obtenerAeropuertoPorCodigo(lineaSC.next());
+                    if(aDest != null) {
+                        plan.setDestino(aDest);
+                        plan.setDistancia();
+                        plan.setHoraSalidaLocal(G4D.toTime(lineaSC.next()));
+                        plan.setHoraSalidaUTC();
+                        plan.setHoraLlegadaLocal(G4D.toTime(lineaSC.next()));
+                        plan.setHoraLlegadaUTC();
+                        plan.setCapacidad(lineaSC.nextInt());
+                        this.planes.add(plan);
+                    }
+                }
                 lineaSC.close();
             }
-            G4D.Logger.logf("Se cargaron %d planes de vuelo.%n",planes.size());
-        } catch (FileNotFoundException e) {
-            G4D.Logger.logln_err("ERROR: No se encontró el archivo de 'PlanesDeVuelo' en la ruta '" + rutaArchivo + "'");
+            G4D.Logger.logf("[<] PLANES DE VUELO CARGADOS! ('%d' planes)%n", this.planes.size());
+        } catch (FileNotFoundException | NullPointerException e) {
+            G4D.Logger.logf_err("[X] ARCHIVO DE 'PLANES DE VUELO' NO ENCONTRADO! (RUTA: '%s')%n", rutaArchivo);
             System.exit(1);
-        } catch (NullPointerException e) {
-            G4D.Logger.logln_err("ERROR: Se proporciono una ruta vacia." + e.getMessage());
+        } catch (NoSuchElementException e) {
+            G4D.Logger.logf_err("[X] FORMATO DE ARCHIVO INVALIDO! (RUTA: '%s')%n", rutaArchivo);
             System.exit(1);
         } catch (Exception e) {
             e.printStackTrace();
@@ -166,12 +167,83 @@ public class Problematica {
         }
     }
     //
+    private String generarClientes() {
+        G4D.Logger.logln("Generando clientes en 'Clientes.txt'..");
+        //
+        String rutaArchivo = "Clientes.txt";
+        int cantCli = 300;
+        // Generando archivo
+        try {
+            // Inicializaion del archivo y scanner
+            FileWriter archivo = new FileWriter(rutaArchivo);
+            PrintWriter archivoWriter = new PrintWriter(archivo);
+            //
+            for(int i = 0; i < cantCli; i++) {
+                int codigo = i + 1;
+                String nombre = G4D.Generator.getUniqueName();
+                String correo = G4D.Generator.getUniqueEmail();
+                archivoWriter.printf("%07d    %-50s    %s%n",
+                    codigo,
+                    nombre,
+                    correo 
+                );
+            }
+            archivoWriter.flush();
+            archivoWriter.close();
+            archivo.close();
+            G4D.Logger.logf("[>] ARCHIVO DE 'CLIENTES' GENERADO! (RUTA: '%s')%n", rutaArchivo);
+        } catch (Exception e){
+            e.printStackTrace();
+            System.exit(1);
+        } 
+        return rutaArchivo;
+    }
+    //
+    private void cargarClientes(String rutaArchivo) {
+        G4D.Logger.logf("Cargando clientes desde '%s'..%n",rutaArchivo);
+        // Declaracion de variables
+        String linea;
+        File archivo;
+        Scanner archivoSC = null, lineaSC;
+        // Carga de datos
+        try {
+            // Inicializaion del archivo y scanner
+            archivo = new File(rutaArchivo);
+            archivoSC = new Scanner(archivo, G4D.getFileCharset(archivo));
+            // Iterativa de lectura y carga
+            while (archivoSC.hasNextLine()) {
+                linea = archivoSC.nextLine().trim();
+                // Inicializacion de scanner de linea
+                lineaSC = new Scanner(linea);
+                lineaSC.useDelimiter("\\s{2,}"); 
+                Cliente cliente = new Cliente();
+                cliente.setCodigo(lineaSC.next());
+                cliente.setNombre(lineaSC.next());
+                cliente.setCorreo(lineaSC.next());
+                this.clientes.add(cliente);
+                lineaSC.close();
+            }
+        } catch (FileNotFoundException | NullPointerException e) {
+            G4D.Logger.logf_err("[X] ARCHIVO DE 'CLIENTES' NO ENCONTRADO! (RUTA: '%s')%n", rutaArchivo);
+            System.exit(1);
+        } catch (NoSuchElementException e) {
+            G4D.Logger.logf_err("[X] FORMATO DE ARCHIVO INVALIDO! (RUTA: '%s')%n", rutaArchivo);
+            System.exit(1);
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.exit(1);
+        } finally {
+            if (archivoSC != null) archivoSC.close();
+        }
+        G4D.Logger.logf("[<] CLIENTES CARGADOS! ('%d' clientes)%n", this.clientes.size());
+    }
+    //
     private String generarPedidos() {
-        G4D.Logger.logln("Generando archivo de 'Pedidos'..");
+        G4D.Logger.logln("Generando pedidos en 'Pedidos.txt'..");
         // Declaracion de variables
         String rutaArchivo = "Pedidos.txt";
         Random random = new Random();
-        int minPed = 450,maxPed = 500, ped_minNumProd = 950,ped_maxNumProd = 990, ped_maxNumCli = 50;
+        int minPed = 45,maxPed = 50, ped_minNumProd = 95,ped_maxNumProd = 99;
         // Generando archivo
         try {
             // Inicializaion del archivo y scanner
@@ -180,7 +252,7 @@ public class Problematica {
             //
             for(int i = 0,cantPed = random.nextInt(minPed,maxPed);i < cantPed;i++) {
                 int numProd = random.nextInt(ped_minNumProd,ped_maxNumProd);
-                int numCli = 1 + random.nextInt(ped_maxNumCli);
+                int numCli = 1 + random.nextInt(this.clientes.size());
                 String destino = this.destinos.get(random.nextInt(this.destinos.size())).getCodigo();
                 LocalDateTime fechaHoraCreacion = LocalDateTime.of(
                     LocalDate.now().withDayOfMonth(1 + random.nextInt(LocalDate.now().lengthOfMonth())),
@@ -202,15 +274,16 @@ public class Problematica {
             archivoWriter.flush();
             archivoWriter.close();
             archivo.close();
-            G4D.Logger.logf("Archivo de 'Pedidos' generado en la ruta '%s'.%n",rutaArchivo);
+            G4D.Logger.logf("[>] ARCHIVO DE 'PEDIDOS' GENERADO! (RUTA: '%s')%n", rutaArchivo);
         } catch (Exception e){
             e.printStackTrace();
-        }
+            System.exit(1);
+        } 
         return rutaArchivo;
     }
-    // // PROVISIONAL HASTA TENER FORMATO DEL ARCHIVO DE PEDIDOS
+    //
     private void cargarPedidos(String rutaArchivo) {
-        G4D.Logger.logf("Leyendo archivo de 'Pedidos' desde '%s'..%n",rutaArchivo);
+        G4D.Logger.logf("Cargando pedidos desde '%s'..%n",rutaArchivo);
         // Declaracion de variables
         String linea;
         File archivo;
@@ -235,25 +308,23 @@ public class Problematica {
                         0
                     )
                 );
-                String codigoDestino = lineaSC.next();
-                int numProd = lineaSC.nextInt();
-                int codigoCli = lineaSC.nextInt();
-                Cliente cliente = new Cliente();
-                cliente.setCodigo(String.format("%07d",codigoCli));
-                Aeropuerto destino = obtenerAeropuertoPorCodigo(codigoDestino);
-                pedido.setDestino(destino);
-                pedido.setFechaHoraGeneracionLocal(fechaHoraCreacionLocal);;
-                pedido.setFechaHoraGeneracionUTC(G4D.toUTC(fechaHoraCreacionLocal,destino.getHusoHorario()));
-                pedido.setCantidadDeProductosSolicitados(numProd);
-                pedido.setCliente(cliente);
-                this.pedidos.add(pedido);
+                Aeropuerto aDest = obtenerAeropuertoPorCodigo(lineaSC.next());
+                pedido.setDestino(aDest);
+                pedido.setCantidadDeProductosSolicitados(lineaSC.nextInt());
+                Cliente cliente = obtenerClientePorCodigo(lineaSC.next());
+                if(cliente != null) {
+                    pedido.setCliente(cliente);
+                    pedido.setFechaHoraGeneracionLocal(fechaHoraCreacionLocal);
+                    pedido.setFechaHoraGeneracionUTC();
+                    this.pedidos.add(pedido);
+                }
                 lineaSC.close();
             }
-        } catch (FileNotFoundException e) {
-            G4D.Logger.logln_err("ERROR: No se encontró el archivo de 'Pedidos' en la ruta '" + rutaArchivo + "'");
+        } catch (FileNotFoundException | NullPointerException e) {
+            G4D.Logger.logf_err("[X] ARCHIVO DE 'PEDIDOS' NO ENCONTRADO! (RUTA: '%s')%n", rutaArchivo);
             System.exit(1);
-        } catch (NullPointerException e) {
-            G4D.Logger.logln_err("ERROR: Se proporciono una ruta vacia." + e.getMessage());
+        } catch (NoSuchElementException e) {
+            G4D.Logger.logf_err("[X] FORMATO DE ARCHIVO INVALIDO! (RUTA: '%s')%n", rutaArchivo);
             System.exit(1);
         } catch (Exception e) {
             e.printStackTrace();
@@ -262,13 +333,13 @@ public class Problematica {
             if (archivoSC != null) archivoSC.close();
         }
         this.pedidos.sort(Comparator.comparing(Pedido::getFechaHoraGeneracionUTC));
-        G4D.Logger.Stats.totalPed = pedidos.size();
-        for (Pedido p : pedidos) G4D.Logger.Stats.totalProd += p.getCantidadDeProductosSolicitados();
-        G4D.Logger.logf("Se cargaron %d pedidos. (%d productos)%n", G4D.Logger.Stats.totalPed, G4D.Logger.Stats.totalProd);
+        G4D.Logger.Stats.totalPed = this.pedidos.size();
+        for (Pedido p : this.pedidos) G4D.Logger.Stats.totalProd += p.getCantidadDeProductosSolicitados();
+        G4D.Logger.logf("[<] PEDIDOS CARGADOS! ('%d' pedidos -> '%d' productos)%n", G4D.Logger.Stats.totalPed, G4D.Logger.Stats.totalProd);
     }
     //
     private Aeropuerto obtenerAeropuertoPorCodigo(String codigo) {
-        for (Aeropuerto orig : origenes.values()) {
+        for (Aeropuerto orig : this.origenes.values()) {
             if (orig.getCodigo().compareTo(codigo) == 0) {
                 return orig;
             }
@@ -276,6 +347,15 @@ public class Problematica {
         for (Aeropuerto dest : this.destinos) {
             if (dest.getCodigo().compareTo(codigo) == 0) {
                 return dest;
+            }
+        }
+        return null;
+    }
+    //
+    private Cliente obtenerClientePorCodigo(String codigo) {
+        for(Cliente cli : this.clientes) {
+            if(cli.getCodigo().equals(codigo)) {
+                return cli;
             }
         }
         return null;

@@ -22,7 +22,7 @@ public class Vuelo {
     private PlanDeVuelo plan;
 
     public Vuelo() {
-        this.id = G4D.getUniqueString("VUE");
+        this.id = G4D.Generator.getUniqueString("VUE");
         this.capacidadDisponible = 0;
         this.duracion = 0.0;
         this.distancia = 0.0;

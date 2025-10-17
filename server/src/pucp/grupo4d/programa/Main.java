@@ -23,7 +23,7 @@ public class Main {
         // Declaracion de algoritmo
         Algoritmo algoritmo1 = new GVNS(); // new PSO();
         // Optimizacion
-        GVNS.fastSearch = false;
+        GVNS.fastSearch = true;
         algoritmo1.planificar(problematica);
     }
 }

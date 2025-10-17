@@ -539,6 +539,7 @@ public class GVNS extends Algoritmo {
                 G4D_Util.Logger.delete_lines(numLines.value);
                 numLines.decrement(numLines.value - 1);
                 vuelosUtilizados.remove(vuelo);
+                // aeropuertosVisitados.remove(actual);
             }
         }
         G4D_Util.Logger.delete_lines(numLines.value);

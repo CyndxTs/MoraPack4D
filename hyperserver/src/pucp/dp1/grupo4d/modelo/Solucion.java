@@ -32,7 +32,7 @@ public class Solucion {
     
 
     public Solucion() {
-        this.id = G4D.getUniqueString("SOL");
+        this.id = G4D.Generator.getUniqueString("SOL");
         this.fitness = PEOR_FITNESS;
         this.ratioPromedioDeUtilizacionTemporal = 1.0;
         this.ratioPromedioDeDesviacionEspacial = 1.0;
@@ -44,6 +44,7 @@ public class Solucion {
     }
 
     public Solucion replicar() {
+        Map<String, Cliente> poolClientes = new HashMap<>();
         Map<String, Aeropuerto> poolAeropuertos = new HashMap<>();
         Map<String, Vuelo> poolVuelos = new HashMap<>();
         Map<String, Ruta> poolRutas = new HashMap<>();
@@ -53,7 +54,7 @@ public class Solucion {
         solucion.ratioPromedioDeUtilizacionTemporal = this.ratioPromedioDeUtilizacionTemporal;
         solucion.ratioPromedioDeDesviacionEspacial = this.ratioPromedioDeDesviacionEspacial;
         solucion.ratioPromedioDeDisposicionOperacional = this.ratioPromedioDeDisposicionOperacional;
-        for (Pedido pedido : this.pedidosAtendidos) solucion.pedidosAtendidos.add(pedido.replicar(poolAeropuertos, poolVuelos, poolRutas, poolLotes));
+        for (Pedido pedido : this.pedidosAtendidos) solucion.pedidosAtendidos.add(pedido.replicar(poolClientes, poolAeropuertos, poolVuelos, poolRutas, poolLotes));
         for (Vuelo vuelo : this.vuelosEnTransito) solucion.vuelosEnTransito.add(poolVuelos.computeIfAbsent(vuelo.getId(), id -> vuelo.replicar(poolAeropuertos, poolLotes)));
         for (Ruta ruta : this.rutasEnOperacion) solucion.rutasEnOperacion.add(poolRutas.computeIfAbsent(ruta.getId(), id -> ruta.replicar(poolAeropuertos, poolVuelos, poolLotes)));
         return solucion;

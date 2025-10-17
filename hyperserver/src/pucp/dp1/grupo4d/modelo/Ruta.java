@@ -27,7 +27,7 @@ public class Ruta {
     private List<Vuelo> vuelos;
 
     public Ruta() {
-        this.id = G4D.getUniqueString("RUT");
+        this.id = G4D.Generator.getUniqueString("RUT");
         this.duracion = 0.0;
         this.distancia = 0.0;
         this.vuelos = new ArrayList<>();
@@ -104,8 +104,8 @@ public class Ruta {
         ruta.fechaHoraLlegadaLocal = this.fechaHoraLlegadaLocal;
         ruta.fechaHoraLlegadaUTC = this.fechaHoraLlegadaUTC;
         ruta.tipo = this.tipo;
-        ruta.origen = (this.origen != null) ? poolAeropuertos.computeIfAbsent(this.origen.getId(), id -> this.origen.replicar(poolLotes)) : null;
-        ruta.destino = (this.destino != null) ? poolAeropuertos.computeIfAbsent(this.destino.getId(), id -> this.destino.replicar(poolLotes)) : null;
+        ruta.origen = (this.origen != null) ? poolAeropuertos.computeIfAbsent(this.origen.getCodigo(), id -> this.origen.replicar(poolLotes)) : null;
+        ruta.destino = (this.destino != null) ? poolAeropuertos.computeIfAbsent(this.destino.getCodigo(), id -> this.destino.replicar(poolLotes)) : null;
         for (Vuelo vuelo : this.vuelos) ruta.vuelos.add(poolVuelos.computeIfAbsent(vuelo.getId(), id -> vuelo.replicar(poolAeropuertos, poolLotes)));
         return ruta;
     }

@@ -24,7 +24,7 @@ public class RegistroDeAlmacen {
     private List<LoteDeProductos> lotes;
 
     public RegistroDeAlmacen() {
-        this.id = G4D.getUniqueString("REG");
+        this.id = G4D.Generator.getUniqueString("REG");
         this.tamanio = 0;
         this.lotes = new ArrayList<>();
     }

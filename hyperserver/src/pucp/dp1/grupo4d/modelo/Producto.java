@@ -13,7 +13,7 @@ public class Producto {
     private String id;
 
     public Producto() {
-        this.id = G4D.getUniqueString("PRO");
+        this.id = G4D.Generator.getUniqueString("PRO");
     }
 
     public Producto replicar() {
