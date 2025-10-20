@@ -10,6 +10,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import pucp.dp1.grupo4d.util.G4D;
 
@@ -40,7 +41,9 @@ public class Ruta {
         this.fechaHoraLlegadaLocal = this.vuelos.getLast().getFechaHoraLlegadaLocal();
     }
 
-    public void registraLoteDeProductos(LoteDeProductos lote) {
+    public void registraLoteDeProductos(LoteDeProductos lote, Set<Vuelo> vuelosEnTransito, Set<Ruta> rutasEnOperacion) {
+        rutasEnOperacion.add(this);
+        vuelosEnTransito.addAll(this.vuelos);
         for(int i = 0; i < this.vuelos.size(); i++) {
             Vuelo vuelo = vuelos.get(i);
             vuelo.setCapacidadDisponible(vuelo.getCapacidadDisponible() - lote.getTamanio());
@@ -54,6 +57,15 @@ public class Ruta {
             vuelo.setCapacidadDisponible(vuelo.getCapacidadDisponible() - lote.getTamanio());
             vuelo.getPlan().getDestino().agregarLoteDeProductos(lote, this.id);
         }
+    }
+
+    public void eliminarLoteDeProductos(LoteDeProductos lote, Set<Vuelo> vuelosEnTransito, Set<Ruta> rutasEnOperacion) {
+        for(Vuelo vuelo : this.vuelos) {
+            vuelo.setCapacidadDisponible(vuelo.getCapacidadDisponible() + lote.getTamanio());
+            if(vuelo.getCapacidadDisponible() == vuelo.getPlan().getCapacidad()) vuelosEnTransito.remove(vuelo);
+            vuelo.getPlan().getDestino().eliminarLoteDeProductos(lote, this.id);
+        }
+        if(obtenerCapacidadDisponible() == obtenerCapacidad()) rutasEnOperacion.remove(this);
     }
 
     public Integer obtenerCapacidadDisponible() {

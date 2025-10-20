@@ -243,7 +243,7 @@ public class Problematica {
         // Declaracion de variables
         String rutaArchivo = "Pedidos.txt";
         Random random = new Random();
-        int minPed = 45,maxPed = 50, ped_minNumProd = 95,ped_maxNumProd = 99;
+        int minPed = 185,maxPed = 200, ped_minNumProd = 950,ped_maxNumProd = 999;
         // Generando archivo
         try {
             // Inicializaion del archivo y scanner

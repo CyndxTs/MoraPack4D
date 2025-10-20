@@ -207,6 +207,25 @@ public class G4D {
         return StandardCharsets.UTF_8; // default UTF-8
     }
     //
+    public static <T> List<List<T>> getPossibleCombinations(List<T> elements, int groupSize) {
+        List<List<T>> result = new ArrayList<>();
+        if (groupSize > elements.size() || groupSize <= 0) return result;
+        generateCombinations(elements, groupSize, 0, new ArrayList<>(), result);
+        return result;
+    }
+    //
+    private static <T> void generateCombinations(List<T> elements, int groupSize, int inicio, List<T> actual, List<List<T>> result) {
+        if (actual.size() == groupSize) {
+            result.add(new ArrayList<>(actual));
+            return;
+        }
+        for (int i = inicio; i < elements.size(); i++) {
+            actual.add(elements.get(i));
+            generateCombinations(elements, groupSize, i + 1, actual, result);
+            actual.remove(actual.size() - 1);
+        }
+    }
+    //
     public static class IntegerWrapper {
         public int value;
 
@@ -459,6 +478,7 @@ public class G4D {
         }
         //
         public static void delete_upper_line() {
+            G4D.Logger.delete_current_line();
             logger.info(getCustomAction("U1Cl2"));
         }
         //
@@ -504,12 +524,25 @@ public class G4D {
             private static Instant l_start;
             private static Instant p_start;
             private static long duration;
-            public static int posPed = 0;
-            public static int numPed = 1;
-            public static int totalPed = 0;
-            public static int posProd = 0;
-            public static int numProd = 1;
-            public static int totalProd = 0;
+            public static int posPed;
+            public static int numPed;
+            public static int totalPed;
+            public static int posProd;
+            public static int numProd;
+            public static int totalProd;
+
+            static {
+                totalPed = 0;
+                totalProd = 0;
+                reset_count();
+            }
+
+            public static void reset_count() {
+                posPed = 0;
+                numPed = 1;
+                posProd = 0;
+                numProd = 0;
+            }
 
             public static void set_global_start() {
                 g_start = Instant.now();

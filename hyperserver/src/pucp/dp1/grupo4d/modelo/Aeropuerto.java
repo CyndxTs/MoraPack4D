@@ -86,6 +86,19 @@ public class Aeropuerto {
         return false;
     }
 
+    public Boolean eliminarLoteDeProductos(LoteDeProductos lote, String idRuta) {
+        for(RegistroDeAlmacen registro : this.registros) {
+            if(registro.getIdRuta().compareTo(idRuta) == 0) {
+                if(registro.getLotes().remove(lote)) {
+                    registro.setTamanio(registro.getTamanio() - lote.getTamanio());
+                    if(registro.getTamanio() == 0) this.registros.remove(registro);
+                }
+                return true;
+            }
+        }
+        return false;
+    }
+
     public Aeropuerto replicar(Map<String, LoteDeProductos> poolLotes) {
         Aeropuerto aeropuerto = new Aeropuerto();
         aeropuerto.id = this.id;
