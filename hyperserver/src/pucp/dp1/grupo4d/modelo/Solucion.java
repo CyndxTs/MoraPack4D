@@ -26,7 +26,6 @@ public class Solucion {
     private Double ratioPromedioDeDisposicionOperacional;
     private static final Double f_DO = 3000.0;
     private List<Pedido> pedidosAtendidos;
-    private Set<Aeropuerto> aeropuertosEnUso;
     private Set<Vuelo> vuelosEnTransito;
     private Set<Ruta> rutasEnOperacion;
     
@@ -38,7 +37,6 @@ public class Solucion {
         this.ratioPromedioDeDesviacionEspacial = 1.0;
         this.ratioPromedioDeDisposicionOperacional = 1.0;
         this.pedidosAtendidos = new ArrayList<>();
-        this.aeropuertosEnUso = new HashSet<>();
         this.vuelosEnTransito = new HashSet<>();
         this.rutasEnOperacion = new HashSet<>();
     }
@@ -60,7 +58,6 @@ public class Solucion {
         solucion.ratioPromedioDeDesviacionEspacial = this.ratioPromedioDeDesviacionEspacial;
         solucion.ratioPromedioDeDisposicionOperacional = this.ratioPromedioDeDisposicionOperacional;
         for (Pedido pedido : this.pedidosAtendidos) solucion.pedidosAtendidos.add(pedido.replicar(poolClientes, poolAeropuertos, poolVuelos, poolRutas, poolLotes));
-        for(Aeropuerto aeropuerto : this.aeropuertosEnUso) solucion.aeropuertosEnUso.add(poolAeropuertos.computeIfAbsent(aeropuerto.getCodigo(), id -> aeropuerto.replicar(poolLotes)));
         for (Vuelo vuelo : this.vuelosEnTransito) solucion.vuelosEnTransito.add(poolVuelos.computeIfAbsent(vuelo.getId(), id -> vuelo.replicar(poolAeropuertos, poolLotes)));
         for (Ruta ruta : this.rutasEnOperacion) solucion.rutasEnOperacion.add(poolRutas.computeIfAbsent(ruta.getId(), id -> ruta.replicar(poolAeropuertos, poolVuelos, poolLotes)));
         return solucion;
@@ -73,7 +70,6 @@ public class Solucion {
         this.ratioPromedioDeDesviacionEspacial = solucion.ratioPromedioDeDesviacionEspacial;
         this.ratioPromedioDeDisposicionOperacional = solucion.ratioPromedioDeDisposicionOperacional;
         this.pedidosAtendidos = solucion.pedidosAtendidos;
-        this.aeropuertosEnUso = solucion.aeropuertosEnUso;
         this.vuelosEnTransito = solucion.vuelosEnTransito;
         this.rutasEnOperacion = solucion.rutasEnOperacion;
     }
@@ -188,14 +184,6 @@ public class Solucion {
 
     public void setPedidosAtendidos(List<Pedido> pedidosAtendidos) {
         this.pedidosAtendidos = pedidosAtendidos;
-    }
-
-    public Set<Aeropuerto> getAeropuertosEnUso() {
-        return aeropuertosEnUso;
-    }
-
-    public void setAeropuertosEnUso(Set<Aeropuerto> aeropuertosEnUso) {
-        this.aeropuertosEnUso = aeropuertosEnUso;
     }
 
     public Set<Vuelo> getVuelosEnTransito() {

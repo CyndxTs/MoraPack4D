@@ -135,7 +135,6 @@ public class GVNS {
         List<Aeropuerto> origenes = new ArrayList<>(problematica.origenes.values());
         List<PlanDeVuelo> planes = problematica.planes;
         List<Pedido> pedidos = problematica.pedidos;
-        Set<Aeropuerto> aeropuertosEnUso = new HashSet<>();
         Set<Vuelo> vuelosEnTransito = new HashSet<>();
         Set<Ruta> rutasEnOperacion = new HashSet<>();
         //
@@ -144,7 +143,7 @@ public class GVNS {
             G4D.Logger.Stats.numProd = 1;
             G4D.Logger.Stats.log_stat_ped();
             G4D.Logger.Stats.set_process_start();
-            boolean pedidoAtendido = atenderPedido(pedido, origenes, planes, aeropuertosEnUso, vuelosEnTransito, rutasEnOperacion);
+            boolean pedidoAtendido = atenderPedido(pedido, origenes, planes, vuelosEnTransito, rutasEnOperacion);
             if(!pedidoAtendido) {
                 G4D.Logger.Stats.log_err_stat();
                 System.exit(1);
@@ -154,20 +153,18 @@ public class GVNS {
         }
         // 
         solucion.setPedidosAtendidos(pedidos);
-        solucion.setAeropuertosEnUso(aeropuertosEnUso);
         solucion.setVuelosEnTransito(vuelosEnTransito);
         solucion.setRutasEnOperacion(rutasEnOperacion);
         solucion.setFitness();
     }
     //
     private boolean atenderPedido(Pedido pedido, List<Aeropuerto> origenes, List<PlanDeVuelo> planes,
-                                  Set<Aeropuerto> aeropuertosEnUso, Set<Vuelo> vuelosEnTransito, Set<Ruta> rutasEnOperacion) {
+                                  Set<Vuelo> vuelosEnTransito, Set<Ruta> rutasEnOperacion) {
         //
         int cantPorEnrutar = pedido.getCantidadDeProductosSolicitados();
         LocalDateTime fechaHoraInicial = pedido.getFechaHoraGeneracionUTC();
         Aeropuerto destino = pedido.getDestino();
         List<Aeropuerto> origenesDisponibles = new ArrayList<>(origenes);
-        Set<Aeropuerto> aeropuertosVisitados = new HashSet<>();
         Set<Vuelo> vuelosActivados = new HashSet<>(vuelosEnTransito);
         Set<Ruta> rutasAsignadas = new HashSet<>(rutasEnOperacion);
         while(!origenesDisponibles.isEmpty()) {
@@ -181,8 +178,7 @@ public class GVNS {
             Ruta ruta = buscarRutaVoraz(fechaHoraInicial, fechaHoraLimite, origen, destino, rutasAsignadas);
             G4D.Logger.delete_current_line();
             if(ruta == null) {
-                Set<Aeropuerto> aeropuertosVisitadosEnRuta = new HashSet<>();
-                ruta = construirRutaVoraz(fechaHoraInicial, fechaHoraLimite, origen, destino, planes, aeropuertosVisitadosEnRuta, vuelosActivados);
+                ruta = construirRutaVoraz(fechaHoraInicial, fechaHoraLimite, origen, destino, planes, vuelosActivados);
                 if(ruta == null) {
                     G4D.Logger.log("No es posible generar una ruta a partir de este origen.");
                     origenesDisponibles.remove(origen);
@@ -190,7 +186,6 @@ public class GVNS {
                     continue;
                 }
                 ruta.setTipo(tipoRuta);
-                aeropuertosVisitados.addAll(aeropuertosVisitadosEnRuta);
             } else rutaReasignada = true;
             int rCapDisp = ruta.obtenerCapacidadDisponible();
             int cantEnrutables = Math.min(rCapDisp, cantPorEnrutar);
@@ -207,7 +202,6 @@ public class GVNS {
                 G4D.Logger.delete_lines(3);
                 G4D.Logger.log(">>> PEDIDO ATENDIDO.");
                 pedido.setFechaHoraExpiracion();
-                aeropuertosEnUso.addAll(aeropuertosVisitados);
                 vuelosEnTransito.addAll(vuelosActivados);
                 rutasEnOperacion.addAll(rutasAsignadas);
                 G4D.Logger.delete_lines(5);
@@ -244,8 +238,7 @@ public class GVNS {
     }
     //
     private Ruta construirRutaVoraz(LocalDateTime fechaHoraInicial, LocalDateTime fechaHoraLimite, Aeropuerto origen,
-                                    Aeropuerto destino, List<PlanDeVuelo> planes, Set<Aeropuerto> aeropuertosVisitados,
-                                    Set<Vuelo> vuelosActivados) {
+                                    Aeropuerto destino, List<PlanDeVuelo> planes, Set<Vuelo> vuelosActivados) {
         G4D.Logger.logln("Construyendo nueva ruta..");
         //
         Ruta ruta = new Ruta();
@@ -258,6 +251,7 @@ public class GVNS {
             return null;
         }
         //
+        Set<Aeropuerto> aeropuertosVisitados = new HashSet<>();
         while (!actual.equals(destino)) {
             aeropuertosVisitados.add(actual);
             G4D.Logger.logf("> Vuelos asignados: %d%n",secuenciaDeVuelos.size());
@@ -288,7 +282,6 @@ public class GVNS {
         }
         G4D.Logger.delete_upper_line();
         G4D.Logger.log("DESTINO ALCANZADO. Guardando ruta..");
-        aeropuertosVisitados.add(actual);
         ruta.setOrigen(origen);
         ruta.setDestino(destino);
         ruta.setVuelos(secuenciaDeVuelos);
@@ -344,9 +337,7 @@ public class GVNS {
                 j++;
                 if (huboMejora) {
                     solucion.reasignar(solucionPropuesta);
-                    G4D.Logger.delete_lines(1 + j);
                     i = 1;
-                    j = 0;
                 } else {
                     i++;
                 }
@@ -375,16 +366,12 @@ public class GVNS {
             } else G4D.Logger.log("[APTO]");
             Map<Ruta, LoteDeProductos> lotesPorRutaAux = new HashMap<>(lotesPorRuta);
             List<List<Ruta>> combinaciones = G4D.getPossibleCombinations(new ArrayList<>(lotesPorRuta.keySet()), ele);
-            for (List<Ruta> rutasOrig : combinaciones) {
-                int combTotalProd = 0;
-                for (Ruta rOrig : rutasOrig) combTotalProd += lotesPorRuta.get(rOrig).getTamanio();
-                int capDispTotal = 0;
-                List<Ruta> rutasDest = new ArrayList<>();
-                for(Ruta r : lotesPorRuta.keySet()) {
-                    if(rutasOrig.contains(r)) continue;
-                    capDispTotal += r.obtenerCapacidadDisponible();
-                    rutasDest.add(r);
-                }
+            int posMejorComb = -1;
+            for (int posComb = 0; posComb < combinaciones.size(); posComb++) {
+                List<Ruta> rutasOrig = combinaciones.get(posComb);
+                int combTotalProd = rutasOrig.stream().mapToInt(r -> lotesPorRuta.get(r).getTamanio()).sum();
+                List<Ruta> rutasDest = lotesPorRuta.keySet().stream().filter(r -> !rutasOrig.contains(r)).collect(Collectors.toList());
+                int capDispTotal = rutasDest.stream().mapToInt(Ruta::obtenerCapacidadDisponible).sum();
                 G4D.Logger.delete_current_line();
                 G4D.Logger.log("Validando disponibilidad de rutas destino.. ");
                 if (capDispTotal < combTotalProd) {
@@ -394,48 +381,34 @@ public class GVNS {
                 G4D.Logger.delete_current_line();
                 G4D.Logger.logf("Mejor fitness actual: %.3f | >> REINSERTANDO..", mejorFitness);
                 rutasDest.sort(Comparator.comparing(Ruta::getFechaHoraLlegadaUTC));
-                for(Ruta rOrig : rutasOrig) {
-                    LoteDeProductos lOrig = lotesPorRuta.get(rOrig);
-                    int tamanioRestantePorFusionar = lOrig.getTamanio();
-                    rOrig.eliminarLoteDeProductos(lOrig, vuelosEnTransito, rutasEnOperacion);
-                    lotesPorRuta.remove(rOrig);
-                    for(Ruta rDest : rutasDest) {
-                        if(tamanioRestantePorFusionar == 0) break;
-                        int rDestCapDisp = rDest.obtenerCapacidadDisponible();
-                        if(rDestCapDisp == 0) continue;
-                        int tamanioDeFusion = Math.min(tamanioRestantePorFusionar, rDestCapDisp);
-                        LoteDeProductos lOld = lotesPorRuta.get(rDest);
-                        int tamanioDeConsolidado = lOld.getTamanio() + tamanioDeFusion;
-                        rDest.eliminarLoteDeProductos(lOld, vuelosEnTransito, rutasEnOperacion);
-                        lotesPorRuta.remove(rDest);
-                        LoteDeProductos lNew = rDest.getOrigen().generarLoteDeProductos(tamanioDeConsolidado);
-                        rDest.registraLoteDeProductos(lNew, vuelosEnTransito, rutasEnOperacion);
-                        lotesPorRuta.put(rDest, lNew);
-                        tamanioRestantePorFusionar -= tamanioDeFusion;
-                    }
-                }
+                insertarEleLotes(rutasOrig, rutasDest, lotesPorRuta, vuelosEnTransito, rutasEnOperacion);
                 solucion.setFitness();
                 double fitnessObtenido = solucion.getFitness();
                 G4D.Logger.logf(" | >> Fitness obtenido: %.3f", fitnessObtenido);
                 if (fitnessObtenido < mejorFitness) {
                     G4D.Logger.log(" | ¡NUEVO MEJOR!");
                     mejorFitness = solucion.getFitness();
+                    posMejorComb = posComb;
                     huboMejora = true;
-                    break;
-                } else {
-                    G4D.Logger.log(" | No fue mejor. Revirtiendo..");
-                    for (Ruta r : lotesPorRuta.keySet()) {
-                        LoteDeProductos l = lotesPorRuta.get(r);
-                        r.eliminarLoteDeProductos(l, vuelosEnTransito, rutasEnOperacion);
-                    }
-                    lotesPorRuta.clear();
-                    lotesPorRuta.putAll(lotesPorRutaAux);
-                    //
-                    for (Ruta r : lotesPorRuta.keySet()) {
-                        LoteDeProductos l = lotesPorRuta.get(r);
-                        r.registraLoteDeProductos(l, vuelosEnTransito, rutasEnOperacion);
-                    }
+                } else G4D.Logger.log(" | No fue mejor..");
+                for (Ruta r : lotesPorRuta.keySet()) {
+                    LoteDeProductos l = lotesPorRuta.get(r);
+                    r.eliminarLoteDeProductos(l, vuelosEnTransito, rutasEnOperacion);
                 }
+                lotesPorRuta.clear();
+                lotesPorRuta.putAll(lotesPorRutaAux);
+                //
+                for (Ruta r : lotesPorRuta.keySet()) {
+                    LoteDeProductos l = lotesPorRuta.get(r);
+                    r.registraLoteDeProductos(l, vuelosEnTransito, rutasEnOperacion);
+                }
+            }
+            if(posMejorComb != -1) {
+                List<Ruta> rutasOrig = combinaciones.get(posMejorComb);
+                List<Ruta> rutasDest = lotesPorRuta.keySet().stream().filter(r -> !rutasOrig.contains(r)).collect(Collectors.toList());
+                rutasDest.sort(Comparator.comparing(Ruta::getFechaHoraLlegadaUTC));
+                insertarEleLotes(rutasOrig, rutasDest, lotesPorRuta, vuelosEnTransito, rutasEnOperacion);
+                solucion.setFitness();
             }
         }
         solucion.setFitness();
@@ -445,6 +418,29 @@ public class GVNS {
             G4D.Logger.logln(" | {FITNESS OPTIMIZADO}");
         } else G4D.Logger.logln(" | [FITNESS MANTENIDO]");
         return huboMejora;
+    }
+    //
+    private void insertarEleLotes(List<Ruta> rutasOrig, List<Ruta> rutasDest, Map<Ruta, LoteDeProductos> lotesPorRuta, Set<Vuelo> vuelosEnTransito, Set<Ruta> rutasEnOperacion) {
+        for(Ruta rOrig : rutasOrig) {
+            LoteDeProductos lOrig = lotesPorRuta.get(rOrig);
+            int tamanioRestantePorFusionar = lOrig.getTamanio();
+            rOrig.eliminarLoteDeProductos(lOrig, vuelosEnTransito, rutasEnOperacion);
+            lotesPorRuta.remove(rOrig);
+            for(Ruta rDest : rutasDest) {
+                if(tamanioRestantePorFusionar == 0) break;
+                int rDestCapDisp = rDest.obtenerCapacidadDisponible();
+                if(rDestCapDisp == 0) continue;
+                int tamanioDeFusion = Math.min(tamanioRestantePorFusionar, rDestCapDisp);
+                LoteDeProductos lOld = lotesPorRuta.get(rDest);
+                int tamanioDeConsolidado = lOld.getTamanio() + tamanioDeFusion;
+                rDest.eliminarLoteDeProductos(lOld, vuelosEnTransito, rutasEnOperacion);
+                lotesPorRuta.remove(rDest);
+                LoteDeProductos lNew = rDest.getOrigen().generarLoteDeProductos(tamanioDeConsolidado);
+                rDest.registraLoteDeProductos(lNew, vuelosEnTransito, rutasEnOperacion);
+                lotesPorRuta.put(rDest, lNew);
+                tamanioRestantePorFusionar -= tamanioDeFusion;
+            }
+        }
     }
     //
     private Boolean LSIntercambiar(Solucion solucion, int ele) {
@@ -467,7 +463,7 @@ public class GVNS {
             } else G4D.Logger.log("[APTO]");
             Map<Ruta, LoteDeProductos> lotesPorRutaAux = new HashMap<>(lotesPorRuta);
             List<List<Ruta>> combinaciones = G4D.getPossibleCombinations(new ArrayList<>(lotesPorRuta.keySet()), ele);
-            boolean huboMejoraEnPedido = false;
+            int posMejorA = -1, posMejorB = -1;
             for(int pA = 0; pA < combinaciones.size() - 1; pA++) {
                 for(int pB = pA + 1; pB < combinaciones.size(); pB++) {
                     G4D.Logger.delete_current_line();
@@ -490,66 +486,38 @@ public class GVNS {
                     } else G4D.Logger.log("[DISPONIBLES]");
                     G4D.Logger.delete_current_line();
                     G4D.Logger.logf("Mejor fitness actual: %.3f | >> INTERCAMBIANDO..", mejorFitness);
-                    for (Ruta r : grupoA) {
-                        LoteDeProductos l = lotesPorRuta.get(r);
-                        r.eliminarLoteDeProductos(l, vuelosEnTransito, rutasEnOperacion);
-                        lotesPorRuta.remove(r);
-                    }
-                    for (Ruta r : grupoB) {
-                        LoteDeProductos l = lotesPorRuta.get(r);
-                        r.eliminarLoteDeProductos(l, vuelosEnTransito, rutasEnOperacion);
-                        lotesPorRuta.remove(r);
-                    }
-                    int restanteB = tamanioB;
                     grupoA.sort(Comparator.comparing(Ruta::getFechaHoraLlegadaUTC));
-                    for (Ruta r : grupoA) {
-                        if (restanteB == 0) break;
-                        int capDisp = r.obtenerCapacidadDisponible();
-                        if(capDisp == 0) continue;
-                        int asignar = Math.min(capDisp, restanteB);
-                        LoteDeProductos lNew = r.getOrigen().generarLoteDeProductos(asignar);
-                        r.registraLoteDeProductos(lNew, vuelosEnTransito, rutasEnOperacion);
-                        lotesPorRuta.put(r, lNew);
-                        restanteB -= asignar;
-                    }
-                    int restanteA = tamanioA;
                     grupoB.sort(Comparator.comparing(Ruta::getFechaHoraLlegadaUTC));
-                    for (Ruta r : grupoB) {
-                        if (restanteA == 0) break;
-                        int capDisp = r.obtenerCapacidadDisponible();
-                        if(capDisp == 0) continue;
-                        int asignar = Math.min(capDisp, restanteA);
-                        LoteDeProductos lNew = r.getOrigen().generarLoteDeProductos(asignar);
-                        r.registraLoteDeProductos(lNew, vuelosEnTransito, rutasEnOperacion);
-                        lotesPorRuta.put(r, lNew);
-                        restanteA -= asignar;
-                    }
+                    intercambiarEleLotes(grupoA, grupoB, lotesPorRuta, vuelosEnTransito, rutasEnOperacion);
                     solucion.setFitness();
                     double fitnessObtenido = solucion.getFitness();
                     G4D.Logger.logf(" | >> Fitness obtenido: %.3f", fitnessObtenido);
                     if (fitnessObtenido < mejorFitness) {
                         G4D.Logger.log(" | ¡NUEVO MEJOR!");
                         mejorFitness = fitnessObtenido;
+                        posMejorA = pA;
+                        posMejorB = pB;
                         huboMejora = true;
-                        huboMejoraEnPedido = true;
-                        break;
-                    } else {
-                        G4D.Logger.log(" | No fue mejor. Revirtiendo..");
-                        //
-                        for (Ruta r : lotesPorRuta.keySet()) {
-                            LoteDeProductos l = lotesPorRuta.get(r);
-                            r.eliminarLoteDeProductos(l, vuelosEnTransito, rutasEnOperacion);
-                        }
-                        lotesPorRuta.clear();
-                        lotesPorRuta.putAll(lotesPorRutaAux);
-                        //
-                        for (Ruta r : lotesPorRuta.keySet()) {
-                            LoteDeProductos l = lotesPorRuta.get(r);
-                            r.registraLoteDeProductos(l, vuelosEnTransito, rutasEnOperacion);
-                        }
+                    } else G4D.Logger.log(" | No fue mejor. Revirtiendo..");
+                    for (Ruta r : lotesPorRuta.keySet()) {
+                        LoteDeProductos l = lotesPorRuta.get(r);
+                        r.eliminarLoteDeProductos(l, vuelosEnTransito, rutasEnOperacion);
+                    }
+                    lotesPorRuta.clear();
+                    lotesPorRuta.putAll(lotesPorRutaAux);
+                    for (Ruta r : lotesPorRuta.keySet()) {
+                        LoteDeProductos l = lotesPorRuta.get(r);
+                        r.registraLoteDeProductos(l, vuelosEnTransito, rutasEnOperacion);
                     }
                 }
-                if(huboMejoraEnPedido) break;
+            }
+            if(posMejorA != -1 && posMejorB != -1) {
+                List<Ruta> grupoA = combinaciones.get(posMejorA);
+                grupoA.sort(Comparator.comparing(Ruta::getFechaHoraLlegadaUTC));
+                List<Ruta> grupoB = combinaciones.get(posMejorB);
+                grupoB.sort(Comparator.comparing(Ruta::getFechaHoraLlegadaUTC));
+                intercambiarEleLotes(grupoA, grupoB, lotesPorRuta, vuelosEnTransito, rutasEnOperacion);
+                solucion.setFitness();
             }
         }
         solucion.setFitness();
@@ -560,6 +528,41 @@ public class GVNS {
         else
             G4D.Logger.logln(" | [FITNESS MANTENIDO]");
         return huboMejora;
+    }
+    //
+    private void intercambiarEleLotes(List<Ruta> grupoA, List<Ruta> grupoB, Map<Ruta, LoteDeProductos> lotesPorRuta, Set<Vuelo> vuelosEnTransito, Set<Ruta> rutasEnOperacion) {
+        int restanteA = grupoA.stream().mapToInt( r -> lotesPorRuta.get(r).getTamanio()).sum();
+        int restanteB = grupoB.stream().mapToInt( r -> lotesPorRuta.get(r).getTamanio()).sum();
+        for (Ruta r : grupoA) {
+            LoteDeProductos l = lotesPorRuta.get(r);
+            r.eliminarLoteDeProductos(l, vuelosEnTransito, rutasEnOperacion);
+            lotesPorRuta.remove(r);
+        }
+        for (Ruta r : grupoB) {
+            LoteDeProductos l = lotesPorRuta.get(r);
+            r.eliminarLoteDeProductos(l, vuelosEnTransito, rutasEnOperacion);
+            lotesPorRuta.remove(r);
+        }
+        for (Ruta r : grupoA) {
+            if (restanteB == 0) break;
+            int capDisp = r.obtenerCapacidadDisponible();
+            if(capDisp == 0) continue;
+            int asignar = Math.min(capDisp, restanteB);
+            LoteDeProductos lNew = r.getOrigen().generarLoteDeProductos(asignar);
+            r.registraLoteDeProductos(lNew, vuelosEnTransito, rutasEnOperacion);
+            lotesPorRuta.put(r, lNew);
+            restanteB -= asignar;
+        }
+        for (Ruta r : grupoB) {
+            if (restanteA == 0) break;
+            int capDisp = r.obtenerCapacidadDisponible();
+            if(capDisp == 0) continue;
+            int asignar = Math.min(capDisp, restanteA);
+            LoteDeProductos lNew = r.getOrigen().generarLoteDeProductos(asignar);
+            r.registraLoteDeProductos(lNew, vuelosEnTransito, rutasEnOperacion);
+            lotesPorRuta.put(r, lNew);
+            restanteA -= asignar;
+        }
     }
     //
     private Boolean LSRealocar(Solucion solucion, int ele) {
@@ -581,67 +584,59 @@ public class GVNS {
                 continue;
             } else G4D.Logger.log("[APTO]");
             Map<Ruta, LoteDeProductos> lotesPorRutaAux = new HashMap<>(lotesPorRuta);
-            List<List<Ruta>> combinaciones = G4D.getPossibleCombinations(new ArrayList<>(lotesPorRuta.keySet()), ele);
-            for (List<Ruta> rutasOrig : combinaciones) {
+            List<Ruta> rutas = new ArrayList<>(lotesPorRuta.keySet());
+            List<List<Ruta>> combinaciones = G4D.getPossibleCombinations(rutas, ele);
+            int posMejorComb = -1;
+            for (int posComb = 0; posComb < combinaciones.size(); posComb++) {
+                List<Ruta> rutasOrig = combinaciones.get(posComb);
                 G4D.Logger.delete_current_line();
                 G4D.Logger.log("Validando disponibilidad de rutas destino..");
                 int totalRealocar = rutasOrig.stream().mapToInt(r -> lotesPorRuta.get(r).getTamanio()).sum();
-                // 
-                List<Ruta> candidatas = rutasEnOperacion.stream()
-                    .filter(r -> !rutasOrig.contains(r))
+                List<Ruta> rutasDest = rutasEnOperacion.stream()
+                    .filter(r -> !rutas.contains(r))
                     .filter(r -> r.getDestino().equals(pedido.getDestino()))
                     .filter(r -> !r.getFechaHoraSalidaUTC().isBefore(pedido.getFechaHoraGeneracionUTC()) && !r.getFechaHoraLlegadaUTC().isAfter(pedido.getFechaHoraExpiracionUTC())) // si tienes este método o un criterio temporal
                     .filter(r -> r.obtenerCapacidadDisponible() > 0)
                     .sorted(Comparator.comparing(Ruta::getFechaHoraLlegadaUTC))
                     .collect(Collectors.toList());
-                int capDispTotal = candidatas.stream().mapToInt(Ruta::obtenerCapacidadDisponible).sum();
+                int capDispTotal = rutasDest.stream().mapToInt(Ruta::obtenerCapacidadDisponible).sum();
                 if (capDispTotal < totalRealocar) {
                     G4D.Logger.log("[NO DISPONIBLES]");
                     continue;
                 } else G4D.Logger.log("[DISPONIBLES]");
                 G4D.Logger.delete_current_line();
                 G4D.Logger.logf("Mejor fitness actual: %.3f | >> REALOCANDO..", mejorFitness);
-                // 
-                for (Ruta rOrig : rutasOrig) {
-                    LoteDeProductos l = lotesPorRuta.get(rOrig);
-                    rOrig.eliminarLoteDeProductos(l, vuelosEnTransito, rutasEnOperacion);
-                    lotesPorRuta.remove(rOrig);
-                }
-                // 
-                int restante = totalRealocar;
-                for (Ruta rDest : candidatas) {
-                    if (restante == 0) break;
-                    int capDisp = rDest.obtenerCapacidadDisponible();
-                    if (capDisp == 0) continue;
-                    int asignar = Math.min(capDisp, restante);
-                    LoteDeProductos lNew = rDest.getOrigen().generarLoteDeProductos(asignar);
-                    rDest.registraLoteDeProductos(lNew, vuelosEnTransito, rutasEnOperacion);
-                    lotesPorRuta.put(rDest, lNew);
-                    restante -= asignar;
-                }
-                // 
+                realocarEleLotes(rutasOrig, rutasDest, lotesPorRuta, vuelosEnTransito, rutasEnOperacion);
                 solucion.setFitness();
                 double fitnessObtenido = solucion.getFitness();
                 G4D.Logger.logf(" | >> Fitness obtenido: %.3f", fitnessObtenido);
                 if (fitnessObtenido < mejorFitness) {
                     G4D.Logger.log(" | ¡NUEVO MEJOR!");
                     mejorFitness = fitnessObtenido;
+                    posMejorComb = posComb;
                     huboMejora = true;
-                    break;
-                } else {
-                    G4D.Logger.log(" | No fue mejor. Revirtiendo..");
-                    // revertir cambios
-                    for (Ruta r : lotesPorRuta.keySet()) {
-                        LoteDeProductos l = lotesPorRuta.get(r);
-                        r.eliminarLoteDeProductos(l, vuelosEnTransito, rutasEnOperacion);
-                    }
-                    lotesPorRuta.clear();
-                    lotesPorRuta.putAll(lotesPorRutaAux);
-                    for (Ruta r : lotesPorRuta.keySet()) {
-                        LoteDeProductos l = lotesPorRuta.get(r);
-                        r.registraLoteDeProductos(l, vuelosEnTransito, rutasEnOperacion);
-                    }
+                } else G4D.Logger.log(" | No fue mejor. Revirtiendo..");
+                for (Ruta r : lotesPorRuta.keySet()) {
+                    LoteDeProductos l = lotesPorRuta.get(r);
+                    r.eliminarLoteDeProductos(l, vuelosEnTransito, rutasEnOperacion);
                 }
+                lotesPorRuta.clear();
+                lotesPorRuta.putAll(lotesPorRutaAux);
+                for (Ruta r : lotesPorRuta.keySet()) {
+                    LoteDeProductos l = lotesPorRuta.get(r);
+                    r.registraLoteDeProductos(l, vuelosEnTransito, rutasEnOperacion);
+                }
+            }
+            if(posMejorComb != -1) {
+                List<Ruta> rutasOrig = combinaciones.get(posMejorComb);
+                List<Ruta> rutasDest = rutasEnOperacion.stream()
+                    .filter(r -> !rutasOrig.contains(r))
+                    .filter(r -> r.getDestino().equals(pedido.getDestino()))
+                    .filter(r -> !r.getFechaHoraSalidaUTC().isBefore(pedido.getFechaHoraGeneracionUTC()) && !r.getFechaHoraLlegadaUTC().isAfter(pedido.getFechaHoraExpiracionUTC())) // si tienes este método o un criterio temporal
+                    .filter(r -> r.obtenerCapacidadDisponible() > 0)
+                    .sorted(Comparator.comparing(Ruta::getFechaHoraLlegadaUTC))
+                    .collect(Collectors.toList());
+                realocarEleLotes(rutasOrig, rutasDest, lotesPorRuta, vuelosEnTransito, rutasEnOperacion);
             }
         }
         solucion.setFitness();
@@ -652,6 +647,25 @@ public class GVNS {
         else
             G4D.Logger.logln(" | [FITNESS MANTENIDO]");
         return huboMejora;
+    }
+    //
+    private void realocarEleLotes(List<Ruta> rutasOrig, List<Ruta> rutasDest, Map<Ruta, LoteDeProductos> lotesPorRuta, Set<Vuelo> vuelosEnTransito, Set<Ruta> rutasEnOperacion) {
+        int restante = rutasOrig.stream().mapToInt(r -> lotesPorRuta.get(r).getTamanio()).sum();
+        for (Ruta rOrig : rutasOrig) {
+            LoteDeProductos l = lotesPorRuta.get(rOrig);
+            rOrig.eliminarLoteDeProductos(l, vuelosEnTransito, rutasEnOperacion);
+            lotesPorRuta.remove(rOrig);
+        }
+        for (Ruta rDest : rutasDest) {
+            if (restante == 0) break;
+            int capDisp = rDest.obtenerCapacidadDisponible();
+            if (capDisp == 0) continue;
+            int asignar = Math.min(capDisp, restante);
+            LoteDeProductos lNew = rDest.getOrigen().generarLoteDeProductos(asignar);
+            rDest.registraLoteDeProductos(lNew, vuelosEnTransito, rutasEnOperacion);
+            lotesPorRuta.put(rDest, lNew);
+            restante -= asignar;
+        }
     }
     //
     private void Shaking(Solucion solucion, G4D.IntegerWrapper k) {
@@ -696,15 +710,9 @@ public class GVNS {
             Map<Ruta, LoteDeProductos> lotesPorRuta = pedido.getLotesPorRuta();
             List<List<Ruta>> combinaciones = G4D.getPossibleCombinations(new ArrayList<>(lotesPorRuta.keySet()), ele);
             List<Ruta> rutasOrig = combinaciones.get(random.nextInt(combinaciones.size()));
-            int combTotalProd = 0;
-            for (Ruta rOrig : rutasOrig) combTotalProd += lotesPorRuta.get(rOrig).getTamanio();
-            int capDispTotal = 0;
-            List<Ruta> rutasDest = new ArrayList<>();
-            for(Ruta r : lotesPorRuta.keySet()) {
-                if(rutasOrig.contains(r)) continue;
-                capDispTotal += r.obtenerCapacidadDisponible();
-                rutasDest.add(r);
-            }
+            int combTotalProd = rutasOrig.stream().mapToInt(r -> lotesPorRuta.get(r).getTamanio()).sum();
+            List<Ruta> rutasDest = lotesPorRuta.keySet().stream().filter(r -> !rutasOrig.contains(r)).collect(Collectors.toList());
+            int capDispTotal = rutasDest.stream().mapToInt(Ruta::obtenerCapacidadDisponible).sum();
             G4D.Logger.delete_current_line();
             G4D.Logger.log("Validando disponibilidad de rutas destino.. ");
             if (capDispTotal < combTotalProd) {
@@ -714,26 +722,7 @@ public class GVNS {
             G4D.Logger.delete_current_line();
             G4D.Logger.log("Reinsertando..");
             Collections.shuffle(rutasDest);
-            for(Ruta rOrig : rutasOrig) {
-                LoteDeProductos lOrig = lotesPorRuta.get(rOrig);
-                int tamanioRestantePorFusionar = lOrig.getTamanio();
-                rOrig.eliminarLoteDeProductos(lOrig, vuelosEnTransito, rutasEnOperacion);
-                lotesPorRuta.remove(rOrig);
-                for(Ruta rDest : rutasDest) {
-                    if(tamanioRestantePorFusionar == 0) break;
-                    int rDestCapDisp = rDest.obtenerCapacidadDisponible();
-                    if(rDestCapDisp == 0) continue;
-                    int tamanioDeFusion = Math.min(tamanioRestantePorFusionar, rDestCapDisp);
-                    LoteDeProductos lOld = lotesPorRuta.get(rDest);
-                    int tamanioDeConsolidado = lOld.getTamanio() + tamanioDeFusion;
-                    rDest.eliminarLoteDeProductos(lOld, vuelosEnTransito, rutasEnOperacion);
-                    lotesPorRuta.remove(rDest);
-                    LoteDeProductos lNew = rDest.getOrigen().generarLoteDeProductos(tamanioDeConsolidado);
-                    rDest.registraLoteDeProductos(lNew, vuelosEnTransito, rutasEnOperacion);
-                    lotesPorRuta.put(rDest, lNew);
-                    tamanioRestantePorFusionar -= tamanioDeFusion;
-                }
-            }
+            insertarEleLotes(rutasOrig, rutasDest, lotesPorRuta, vuelosEnTransito, rutasEnOperacion);
         }
         solucion.setFitness();
         G4D.Logger.delete_upper_line();
@@ -775,40 +764,9 @@ public class GVNS {
             } else G4D.Logger.log("[DISPONIBLES]");
             G4D.Logger.delete_current_line();
             G4D.Logger.log("Intercambiando..");
-            for (Ruta r : grupoA) {
-                LoteDeProductos l = lotesPorRuta.get(r);
-                r.eliminarLoteDeProductos(l, vuelosEnTransito, rutasEnOperacion);
-                lotesPorRuta.remove(r);
-            }
-            for (Ruta r : grupoB) {
-                LoteDeProductos l = lotesPorRuta.get(r);
-                r.eliminarLoteDeProductos(l, vuelosEnTransito, rutasEnOperacion);
-                lotesPorRuta.remove(r);
-            }
-            int restanteB = tamanioB;
             Collections.shuffle(grupoA);
-            for (Ruta r : grupoA) {
-                if (restanteB == 0) break;
-                int capDisp = r.obtenerCapacidadDisponible();
-                if(capDisp == 0) continue;
-                int asignar = Math.min(capDisp, restanteB);
-                LoteDeProductos lNew = r.getOrigen().generarLoteDeProductos(asignar);
-                r.registraLoteDeProductos(lNew, vuelosEnTransito, rutasEnOperacion);
-                lotesPorRuta.put(r, lNew);
-                restanteB -= asignar;
-            }
-            int restanteA = tamanioA;
             Collections.shuffle(grupoB);
-            for (Ruta r : grupoB) {
-                if (restanteA == 0) break;
-                int capDisp = r.obtenerCapacidadDisponible();
-                if(capDisp == 0) continue;
-                int asignar = Math.min(capDisp, restanteA);
-                LoteDeProductos lNew = r.getOrigen().generarLoteDeProductos(asignar);
-                r.registraLoteDeProductos(lNew, vuelosEnTransito, rutasEnOperacion);
-                lotesPorRuta.put(r, lNew);
-                restanteA -= asignar;
-            }
+            intercambiarEleLotes(grupoA, grupoB, lotesPorRuta, vuelosEnTransito, rutasEnOperacion);
         }
         solucion.setFitness();
         G4D.Logger.delete_upper_line();
@@ -831,44 +789,27 @@ public class GVNS {
                 G4D.Logger.log("[NO APTO]");
                 continue;
             } else G4D.Logger.log("[APTO]");
-            List<List<Ruta>> combinaciones = G4D.getPossibleCombinations(new ArrayList<>(lotesPorRuta.keySet()), ele);
+            List<Ruta> rutas = new ArrayList<>(lotesPorRuta.keySet());
+            List<List<Ruta>> combinaciones = G4D.getPossibleCombinations(rutas, ele);
             List<Ruta> rutasOrig = combinaciones.get(random.nextInt(combinaciones.size()));
             G4D.Logger.delete_current_line();
             G4D.Logger.log("Analizando rutas origen...");
             int totalRealocar = rutasOrig.stream().mapToInt(r -> lotesPorRuta.get(r).getTamanio()).sum();
-            // 
-            List<Ruta> candidatas = rutasEnOperacion.stream()
-                .filter(r -> !rutasOrig.contains(r))
+            List<Ruta> rutasDest = rutasEnOperacion.stream()
+                .filter(r -> !rutas.contains(r))
                 .filter(r -> r.getDestino().equals(pedido.getDestino()))
                 .filter(r -> !r.getFechaHoraSalidaUTC().isBefore(pedido.getFechaHoraGeneracionUTC()) && !r.getFechaHoraLlegadaUTC().isAfter(pedido.getFechaHoraExpiracionUTC())) // si tienes este método o un criterio temporal
                 .filter(r -> r.obtenerCapacidadDisponible() > 0)
                 .collect(Collectors.toList());
             G4D.Logger.delete_current_line();
             G4D.Logger.log("Validando disponibilidad de rutas destino..");
-            int capDispTotal = candidatas.stream().mapToInt(Ruta::obtenerCapacidadDisponible).sum();
+            int capDispTotal = rutasDest.stream().mapToInt(Ruta::obtenerCapacidadDisponible).sum();
             if (capDispTotal < totalRealocar) {
                 G4D.Logger.log("[NO DISPONIBLES]");
                 continue;
             } else G4D.Logger.log("[DISPONIBLES]");
-            // 
-            for (Ruta rOrig : rutasOrig) {
-                LoteDeProductos l = lotesPorRuta.get(rOrig);
-                rOrig.eliminarLoteDeProductos(l, vuelosEnTransito, rutasEnOperacion);
-                lotesPorRuta.remove(rOrig);
-            }
-            // 
-            int restante = totalRealocar;
-            Collections.shuffle(candidatas);
-            for (Ruta rDest : candidatas) {
-                if (restante == 0) break;
-                int capDisp = rDest.obtenerCapacidadDisponible();
-                if (capDisp == 0) continue;
-                int asignar = Math.min(capDisp, restante);
-                LoteDeProductos lNew = rDest.getOrigen().generarLoteDeProductos(asignar);
-                rDest.registraLoteDeProductos(lNew, vuelosEnTransito, rutasEnOperacion);
-                lotesPorRuta.put(rDest, lNew);
-                restante -= asignar;
-            }
+            Collections.shuffle(rutasDest);
+            realocarEleLotes(rutasOrig, rutasDest, lotesPorRuta, vuelosEnTransito, rutasEnOperacion);
         }
         solucion.setFitness();
         G4D.Logger.delete_upper_line();
