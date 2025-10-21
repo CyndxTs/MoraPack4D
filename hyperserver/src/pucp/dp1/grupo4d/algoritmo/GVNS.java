@@ -83,7 +83,7 @@ public class GVNS {
                 // Realizacion de Agitaciones Aleatorias Continuas hasta una Posible Solucion
                 while (true) {
                     x_prima = solucionAux.replicar();
-                    G4D.Logger.delete_current_line();
+                    G4D.Logger.log("Agitando.. ");
                     Shaking(x_prima, k);
                     G4D.Logger.log("Validando solucion..");
                     if (x_prima.getFitness() < Solucion.PEOR_FITNESS) {
@@ -95,7 +95,11 @@ public class GVNS {
                         G4D.Logger.delete_current_line();
                         G4D.Logger.log(">> SOLUCION ABERRANTE");
                         intentos++;
-                        if (intentos >= MAX_INTENTOS) break;
+                        if (intentos >= MAX_INTENTOS) {
+                            G4D.Logger.log(" | LIMITE DE INTENTOS ALCANZADO.");
+                            break;
+                        }
+                        G4D.Logger.log(" | Reintentando..");
                     }
                 }
 
@@ -103,18 +107,19 @@ public class GVNS {
                     k.value++;
                     continue;
                 }
-
-                Solucion x_prima_doble = new Solucion(x_prima);
+                Solucion x_prima_doble = x_prima.replicar();
                 G4D.Logger.delete_current_line();
                 G4D.Logger.log("Reoptimizando.. ");
                 VND(problematica, x_prima_doble);
+                G4D.Logger.delete_upper_line();
+                G4D.Logger.logf("> 'Reoptimización' : %.3f -> %.3f%n", x_prima.getFitness(), x_prima_doble.getFitness());
                 // 
                 Instant end = Instant.now();
                 t.value = (int) Duration.between(start, end).getSeconds();
-                // 
+                G4D.Logger.log("Validando nuevo vencindario.. ");
                 NeighborhoodChange(problematica, solucionAux, x_prima_doble, x_best, k, t, t_best);
+                G4D.Logger.delete_lines(3);
             }
-            G4D.Logger.delete_lines(1 + k.value);
             // 
             Instant end = Instant.now();
             Duration duracion = Duration.between(start, end);
@@ -323,6 +328,10 @@ public class GVNS {
             while (i <= 3) {
                 Solucion solucionPropuesta = solucion.replicar();
                 huboMejora = false;
+                if(j == 3) {
+                    j = 0;
+                    G4D.Logger.delete_lines(4);
+                }
                 switch (i) {
                     case 1:
                         huboMejora = LSInsertar(solucionPropuesta, ele);
@@ -369,17 +378,17 @@ public class GVNS {
             int posMejorComb = -1;
             for (int posComb = 0; posComb < combinaciones.size(); posComb++) {
                 List<Ruta> rutasOrig = combinaciones.get(posComb);
+                G4D.Logger.delete_current_line();
+                G4D.Logger.log("Validando disponibilidad de rutas destino.. ");
                 int combTotalProd = rutasOrig.stream().mapToInt(r -> lotesPorRuta.get(r).getTamanio()).sum();
                 List<Ruta> rutasDest = lotesPorRuta.keySet().stream().filter(r -> !rutasOrig.contains(r)).collect(Collectors.toList());
                 int capDispTotal = rutasDest.stream().mapToInt(Ruta::obtenerCapacidadDisponible).sum();
-                G4D.Logger.delete_current_line();
-                G4D.Logger.log("Validando disponibilidad de rutas destino.. ");
                 if (capDispTotal < combTotalProd) {
                     G4D.Logger.log("[NO DISPONIBLES]");
                     continue;
                 } else G4D.Logger.log("[DISPONIBLES]");
                 G4D.Logger.delete_current_line();
-                G4D.Logger.logf("Mejor fitness actual: %.3f | >> REINSERTANDO..", mejorFitness);
+                G4D.Logger.logf("Mejor fitness actual: %.3f | >> INSERTANDO..", mejorFitness);
                 rutasDest.sort(Comparator.comparing(Ruta::getFechaHoraLlegadaUTC));
                 insertarEleLotes(rutasOrig, rutasDest, lotesPorRuta, vuelosEnTransito, rutasEnOperacion);
                 solucion.setFitness();
@@ -397,7 +406,6 @@ public class GVNS {
                 }
                 lotesPorRuta.clear();
                 lotesPorRuta.putAll(lotesPorRutaAux);
-                //
                 for (Ruta r : lotesPorRuta.keySet()) {
                     LoteDeProductos l = lotesPorRuta.get(r);
                     r.registraLoteDeProductos(l, vuelosEnTransito, rutasEnOperacion);
@@ -413,7 +421,7 @@ public class GVNS {
         }
         solucion.setFitness();
         G4D.Logger.delete_upper_line();
-        G4D.Logger.logf("> 'Reinserción' : %.3f -> %.3f", fitnessInicial, mejorFitness);
+        G4D.Logger.logf("> 'Inserción' : %.3f -> %.3f", fitnessInicial, mejorFitness);
         if (huboMejora) {
             G4D.Logger.logln(" | {FITNESS OPTIMIZADO}");
         } else G4D.Logger.logln(" | [FITNESS MANTENIDO]");
@@ -462,59 +470,52 @@ public class GVNS {
                 continue;
             } else G4D.Logger.log("[APTO]");
             Map<Ruta, LoteDeProductos> lotesPorRutaAux = new HashMap<>(lotesPorRuta);
-            List<List<Ruta>> combinaciones = G4D.getPossibleCombinations(new ArrayList<>(lotesPorRuta.keySet()), ele);
-            int posMejorA = -1, posMejorB = -1;
-            for(int pA = 0; pA < combinaciones.size() - 1; pA++) {
-                for(int pB = pA + 1; pB < combinaciones.size(); pB++) {
-                    G4D.Logger.delete_current_line();
-                    G4D.Logger.log("Buscando combinacion posible..");
-                    List<Ruta> grupoA = combinaciones.get(pA);
-                    List<Ruta> grupoB = combinaciones.get(pB);
-                    if (!Collections.disjoint(grupoA, grupoB)) {
-                        G4D.Logger.log("[NO ENCONTRADA]");
-                        continue;
-                    } else G4D.Logger.log("[ENCONTRADA]");
-                    G4D.Logger.delete_current_line();
-                    G4D.Logger.log("Validando disponibilidad de rutas..");
-                    int tamanioA = grupoA.stream().mapToInt( r -> lotesPorRuta.get(r).getTamanio()).sum();
-                    int tamanioB = grupoB.stream().mapToInt( r -> lotesPorRuta.get(r).getTamanio()).sum();
-                    int capDispA = grupoA.stream().mapToInt(Ruta::obtenerCapacidadDisponible).sum();
-                    int capDispB = grupoB.stream().mapToInt(Ruta::obtenerCapacidadDisponible).sum();
-                    if (capDispA < tamanioB || capDispB < tamanioA) {
-                        G4D.Logger.log("[NO DISPONIBLES]");
-                        continue;
-                    } else G4D.Logger.log("[DISPONIBLES]");
-                    G4D.Logger.delete_current_line();
-                    G4D.Logger.logf("Mejor fitness actual: %.3f | >> INTERCAMBIANDO..", mejorFitness);
-                    grupoA.sort(Comparator.comparing(Ruta::getFechaHoraLlegadaUTC));
-                    grupoB.sort(Comparator.comparing(Ruta::getFechaHoraLlegadaUTC));
-                    intercambiarEleLotes(grupoA, grupoB, lotesPorRuta, vuelosEnTransito, rutasEnOperacion);
-                    solucion.setFitness();
-                    double fitnessObtenido = solucion.getFitness();
-                    G4D.Logger.logf(" | >> Fitness obtenido: %.3f", fitnessObtenido);
-                    if (fitnessObtenido < mejorFitness) {
-                        G4D.Logger.log(" | ¡NUEVO MEJOR!");
-                        mejorFitness = fitnessObtenido;
-                        posMejorA = pA;
-                        posMejorB = pB;
-                        huboMejora = true;
-                    } else G4D.Logger.log(" | No fue mejor. Revirtiendo..");
-                    for (Ruta r : lotesPorRuta.keySet()) {
-                        LoteDeProductos l = lotesPorRuta.get(r);
-                        r.eliminarLoteDeProductos(l, vuelosEnTransito, rutasEnOperacion);
-                    }
-                    lotesPorRuta.clear();
-                    lotesPorRuta.putAll(lotesPorRutaAux);
-                    for (Ruta r : lotesPorRuta.keySet()) {
-                        LoteDeProductos l = lotesPorRuta.get(r);
-                        r.registraLoteDeProductos(l, vuelosEnTransito, rutasEnOperacion);
-                    }
+            List<List<Ruta>> combinaciones = G4D.getPossibleCombinations(new ArrayList<>(lotesPorRuta.keySet()), 2*ele);
+            int posMejorComb = -1;
+            for(int posComb = 0; posComb < combinaciones.size() - 1; posComb++) {
+                List<Ruta> combinacion = combinaciones.get(posComb);
+                List<Ruta> grupoA = combinacion.subList(0, ele);
+                List<Ruta> grupoB = combinacion.subList(ele, combinacion.size());
+                G4D.Logger.delete_current_line();
+                G4D.Logger.log("Validando disponibilidad de rutas..");
+                int capDispA = grupoA.stream().mapToInt(Ruta::obtenerCapacidadDisponible).sum();
+                int capDispB = grupoB.stream().mapToInt(Ruta::obtenerCapacidadDisponible).sum();
+                int tamanioA = grupoA.stream().mapToInt( r -> lotesPorRuta.get(r).getTamanio()).sum();
+                int tamanioB = grupoB.stream().mapToInt( r -> lotesPorRuta.get(r).getTamanio()).sum();
+                if (capDispA < tamanioB || capDispB < tamanioA) {
+                    G4D.Logger.log("[NO DISPONIBLES]");
+                    continue;
+                } else G4D.Logger.log("[DISPONIBLES]");
+                G4D.Logger.delete_current_line();
+                G4D.Logger.logf("Mejor fitness actual: %.3f | >> INTERCAMBIANDO..", mejorFitness);
+                grupoA.sort(Comparator.comparing(Ruta::getFechaHoraLlegadaUTC));
+                grupoB.sort(Comparator.comparing(Ruta::getFechaHoraLlegadaUTC));
+                intercambiarEleLotes(grupoA, grupoB, lotesPorRuta, vuelosEnTransito, rutasEnOperacion);
+                solucion.setFitness();
+                double fitnessObtenido = solucion.getFitness();
+                G4D.Logger.logf(" | >> Fitness obtenido: %.3f", fitnessObtenido);
+                if (fitnessObtenido < mejorFitness) {
+                    G4D.Logger.log(" | ¡NUEVO MEJOR!");
+                    mejorFitness = fitnessObtenido;
+                    posMejorComb = posComb;
+                    huboMejora = true;
+                } else G4D.Logger.log(" | No fue mejor. Revirtiendo..");
+                for (Ruta r : lotesPorRuta.keySet()) {
+                    LoteDeProductos l = lotesPorRuta.get(r);
+                    r.eliminarLoteDeProductos(l, vuelosEnTransito, rutasEnOperacion);
+                }
+                lotesPorRuta.clear();
+                lotesPorRuta.putAll(lotesPorRutaAux);
+                for (Ruta r : lotesPorRuta.keySet()) {
+                    LoteDeProductos l = lotesPorRuta.get(r);
+                    r.registraLoteDeProductos(l, vuelosEnTransito, rutasEnOperacion);
                 }
             }
-            if(posMejorA != -1 && posMejorB != -1) {
-                List<Ruta> grupoA = combinaciones.get(posMejorA);
+            if(posMejorComb != -1) {
+                List<Ruta> combinacion = combinaciones.get(posMejorComb);
+                List<Ruta> grupoA = combinacion.subList(0, ele);
+                List<Ruta> grupoB = combinacion.subList(ele, combinacion.size());
                 grupoA.sort(Comparator.comparing(Ruta::getFechaHoraLlegadaUTC));
-                List<Ruta> grupoB = combinaciones.get(posMejorB);
                 grupoB.sort(Comparator.comparing(Ruta::getFechaHoraLlegadaUTC));
                 intercambiarEleLotes(grupoA, grupoB, lotesPorRuta, vuelosEnTransito, rutasEnOperacion);
                 solucion.setFitness();
@@ -669,12 +670,17 @@ public class GVNS {
     }
     //
     private void Shaking(Solucion solucion, G4D.IntegerWrapper k) {
-        G4D.Logger.logln("Agitando..");
+        G4D.Logger.logln("[RAND]");
         int j = 0;
-        // Perturbar la solución actual para diversificación
+        double fitnessInicial = solucion.getFitness();
+        // 
         for (int i = 0; i < k.value; ++i) {
             int neighborhood = random.nextInt(3);
             int ele = L_MIN + random.nextInt(L_MAX - L_MIN + 1);
+            if(j == 3) {
+                j = 0;
+                G4D.Logger.delete_lines(4);
+            }
             switch (neighborhood) {
                 case 0:
                     TInsertar(solucion, ele);
@@ -688,11 +694,12 @@ public class GVNS {
             }
             j++;
         }
-        G4D.Logger.delete_lines(1 + j);
+        G4D.Logger.delete_lines(2 + j);
+        G4D.Logger.logf("> 'Agitación' : %.3f -> %.3f%n", fitnessInicial, solucion.getFitness());
     }
     //
     private void TInsertar(Solucion solucion, int ele) {
-        G4D.Logger.logln("> Realizando perturbación por 'Reinserción'..");
+        G4D.Logger.logln("> Realizando perturbación por 'Inserción'..");
         //
         double fitnessInicial = solucion.getFitness();
         List<Pedido> pedidos = solucion.getPedidosAtendidos();
@@ -720,13 +727,13 @@ public class GVNS {
                 continue;
             } else G4D.Logger.log("[DISPONIBLES]");
             G4D.Logger.delete_current_line();
-            G4D.Logger.log("Reinsertando..");
+            G4D.Logger.log("Insertando..");
             Collections.shuffle(rutasDest);
             insertarEleLotes(rutasOrig, rutasDest, lotesPorRuta, vuelosEnTransito, rutasEnOperacion);
         }
         solucion.setFitness();
         G4D.Logger.delete_upper_line();
-        G4D.Logger.logf("> 'Reinserción' : %.3f%n", fitnessInicial, solucion.getFitness());
+        G4D.Logger.logf("> 'Inserción' : %.3f -> %.3f%n", fitnessInicial, solucion.getFitness());
     }
     //
     private void TIntercambiar(Solucion solucion, int ele) {
@@ -745,19 +752,16 @@ public class GVNS {
                 G4D.Logger.log("[NO APTO]");
                 continue;
             } else G4D.Logger.log("[APTO]");
-            List<List<Ruta>> combinaciones = G4D.getPossibleCombinations(new ArrayList<>(lotesPorRuta.keySet()), ele);
-            List<Ruta> grupoA = new ArrayList<>(), grupoB = new ArrayList<>();
-            while(true) {
-                grupoA = combinaciones.get(random.nextInt(combinaciones.size()));
-                grupoB = combinaciones.get(random.nextInt(combinaciones.size()));
-                if(Collections.disjoint(grupoA, grupoB)) break;
-            }
+            List<List<Ruta>> combinaciones = G4D.getPossibleCombinations(new ArrayList<>(lotesPorRuta.keySet()), 2*ele);
+            List<Ruta> combinacion = combinaciones.get(random.nextInt(combinaciones.size()));
+            List<Ruta> grupoA = combinacion.subList(0, ele);
+            List<Ruta> grupoB = combinacion.subList(ele, combinacion.size());
             G4D.Logger.delete_current_line();
             G4D.Logger.log("Validando disponibilidad de rutas..");
-            int tamanioA = grupoA.stream().mapToInt( r -> lotesPorRuta.get(r).getTamanio()).sum();
-            int tamanioB = grupoB.stream().mapToInt( r -> lotesPorRuta.get(r).getTamanio()).sum();
             int capDispA = grupoA.stream().mapToInt(Ruta::obtenerCapacidadDisponible).sum();
             int capDispB = grupoB.stream().mapToInt(Ruta::obtenerCapacidadDisponible).sum();
+            int tamanioA = grupoA.stream().mapToInt( r -> lotesPorRuta.get(r).getTamanio()).sum();
+            int tamanioB = grupoB.stream().mapToInt( r -> lotesPorRuta.get(r).getTamanio()).sum();
             if (capDispA < tamanioB || capDispB < tamanioA) {
                 G4D.Logger.log("[NO DISPONIBLES]");
                 continue;
@@ -770,7 +774,7 @@ public class GVNS {
         }
         solucion.setFitness();
         G4D.Logger.delete_upper_line();
-        G4D.Logger.logf("> 'Intercambio' : %.3f%n", fitnessInicial, solucion.getFitness());
+        G4D.Logger.logf("> 'Intercambio' : %.3f -> %.3f%n", fitnessInicial, solucion.getFitness());
     }
     //
     private void TRealocar(Solucion solucion, int ele) {
@@ -813,14 +817,14 @@ public class GVNS {
         }
         solucion.setFitness();
         G4D.Logger.delete_upper_line();
-        G4D.Logger.logf("> 'Realocación' : %.3f%n", fitnessInicial, solucion.getFitness());
+        G4D.Logger.logf("> 'Realocación' : %.3f -> %.3f%n", fitnessInicial, solucion.getFitness());
     }
     //
     private void NeighborhoodChange(Problematica problematica, Solucion solucionAux,
                                     Solucion x_prima_doble, Solucion x_best,
                                     G4D.IntegerWrapper k, G4D.IntegerWrapper t, 
                                     G4D.IntegerWrapper mejorT) {
-        G4D.Logger.log("Validando cambio de vencindario.. ");
+        G4D.Logger.log("[NeighborhoodChange]");
         if (x_prima_doble.getFitness() < x_best.getFitness()) {
             x_best.reasignar(x_prima_doble.replicar());
             solucionAux.reasignar(x_prima_doble);
