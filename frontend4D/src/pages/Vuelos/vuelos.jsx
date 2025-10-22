@@ -1,5 +1,5 @@
 import React from 'react'
-import './Vuelos.scss'
+import './vuelos.scss'
 
 export default function Vuelos() {
   return (

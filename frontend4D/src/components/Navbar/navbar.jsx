@@ -1,6 +1,6 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
-import './Navbar.scss'
+import './navbar.scss'
 
 import logo from '../../assets/images/mora.png'
 

@@ -1,5 +1,5 @@
 import React from 'react'
-import './Reportes.scss'
+import './reportes.scss'
 
 export default function Reportes() {
   return (

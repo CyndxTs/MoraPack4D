@@ -1,6 +1,7 @@
 // src/components/ui/ui.jsx
 import React, { useState } from "react";
 import "./ui.scss";
+import planeMora from "../../assets/icons/planeMora.svg"; 
 
 export function Button({ icon, label, onClick, type = "button" }) {
   return (
@@ -150,7 +151,7 @@ export function Legend({ items }) {
       {items.map((item, i) => (
         <li key={i}>
           <img
-            src="src/assets/icons/planeMora.svg"
+            src={planeMora}
             alt={item.label}
             className={`legend-icon ${item.status}`}
           />
