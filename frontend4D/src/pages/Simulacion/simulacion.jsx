@@ -98,42 +98,73 @@ export default function Simulacion() {
 
   //EJEMPLO
   // Coordenadas de vuelos
-  const lima = { lat: -12.0464, lng: -77.0428 };
-  const destinos = [
-    { name: "Bogotá", coords: [4.711, -74.0721] },
-    { name: "São Paulo", coords: [-23.55, -46.6333] },
-    { name: "Buenos Aires", coords: [-34.6037, -58.3816] },
-    { name: "Miami", coords: [25.7617, -80.1918] },
-    { name: "Madrid", coords: [40.4168, -3.7038] },
-    { name: "Atenas", coords: [37.9838, 23.7275] },
-    { name: "Bakú", coords: [40.4093, 49.8671] },
-    { name: "Pekín", coords: [39.9042, 116.4074] },
-    { name: "Berlín", coords: [52.52, 13.405] },
-    { name: "Ciudad de México", coords: [19.4326, -99.1332] },
+  const airports = {
+    SKBO: { name: "Bogotá", lat: 4.701, lng: -74.146, gmt: -5 },
+    SEQM: { name: "Quito", lat: -0.1807, lng: -78.4678, gmt: -5 },
+    SVMI: { name: "Caracas", lat: 10.6031, lng: -66.9906, gmt: -4 },
+    SBBR: { name: "Brasilia", lat: -15.8711, lng: -47.9186, gmt: -3 },
+    SPIM: { name: "Lima", lat: -12.0464, lng: -77.0428, gmt: -5 },
+    SLLP: { name: "La Paz", lat: -16.509, lng: -68.113, gmt: -4 },
+    SCEL: { name: "Santiago de Chile", lat: -33.3929, lng: -70.7858, gmt: -3 },
+    SABE: { name: "Buenos Aires", lat: -34.559, lng: -58.415, gmt: -3 },
+    SGAS: { name: "Asunción", lat: -25.239, lng: -57.518, gmt: -4 },
+    SUAA: { name: "Montevideo", lat: -34.789, lng: -56.264, gmt: -3 },
+  };
+
+  const flightData = [
+    { from: "SKBO", to: "SEQM", start: "03:34", end: "05:21", capacity: 300 },
+    { from: "SEQM", to: "SKBO", start: "04:29", end: "06:16", capacity: 340 },
+    { from: "SKBO", to: "SVMI", start: "07:24", end: "11:47", capacity: 300 },
+    { from: "SVMI", to: "SKBO", start: "06:33", end: "08:56", capacity: 340 },
+    { from: "SKBO", to: "SBBR", start: "06:23", end: "14:58", capacity: 320 },
+    { from: "SBBR", to: "SKBO", start: "03:02", end: "07:37", capacity: 320 },
+    { from: "SKBO", to: "SPIM", start: "01:58", end: "05:14", capacity: 340 },
+    { from: "SPIM", to: "SKBO", start: "04:35", end: "08:51", capacity: 340 },
   ];
 
   const [flights, setFlights] = useState(
-    destinos.map((d, i) => ({
-      code: `MORA${i + 1}`,
-      origin: lima,
-      originName: "Lima",
-      destination: { lat: d.coords[0], lng: d.coords[1] },
-      destinationName: d.name,
-      progress: 0, // 0 a 1
-      arrived: false,
-      position: { lat: lima.lat, lng: lima.lng },
-    }))
+    flightData.map((f, i) => {
+      const origin = airports[f.from];
+      const dest = airports[f.to];
+      const startH = parseInt(f.start.split(":")[0]);
+      const startM = parseInt(f.start.split(":")[1]);
+      const endH = parseInt(f.end.split(":")[0]);
+      const endM = parseInt(f.end.split(":")[1]);
+      const durationMinutes = (endH * 60 + endM) - (startH * 60 + startM);
+      const durationSec = Math.max(durationMinutes * 60, 60);
+      return {
+        code: `${f.from}-${f.to}-${i + 1}`,
+        origin,
+        originName: origin.name,
+        destination: dest,
+        destinationName: dest.name,
+        startTime: f.start,
+        endTime: f.end,
+        capacity: f.capacity,
+        durationSec,
+        progress: 0,
+        arrived: false,
+        position: { lat: origin.lat, lng: origin.lng },
+      };
+    })
   );
 
-  // animación del vuelo
+  const createColoredIcon = (filterCss) =>
+  L.divIcon({
+    html: `<img src="${planeIconImg}" style="width:35px;filter:${filterCss};">`,
+    className: "",
+    iconSize: [35, 35],
+  });
+
+
+  // === ANIMACIÓN DE LOS VUELOS ===
   useEffect(() => {
     if (!timerRunning) return;
-    const duration = 300; // 5 minutos (300s)
     const interval = setInterval(() => {
       setFlights((prev) =>
         prev.map((f) => {
           if (f.arrived) return f;
-          const newProgress = Math.min(f.progress + 1 / duration, 1);
+          const newProgress = Math.min(f.progress + 1 / f.durationSec, 1);
           const newPos = {
             lat: f.origin.lat + (f.destination.lat - f.origin.lat) * newProgress,
             lng: f.origin.lng + (f.destination.lng - f.origin.lng) * newProgress,
@@ -146,7 +177,7 @@ export default function Simulacion() {
           };
         })
       );
-    }, 1000);
+    }, 1_000);
     return () => clearInterval(interval);
   }, [timerRunning]);
   //
@@ -292,33 +323,33 @@ export default function Simulacion() {
           <span className="value">{formatTime(seconds)}</span>
         </div>
      
-        <MapContainer
-          id="map"
-          center={[-12.0464, -77.0428]} // Lima
-          zoom={2}
-        >
+        <MapContainer id="map" center={[-12.0464, -77.0428]} zoom={3}>
           <TileLayer
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
           />
 
-          {flights.map((flight, i) => (
-            <Marker
-              key={i}
-              position={flight.position}
-              icon={L.icon({
-                iconUrl: planeIconImg,
-                iconSize: [35, 35],
-                className: flight.arrived ? "plane-arrived" : "plane-flying",
-              })}
-            >
-              <Popup>
-                <b>{flight.code}</b><br />
-                {flight.originName} → {flight.destinationName}<br />
-                Estado: {flight.arrived ? "Finalizado" : "En curso"}
-              </Popup>
-            </Marker>
-          ))}
+          {flights.map((flight, i) => {
+            let filterCss = "";
+            if (flight.arrived) filterCss = "invert(35%) sepia(82%) saturate(1595%) hue-rotate(185deg) brightness(94%) contrast(92%)";
+            else filterCss = "invert(62%) sepia(86%) saturate(421%) hue-rotate(356deg) brightness(94%) contrast(92%)";
+
+            return (
+              <Marker
+                key={i}
+                position={flight.position}
+                icon={createColoredIcon(filterCss)}
+              >
+                <Popup>
+                  <b>{flight.code}</b><br />
+                  {flight.originName} → {flight.destinationName}<br />
+                  Salida: {flight.startTime} | Llegada: {flight.endTime}<br />
+                  Capacidad: {flight.capacity} pax<br />
+                  Estado: {flight.arrived ? "Finalizado" : "En curso"}
+                </Popup>
+              </Marker>
+            );
+          })}
         </MapContainer>
 
         

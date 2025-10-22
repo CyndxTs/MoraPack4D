@@ -389,13 +389,15 @@
 }
 
 /* Colores solo para el avión */
-.en-curso {
+.legend-icon.en-curso {
   filter: invert(62%) sepia(86%) saturate(421%) hue-rotate(356deg) brightness(94%) contrast(92%);
 }
-.finalizado {
+
+.legend-icon.finalizado {
   filter: invert(35%) sepia(82%) saturate(1595%) hue-rotate(185deg) brightness(94%) contrast(92%);
 }
-.cancelado {
+
+.legend-icon.cancelado {
   filter: invert(28%) sepia(78%) saturate(1946%) hue-rotate(337deg) brightness(92%) contrast(92%);
 }
 
