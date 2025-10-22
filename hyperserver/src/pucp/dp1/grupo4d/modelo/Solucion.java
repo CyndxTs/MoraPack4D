@@ -6,6 +6,7 @@
 
 package pucp.dp1.grupo4d.modelo;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -18,7 +19,7 @@ import pucp.dp1.grupo4d.util.G4D;
 public class Solucion {
     private String id;
     private Double fitness;
-    public static final Double PEOR_FITNESS = 9999.99;
+    private static final Double f_PF = 1.015;
     private Double ratioPromedioDeUtilizacionTemporal;
     private static final Double f_UT = 5000.0;
     private Double ratioPromedioDeDesviacionEspacial;
@@ -32,7 +33,7 @@ public class Solucion {
 
     public Solucion() {
         this.id = G4D.Generator.getUniqueString("SOL");
-        this.fitness = PEOR_FITNESS;
+        this.fitness = 9999.99;
         this.ratioPromedioDeUtilizacionTemporal = 1.0;
         this.ratioPromedioDeDesviacionEspacial = 1.0;
         this.ratioPromedioDeDisposicionOperacional = 1.0;
@@ -43,6 +44,10 @@ public class Solucion {
 
     public Solucion(Solucion solucion) {
         this.reasignar(solucion);
+    }
+
+    public double obtenerPeorFitness() {
+        return f_PF*this.fitness;
     }
 
     public Solucion replicar() {
@@ -117,13 +122,22 @@ public class Solucion {
     }
 
     public void setRatioPromedioDeUtilizacionTemporal() {
-        double sumaRatios = 0.0;
-        for (Ruta ruta : this.rutasEnOperacion) {
-            sumaRatios += ruta.getDuracion() / ruta.getTipo().getMaxHorasParaEntrega();
+        double sumaRatios = 0.0, totalProd = 0;
+        for(Pedido pedido : this.pedidosAtendidos) {
+            LocalDateTime fechaHoraGeneracion = pedido.getFechaHoraGeneracionUTC();
+            Map<Ruta, LoteDeProductos> lotesPorRuta = pedido.getLotesPorRuta();
+            List<Ruta> rutas = new ArrayList<>(lotesPorRuta.keySet());
+            for(Ruta ruta : rutas) {
+                int cantProd = lotesPorRuta.get(ruta).getTamanio();
+                double duracionTotal = ruta.obtenerDuracionActivaTotal() + ruta.obtenerDuracionPasivaTotal(fechaHoraGeneracion);
+                double duracionMaxima = ruta.getTipo().getMaxHorasParaEntrega();
+                sumaRatios += cantProd*duracionTotal/duracionMaxima;
+                totalProd += cantProd;
+            }
         }
-        if (this.rutasEnOperacion.isEmpty()) {
+        if(this.pedidosAtendidos.isEmpty()) {
             this.ratioPromedioDeUtilizacionTemporal = 1.0;
-        } else this.ratioPromedioDeUtilizacionTemporal = sumaRatios / this.rutasEnOperacion.size();
+        } else this.ratioPromedioDeUtilizacionTemporal = sumaRatios / totalProd;
     }
 
     public void setRatioPromedioDeUtilizacionTemporal(Double ratioPromedioDeUtilizacionTemporal) {
@@ -135,17 +149,23 @@ public class Solucion {
     }
 
     public void setRatioPromedioDeDesviacionEspacial() {
-        double sumaRatios = 0.0;
-        for (Ruta ruta : this.rutasEnOperacion) {
-            Aeropuerto aOrig = ruta.getOrigen();
-            Aeropuerto aDest = ruta.getDestino();
-            double dRecorrida = ruta.getDistancia();
-            double dIdeal = aOrig.obtenerDistanciaHasta(aDest);
-            sumaRatios += (dRecorrida / dIdeal) - 1;
+        double sumaRatios = 0.0, totalProd = 0;
+        for(Pedido pedido : this.pedidosAtendidos) {
+            Map<Ruta, LoteDeProductos> lotesPorRuta = pedido.getLotesPorRuta();
+            List<Ruta> rutas = new ArrayList<>(lotesPorRuta.keySet());
+            for(Ruta ruta : rutas) {
+                Aeropuerto aOrig = ruta.getOrigen();
+                Aeropuerto aDest = ruta.getDestino();
+                double dRecorrida = ruta.getDistancia();
+                double dIdeal = aOrig.obtenerDistanciaHasta(aDest);
+                int cantProd = lotesPorRuta.get(ruta).getTamanio();
+                sumaRatios += cantProd*((dRecorrida / dIdeal) - 1);
+                totalProd += cantProd;
+            }
         }
-        if (this.rutasEnOperacion.isEmpty()) {
+        if (this.pedidosAtendidos.isEmpty()) {
             this.ratioPromedioDeDesviacionEspacial = 1.0;
-        } else this.ratioPromedioDeDesviacionEspacial = sumaRatios / this.rutasEnOperacion.size();
+        } else this.ratioPromedioDeDesviacionEspacial = sumaRatios / totalProd;
     }
 
     public void setRatioPromedioDeDesviacionEspacial(Double ratioPromedioDeDesviacionEspacial) {
@@ -160,13 +180,7 @@ public class Solucion {
         double sumaRatios = 0.0;
         for (Ruta ruta : this.rutasEnOperacion) {
             int rCapDisp = ruta.obtenerCapacidadDisponible();
-            if(rCapDisp < 0) {
-                ruta.obtenerCapacidadDisponible();
-            }
             double rCap = ((double)(ruta.obtenerCapacidad()));
-            if(rCap < 0) {
-                rCap = ((double)(ruta.obtenerCapacidad()));
-            }
             sumaRatios +=  rCapDisp/rCap ;
         }
         if (this.rutasEnOperacion.isEmpty()) {

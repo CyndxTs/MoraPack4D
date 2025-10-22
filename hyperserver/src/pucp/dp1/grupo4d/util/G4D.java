@@ -571,21 +571,21 @@ public class G4D {
                 duration = Duration.between(p_start, end).toNanos();
             }
 
-            private static double get_mean_time_by_ped() {
+            private static Double get_mean_time_by_ped() {
                 return duration/(1000000.0*posPed);
             }
 
-            private static double get_mean_time_by_prod() {
+            private static Double get_mean_time_by_prod() {
                 return duration/(1000.0*posProd);
             }
 
-            private static double get_convergence_time() {
+            private static Double get_convergence_time() {
                 return duration/1000000000.0;
             }
 
             public static void log_stat_ped() {
-                G4D.Logger.logf("[#] TOTAL DE PEDIDOS ATENDIDOS: %d de' %d'%n",posPed,totalPed);
-                G4D.Logger.logf("[#] TIEMPO PROMEDIO DE ATENCION DE PEDIDO: %.3f ms.%n",get_mean_time_by_ped());
+                G4D.Logger.logf("[#] TOTAL DE PEDIDOS ATENDIDOS: %d de' %d'%n", posPed, totalPed);
+                G4D.Logger.logf("[#] TIEMPO PROMEDIO DE ATENCION DE PEDIDO: %.3f ms.%n", get_mean_time_by_ped());
             }
 
             public static void log_stat_prod() {
