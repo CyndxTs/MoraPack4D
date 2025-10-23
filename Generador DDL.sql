@@ -1,3 +1,5 @@
+-- MySQL Workbench Forward Engineering
+
 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0;
 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0;
 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION';
@@ -32,7 +34,7 @@ DROP TABLE IF EXISTS `morapack4d`.`AEROPUERTO` ;
 CREATE TABLE IF NOT EXISTS `morapack4d`.`AEROPUERTO` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `codigo` VARCHAR(4) NOT NULL,
-  `ciudad` VARCHAR(40) NOT NULL,
+  `ciudad` VARCHAR(30) NOT NULL,
   `pais` VARCHAR(20) NOT NULL,
   `continente` VARCHAR(20) NOT NULL,
   `alias` VARCHAR(4) NOT NULL,
@@ -42,6 +44,7 @@ CREATE TABLE IF NOT EXISTS `morapack4d`.`AEROPUERTO` (
   `latitud_dec` DOUBLE NOT NULL,
   `longitud_dms` VARCHAR(20) NOT NULL,
   `longitud_dec` DOUBLE NOT NULL,
+  `esSede` TINYINT NULL DEFAULT 0,
   PRIMARY KEY (`id`),
   UNIQUE INDEX `codigo_UNIQUE` (`codigo` ASC) VISIBLE,
   UNIQUE INDEX `alias_UNIQUE` (`alias` ASC) VISIBLE);
@@ -55,17 +58,16 @@ DROP TABLE IF EXISTS `morapack4d`.`REGISTRO` ;
 CREATE TABLE IF NOT EXISTS `morapack4d`.`REGISTRO` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `codigo` VARCHAR(20) NOT NULL,
-  `tamanio` INT NOT NULL,
   `fecha_hora_ingreso_local` TIMESTAMP NOT NULL,
   `fecha_hora_ingreso_utc` TIMESTAMP NOT NULL,
   `fecha_hora_egreso_local` TIMESTAMP NOT NULL,
   `fecha_hora_egreso_utc` TIMESTAMP NOT NULL,
-  `id_registro` INT NOT NULL,
+  `id_aeropuerto` INT NOT NULL,
   PRIMARY KEY (`id`),
-  INDEX `fk_REGISTRO_AEROPUERTO1_idx` (`id_registro` ASC) VISIBLE,
+  INDEX `fk_REGISTRO_AEROPUERTO1_idx` (`id_aeropuerto` ASC) VISIBLE,
   UNIQUE INDEX `codigo_UNIQUE` (`codigo` ASC) VISIBLE,
   CONSTRAINT `fk_REGISTRO_AEROPUERTO1`
-    FOREIGN KEY (`id_registro`)
+    FOREIGN KEY (`id_aeropuerto`)
     REFERENCES `morapack4d`.`AEROPUERTO` (`id`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION);
@@ -301,45 +303,23 @@ CREATE TABLE IF NOT EXISTS `morapack4d`.`PEDIDO_POR_RUTA_POR_LOTE` (
 
 
 -- -----------------------------------------------------
--- Table `morapack4d`.`EVENTO`
--- -----------------------------------------------------
-DROP TABLE IF EXISTS `morapack4d`.`EVENTO` ;
-
-CREATE TABLE IF NOT EXISTS `morapack4d`.`EVENTO` (
-  `id` INT NOT NULL AUTO_INCREMENT,
-  `codigo` VARCHAR(20) NOT NULL,
-  `tipo` ENUM('RETRASO', 'CANCELACION') NOT NULL,
-  `fecha_hora_inicio_local` TIMESTAMP NOT NULL,
-  `fecha_hora_inicio_utc` TIMESTAMP NOT NULL,
-  `fecha_hora_fin_local` TIMESTAMP NOT NULL,
-  `fecha_hora_fin_utc` TIMESTAMP NOT NULL,
-  `hora_nueva_salida_local` TIME NULL DEFAULT NULL,
-  `hora_nueva_salida_utc` TIME NULL DEFAULT NULL,
-  `hora_nueva_llegada_local` TIME NULL DEFAULT NULL,
-  `hora_nueva_llegada_utc` TIME NULL DEFAULT NULL,
-  `id_vuelo` INT NOT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE INDEX `codigo_UNIQUE` (`codigo` ASC) VISIBLE,
-  INDEX `fk_EVENTO_VUELO1_idx` (`id_vuelo` ASC) VISIBLE,
-  CONSTRAINT `fk_EVENTO_VUELO1`
-    FOREIGN KEY (`id_vuelo`)
-    REFERENCES `morapack4d`.`VUELO` (`id`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION);
-
-
--- -----------------------------------------------------
 -- Table `morapack4d`.`PARAMETROS`
 -- -----------------------------------------------------
 DROP TABLE IF EXISTS `morapack4d`.`PARAMETROS` ;
 
 CREATE TABLE IF NOT EXISTS `morapack4d`.`PARAMETROS` (
   `id` INT NOT NULL AUTO_INCREMENT,
-  `max_dias_entrega_intracontinental` INT NOT NULL,
-  `max_dias_entrega_intercontinental` INT NOT NULL,
-  `max_horas_recojo` DOUBLE NOT NULL,
-  `min_horas_estancia` DOUBLE NOT NULL,
-  `max_horas_estancia` DOUBLE NOT NULL,
+  `max_dias_entrega_intracontinental` INT NULL,
+  `max_dias_entrega_intercontinental` INT NULL,
+  `max_horas_recojo` DOUBLE NULL,
+  `min_horas_estancia` DOUBLE NULL,
+  `max_horas_estancia` DOUBLE NULL,
+  `ele_min` INT NULL,
+  `ele_max` INT NULL,
+  `k_min` INT NULL,
+  `k_max` INT NULL,
+  `t_max` INT NULL,
+  `max_intentos` INT NULL,
   PRIMARY KEY (`id`));
 
 
