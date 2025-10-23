@@ -1,7 +1,11 @@
 // src/components/ui/ui.jsx
 import React, { useState } from "react";
 import "./ui.scss";
+
 import planeMora from "../../assets/icons/planeMora.svg"; 
+import viewIcon from "../../assets/icons/view.svg";
+import editIcon from "../../assets/icons/edit.svg";
+import deleteIcon from "../../assets/icons/delete.svg";
 
 export function Button({ icon, label, onClick, type = "button" }) {
   return (
@@ -111,6 +115,7 @@ export function Dropdown({ options = [], onSelect, placeholder = "Seleccionar...
   );
 }
 
+
 export function Table({ headers = [], data = [] }) {
   return (
     <div className="table-container">
@@ -118,17 +123,26 @@ export function Table({ headers = [], data = [] }) {
         <thead>
           <tr>
             {headers.map((h, i) => (
-              <th key={i}>{h}</th>
+              <th key={i}>{h.label}</th>
             ))}
           </tr>
         </thead>
+
         <tbody>
           {data.length ? (
             data.map((row, i) => (
               <tr key={i}>
                 {headers.map((h, j) => {
-                  const key = h.toLowerCase().replace(/\s/g, '');
-                  return <td key={j}>{row[key] || ""}</td>;
+                  if (h.key === "acciones") {
+                    return (
+                      <td key={j} className="acciones">
+                        <img src={viewIcon} alt="Ver" title="Ver" />
+                        <img src={editIcon} alt="Editar" title="Editar" />
+                        <img src={deleteIcon} alt="Eliminar" title="Eliminar" />
+                      </td>
+                    );
+                  }
+                  return <td key={j}>{row[h.key] ?? ""}</td>;
                 })}
               </tr>
             ))
@@ -139,11 +153,14 @@ export function Table({ headers = [], data = [] }) {
               </td>
             </tr>
           )}
-        </tbody>  
+        </tbody>
       </table>
     </div>
   );
 }
+
+
+
 
 export function Legend({ items }) {
   return (

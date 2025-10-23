@@ -25,8 +25,21 @@ export default function Pedidos() {
   const [codigo, setCodigo] = useState("");
 
   // Tabla
-  const headers = ["Código", "Cliente", "Fecha de generación", "Estado", "Acciones"];
-  const data = [];
+  const headers = [
+    { label: "Código", key: "codigo" },
+    { label: "Cliente", key: "cliente" },
+    { label: "Fecha de generación", key: "fecha" },
+    { label: "Estado", key: "estado" },
+    { label: "Acciones", key: "acciones" },
+  ];
+
+  const data = [
+    { codigo: "P001", cliente: "Victoria Pacheco", fecha: "2025-10-22 07:45", estado: "En curso" },
+    { codigo: "P002", cliente: "Elena Denisovna", fecha: "2025-10-21 14:30", estado: "Pendiente" },
+    { codigo: "P003", cliente: "Ji-hun Lim", fecha: "2025-10-20 09:12", estado: "Entregado" },
+    { codigo: "P004", cliente: "Hye-jin Sim", fecha: "2025-10-19 18:05", estado: "Cancelado" },
+    { codigo: "P005", cliente: "Ha-eun Baek", fecha: "2025-10-18 22:47", estado: "En curso" },
+  ];
 
   const handleFileChange = (e) => {
     if (e.target.files.length > 0) setArchivo(e.target.files[0].name);

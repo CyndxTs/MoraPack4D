@@ -20,8 +20,58 @@ export default function Planificacion() {
   const [parametro3, setParametro3] = useState("");
 
   // Tabla
-  const headers = ["Nro. vuelo", "Origen", "Destino", "Salida", "Llegada", "Estado", "Acciones"];
-  const data = []; // tabla vacía
+  const headers = [
+    { label: "Código", key: "codigo" },
+    { label: "Origen", key: "origen" },
+    { label: "Destino", key: "destino" },
+    { label: "Salida", key: "salida" },
+    { label: "Llegada", key: "llegada" },
+    { label: "Estado", key: "estado" },
+    { label: "Acciones", key: "acciones" },
+  ];
+
+  const data = [
+    {
+      codigo: "PLA0001",
+      origen: "LIM - Jorge Chávez",
+      destino: "JFK - New York",
+      salida: "2025-10-22 08:30",
+      llegada: "2025-10-22 17:15",
+      estado: "En ruta",
+    },
+    {
+      codigo: "PLA0002",
+      origen: "JFK - New York",
+      destino: "CDG - París",
+      salida: "2025-10-21 12:00",
+      llegada: "2025-10-21 23:40",
+      estado: "Finalizado",
+    },
+    {
+      codigo: "PLA0003",
+      origen: "CDG - París",
+      destino: "FRA - Frankfurt",
+      salida: "2025-10-20 10:45",
+      llegada: "2025-10-20 13:00",
+      estado: "Pendiente",
+    },
+    {
+      codigo: "PLA0004",
+      origen: "FRA - Frankfurt",
+      destino: "NRT - Tokio",
+      salida: "2025-10-19 20:15",
+      llegada: "2025-10-20 11:00",
+      estado: "En ruta",
+    },
+    {
+      codigo: "PLA0005",
+      origen: "NRT - Tokio",
+      destino: "SYD - Sydney",
+      salida: "2025-10-18 09:20",
+      llegada: "2025-10-18 19:05",
+      estado: "Programado",
+    },
+  ];
 
   const handleFileChange = (e) => {
     if (e.target.files.length > 0) setArchivo(e.target.files[0].name);

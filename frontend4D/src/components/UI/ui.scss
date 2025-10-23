@@ -363,6 +363,23 @@
   font-style: italic;
 }
 
+.custom-table td.acciones {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.custom-table td.acciones img {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.custom-table td.acciones img:hover {
+  transform: scale(1.15);
+}
+
 /* === Leyenda === */
 .legend-list {
   list-style: none;
