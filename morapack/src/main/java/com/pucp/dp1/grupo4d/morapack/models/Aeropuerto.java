@@ -1,0 +1,271 @@
+package com.pucp.dp1.grupo4d.morapack.models;
+
+import jakarta.persistence.*;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
+import com.pucp.dp1.grupo4d.morapack.utils.G4D;
+
+@Entity
+@Table(name = "AEROPUERTO", schema = "morapack4d")
+public class Aeropuerto {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id", nullable = false)
+    private Integer id;
+
+    @Column(name = "codigo", length = 4, nullable = false, unique = true)
+    private String codigo;
+
+    @Column(name = "ciudad", length = 30, nullable = false)
+    private String ciudad;
+
+    @Column(name = "pais", length = 20, nullable = false)
+    private String pais;
+
+    @Column(name = "continente", length = 20, nullable = false)
+    private String continente;
+
+    @Column(name = "alias", length = 4, nullable = false, unique = true)
+    private String alias;
+
+    @Column(name = "huso_horario", nullable = false)
+    private Integer husoHorario;
+
+    @Column(name = "capacidad", nullable = false)
+    private Integer capacidad;
+
+    @Column(name = "latitud_dms", length = 20, nullable = false)
+    private String latitudDMS;
+
+    @Column(name = "latitud_dec", nullable = false)
+    private Double latitudDEC;
+
+    @Column(name = "longitud_dms", length = 20, nullable = false)
+    private String longitudDMS;
+
+    @Column(name = "longitud_dec", nullable = false)
+    private Double longitudDEC;
+
+    @Column(name = "esSede")
+    private Boolean esSede = false;
+
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "id_aeropuerto", nullable = false)// <- esto crea la FK en REGISTRO
+    private List<Registro> registros ;
+
+    public Aeropuerto() {
+        this.id = null;
+        this.codigo = G4D.Generator.getUniqueString("AER");
+        this.capacidad = 0;
+        this.registros = new ArrayList<>();
+    }
+
+    public Lote generarLoteDeProductos(int cantProd) {
+        Lote lote = new Lote();
+        lote.setTamanio(cantProd);
+        lote.setProductos();
+        return lote;
+    }
+
+    public Integer obtenerCapacidadDisponible(LocalDateTime fechaHoraInicio, LocalDateTime fechaHoraFin) {
+        int disp = this.capacidad, minDisp = this.capacidad;
+        Map<LocalDateTime, Integer> eventos = new TreeMap<>();
+        for(Registro registro : this.registros) {
+            LocalDateTime rFechaHoraIngreso = registro.getFechaHoraIngresoUTC(), rFechaHoraEgreso = registro.getFechaHoraEgresoUTC();
+            if(rFechaHoraIngreso.isBefore(fechaHoraFin) && rFechaHoraEgreso.isAfter(fechaHoraInicio)) {
+                int tamanio = registro.getLote().getTamanio();
+                eventos.merge(rFechaHoraIngreso, -tamanio, Integer::sum);
+                eventos.merge(rFechaHoraEgreso, +tamanio, Integer::sum);
+            }
+        }
+        for(int canProd : eventos.values()) {
+            disp += canProd;
+            minDisp = Math.min(minDisp, disp);
+        }
+        return minDisp;
+    }
+
+    public Double obtenerDistanciaHasta(Aeropuerto aDest) {
+        return G4D.getGeodesicDistance(this.latitudDEC, this.longitudDEC, aDest.latitudDEC, aDest.longitudDEC);
+    }
+
+    public void registrarLoteDeProductos(Lote lote, LocalDateTime fechaHoraIngresoUTC, LocalDateTime fechaHoraEgresoUTC) {
+        Registro registro = new Registro();
+        registro.setFechaHoraIngresoUTC(fechaHoraIngresoUTC);
+        registro.setFechaHoraIngresoLocal(G4D.toLocal(fechaHoraIngresoUTC, this.husoHorario));
+        registro.setFechaHoraEgresoUTC(fechaHoraEgresoUTC);
+        registro.setFechaHoraEgresoLocal(G4D.toLocal(fechaHoraEgresoUTC, this.husoHorario));
+        registro.setLote(lote);
+        this.registros.add(registro);
+    }
+
+    public Boolean eliminarLoteDeProductos(Lote lote) {
+        for(Registro registro : this.registros) {
+            if(registro.getLote().equals(lote)) {
+                this.registros.remove(registro);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public Aeropuerto replicar(Map<String, Lote> poolLotes) {
+        Aeropuerto aeropuerto = new Aeropuerto();
+        aeropuerto.id = this.id;
+        aeropuerto.codigo = this.codigo;
+        aeropuerto.ciudad = this.ciudad;
+        aeropuerto.pais = this.pais;
+        aeropuerto.continente = this.continente;
+        aeropuerto.alias = this.alias;
+        aeropuerto.husoHorario = this.husoHorario;
+        aeropuerto.capacidad = this.capacidad;
+        aeropuerto.latitudDMS = this.latitudDMS;
+        aeropuerto.latitudDEC = this.latitudDEC;
+        aeropuerto.longitudDMS = this.longitudDMS;
+        aeropuerto.longitudDEC = this.longitudDEC;
+        for(Registro r : this.registros) aeropuerto.registros.add(r.replicar(poolLotes));
+        return aeropuerto;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("%s - %s, %s", this.codigo, this.ciudad, this.pais);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Aeropuerto that = (Aeropuerto) o;
+        return codigo != null && codigo.equals(that.codigo);
+    }
+
+    @Override
+    public int hashCode() {
+        return codigo != null ? codigo.hashCode() : 0;
+    }
+
+    public Integer getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    public String getCodigo() {
+        return codigo;
+    }
+
+    public void setCodigo(String codigo) {
+        this.codigo = codigo;
+    }
+
+    public String getCiudad() {
+        return ciudad;
+    }
+
+    public void setCiudad(String ciudad) {
+        this.ciudad = ciudad;
+    }
+
+    public String getPais() {
+        return pais;
+    }
+
+    public void setPais(String pais) {
+        this.pais = pais;
+    }
+
+    public String getContinente() {
+        return continente;
+    }
+
+    public void setContinente(String continente) {
+        this.continente = continente;
+    }
+
+    public String getAlias() {
+        return alias;
+    }
+
+    public void setAlias(String alias) {
+        this.alias = alias;
+    }
+
+    public Integer getHusoHorario() {
+        return husoHorario;
+    }
+
+    public void setHusoHorario(int husoHorario) {
+        this.husoHorario = husoHorario;
+    }
+
+    public Integer getCapacidad() {
+        return capacidad;
+    }
+
+    public void setCapacidad(int capacidad) {
+        this.capacidad = capacidad;
+    }
+
+    public String getLatitudDMS() {
+        return latitudDMS;
+    }
+
+    public void setLatitudDMS() {
+        this.latitudDMS = G4D.toLatDMS(this.latitudDEC);
+    }
+
+    public void setLatitudDMS(String latitudDMS) {
+        this.latitudDMS = latitudDMS;
+    }
+
+    public Double getLatitudDEC() {
+        return latitudDEC;
+    }
+
+    public void setLatitudDEC() {
+        this.latitudDEC = G4D.toLatDEC(this.latitudDMS);
+    }
+
+    public void setLatitudDEC(double latitudDEC) {
+        this.latitudDEC = latitudDEC;
+    }
+
+    public String getLongitudDMS() {
+        return longitudDMS;
+    }
+
+    public void setLongitudDMS() {
+        this.longitudDMS = G4D.toLonDMS(this.longitudDEC);
+    }
+
+    public void setLongitudDMS(String longitudDMS) {
+        this.longitudDMS = longitudDMS;
+    }
+
+    public Double getLongitudDEC() {
+        return longitudDEC;
+    }
+
+    public void setLongitudDEC() {
+        this.longitudDEC = G4D.toLonDEC(this.longitudDMS);
+    }
+
+    public void setLongitudDEC(double longitudDEC) {
+        this.longitudDEC = longitudDEC;
+    }
+
+    public List<Registro> getRegistros() {
+        return registros;
+    }
+
+    public void setRegistros(List<Registro> registros) {
+        this.registros = registros;
+    }
+}
