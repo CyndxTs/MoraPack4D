@@ -7,20 +7,25 @@ SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,N
 -- -----------------------------------------------------
 -- Schema morapack4d
 -- -----------------------------------------------------
+
+-- -----------------------------------------------------
+-- Schema morapack4d
+-- -----------------------------------------------------
 CREATE SCHEMA IF NOT EXISTS `morapack4d` ;
 USE `morapack4d` ;
 
 -- -----------------------------------------------------
--- Table `morapack4d`.`CLIENTE`
+-- Table `morapack4d`.`USUARIO`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `morapack4d`.`CLIENTE` ;
+DROP TABLE IF EXISTS `morapack4d`.`USUARIO` ;
 
-CREATE TABLE IF NOT EXISTS `morapack4d`.`CLIENTE` (
+CREATE TABLE IF NOT EXISTS `morapack4d`.`USUARIO` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `codigo` VARCHAR(7) NOT NULL,
   `nombre` VARCHAR(50) NOT NULL,
   `correo` VARCHAR(40) NOT NULL,
   `contrasenia` VARCHAR(255) NOT NULL,
+  `tipo` ENUM('ADMINISTRADOR', 'CLIENTE') NOT NULL DEFAULT 'CLIENTE',
   PRIMARY KEY (`id`),
   UNIQUE INDEX `codigo_UNIQUE` (`codigo` ASC) VISIBLE,
   UNIQUE INDEX `correo_UNIQUE` (`correo` ASC) VISIBLE);
@@ -44,7 +49,7 @@ CREATE TABLE IF NOT EXISTS `morapack4d`.`AEROPUERTO` (
   `latitud_dec` DOUBLE NOT NULL,
   `longitud_dms` VARCHAR(20) NOT NULL,
   `longitud_dec` DOUBLE NOT NULL,
-  `esSede` TINYINT NULL DEFAULT 0,
+  `es_sede` TINYINT NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`),
   UNIQUE INDEX `codigo_UNIQUE` (`codigo` ASC) VISIBLE,
   UNIQUE INDEX `alias_UNIQUE` (`alias` ASC) VISIBLE);
@@ -74,6 +79,70 @@ CREATE TABLE IF NOT EXISTS `morapack4d`.`REGISTRO` (
 
 
 -- -----------------------------------------------------
+-- Table `morapack4d`.`PEDIDO`
+-- -----------------------------------------------------
+DROP TABLE IF EXISTS `morapack4d`.`PEDIDO` ;
+
+CREATE TABLE IF NOT EXISTS `morapack4d`.`PEDIDO` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `codigo` VARCHAR(20) NOT NULL,
+  `cantidad_solicitada` INT NOT NULL,
+  `fecha_hora_generacion_local` TIMESTAMP NOT NULL,
+  `fecha_hora_generacion_utc` TIMESTAMP NOT NULL,
+  `fecha_hora_expiracion_local` TIMESTAMP NULL DEFAULT NULL,
+  `fecha_hora_expiracion_utc` TIMESTAMP NULL DEFAULT NULL,
+  `id_cliente` INT NOT NULL,
+  `id_aeropuerto_destino` INT NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE INDEX `codigo_UNIQUE` (`codigo` ASC) VISIBLE,
+  INDEX `fk_PEDIDO_CLIENTE1_idx` (`id_cliente` ASC) VISIBLE,
+  INDEX `fk_PEDIDO_AEROPUERTO1_idx` (`id_aeropuerto_destino` ASC) VISIBLE,
+  CONSTRAINT `fk_PEDIDO_CLIENTE1`
+    FOREIGN KEY (`id_cliente`)
+    REFERENCES `morapack4d`.`USUARIO` (`id`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION,
+  CONSTRAINT `fk_PEDIDO_AEROPUERTO1`
+    FOREIGN KEY (`id_aeropuerto_destino`)
+    REFERENCES `morapack4d`.`AEROPUERTO` (`id`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION);
+
+
+-- -----------------------------------------------------
+-- Table `morapack4d`.`RUTA`
+-- -----------------------------------------------------
+DROP TABLE IF EXISTS `morapack4d`.`RUTA` ;
+
+CREATE TABLE IF NOT EXISTS `morapack4d`.`RUTA` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `codigo` VARCHAR(20) NOT NULL,
+  `duracion` DOUBLE NOT NULL,
+  `distancia` DOUBLE NOT NULL,
+  `fecha_hora_salida_local` TIMESTAMP NOT NULL,
+  `fecha_hora_salida_utc` TIMESTAMP NOT NULL,
+  `fecha_hora_llegada_local` TIMESTAMP NOT NULL,
+  `fecha_hora_llegada_utc` TIMESTAMP NOT NULL,
+  `tipo` ENUM('INTRACONTINENTAL', 'INTERCONTINENTAL') NOT NULL,
+  `id_aeropuerto_origen` INT NOT NULL,
+  `id_aeropuerto_destino` INT NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE INDEX `codigo_UNIQUE` (`codigo` ASC) VISIBLE,
+  INDEX `fk_RUTA_AEROPUERTO1_idx` (`id_aeropuerto_origen` ASC) VISIBLE,
+  INDEX `fk_RUTA_AEROPUERTO2_idx` (`id_aeropuerto_destino` ASC) VISIBLE,
+  CONSTRAINT `fk_RUTA_AEROPUERTO1`
+    FOREIGN KEY (`id_aeropuerto_origen`)
+    REFERENCES `morapack4d`.`AEROPUERTO` (`id`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION,
+  CONSTRAINT `fk_RUTA_AEROPUERTO2`
+    FOREIGN KEY (`id_aeropuerto_destino`)
+    REFERENCES `morapack4d`.`AEROPUERTO` (`id`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION);
+
+
+-- -----------------------------------------------------
 -- Table `morapack4d`.`LOTE`
 -- -----------------------------------------------------
 DROP TABLE IF EXISTS `morapack4d`.`LOTE` ;
@@ -82,8 +151,22 @@ CREATE TABLE IF NOT EXISTS `morapack4d`.`LOTE` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `codigo` VARCHAR(20) NOT NULL,
   `tamanio` INT NOT NULL,
+  `id_pedido` INT NOT NULL,
+  `id_ruta` INT NOT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE INDEX `codigo_UNIQUE` (`codigo` ASC) VISIBLE);
+  UNIQUE INDEX `codigo_UNIQUE` (`codigo` ASC) VISIBLE,
+  INDEX `fk_LOTE_PEDIDO1_idx` (`id_pedido` ASC) VISIBLE,
+  INDEX `fk_LOTE_RUTA1_idx` (`id_ruta` ASC) VISIBLE,
+  CONSTRAINT `fk_LOTE_PEDIDO1`
+    FOREIGN KEY (`id_pedido`)
+    REFERENCES `morapack4d`.`PEDIDO` (`id`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION,
+  CONSTRAINT `fk_LOTE_RUTA1`
+    FOREIGN KEY (`id_ruta`)
+    REFERENCES `morapack4d`.`RUTA` (`id`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION);
 
 
 -- -----------------------------------------------------
@@ -111,7 +194,7 @@ CREATE TABLE IF NOT EXISTS `morapack4d`.`PRODUCTO` (
 DROP TABLE IF EXISTS `morapack4d`.`REGISTRO_POR_LOTE` ;
 
 CREATE TABLE IF NOT EXISTS `morapack4d`.`REGISTRO_POR_LOTE` (
-  `id_registro` INT NOT NULL AUTO_INCREMENT,
+  `id_registro` INT NOT NULL,
   `id_lote` INT NOT NULL,
   PRIMARY KEY (`id_registro`, `id_lote`),
   INDEX `fk_REGISTRO_DE_ALMACEN_has_LOTE_LOTE1_idx` (`id_lote` ASC) VISIBLE,
@@ -134,7 +217,7 @@ CREATE TABLE IF NOT EXISTS `morapack4d`.`REGISTRO_POR_LOTE` (
 DROP TABLE IF EXISTS `morapack4d`.`PLAN` ;
 
 CREATE TABLE IF NOT EXISTS `morapack4d`.`PLAN` (
-  `id` INT NOT NULL,
+  `id` INT NOT NULL AUTO_INCREMENT,
   `codigo` VARCHAR(20) NOT NULL,
   `capacidad` INT NOT NULL,
   `duracion` DOUBLE NOT NULL,
@@ -186,70 +269,6 @@ CREATE TABLE IF NOT EXISTS `morapack4d`.`VUELO` (
 
 
 -- -----------------------------------------------------
--- Table `morapack4d`.`PEDIDO`
--- -----------------------------------------------------
-DROP TABLE IF EXISTS `morapack4d`.`PEDIDO` ;
-
-CREATE TABLE IF NOT EXISTS `morapack4d`.`PEDIDO` (
-  `id` INT NOT NULL AUTO_INCREMENT,
-  `codigo` VARCHAR(20) NOT NULL,
-  `cantidad_solicitada` INT NOT NULL,
-  `fecha_hora_generacion_local` TIMESTAMP NOT NULL,
-  `fecha_hora_generacion_utc` TIMESTAMP NOT NULL,
-  `fecha_hora_expiracion_local` TIMESTAMP NOT NULL,
-  `fecha_hora_expiracion_utc` TIMESTAMP NOT NULL,
-  `id_cliente` INT NOT NULL,
-  `id_aeropuerto_destino` INT NOT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE INDEX `codigo_UNIQUE` (`codigo` ASC) VISIBLE,
-  INDEX `fk_PEDIDO_CLIENTE1_idx` (`id_cliente` ASC) VISIBLE,
-  INDEX `fk_PEDIDO_AEROPUERTO1_idx` (`id_aeropuerto_destino` ASC) VISIBLE,
-  CONSTRAINT `fk_PEDIDO_CLIENTE1`
-    FOREIGN KEY (`id_cliente`)
-    REFERENCES `morapack4d`.`CLIENTE` (`id`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION,
-  CONSTRAINT `fk_PEDIDO_AEROPUERTO1`
-    FOREIGN KEY (`id_aeropuerto_destino`)
-    REFERENCES `morapack4d`.`AEROPUERTO` (`id`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION);
-
-
--- -----------------------------------------------------
--- Table `morapack4d`.`RUTA`
--- -----------------------------------------------------
-DROP TABLE IF EXISTS `morapack4d`.`RUTA` ;
-
-CREATE TABLE IF NOT EXISTS `morapack4d`.`RUTA` (
-  `id` INT NOT NULL AUTO_INCREMENT,
-  `codigo` VARCHAR(20) NOT NULL,
-  `duracion` DOUBLE NOT NULL,
-  `distancia` DOUBLE NOT NULL,
-  `fecha_hora_salida_local` TIMESTAMP NOT NULL,
-  `fecha_hora_salida_utc` TIMESTAMP NOT NULL,
-  `fecha_hora_llegada_local` TIMESTAMP NOT NULL,
-  `fecha_hora_llegada_utc` TIMESTAMP NOT NULL,
-  `tipo` ENUM('INTRACONTINENTAL', 'INTERCONTINENTAL') NOT NULL,
-  `id_aeropuerto_origen` INT NOT NULL,
-  `id_aeropuerto_destino` INT NOT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE INDEX `codigo_UNIQUE` (`codigo` ASC) VISIBLE,
-  INDEX `fk_RUTA_AEROPUERTO1_idx` (`id_aeropuerto_origen` ASC) VISIBLE,
-  INDEX `fk_RUTA_AEROPUERTO2_idx` (`id_aeropuerto_destino` ASC) VISIBLE,
-  CONSTRAINT `fk_RUTA_AEROPUERTO1`
-    FOREIGN KEY (`id_aeropuerto_origen`)
-    REFERENCES `morapack4d`.`AEROPUERTO` (`id`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION,
-  CONSTRAINT `fk_RUTA_AEROPUERTO2`
-    FOREIGN KEY (`id_aeropuerto_destino`)
-    REFERENCES `morapack4d`.`AEROPUERTO` (`id`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION);
-
-
--- -----------------------------------------------------
 -- Table `morapack4d`.`RUTA_POR_VUELO`
 -- -----------------------------------------------------
 DROP TABLE IF EXISTS `morapack4d`.`RUTA_POR_VUELO` ;
@@ -273,54 +292,26 @@ CREATE TABLE IF NOT EXISTS `morapack4d`.`RUTA_POR_VUELO` (
 
 
 -- -----------------------------------------------------
--- Table `morapack4d`.`PEDIDO_POR_RUTA_POR_LOTE`
+-- Table `morapack4d`.`PEDIDO_POR_RUTA`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `morapack4d`.`PEDIDO_POR_RUTA_POR_LOTE` ;
+DROP TABLE IF EXISTS `morapack4d`.`PEDIDO_POR_RUTA` ;
 
-CREATE TABLE IF NOT EXISTS `morapack4d`.`PEDIDO_POR_RUTA_POR_LOTE` (
+CREATE TABLE IF NOT EXISTS `morapack4d`.`PEDIDO_POR_RUTA` (
   `id_pedido` INT NOT NULL,
   `id_ruta` INT NOT NULL,
-  `id_lote` INT NOT NULL,
-  PRIMARY KEY (`id_pedido`, `id_ruta`, `id_lote`),
-  INDEX `fk_category_RUTA1_idx` (`id_ruta` ASC) VISIBLE,
-  INDEX `fk_category_PEDIDO1_idx` (`id_pedido` ASC) VISIBLE,
-  INDEX `fk_category_LOTE1_idx` (`id_lote` ASC) VISIBLE,
-  CONSTRAINT `fk_category_RUTA1`
-    FOREIGN KEY (`id_ruta`)
-    REFERENCES `morapack4d`.`RUTA` (`id`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION,
-  CONSTRAINT `fk_category_PEDIDO1`
+  PRIMARY KEY (`id_pedido`, `id_ruta`),
+  INDEX `fk_PEDIDO_has_RUTA_RUTA1_idx` (`id_ruta` ASC) VISIBLE,
+  INDEX `fk_PEDIDO_has_RUTA_PEDIDO1_idx` (`id_pedido` ASC) VISIBLE,
+  CONSTRAINT `fk_PEDIDO_has_RUTA_PEDIDO1`
     FOREIGN KEY (`id_pedido`)
     REFERENCES `morapack4d`.`PEDIDO` (`id`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
-  CONSTRAINT `fk_category_LOTE1`
-    FOREIGN KEY (`id_lote`)
-    REFERENCES `morapack4d`.`LOTE` (`id`)
+  CONSTRAINT `fk_PEDIDO_has_RUTA_RUTA1`
+    FOREIGN KEY (`id_ruta`)
+    REFERENCES `morapack4d`.`RUTA` (`id`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION);
-
-
--- -----------------------------------------------------
--- Table `morapack4d`.`PARAMETROS`
--- -----------------------------------------------------
-DROP TABLE IF EXISTS `morapack4d`.`PARAMETROS` ;
-
-CREATE TABLE IF NOT EXISTS `morapack4d`.`PARAMETROS` (
-  `id` INT NOT NULL AUTO_INCREMENT,
-  `max_dias_entrega_intracontinental` INT NULL,
-  `max_dias_entrega_intercontinental` INT NULL,
-  `max_horas_recojo` DOUBLE NULL,
-  `min_horas_estancia` DOUBLE NULL,
-  `max_horas_estancia` DOUBLE NULL,
-  `ele_min` INT NULL,
-  `ele_max` INT NULL,
-  `k_min` INT NULL,
-  `k_max` INT NULL,
-  `t_max` INT NULL,
-  `max_intentos` INT NULL,
-  PRIMARY KEY (`id`));
 
 
 SET SQL_MODE=@OLD_SQL_MODE;

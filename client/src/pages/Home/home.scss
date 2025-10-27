@@ -1,0 +1,109 @@
+// Estilos específicos de la página Home
+
+.home-page {
+  // Banner principal
+  #main-banner {
+    margin-bottom: 0;
+
+    img {
+      width: 100%;
+      display: block;
+    }
+  }
+
+  // Sección Nosotros
+  #nosotros {
+    background-color: var(--color-blanco);
+    text-align: justify;
+
+    h2 {
+      color: var(--color-negro);
+      margin-bottom: 20px;
+    }
+
+    p {
+      color: var(--color-negro);
+    }
+  }
+
+  // Sección Impacto (aside)
+  #impacto {
+    background-image: url('../../assets/images/planeMora.png');
+    background-size: cover;
+    background-position: left 25%;
+    background-attachment: fixed;
+    text-align: right;
+    color: var(--color-background);
+
+    .display-1 {
+      text-shadow: 3px 3px #000000;
+      line-height: 1em;
+    }
+
+    .texto-importante {
+      color: var(--color-gold);
+    }
+  }
+
+  // Sección Sedes
+  #sedes {
+    background-color: var(--color-blanco);
+    text-align: left;
+
+    h2 {
+      color: var(--color-dark-negro);
+      margin-bottom: 40px;
+    }
+
+    img {
+      width: 100%;
+      height: 250px;
+      object-fit: cover;
+    }
+
+    h3 {
+      text-transform: uppercase;
+      margin-top: 10px;
+      color: var(--color-negro);
+    }
+  }
+
+  // Sección Empresa
+  #empresa {
+    background-color: var(--color-background);
+
+    .col {
+      p {
+        color: var(--color-negro);
+      }
+
+      img {
+        width: 100%;
+        height: 102%;
+        object-fit: cover;
+      }
+    }
+  }
+
+  // Sección Historia
+  #historia {
+    background-color: var(--color-blanco);
+  }
+
+  // Sección Equipo
+  #equipo {
+    background-color: var(--color-background);
+    text-align: center;
+
+    h2 {
+      color: var(--color-negro);
+      margin-bottom: 40px;
+    }
+
+    h3 {
+      color: var(--color-negro);
+      font-size: 18px;
+      font-weight: 700;
+    }
+  }
+}
