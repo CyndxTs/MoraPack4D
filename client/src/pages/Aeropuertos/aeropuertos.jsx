@@ -16,8 +16,23 @@ export default function Aeropuertos() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [archivo, setArchivo] = useState(null);
 
-  const headers = ["Código", "Ciudad", "País", "Capacidad", "Estado", "Acciones"];
-  const data = []; 
+  const headers = [
+    { label: "Código", key: "codigo" },
+    { label: "Ciudad", key: "ciudad" },
+    { label: "País", key: "pais" },
+    { label: "Capacidad", key: "capacidad" },
+    { label: "Estado", key: "estado" },
+    { label: "Acciones", key: "acciones" },
+  ];
+
+  const data = [
+    { codigo: "SPIM", ciudad: "Lima", pais: "Perú", capacidad: 440, estado: "Activo" },
+    { codigo: "SKBO", ciudad: "Bogotá", pais: "Colombia", capacidad: 430, estado: "Activo" },
+    { codigo: "SEQM", ciudad: "Quito", pais: "Ecuador", capacidad: 410, estado: "Activo" },
+    { codigo: "SBBR", ciudad: "Brasilia", pais: "Brasil", capacidad: 480, estado: "Activo" },
+    { codigo: "SVMI", ciudad: "Caracas", pais: "Venezuela", capacidad: 400, estado: "Inactivo" },
+  ];
+
 
   const handleFileChange = (e) => {
     if (e.target.files.length > 0) {
