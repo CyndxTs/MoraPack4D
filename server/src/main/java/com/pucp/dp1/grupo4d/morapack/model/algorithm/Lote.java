@@ -13,19 +13,16 @@ import com.pucp.dp1.grupo4d.morapack.util.G4D;
 public class Lote {
     private String codigo;
     private Integer tamanio;
-    private List<Producto> productos;
 
     public Lote() {
         this.codigo = G4D.Generator.getUniqueString("LOT");
         this.tamanio = 0;
-        this.productos = new ArrayList<>();
     }
 
     public Lote replicar() {
         Lote lote = new Lote();
         lote.codigo = this.codigo;
         lote.tamanio = this.tamanio;
-        for(Producto p : this.productos) lote.productos.add(p.replicar());
         return lote;
     }
 
@@ -56,18 +53,5 @@ public class Lote {
 
     public void setTamanio(int tamanio) {
         this.tamanio = tamanio;
-    }
-
-    public List<Producto> getProductos() {
-        return productos;
-    }
-
-    public void setProductos() {
-        this.productos = new ArrayList<>();
-        for(int i = 0; i < this.tamanio; i++) this.productos.add(new Producto());
-    }
-
-    public void setProductos(List<Producto> productos) {
-        this.productos = productos;
     }
 }

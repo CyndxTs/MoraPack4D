@@ -59,7 +59,7 @@ public class AeropuertoEntity {
     @JsonManagedReference
     private List<PedidoEntity> pedidosComoDestino = new ArrayList<>();
 
-    @OneToMany(mappedBy = "aeropuerto", fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "aeropuerto", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference
     private List<RegistroEntity> registros = new ArrayList<>();
 

@@ -67,6 +67,8 @@ public class AlgorithmService {
     private VueloAdapter vueloAdapter;
     @Autowired
     private VueloService vueloService;
+    @Autowired
+    private RegistroAdapter registroAdapter;
 
     public ImportResponse importarDesdeArchivo(MultipartFile file, String type) {
         try {
@@ -129,7 +131,7 @@ public class AlgorithmService {
         gvns.planificar(problematica);
 
         Solucion solucion = gvns.getSolucionINI();
-        actualizarPorSolucion(solucion);
+        actualizarPorSolucion(solucion, problematica);
 
         // Limpiar pools después de persistir
         problematica.limpiarPools();
@@ -141,7 +143,7 @@ public class AlgorithmService {
     }
 
     @Transactional
-    public void actualizarPorSolucion(Solucion solucion) {
+    public void actualizarPorSolucion(Solucion solucion, Problematica problematica) {
         if (solucion == null || solucion.getPedidosAtendidos() == null) {
             return;
         }
@@ -250,7 +252,7 @@ public class AlgorithmService {
 
                 // Establecer relaciones bidireccionales
                 loteEntity.setRuta(rutaEntity);
-                loteEntity.setPedido(pedidoEntity);  // ✅ Ahora SÍ asignar pedido
+                loteEntity.setPedido(pedidoEntity);
 
                 // Agregar a las colecciones del pedido
                 if (!pedidoEntity.getRutas().contains(rutaEntity)) {
@@ -261,7 +263,7 @@ public class AlgorithmService {
                 contadorLotes++;
             }
 
-            // Persistir pedido (con cascade a lotes y productos)
+            // Persistir pedido (con cascade a lotes)
             pedidoService.save(pedidoEntity);
             contadorPedidos++;
 
@@ -272,6 +274,65 @@ public class AlgorithmService {
 
         System.out.println("│");
         System.out.println("└─ Total pedidos: " + contadorPedidos + " | Total lotes: " + contadorLotes);
+        System.out.println();
+
+        // ============================================
+        // FASE 4: PERSISTIR REGISTROS
+        // ============================================
+        System.out.println("┌─ FASE 4: Persistiendo Registros");
+        System.out.println("│");
+
+        int contadorRegistros = 0;
+
+        for (Aeropuerto aeropuertoAlg : problematica.destinos) {
+            if (aeropuertoAlg == null || aeropuertoAlg.getRegistros().isEmpty()) {
+                continue;
+            }
+
+            System.out.println("│  → Procesando aeropuerto: " + aeropuertoAlg.getCodigo());
+
+            // Buscar aeropuerto en BD (no usar adapter)
+            AeropuertoEntity aeropuertoEntity = aeropuertoService.findByCodigo(aeropuertoAlg.getCodigo()).orElse(null);
+            if (aeropuertoEntity == null) {
+                System.out.println("│    ✗ Aeropuerto no encontrado en BD");
+                continue;
+            }
+
+            aeropuertoEntity.getRegistros().clear();
+
+            for (Registro registroAlg : aeropuertoAlg.getRegistros()) {
+                // Crear RegistroEntity directamente (no usar adapter)
+                RegistroEntity registroEntity = new RegistroEntity();
+                registroEntity.setCodigo(registroAlg.getCodigo());
+                registroEntity.setFechaHoraIngresoLocal(registroAlg.getFechaHoraIngresoLocal());
+                registroEntity.setFechaHoraIngresoUTC(registroAlg.getFechaHoraIngresoUTC());
+                registroEntity.setFechaHoraEgresoLocal(registroAlg.getFechaHoraEgresoLocal());
+                registroEntity.setFechaHoraEgresoUTC(registroAlg.getFechaHoraEgresoUTC());
+                registroEntity.setAeropuerto(aeropuertoEntity);
+
+                // ⚠️ CRÍTICO: Buscar lote DESDE LA BD, no del pool
+                String codigoLote = registroAlg.getLote().getCodigo();
+                LoteEntity loteEntity = loteService.findByCodigo(codigoLote).orElse(null);
+
+                if (loteEntity == null) {
+                    System.out.println("│    ✗ Lote no encontrado en BD: " + codigoLote);
+                    continue;
+                }
+
+                registroEntity.setLote(loteEntity);
+                aeropuertoEntity.getRegistros().add(registroEntity);
+                contadorRegistros++;
+            }
+
+            if (!aeropuertoEntity.getRegistros().isEmpty()) {
+                aeropuertoService.save(aeropuertoEntity);
+                System.out.println("│  ✓ Aeropuerto guardado con " +
+                        aeropuertoEntity.getRegistros().size() + " registros");
+            }
+        }
+
+        System.out.println("│");
+        System.out.println("└─ Total registros: " + contadorRegistros);
         System.out.println();
 
         System.out.println("════════════════════════════════════════════════");

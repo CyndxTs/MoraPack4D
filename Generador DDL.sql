@@ -177,25 +177,6 @@ CREATE TABLE IF NOT EXISTS `morapack4d`.`REGISTRO` (
 
 
 -- -----------------------------------------------------
--- Table `morapack4d`.`PRODUCTO`
--- -----------------------------------------------------
-DROP TABLE IF EXISTS `morapack4d`.`PRODUCTO` ;
-
-CREATE TABLE IF NOT EXISTS `morapack4d`.`PRODUCTO` (
-  `id` INT NOT NULL AUTO_INCREMENT,
-  `codigo` VARCHAR(30) NOT NULL,
-  `id_lote` INT NOT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE INDEX `codigo_UNIQUE` (`codigo` ASC) VISIBLE,
-  INDEX `fk_PRODUCTO_LOTE_DE_PRODUCTOS_idx` (`id_lote` ASC) VISIBLE,
-  CONSTRAINT `fk_PRODUCTO_LOTE_DE_PRODUCTOS`
-    FOREIGN KEY (`id_lote`)
-    REFERENCES `morapack4d`.`LOTE` (`id`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION);
-
-
--- -----------------------------------------------------
 -- Table `morapack4d`.`PLAN`
 -- -----------------------------------------------------
 DROP TABLE IF EXISTS `morapack4d`.`PLAN` ;

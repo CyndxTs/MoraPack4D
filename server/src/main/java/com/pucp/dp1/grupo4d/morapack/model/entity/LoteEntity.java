@@ -42,10 +42,6 @@ public class LoteEntity {
     @JsonManagedReference
     private List<RegistroEntity> registros = new ArrayList<>();
 
-    @OneToMany(mappedBy = "lote", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
-    @JsonManagedReference
-    private List<ProductoEntity> productos = new ArrayList<>();
-
     public LoteEntity() {}
 
     @Override
@@ -67,5 +63,4 @@ public class LoteEntity {
     public PedidoEntity getPedido() { return pedido; } public void setPedido(PedidoEntity pedido) { this.pedido = pedido; }
     public RutaEntity getRuta() { return ruta; } public void setRuta(RutaEntity ruta) { this.ruta = ruta; }
     public List<RegistroEntity> getRegistros() { return registros; } public void setRegistros(List<RegistroEntity> registros) { this.registros = registros; }
-    public List<ProductoEntity> getProductos() { return productos; } public void setProductos(List<ProductoEntity> productos) { this.productos = productos; }
 }

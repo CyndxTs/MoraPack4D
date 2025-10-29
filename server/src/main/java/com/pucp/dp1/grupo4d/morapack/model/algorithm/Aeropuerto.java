@@ -36,7 +36,6 @@ public class Aeropuerto {
     public Lote generarLoteDeProductos(int cantProd) {
         Lote lote = new Lote();
         lote.setTamanio(cantProd);
-        lote.setProductos();
         return lote;
     }
 
