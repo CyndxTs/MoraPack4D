@@ -88,15 +88,14 @@ public class RutaAdapter {
         entity.setDestino(destino);
 
         if (algorithm.getVuelos() != null) {
-            List<VueloEntity> vuelosEntity = new ArrayList<>();
+            entity.getVuelos().clear();
             for (Vuelo vuelo : algorithm.getVuelos()) {
                 VueloEntity vueloEntity = vueloAdapter.toEntity(vuelo);
                 if(vueloEntity != null) {
                     vueloEntity.getRutas().add(entity);
-                    vuelosEntity.add(vueloEntity);
+                    entity.getVuelos().add(vueloEntity);
                 }
             }
-            entity.setVuelos(vuelosEntity);
         }
         return entity;
     }

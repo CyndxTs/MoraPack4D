@@ -69,15 +69,14 @@ public class AeropuertoAdapter {
         AeropuertoEntity entity = aeropuertoService.findByCodigo(algorithm.getCodigo()).orElse(null);
         if (entity == null) return null;
 
-        List<RegistroEntity> registrosEntity = new ArrayList<>();
+        entity.getRegistros().clear();
         if (algorithm.getRegistros() != null) {
             for (Registro registro : algorithm.getRegistros()) {
                 RegistroEntity registroEntity = registroAdapter.toEntity(registro);
                 registroEntity.setAeropuerto(entity);
-                registrosEntity.add(registroEntity);
+                entity.getRegistros().add(registroEntity);
             }
         }
-        entity.setRegistros(registrosEntity);
         return entity;
     }
 

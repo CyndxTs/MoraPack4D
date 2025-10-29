@@ -84,8 +84,8 @@ public class PedidoAdapter {
         entity.setFechaHoraExpiracionUTC(algorithm.getFechaHoraExpiracionUTC());
 
         if (algorithm.getLotesPorRuta() != null) {
-            List<RutaEntity> rutasEntity = new ArrayList<>();
-            List<LoteEntity> lotesEntity = new ArrayList<>();
+            entity.getRutas().clear();
+            entity.getLotes().clear();
             for (Map.Entry<Ruta, Lote> entry : algorithm.getLotesPorRuta().entrySet()) {
                 RutaEntity rutaEntity = rutaAdapter.toEntity(entry.getKey());
                 if(rutaEntity != null) {
@@ -93,15 +93,13 @@ public class PedidoAdapter {
                     if(loteEntity != null) {
                         rutaEntity.getLotes().add(loteEntity);
                         rutaEntity.getPedidos().add(entity);
-                        rutasEntity.add(rutaEntity);
+                        entity.getRutas().add(rutaEntity);
                         loteEntity.setRuta(rutaEntity);
                         loteEntity.setPedido(entity);
-                        lotesEntity.add(loteEntity);
+                        entity.getLotes().add(loteEntity);
                     }
                 }
             }
-            entity.setRutas(rutasEntity);
-            entity.setLotes(lotesEntity);
         }
         return entity;
     }

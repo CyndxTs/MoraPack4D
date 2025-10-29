@@ -783,9 +783,9 @@ public class G4D {
         };
         // Obtener 'UniqueString' a partir de prefijo
         public static String getUniqueString(String prefix) {
-            long millis = System.currentTimeMillis();
+            long millis = System.nanoTime();
             String base36Millis = Long.toString(millis, 36);
-            String uuid = UUID.randomUUID().toString().replace("-", "").substring(0, 8);
+            String uuid = UUID.randomUUID().toString().replace("-", "").substring(0, 12);
             BigInteger uuidNum = new BigInteger(uuid, 16);
             String base36Uuid = uuidNum.toString(36);
             return prefix + "-" + base36Millis + base36Uuid;

@@ -23,7 +23,7 @@ public class PedidoEntity {
     @Column(name = "id", nullable = false)
     private Integer id;
 
-    @Column(name = "codigo", length = 20, nullable = false, unique = true)
+    @Column(name = "codigo", length = 30, nullable = false, unique = true)
     private String codigo;
 
     @Column(name = "cantidad_solicitada", nullable = false)
@@ -35,23 +35,23 @@ public class PedidoEntity {
     @Column(name = "fecha_hora_generacion_utc", nullable = false)
     private LocalDateTime fechaHoraGeneracionUTC;
 
-    @Column(name = "fecha_hora_expiracion_local", nullable = true)
+    @Column(name = "fecha_hora_expiracion_local")
     private LocalDateTime fechaHoraExpiracionLocal;
 
-    @Column(name = "fecha_hora_expiracion_utc", nullable = true)
+    @Column(name = "fecha_hora_expiracion_utc")
     private LocalDateTime fechaHoraExpiracionUTC;
 
-    @ManyToOne(optional = false)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_cliente", nullable = false)
     @JsonBackReference
     private ClienteEntity cliente;
 
-    @ManyToOne(optional = false)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_aeropuerto_destino", nullable = false)
     @JsonBackReference
     private AeropuertoEntity destino;
 
-    @ManyToMany
+    @ManyToMany(cascade = CascadeType.MERGE)
     @JoinTable(
             name = "PEDIDO_POR_RUTA",
             joinColumns = @JoinColumn(name = "id_pedido"),
@@ -60,7 +60,7 @@ public class PedidoEntity {
     @JsonManagedReference
     private List<RutaEntity> rutas = new ArrayList<>();
 
-    @OneToMany(mappedBy = "pedido", fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "pedido", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference
     private List<LoteEntity> lotes = new ArrayList<>();
 
@@ -69,7 +69,7 @@ public class PedidoEntity {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof LoteEntity)) return false;
+        if (!(o instanceof PedidoEntity)) return false;
         PedidoEntity that = (PedidoEntity) o;
         return Objects.equals(codigo, that.codigo);
     }
@@ -79,26 +79,15 @@ public class PedidoEntity {
         return Objects.hash(codigo);
     }
 
-    public Integer getId() { return id; }
-    public void setId(Integer id) { this.id = id; }
-    public String getCodigo() { return codigo; }
-    public void setCodigo(String codigo) { this.codigo = codigo; }
-    public Integer getCantidadSolicitada() { return cantidadSolicitada; }
-    public void setCantidadSolicitada(Integer cantidadSolicitada) { this.cantidadSolicitada = cantidadSolicitada; }
-    public LocalDateTime getFechaHoraGeneracionLocal() { return fechaHoraGeneracionLocal; }
-    public void setFechaHoraGeneracionLocal(LocalDateTime fechaHoraGeneracionLocal) { this.fechaHoraGeneracionLocal = fechaHoraGeneracionLocal; }
-    public LocalDateTime getFechaHoraGeneracionUTC() { return fechaHoraGeneracionUTC; }
-    public void setFechaHoraGeneracionUTC(LocalDateTime fechaHoraGeneracionUTC) { this.fechaHoraGeneracionUTC = fechaHoraGeneracionUTC; }
-    public LocalDateTime getFechaHoraExpiracionLocal() { return fechaHoraExpiracionLocal; }
-    public void setFechaHoraExpiracionLocal(LocalDateTime fechaHoraExpiracionLocal) { this.fechaHoraExpiracionLocal = fechaHoraExpiracionLocal; }
-    public LocalDateTime getFechaHoraExpiracionUTC() { return fechaHoraExpiracionUTC; }
-    public void setFechaHoraExpiracionUTC(LocalDateTime fechaHoraExpiracionUTC) { this.fechaHoraExpiracionUTC = fechaHoraExpiracionUTC; }
-    public ClienteEntity getCliente() { return cliente; }
-    public void setCliente(ClienteEntity cliente) { this.cliente = cliente; }
-    public AeropuertoEntity getDestino() { return destino; }
-    public void setDestino(AeropuertoEntity destino) { this.destino = destino; }
-    public List<RutaEntity> getRutas() { return rutas; }
-    public void setRutas(List<RutaEntity> rutas) { this.rutas = rutas; }
-    public List<LoteEntity> getLotes() { return lotes; }
-    public void setLotes(List<LoteEntity> lotes) { this.lotes = lotes; }
+    public Integer getId() { return id; } public void setId(Integer id) { this.id = id; }
+    public String getCodigo() { return codigo; } public void setCodigo(String codigo) { this.codigo = codigo; }
+    public Integer getCantidadSolicitada() { return cantidadSolicitada; } public void setCantidadSolicitada(Integer cantidadSolicitada) { this.cantidadSolicitada = cantidadSolicitada; }
+    public LocalDateTime getFechaHoraGeneracionLocal() { return fechaHoraGeneracionLocal; } public void setFechaHoraGeneracionLocal(LocalDateTime fechaHoraGeneracionLocal) { this.fechaHoraGeneracionLocal = fechaHoraGeneracionLocal; }
+    public LocalDateTime getFechaHoraGeneracionUTC() { return fechaHoraGeneracionUTC; } public void setFechaHoraGeneracionUTC(LocalDateTime fechaHoraGeneracionUTC) { this.fechaHoraGeneracionUTC = fechaHoraGeneracionUTC; }
+    public LocalDateTime getFechaHoraExpiracionLocal() { return fechaHoraExpiracionLocal; } public void setFechaHoraExpiracionLocal(LocalDateTime fechaHoraExpiracionLocal) { this.fechaHoraExpiracionLocal = fechaHoraExpiracionLocal; }
+    public LocalDateTime getFechaHoraExpiracionUTC() { return fechaHoraExpiracionUTC; } public void setFechaHoraExpiracionUTC(LocalDateTime fechaHoraExpiracionUTC) { this.fechaHoraExpiracionUTC = fechaHoraExpiracionUTC; }
+    public ClienteEntity getCliente() { return cliente; } public void setCliente(ClienteEntity cliente) { this.cliente = cliente; }
+    public AeropuertoEntity getDestino() { return destino; } public void setDestino(AeropuertoEntity destino) { this.destino = destino; }
+    public List<RutaEntity> getRutas() { return rutas; } public void setRutas(List<RutaEntity> rutas) { this.rutas = rutas; }
+    public List<LoteEntity> getLotes() { return lotes; } public void setLotes(List<LoteEntity> lotes) { this.lotes = lotes; }
 }

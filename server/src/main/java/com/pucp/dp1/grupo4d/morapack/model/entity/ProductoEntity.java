@@ -19,7 +19,7 @@ public class ProductoEntity {
     @Column(name = "id", nullable = false)
     private Integer id;
 
-    @Column(name = "codigo", length = 20, nullable = false, unique = true)
+    @Column(name = "codigo", length = 30, nullable = false, unique = true)
     private String codigo;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -42,10 +42,7 @@ public class ProductoEntity {
         return Objects.hash(id);
     }
 
-    public Integer getId() { return id; }
-    public void setId(Integer id) { this.id = id; }
-    public String getCodigo() { return codigo; }
-    public void setCodigo(String codigo) { this.codigo = codigo; }
-    public LoteEntity getLote() { return lote; }
-    public void setLote(LoteEntity lote) { this.lote = lote; }
+    public Integer getId() { return id; } public void setId(Integer id) { this.id = id; }
+    public String getCodigo() { return codigo; } public void setCodigo(String codigo) { this.codigo = codigo; }
+    public LoteEntity getLote() { return lote; } public void setLote(LoteEntity lote) { this.lote = lote; }
 }

@@ -64,8 +64,15 @@ public class VueloAdapter {
             entity.setFechaHoraSalidaUTC(algorithm.getFechaHoraSalidaUTC());
         }
         entity.setCapacidadDisponible(algorithm.getCapacidadDisponible());
-        entity.setPlan(planAdapter.toEntity(algorithm.getPlan()));
-        if(entity.getPlan() != null) entity.getPlan().getVuelosActivados().add(entity);
+        PlanEntity planEntity = planAdapter.toEntity(algorithm.getPlan());
+        entity.setPlan(planEntity);
+        if (planEntity != null) {
+            final String codigo = entity.getCodigo();
+            boolean existe = planEntity.getVuelosActivados().stream().anyMatch(v -> v.getCodigo().equals(codigo));
+            if (!existe) {
+                planEntity.getVuelosActivados().add(entity);
+            }
+        }
         return entity;
     }
 

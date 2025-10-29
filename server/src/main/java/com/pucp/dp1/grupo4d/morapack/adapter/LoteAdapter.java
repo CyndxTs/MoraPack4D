@@ -64,16 +64,15 @@ public class LoteAdapter {
         };
         entity.setTamanio(algorithm.getTamanio());
 
-        List<ProductoEntity> productosEntity = new ArrayList<>();
+        entity.getProductos().clear();
         if (algorithm.getProductos() != null) {
             for (Producto producto : algorithm.getProductos()) {
                 ProductoEntity productoEntity = productoAdapter.toEntity(producto);
                 if(productoEntity == null) continue;
                 productoEntity.setLote(entity);
-                productosEntity.add(productoEntity);
+                entity.getProductos().add(productoEntity);
             }
         }
-        entity.setProductos(productosEntity);
         return entity;
     }
 

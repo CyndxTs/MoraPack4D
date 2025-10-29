@@ -23,7 +23,7 @@ public class PlanEntity {
     @Column(name = "id", nullable = false)
     private Integer id;
 
-    @Column(name = "codigo", length = 20, nullable = false, unique = true)
+    @Column(name = "codigo", length = 30, nullable = false, unique = true)
     private String codigo;
 
     @Column(name = "capacidad", nullable = false)
@@ -57,7 +57,7 @@ public class PlanEntity {
     @JsonBackReference
     private AeropuertoEntity destino;
 
-    @OneToMany(mappedBy = "plan", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "plan", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference
     private List<VueloEntity> vuelosActivados = new ArrayList<>();
 
@@ -76,28 +76,16 @@ public class PlanEntity {
         return Objects.hash(codigo);
     }
 
-    public Integer getId() { return id; }
-    public void setId(Integer id) { this.id = id; }
-    public String getCodigo() { return codigo; }
-    public void setCodigo(String codigo) { this.codigo = codigo; }
-    public Integer getCapacidad() { return capacidad; }
-    public void setCapacidad(Integer capacidad) { this.capacidad = capacidad; }
-    public Double getDuracion() { return duracion; }
-    public void setDuracion(Double duracion) { this.duracion = duracion; }
-    public Double getDistancia() { return distancia; }
-    public void setDistancia(Double distancia) { this.distancia = distancia; }
-    public LocalTime getHoraSalidaLocal() { return horaSalidaLocal; }
-    public void setHoraSalidaLocal(LocalTime horaSalidaLocal) { this.horaSalidaLocal = horaSalidaLocal; }
-    public LocalTime getHoraSalidaUTC() { return horaSalidaUTC; }
-    public void setHoraSalidaUTC(LocalTime horaSalidaUTC) { this.horaSalidaUTC = horaSalidaUTC; }
-    public LocalTime getHoraLlegadaLocal() { return horaLlegadaLocal; }
-    public void setHoraLlegadaLocal(LocalTime horaLlegadaLocal) { this.horaLlegadaLocal = horaLlegadaLocal; }
-    public LocalTime getHoraLlegadaUTC() { return horaLlegadaUTC; }
-    public void setHoraLlegadaUTC(LocalTime horaLlegadaUTC) { this.horaLlegadaUTC = horaLlegadaUTC; }
-    public AeropuertoEntity getOrigen() { return origen; }
-    public void setOrigen(AeropuertoEntity origen) { this.origen = origen; }
-    public AeropuertoEntity getDestino() { return destino; }
-    public void setDestino(AeropuertoEntity destino) { this.destino = destino; }
-    public List<VueloEntity> getVuelosActivados() { return vuelosActivados; }
-    public void setVuelosActivados(List<VueloEntity> vuelosActivados) { this.vuelosActivados = vuelosActivados; }
+    public Integer getId() { return id; } public void setId(Integer id) { this.id = id; }
+    public String getCodigo() { return codigo; } public void setCodigo(String codigo) { this.codigo = codigo; }
+    public Integer getCapacidad() { return capacidad; } public void setCapacidad(Integer capacidad) { this.capacidad = capacidad; }
+    public Double getDuracion() { return duracion; } public void setDuracion(Double duracion) { this.duracion = duracion; }
+    public Double getDistancia() { return distancia; } public void setDistancia(Double distancia) { this.distancia = distancia; }
+    public LocalTime getHoraSalidaLocal() { return horaSalidaLocal; } public void setHoraSalidaLocal(LocalTime horaSalidaLocal) { this.horaSalidaLocal = horaSalidaLocal; }
+    public LocalTime getHoraSalidaUTC() { return horaSalidaUTC; } public void setHoraSalidaUTC(LocalTime horaSalidaUTC) { this.horaSalidaUTC = horaSalidaUTC; }
+    public LocalTime getHoraLlegadaLocal() { return horaLlegadaLocal; } public void setHoraLlegadaLocal(LocalTime horaLlegadaLocal) { this.horaLlegadaLocal = horaLlegadaLocal; }
+    public LocalTime getHoraLlegadaUTC() { return horaLlegadaUTC; } public void setHoraLlegadaUTC(LocalTime horaLlegadaUTC) { this.horaLlegadaUTC = horaLlegadaUTC; }
+    public AeropuertoEntity getOrigen() { return origen; } public void setOrigen(AeropuertoEntity origen) { this.origen = origen; }
+    public AeropuertoEntity getDestino() { return destino; } public void setDestino(AeropuertoEntity destino) { this.destino = destino; }
+    public List<VueloEntity> getVuelosActivados() { return vuelosActivados; } public void setVuelosActivados(List<VueloEntity> vuelosActivados) { this.vuelosActivados = vuelosActivados; }
 }

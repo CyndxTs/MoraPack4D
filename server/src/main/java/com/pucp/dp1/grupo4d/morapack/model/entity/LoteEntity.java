@@ -22,7 +22,7 @@ public class LoteEntity {
     @Column(name = "id", nullable = false)
     private Integer id;
 
-    @Column(name = "codigo", length = 20, nullable = false, unique = true)
+    @Column(name = "codigo", length = 30, nullable = false, unique = true)
     private String codigo;
 
     @Column(name = "tamanio", nullable = false)
@@ -38,12 +38,11 @@ public class LoteEntity {
     @JsonBackReference
     private RutaEntity ruta;
 
-    @OneToMany(mappedBy = "lote", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "lote", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference
     private List<RegistroEntity> registros = new ArrayList<>();
 
-    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
-    @JoinColumn(name = "lote", nullable = false)
+    @OneToMany(mappedBy = "lote", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference
     private List<ProductoEntity> productos = new ArrayList<>();
 
@@ -62,18 +61,11 @@ public class LoteEntity {
         return Objects.hash(codigo);
     }
 
-    public Integer getId() { return id; }
-    public void setId(Integer id) { this.id = id; }
-    public String getCodigo() { return codigo; }
-    public void setCodigo(String codigo) { this.codigo = codigo; }
-    public Integer getTamanio() { return tamanio; }
-    public void setTamanio(Integer tamanio) { this.tamanio = tamanio; }
-    public PedidoEntity getPedido() { return pedido; }
-    public void setPedido(PedidoEntity pedido) { this.pedido = pedido; }
-    public RutaEntity getRuta() { return ruta; }
-    public void setRuta(RutaEntity ruta) { this.ruta = ruta; }
-    public List<RegistroEntity> getRegistros() { return registros; }
-    public void setRegistros(List<RegistroEntity> registros) { this.registros = registros; }
-    public List<ProductoEntity> getProductos() { return productos; }
-    public void setProductos(List<ProductoEntity> productos) { this.productos = productos; }
+    public Integer getId() { return id; } public void setId(Integer id) { this.id = id; }
+    public String getCodigo() { return codigo; } public void setCodigo(String codigo) { this.codigo = codigo; }
+    public Integer getTamanio() { return tamanio; } public void setTamanio(Integer tamanio) { this.tamanio = tamanio; }
+    public PedidoEntity getPedido() { return pedido; } public void setPedido(PedidoEntity pedido) { this.pedido = pedido; }
+    public RutaEntity getRuta() { return ruta; } public void setRuta(RutaEntity ruta) { this.ruta = ruta; }
+    public List<RegistroEntity> getRegistros() { return registros; } public void setRegistros(List<RegistroEntity> registros) { this.registros = registros; }
+    public List<ProductoEntity> getProductos() { return productos; } public void setProductos(List<ProductoEntity> productos) { this.productos = productos; }
 }

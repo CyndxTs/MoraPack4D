@@ -22,7 +22,7 @@ public class VueloEntity {
     @Column(name = "id", nullable = false)
     private Integer id;
 
-    @Column(name = "codigo", length = 20, nullable = false, unique = true)
+    @Column(name = "codigo", length = 30, nullable = false, unique = true)
     private String codigo;
 
     @Column(name = "capacidad_disponible", nullable = false)
@@ -60,11 +60,9 @@ public class VueloEntity {
     }
 
     @Override
-    public int hashCode() {
-        return Objects.hash(codigo);
-    }
+    public int hashCode() { return Objects.hash(codigo); }
 
-    public Integer getId() {return id; }
+    public Integer getId() { return id; }
     public void setId(Integer id) { this.id = id; }
     public String getCodigo() { return codigo; }
     public void setCodigo(String codigo) { this.codigo = codigo; }

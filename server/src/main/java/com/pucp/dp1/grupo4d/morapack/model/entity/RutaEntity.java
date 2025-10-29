@@ -8,7 +8,6 @@ package com.pucp.dp1.grupo4d.morapack.model.entity;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
-import com.pucp.dp1.grupo4d.morapack.model.enums.EstadoUsuario;
 import com.pucp.dp1.grupo4d.morapack.model.enums.TipoRuta;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
@@ -25,7 +24,7 @@ public class RutaEntity {
     @Column(name = "id", nullable = false)
     private Integer id;
 
-    @Column(name = "codigo", length = 20, nullable = false, unique = true)
+    @Column(name = "codigo", length = 30, nullable = false, unique = true)
     private String codigo;
 
     @Column(name = "duracion", nullable = false)
@@ -60,20 +59,20 @@ public class RutaEntity {
     @JsonBackReference
     private AeropuertoEntity destino;
 
-    @ManyToMany(fetch = FetchType.LAZY)
+    @ManyToMany(fetch = FetchType.LAZY, cascade = CascadeType.MERGE)
     @JoinTable(
             name = "RUTA_POR_VUELO",
             joinColumns = @JoinColumn(name = "id_ruta"),
             inverseJoinColumns = @JoinColumn(name = "id_vuelo")
     )
     @JsonManagedReference
-    private List<VueloEntity> vuelos;
+    private List<VueloEntity> vuelos = new ArrayList<>();
 
     @ManyToMany(mappedBy = "rutas", fetch = FetchType.LAZY)
     @JsonBackReference
     private List<PedidoEntity> pedidos = new ArrayList<>();
 
-    @OneToMany(mappedBy = "ruta", fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "ruta", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     @JsonManagedReference
     private List<LoteEntity> lotes = new ArrayList<>();
 
@@ -88,9 +87,7 @@ public class RutaEntity {
     }
 
     @Override
-    public int hashCode() {
-        return Objects.hash(codigo);
-    }
+    public int hashCode() { return Objects.hash(codigo); }
 
     public Integer getId() { return id; }
     public void setId(Integer id) { this.id = id; }

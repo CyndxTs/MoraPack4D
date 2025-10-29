@@ -62,7 +62,7 @@ DROP TABLE IF EXISTS `morapack4d`.`PEDIDO` ;
 
 CREATE TABLE IF NOT EXISTS `morapack4d`.`PEDIDO` (
   `id` INT NOT NULL AUTO_INCREMENT,
-  `codigo` VARCHAR(20) NOT NULL,
+  `codigo` VARCHAR(30) NOT NULL,
   `cantidad_solicitada` INT NOT NULL,
   `fecha_hora_generacion_local` TIMESTAMP NOT NULL,
   `fecha_hora_generacion_utc` TIMESTAMP NOT NULL,
@@ -93,7 +93,7 @@ DROP TABLE IF EXISTS `morapack4d`.`RUTA` ;
 
 CREATE TABLE IF NOT EXISTS `morapack4d`.`RUTA` (
   `id` INT NOT NULL AUTO_INCREMENT,
-  `codigo` VARCHAR(20) NOT NULL,
+  `codigo` VARCHAR(30) NOT NULL,
   `duracion` DOUBLE NOT NULL,
   `distancia` DOUBLE NOT NULL,
   `fecha_hora_salida_local` TIMESTAMP NOT NULL,
@@ -126,7 +126,7 @@ DROP TABLE IF EXISTS `morapack4d`.`LOTE` ;
 
 CREATE TABLE IF NOT EXISTS `morapack4d`.`LOTE` (
   `id` INT NOT NULL AUTO_INCREMENT,
-  `codigo` VARCHAR(20) NOT NULL,
+  `codigo` VARCHAR(30) NOT NULL,
   `tamanio` INT NOT NULL,
   `id_pedido` INT NOT NULL,
   `id_ruta` INT NOT NULL,
@@ -153,7 +153,7 @@ DROP TABLE IF EXISTS `morapack4d`.`REGISTRO` ;
 
 CREATE TABLE IF NOT EXISTS `morapack4d`.`REGISTRO` (
   `id` INT NOT NULL AUTO_INCREMENT,
-  `codigo` VARCHAR(20) NOT NULL,
+  `codigo` VARCHAR(30) NOT NULL,
   `fecha_hora_ingreso_local` TIMESTAMP NOT NULL,
   `fecha_hora_ingreso_utc` TIMESTAMP NOT NULL,
   `fecha_hora_egreso_local` TIMESTAMP NOT NULL,
@@ -183,7 +183,7 @@ DROP TABLE IF EXISTS `morapack4d`.`PRODUCTO` ;
 
 CREATE TABLE IF NOT EXISTS `morapack4d`.`PRODUCTO` (
   `id` INT NOT NULL AUTO_INCREMENT,
-  `codigo` VARCHAR(20) NOT NULL,
+  `codigo` VARCHAR(30) NOT NULL,
   `id_lote` INT NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE INDEX `codigo_UNIQUE` (`codigo` ASC) VISIBLE,
@@ -202,7 +202,7 @@ DROP TABLE IF EXISTS `morapack4d`.`PLAN` ;
 
 CREATE TABLE IF NOT EXISTS `morapack4d`.`PLAN` (
   `id` INT NOT NULL AUTO_INCREMENT,
-  `codigo` VARCHAR(20) NOT NULL,
+  `codigo` VARCHAR(30) NOT NULL,
   `capacidad` INT NOT NULL,
   `duracion` DOUBLE NOT NULL,
   `distancia` DOUBLE NOT NULL,
@@ -235,7 +235,7 @@ DROP TABLE IF EXISTS `morapack4d`.`VUELO` ;
 
 CREATE TABLE IF NOT EXISTS `morapack4d`.`VUELO` (
   `id` INT NOT NULL AUTO_INCREMENT,
-  `codigo` VARCHAR(20) NOT NULL,
+  `codigo` VARCHAR(30) NOT NULL,
   `capacidad_disponible` INT NOT NULL,
   `fecha_hora_salida_local` TIMESTAMP NOT NULL,
   `fecha_hora_salida_utc` TIMESTAMP NOT NULL,
