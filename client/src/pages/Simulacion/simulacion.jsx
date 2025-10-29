@@ -89,12 +89,41 @@ export default function Simulacion() {
     setTimerRunning(false);
     setTimerActive(false);
     setSeconds(0);
+
+    // Reiniciar posiciones y progreso
+    setFlights(flightData.map((f, i) => {
+      const origin = airports[f.from];
+      const dest = airports[f.to];
+      const startH = parseInt(f.start.split(":")[0]);
+      const startM = parseInt(f.start.split(":")[1]);
+      const endH = parseInt(f.end.split(":")[0]);
+      const endM = parseInt(f.end.split(":")[1]);
+      const durationMinutes = (endH * 60 + endM) - (startH * 60 + startM);
+      const durationSec = Math.max(durationMinutes * 60, 60);
+      return {
+        code: `${f.from}-${f.to}-${i + 1}`,
+        origin,
+        originName: origin.name,
+        destination: dest,
+        destinationName: dest.name,
+        startTime: f.start,
+        endTime: f.end,
+        capacity: f.capacity,
+        durationSec,
+        progress: 0,
+        arrived: false,
+        position: { lat: origin.lat, lng: origin.lng },
+        rotation: 0,
+      };
+    }));
+
     setBtnState({
       start: { disabled: false, color: "blue" },
       pause: { disabled: true, color: "grey" },
       stop:  { disabled: true, color: "grey" }
     });
   };
+
 
   //EJEMPLO
   // Coordenadas de vuelos
@@ -149,9 +178,9 @@ export default function Simulacion() {
     })
   );
 
-  const createColoredIcon = (filterCss) =>
+  const createColoredIcon = (filterCss, rotation) =>
   L.divIcon({
-    html: `<img src="${planeIconImg}" style="width:35px;filter:${filterCss};">`,
+    html: `<img src="${planeIconImg}" style="width:35px; transform: rotate(${rotation}deg); filter:${filterCss}; transition: transform 0.2s linear;">`,
     className: "",
     iconSize: [35, 35],
   });
@@ -164,20 +193,26 @@ export default function Simulacion() {
       setFlights((prev) =>
         prev.map((f) => {
           if (f.arrived) return f;
-          const newProgress = Math.min(f.progress + 1 / f.durationSec, 1);
-          const newPos = {
-            lat: f.origin.lat + (f.destination.lat - f.origin.lat) * newProgress,
-            lng: f.origin.lng + (f.destination.lng - f.origin.lng) * newProgress,
-          };
+          // Aumentar velocidad (x3 más rápido)
+          const newProgress = Math.min(f.progress + (1000 / f.durationSec), 1);
+          const newLat = f.origin.lat + (f.destination.lat - f.origin.lat) * newProgress;
+          const newLng = f.origin.lng + (f.destination.lng - f.origin.lng) * newProgress;
+
+          // Calcular ángulo (rumbo hacia destino)
+          const dy = f.destination.lat - f.origin.lat;
+          const dx = f.destination.lng - f.origin.lng;
+          const rotation = Math.atan2(dy, dx) * (180 / Math.PI); // en grados
+
           return {
             ...f,
             progress: newProgress,
-            position: newPos,
+            position: { lat: newLat, lng: newLng },
             arrived: newProgress >= 1,
+            rotation,
           };
         })
       );
-    }, 1_000);
+    }, 500); // intervalo un poco más fluido y rápido
     return () => clearInterval(interval);
   }, [timerRunning]);
   //
@@ -338,7 +373,7 @@ export default function Simulacion() {
               <Marker
                 key={i}
                 position={flight.position}
-                icon={createColoredIcon(filterCss)}
+                icon={createColoredIcon(filterCss, flight.rotation || 0)}
               >
                 <Popup>
                   <b>{flight.code}</b><br />
