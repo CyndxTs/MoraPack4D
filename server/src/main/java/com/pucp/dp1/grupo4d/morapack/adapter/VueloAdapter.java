@@ -23,9 +23,10 @@ public class VueloAdapter {
     @Autowired
     VueloService vueloService;
 
-    private final Map<String, Vuelo> pool = new HashMap<>();
-
     private final PlanAdapter planAdapter;
+
+    private final Map<String, Vuelo> poolAlgorithm = new HashMap<>();
+    private final Map<String, VueloEntity> poolEntity = new HashMap<>();
 
     public VueloAdapter(PlanAdapter planAdapter) {
         this.planAdapter = planAdapter;
@@ -34,10 +35,9 @@ public class VueloAdapter {
     public Vuelo toAlgorithm(VueloEntity entity) {
         if (entity == null) return null;
 
-        if (pool.containsKey(entity.getCodigo())) {
-            return pool.get(entity.getCodigo());
+        if (poolAlgorithm.containsKey(entity.getCodigo())) {
+            return poolAlgorithm.get(entity.getCodigo());
         }
-
         Vuelo algorithm = new Vuelo();
         algorithm.setCodigo(entity.getCodigo());
         algorithm.setCapacidadDisponible(entity.getCapacidadDisponible());
@@ -47,13 +47,15 @@ public class VueloAdapter {
         algorithm.setFechaHoraLlegadaUTC(entity.getFechaHoraLlegadaUTC());
         Plan planAlg = planAdapter.toAlgorithm(entity.getPlan());
         algorithm.setPlan(planAlg);
-
-        pool.put(algorithm.getCodigo(), algorithm);
+        poolAlgorithm.put(algorithm.getCodigo(), algorithm);
         return algorithm;
     }
 
     public VueloEntity toEntity(Vuelo algorithm) {
         if (algorithm == null) return null;
+        if (poolEntity.containsKey(algorithm.getCodigo())) {
+            return poolEntity.get(algorithm.getCodigo());
+        }
         VueloEntity entity = vueloService.findByCodigo(algorithm.getCodigo()).orElse(null);
         if (entity == null) {
             entity = new VueloEntity();
@@ -73,10 +75,13 @@ public class VueloAdapter {
                 planEntity.getVuelosActivados().add(entity);
             }
         }
+        poolEntity.put(entity.getCodigo(), entity);
         return entity;
     }
 
-    public void clearPool() {
-        pool.clear();
+    public void clearPools() {
+        poolAlgorithm.clear();
+        poolEntity.clear();
+        planAdapter.clearPools();
     }
 }

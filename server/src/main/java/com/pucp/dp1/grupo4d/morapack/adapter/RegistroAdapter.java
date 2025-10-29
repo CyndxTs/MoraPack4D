@@ -20,9 +20,10 @@ public class RegistroAdapter {
     @Autowired
     private RegistroService registroService;
 
-    private final Map<String, Registro> pool = new HashMap<>();
-
     private final LoteAdapter loteAdapter;
+
+    private final Map<String, Registro> poolAlgorithm = new HashMap<>();
+    private final Map<String, RegistroEntity> poolEntity = new HashMap<>();
 
     public RegistroAdapter(LoteAdapter loteAdapter) {
         this.loteAdapter = loteAdapter;
@@ -30,11 +31,9 @@ public class RegistroAdapter {
 
     public Registro toAlgorithm(RegistroEntity entity) {
         if (entity == null) return null;
-
-        if (pool.containsKey(entity.getCodigo())) {
-            return pool.get(entity.getCodigo());
+        if (poolAlgorithm.containsKey(entity.getCodigo())) {
+            return poolAlgorithm.get(entity.getCodigo());
         }
-
         Registro algorithm = new Registro();
         algorithm.setCodigo(entity.getCodigo());
         algorithm.setFechaHoraIngresoLocal(entity.getFechaHoraIngresoLocal());
@@ -42,12 +41,15 @@ public class RegistroAdapter {
         algorithm.setFechaHoraEgresoLocal(entity.getFechaHoraEgresoLocal());
         algorithm.setFechaHoraEgresoUTC(entity.getFechaHoraEgresoUTC());
         algorithm.setLote(loteAdapter.toAlgorithm(entity.getLote()));
-        pool.put(algorithm.getCodigo(), algorithm);
+        poolAlgorithm.put(algorithm.getCodigo(), algorithm);
         return algorithm;
     }
 
     public RegistroEntity toEntity(Registro algorithm) {
         if (algorithm == null) return null;
+        if (poolEntity.containsKey(algorithm.getCodigo())) {
+            return poolEntity.get(algorithm.getCodigo());
+        }
         RegistroEntity entity = registroService.findByCodigo(algorithm.getCodigo()).orElse(null);
         if (entity == null) {
             entity = new RegistroEntity();
@@ -59,10 +61,13 @@ public class RegistroAdapter {
         entity.setFechaHoraEgresoUTC(algorithm.getFechaHoraEgresoUTC());
         entity.setLote(loteAdapter.toEntity(algorithm.getLote()));
         if (entity.getLote() != null) entity.getLote().getRegistros().add(entity);
+        poolEntity.put(entity.getCodigo(), entity);
         return entity;
     }
 
-    public void clearPool() {
-        pool.clear();
+    public void clearPools() {
+        poolAlgorithm.clear();
+        poolEntity.clear();
+        loteAdapter.clearPools();
     }
 }

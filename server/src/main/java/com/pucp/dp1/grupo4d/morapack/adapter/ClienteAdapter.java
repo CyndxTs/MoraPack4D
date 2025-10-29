@@ -20,31 +20,37 @@ public class ClienteAdapter {
     @Autowired
     private ClienteService clienteService;
 
-    private final Map<String, Cliente> pool = new HashMap<>();
+    private final Map<String, Cliente> poolAlgorithm = new HashMap<>();
+    private final Map<String, ClienteEntity> poolEntity = new HashMap<>();
 
     public Cliente toAlgorithm(ClienteEntity entity) {
         if (entity == null) return null;
 
-        if (pool.containsKey(entity.getCodigo())) {
-            return pool.get(entity.getCodigo());
+        if (poolAlgorithm.containsKey(entity.getCodigo())) {
+            return poolAlgorithm.get(entity.getCodigo());
         }
 
         Cliente algorithm = new Cliente();
         algorithm.setCodigo(entity.getCodigo());
         algorithm.setNombre(entity.getNombre());
 
-        pool.put(algorithm.getCodigo(), algorithm);
+        poolAlgorithm.put(algorithm.getCodigo(), algorithm);
         return algorithm;
     }
 
     public ClienteEntity toEntity(Cliente algorithm) {
         if (algorithm == null) return null;
+        if(poolEntity.containsKey(algorithm.getCodigo())) {
+            return poolEntity.get(algorithm.getCodigo());
+        }
         ClienteEntity entity = clienteService.findByCodigo(algorithm.getCodigo()).orElse(null);
         if (entity == null) return null;
+        poolEntity.put(entity.getCodigo(), entity);
         return entity;
     }
 
-    public void clearPool() {
-        pool.clear();
+    public void clearPools() {
+        poolAlgorithm.clear();
+        poolEntity.clear();
     }
 }

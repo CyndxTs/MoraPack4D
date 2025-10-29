@@ -8,10 +8,7 @@ package com.pucp.dp1.grupo4d.morapack.adapter;
 
 import com.pucp.dp1.grupo4d.morapack.model.algorithm.Plan;
 import com.pucp.dp1.grupo4d.morapack.model.algorithm.Aeropuerto;
-import com.pucp.dp1.grupo4d.morapack.model.algorithm.Vuelo;
 import com.pucp.dp1.grupo4d.morapack.model.entity.PlanEntity;
-import com.pucp.dp1.grupo4d.morapack.model.entity.AeropuertoEntity;
-import com.pucp.dp1.grupo4d.morapack.model.entity.VueloEntity;
 import com.pucp.dp1.grupo4d.morapack.service.model.PlanService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -24,9 +21,10 @@ public class PlanAdapter {
     @Autowired
     PlanService planService;
 
-    private final Map<String, Plan> pool = new HashMap<>();
-
     private final AeropuertoAdapter aeropuertoAdapter;
+
+    private final Map<String, Plan> poolAlgorithm = new HashMap<>();
+    private final Map<String, PlanEntity> poolEntity = new HashMap<>();
 
     public PlanAdapter(AeropuertoAdapter aeropuertoAdapter) {
         this.aeropuertoAdapter = aeropuertoAdapter;
@@ -34,11 +32,9 @@ public class PlanAdapter {
 
     public Plan toAlgorithm(PlanEntity entity) {
         if (entity == null) return null;
-
-        if (pool.containsKey(entity.getCodigo())) {
-            return pool.get(entity.getCodigo());
+        if (poolAlgorithm.containsKey(entity.getCodigo())) {
+            return poolAlgorithm.get(entity.getCodigo());
         }
-
         Plan algorithm = new Plan();
         algorithm.setCodigo(entity.getCodigo());
         algorithm.setCapacidad(entity.getCapacidad());
@@ -48,24 +44,28 @@ public class PlanAdapter {
         algorithm.setHoraSalidaUTC(entity.getHoraSalidaUTC());
         algorithm.setHoraLlegadaLocal(entity.getHoraLlegadaLocal());
         algorithm.setHoraLlegadaUTC(entity.getHoraLlegadaUTC());
-
         Aeropuerto origenAlg = aeropuertoAdapter.toAlgorithm(entity.getOrigen());
         Aeropuerto destinoAlg = aeropuertoAdapter.toAlgorithm(entity.getDestino());
         algorithm.setOrigen(origenAlg);
         algorithm.setDestino(destinoAlg);
-
-        pool.put(algorithm.getCodigo(), algorithm);
+        poolAlgorithm.put(algorithm.getCodigo(), algorithm);
         return algorithm;
     }
 
     public PlanEntity toEntity(Plan algorithm) {
         if (algorithm == null) return null;
+        if(poolEntity.containsKey(algorithm.getCodigo())) {
+            return poolEntity.get(algorithm.getCodigo());
+        }
         PlanEntity entity = planService.findByCodigo(algorithm.getCodigo()).orElse(null);
         if (entity == null) return null;
+        poolEntity.put(entity.getCodigo(), entity);
         return entity;
     }
 
-    public void clearPool() {
-        pool.clear();
+    public void clearPools() {
+        poolAlgorithm.clear();
+        poolEntity.clear();
+        aeropuertoAdapter.clearPools();
     }
 }

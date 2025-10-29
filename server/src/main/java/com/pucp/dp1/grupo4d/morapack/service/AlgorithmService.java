@@ -11,6 +11,7 @@ import com.pucp.dp1.grupo4d.morapack.model.dto.response.ImportResponse;
 import com.pucp.dp1.grupo4d.morapack.model.dto.response.PlanificationResponse;
 import com.pucp.dp1.grupo4d.morapack.model.entity.*;
 import com.pucp.dp1.grupo4d.morapack.service.model.*;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -125,17 +126,21 @@ public class AlgorithmService {
         return new PlanificationResponse(true, "Planificación correctamene concluida.");
     }
 
-    private void actualizarPorSolucion(Solucion solucion) {
+    @Transactional
+    public void actualizarPorSolucion(Solucion solucion) {
         if (solucion == null || solucion.getPedidosAtendidos() == null) {
             return;
         }
 
         for (Pedido pedidoAlg : solucion.getPedidosAtendidos()) {
+            System.out.println("CONVIRTIENDO PEDIDO");
             PedidoEntity pedidoEntity = pedidoAdapter.toEntity(pedidoAlg);
             if (pedidoEntity == null) {
                 continue;
             }
+            System.out.println("GUARDANDO PEDIDO");
             pedidoService.save(pedidoEntity);
+            System.out.println("PEDIDO GUARDADO");
         }
 
         System.out.println("Solución actualizada correctamente en la base de datos.");

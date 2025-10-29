@@ -99,9 +99,9 @@ public class Problematica {
     }
 
     public void limpiarPools() {
-        aeropuertoAdapter.clearPool();
-        clienteAdapter.clearPool();
-        planAdapter.clearPool();
-        pedidoAdapter.clearPool();
+        aeropuertoAdapter.clearPools();
+        clienteAdapter.clearPools();
+        planAdapter.clearPools();
+        pedidoAdapter.clearPools();
     }
 }

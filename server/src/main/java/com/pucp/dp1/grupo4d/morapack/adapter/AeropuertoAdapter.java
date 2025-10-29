@@ -25,9 +25,10 @@ public class AeropuertoAdapter {
     @Autowired
     AeropuertoService aeropuertoService;
 
-    private final Map<String, Aeropuerto> pool = new HashMap<>();
-
     private final RegistroAdapter registroAdapter;
+
+    private final Map<String, Aeropuerto> poolAlgorithm = new HashMap<>();
+    private final Map<String, AeropuertoEntity> poolEntity = new HashMap<>();
 
     public AeropuertoAdapter(RegistroAdapter registroAdapter) {
         this.registroAdapter = registroAdapter;
@@ -36,10 +37,9 @@ public class AeropuertoAdapter {
     public Aeropuerto toAlgorithm(AeropuertoEntity entity) {
         if (entity == null) return null;
 
-        if (pool.containsKey(entity.getCodigo())) {
-            return pool.get(entity.getCodigo());
+        if (poolAlgorithm.containsKey(entity.getCodigo())) {
+            return poolAlgorithm.get(entity.getCodigo());
         }
-
         Aeropuerto algorithm = new Aeropuerto();
         algorithm.setCodigo(entity.getCodigo());
         algorithm.setCiudad(entity.getCiudad());
@@ -52,7 +52,6 @@ public class AeropuertoAdapter {
         algorithm.setLatitudDEC(entity.getLatitudDEC());
         algorithm.setLongitudDMS(entity.getLongitudDMS());
         algorithm.setLongitudDEC(entity.getLongitudDEC());
-
         List<Registro> registros = new ArrayList<>();
         if (entity.getRegistros() != null) {
             for (RegistroEntity registroEntity : entity.getRegistros()) {
@@ -61,14 +60,17 @@ public class AeropuertoAdapter {
             }
         }
         algorithm.setRegistros(registros);
+        poolAlgorithm.put(algorithm.getCodigo(), algorithm);
         return algorithm;
     }
 
     public AeropuertoEntity toEntity(Aeropuerto algorithm) {
         if (algorithm == null) return null;
+        if(poolEntity.containsKey(algorithm.getCodigo())) {
+            return poolEntity.get(algorithm.getCodigo());
+        }
         AeropuertoEntity entity = aeropuertoService.findByCodigo(algorithm.getCodigo()).orElse(null);
         if (entity == null) return null;
-
         entity.getRegistros().clear();
         if (algorithm.getRegistros() != null) {
             for (Registro registro : algorithm.getRegistros()) {
@@ -77,10 +79,13 @@ public class AeropuertoAdapter {
                 entity.getRegistros().add(registroEntity);
             }
         }
+        poolEntity.put(entity.getCodigo(), entity);
         return entity;
     }
 
-    public void clearPool() {
-        pool.clear();
+    public void clearPools() {
+        poolAlgorithm.clear();
+        poolEntity.clear();
+        registroAdapter.clearPools();
     }
 }

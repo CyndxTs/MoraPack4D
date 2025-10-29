@@ -24,9 +24,10 @@ public class LoteAdapter {
     @Autowired
     private LoteService loteService;
 
-    private final Map<String, Lote> pool = new HashMap<>();
-
     private final ProductoAdapter productoAdapter;
+
+    private final Map<String, Lote> poolAlgorithm = new HashMap<>();
+    private final Map<String, LoteEntity>  poolEntity = new HashMap<>();
 
     public LoteAdapter(ProductoAdapter productoAdapter) {
         this.productoAdapter = productoAdapter;
@@ -35,14 +36,12 @@ public class LoteAdapter {
     public Lote toAlgorithm(LoteEntity entity) {
         if (entity == null) return null;
 
-        if (pool.containsKey(entity.getCodigo())) {
-            return pool.get(entity.getCodigo());
+        if (poolAlgorithm.containsKey(entity.getCodigo())) {
+            return poolAlgorithm.get(entity.getCodigo());
         }
-
         Lote algorithm = new Lote();
         algorithm.setCodigo(entity.getCodigo());
         algorithm.setTamanio(entity.getTamanio());
-
         List<Producto> productos = new ArrayList<>();
         if (entity.getProductos() != null) {
             for (ProductoEntity productoEntity : entity.getProductos()) {
@@ -50,20 +49,21 @@ public class LoteAdapter {
             }
         }
         algorithm.setProductos(productos);
-
-        pool.put(algorithm.getCodigo(), algorithm);
+        poolAlgorithm.put(algorithm.getCodigo(), algorithm);
         return algorithm;
     }
 
     public LoteEntity toEntity(Lote algorithm) {
         if (algorithm == null) return null;
+        if (poolEntity.containsKey(algorithm.getCodigo())) {
+            return poolEntity.get(algorithm.getCodigo());
+        }
         LoteEntity entity = loteService.findByCodigo(algorithm.getCodigo()).orElse(null);
         if (entity == null) {
             entity = new LoteEntity();
             entity.setCodigo(algorithm.getCodigo());
         };
         entity.setTamanio(algorithm.getTamanio());
-
         entity.getProductos().clear();
         if (algorithm.getProductos() != null) {
             for (Producto producto : algorithm.getProductos()) {
@@ -73,10 +73,13 @@ public class LoteAdapter {
                 entity.getProductos().add(productoEntity);
             }
         }
+        poolEntity.put(entity.getCodigo(), entity);
         return entity;
     }
 
-    public void clearPool() {
-        pool.clear();
+    public void clearPools() {
+        poolAlgorithm.clear();
+        poolEntity.clear();
+        productoAdapter.clearPools();
     }
 }

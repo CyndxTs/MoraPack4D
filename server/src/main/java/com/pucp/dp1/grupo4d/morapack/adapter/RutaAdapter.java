@@ -24,10 +24,11 @@ public class RutaAdapter {
     @Autowired
     RutaService rutaService;
 
-    private final Map<String, Ruta> pool = new HashMap<>();
-
     private final AeropuertoAdapter aeropuertoAdapter;
     private final VueloAdapter vueloAdapter;
+
+    private final Map<String, Ruta> poolAlgorithm = new HashMap<>();
+    private final Map<String, RutaEntity> poolEntity = new HashMap<>();
 
     public RutaAdapter(AeropuertoAdapter aeropuertoAdapter, VueloAdapter vueloAdapter) {
         this.aeropuertoAdapter = aeropuertoAdapter;
@@ -37,8 +38,8 @@ public class RutaAdapter {
     public Ruta toAlgorithm(RutaEntity entity) {
         if (entity == null) return null;
 
-        if (pool.containsKey(entity.getCodigo())) {
-            return pool.get(entity.getCodigo());
+        if (poolAlgorithm.containsKey(entity.getCodigo())) {
+            return poolAlgorithm.get(entity.getCodigo());
         }
 
         Ruta algorithm = new Ruta();
@@ -64,12 +65,15 @@ public class RutaAdapter {
             algorithm.setVuelos(vuelos);
         }
 
-        pool.put(algorithm.getCodigo(), algorithm);
+        poolAlgorithm.put(algorithm.getCodigo(), algorithm);
         return algorithm;
     }
 
     public RutaEntity toEntity(Ruta algorithm) {
         if (algorithm == null) return null;
+        if(poolEntity.containsKey(algorithm.getCodigo())) {
+            return  poolEntity.get(algorithm.getCodigo());
+        }
         RutaEntity entity = rutaService.findByCodigo(algorithm.getCodigo()).orElse(null);
         if (entity == null) {
             entity = new RutaEntity();
@@ -86,7 +90,6 @@ public class RutaAdapter {
         AeropuertoEntity destino = aeropuertoAdapter.toEntity(algorithm.getDestino());
         entity.setOrigen(origen);
         entity.setDestino(destino);
-
         if (algorithm.getVuelos() != null) {
             entity.getVuelos().clear();
             for (Vuelo vuelo : algorithm.getVuelos()) {
@@ -97,10 +100,14 @@ public class RutaAdapter {
                 }
             }
         }
+        poolEntity.put(entity.getCodigo(), entity);
         return entity;
     }
 
-    public void clearPool() {
-        pool.clear();
+    public void clearPools() {
+        poolAlgorithm.clear();
+        poolEntity.clear();
+        aeropuertoAdapter.clearPools();
+        vueloAdapter.clearPools();
     }
 }

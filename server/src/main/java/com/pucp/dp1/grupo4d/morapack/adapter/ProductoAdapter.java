@@ -20,33 +20,37 @@ public class ProductoAdapter {
     @Autowired
     private ProductoService productoService;
 
-    private final Map<String, Producto> pool = new HashMap<>();
+    private final Map<String, Producto> poolAlgorithm = new HashMap<>();
+    private final Map<String, ProductoEntity> poolEntity = new HashMap<>();
 
     public Producto toAlgorithm(ProductoEntity entity) {
         if (entity == null) return null;
-
-        if (pool.containsKey(entity.getCodigo())) {
-            return pool.get(entity.getCodigo());
+        if (poolAlgorithm.containsKey(entity.getCodigo())) {
+            return poolAlgorithm.get(entity.getCodigo());
         }
-
         Producto algorithm = new Producto();
         algorithm.setCodigo(entity.getCodigo());
-
-        pool.put(algorithm.getCodigo(), algorithm);
+        poolAlgorithm.put(algorithm.getCodigo(), algorithm);
+        poolEntity.put(entity.getCodigo(), entity);
         return algorithm;
     }
 
     public ProductoEntity toEntity(Producto algorithm) {
         if (algorithm == null) return null;
+        if(poolEntity.containsKey(algorithm.getCodigo())) {
+            return poolEntity.get(algorithm.getCodigo());
+        }
         ProductoEntity entity = productoService.findByCodigo(algorithm.getCodigo()).orElse(null);
         if (entity == null) {
-            entity = new ProductoEntity();
+            entity = new ProductoEntity();;
             entity.setCodigo(algorithm.getCodigo());
         }
+        poolEntity.put(entity.getCodigo(), entity);
         return entity;
     }
 
-    public void clearPool() {
-        pool.clear();
+    public void clearPools() {
+        poolAlgorithm.clear();
+        poolEntity.clear();
     }
 }
