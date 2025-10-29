@@ -6,7 +6,7 @@
 
 package com.pucp.dp1.grupo4d.morapack.repository;
 
-import com.pucp.dp1.grupo4d.morapack.model.db.RegistroEntity;
+import com.pucp.dp1.grupo4d.morapack.model.entity.RegistroEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import java.util.Optional;

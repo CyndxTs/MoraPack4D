@@ -10,6 +10,8 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+
+import com.pucp.dp1.grupo4d.morapack.model.enums.TipoRuta;
 import com.pucp.dp1.grupo4d.morapack.util.G4D;
 
 public class Pedido {

@@ -149,7 +149,7 @@ public class Plan {
 
     public void setDuracion() {
         LocalDateTime[] rango = G4D.getDateTimeRange(this.horaSalidaUTC, this.horaLlegadaUTC, LocalDateTime.now());
-        this.duracion = G4D.getElapsedHours(rango[0], rango[1]);
+        this.setDuracion(G4D.getElapsedHours(rango[0], rango[1]));
     }
 
     public void setDuracion(double duracion) {
@@ -161,7 +161,7 @@ public class Plan {
     }
 
     public void setHoraSalidaLocal() {
-        this.horaSalidaLocal = G4D.toLocal(this.horaSalidaUTC, this.origen.getHusoHorario());
+        this.setHoraSalidaLocal(G4D.toLocal(this.horaSalidaUTC, this.origen.getHusoHorario()));
     }
 
     public void setHoraSalidaLocal(LocalTime horaSalidaLocal) {
@@ -173,7 +173,7 @@ public class Plan {
     }
 
     public void setHoraSalidaUTC() {
-        this.horaSalidaUTC = G4D.toUTC(this.horaSalidaLocal, this.origen.getHusoHorario());
+        this.setHoraSalidaUTC(G4D.toUTC(this.horaSalidaLocal, this.origen.getHusoHorario()));
     }
 
     public void setHoraSalidaUTC(LocalTime horaSalidaUTC) {
@@ -185,7 +185,7 @@ public class Plan {
     }
 
     public void setHoraLlegadaLocal() {
-        this.horaLlegadaLocal = G4D.toLocal(this.horaLlegadaUTC, this.destino.getHusoHorario());
+        this.setHoraLlegadaLocal(G4D.toLocal(this.horaLlegadaUTC, this.destino.getHusoHorario()));
     }
 
     public void setHoraLlegadaLocal(LocalTime horaLlegadaLocal) {
@@ -197,7 +197,7 @@ public class Plan {
     }
 
     public void setHoraLlegadaUTC() {
-        this.horaLlegadaUTC = G4D.toUTC(this.horaLlegadaLocal, this.destino.getHusoHorario());
+        this.setHoraLlegadaUTC(G4D.toUTC(this.horaLlegadaLocal, this.destino.getHusoHorario()));
     }
 
     public void setHoraLlegadaUTC(LocalTime horaLlegadaUTC) {

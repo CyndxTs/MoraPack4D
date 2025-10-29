@@ -26,17 +26,17 @@ import com.pucp.dp1.grupo4d.morapack.model.algorithm.Pedido;
 import com.pucp.dp1.grupo4d.morapack.model.algorithm.Plan;
 import com.pucp.dp1.grupo4d.morapack.model.algorithm.Ruta;
 import com.pucp.dp1.grupo4d.morapack.model.algorithm.Solucion;
-import com.pucp.dp1.grupo4d.morapack.model.algorithm.TipoRuta;
+import com.pucp.dp1.grupo4d.morapack.model.enums.TipoRuta;
 import com.pucp.dp1.grupo4d.morapack.model.algorithm.Vuelo;
 import com.pucp.dp1.grupo4d.morapack.util.G4D;
 
 public class GVNS {
-    private static Integer L_MIN = 1;
-    private static Integer L_MAX = 3;
-    private static Integer K_MIN = 1;
-    private static Integer K_MAX = 5;
-    private static Integer T_MAX = 12;
-    private static Integer MAX_INTENTOS = 12;
+    public static Integer L_MIN = 1;
+    public static Integer L_MAX = 3;
+    public static Integer K_MIN = 1;
+    public static Integer K_MAX = 5;
+    public static Integer T_MAX = 12;
+    public static Integer MAX_INTENTOS = 12;
     private static final Random random = new Random();
     private Solucion solucionINI;
     private Solucion solucionVND;

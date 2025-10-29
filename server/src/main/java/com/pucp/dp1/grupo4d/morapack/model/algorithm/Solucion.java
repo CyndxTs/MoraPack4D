@@ -29,7 +29,6 @@ public class Solucion {
     private Set<Vuelo> vuelosEnTransito;
     private Set<Ruta> rutasEnOperacion;
 
-
     public Solucion() {
         this.codigo = G4D.Generator.getUniqueString("SOL");
         this.fitness = 9999.99;

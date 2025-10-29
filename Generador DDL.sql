@@ -15,17 +15,17 @@ CREATE SCHEMA IF NOT EXISTS `morapack4d` ;
 USE `morapack4d` ;
 
 -- -----------------------------------------------------
--- Table `morapack4d`.`USUARIO`
+-- Table `morapack4d`.`CLIENTE`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `morapack4d`.`USUARIO` ;
+DROP TABLE IF EXISTS `morapack4d`.`CLIENTE` ;
 
-CREATE TABLE IF NOT EXISTS `morapack4d`.`USUARIO` (
+CREATE TABLE IF NOT EXISTS `morapack4d`.`CLIENTE` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `codigo` VARCHAR(7) NOT NULL,
   `nombre` VARCHAR(50) NOT NULL,
   `correo` VARCHAR(40) NOT NULL,
   `contrasenia` VARCHAR(255) NOT NULL,
-  `tipo` ENUM('ADMINISTRADOR', 'CLIENTE') NOT NULL DEFAULT 'CLIENTE',
+  `estado` ENUM('ONLINE', 'OFFLINE', 'DISABLED') NOT NULL DEFAULT 'OFFLINE',
   PRIMARY KEY (`id`),
   UNIQUE INDEX `codigo_UNIQUE` (`codigo` ASC) VISIBLE,
   UNIQUE INDEX `correo_UNIQUE` (`correo` ASC) VISIBLE);
@@ -99,7 +99,7 @@ CREATE TABLE IF NOT EXISTS `morapack4d`.`PEDIDO` (
   INDEX `fk_PEDIDO_AEROPUERTO1_idx` (`id_aeropuerto_destino` ASC) VISIBLE,
   CONSTRAINT `fk_PEDIDO_CLIENTE1`
     FOREIGN KEY (`id_cliente`)
-    REFERENCES `morapack4d`.`USUARIO` (`id`)
+    REFERENCES `morapack4d`.`CLIENTE` (`id`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
   CONSTRAINT `fk_PEDIDO_AEROPUERTO1`
@@ -312,6 +312,23 @@ CREATE TABLE IF NOT EXISTS `morapack4d`.`PEDIDO_POR_RUTA` (
     REFERENCES `morapack4d`.`RUTA` (`id`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION);
+
+
+-- -----------------------------------------------------
+-- Table `morapack4d`.`ADMINISTRADOR`
+-- -----------------------------------------------------
+DROP TABLE IF EXISTS `morapack4d`.`ADMINISTRADOR` ;
+
+CREATE TABLE IF NOT EXISTS `morapack4d`.`ADMINISTRADOR` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `codigo` VARCHAR(7) NOT NULL,
+  `nombre` VARCHAR(50) NOT NULL,
+  `correo` VARCHAR(40) NOT NULL,
+  `contrasenia` VARCHAR(255) NOT NULL,
+  `estado` ENUM('ONLINE', 'OFFLINE', 'DISABLED') NOT NULL DEFAULT 'OFFLINE',
+  PRIMARY KEY (`id`),
+  UNIQUE INDEX `correo_UNIQUE` (`correo` ASC) VISIBLE,
+  UNIQUE INDEX `codigo_UNIQUE` (`codigo` ASC) VISIBLE);
 
 
 SET SQL_MODE=@OLD_SQL_MODE;
