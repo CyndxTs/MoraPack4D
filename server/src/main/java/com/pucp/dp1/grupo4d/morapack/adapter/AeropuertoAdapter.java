@@ -71,14 +71,6 @@ public class AeropuertoAdapter {
         }
         AeropuertoEntity entity = aeropuertoService.findByCodigo(algorithm.getCodigo()).orElse(null);
         if (entity == null) return null;
-        entity.getRegistros().clear();
-        if (algorithm.getRegistros() != null) {
-            for (Registro registro : algorithm.getRegistros()) {
-                RegistroEntity registroEntity = registroAdapter.toEntity(registro);
-                registroEntity.setAeropuerto(entity);
-                entity.getRegistros().add(registroEntity);
-            }
-        }
         poolEntity.put(entity.getCodigo(), entity);
         return entity;
     }

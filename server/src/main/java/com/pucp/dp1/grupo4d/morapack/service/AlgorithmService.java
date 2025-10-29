@@ -16,6 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -101,7 +102,7 @@ public class AlgorithmService {
     public PlanificationResponse planificar(PlanificationRequest request) {
         if(request.getReparametrizar()) {
             ParametersRequest parameters = request.getParameters();
-            Problematica.MAX_DIAS_ENTREGA_INTRACONTINENTAL = parameters.getMaxDiasEntregaIntracontinental();
+            Problematica.MAX_DIAS_ENTREGA_INTRACONTINENTAL = parameters.getMaxDiasEntregaIntercontinental();
             Problematica.MAX_DIAS_ENTREGA_INTERCONTINENTAL = parameters.getMaxDiasEntregaIntercontinental();
             Problematica.MAX_HORAS_RECOJO = parameters.getMaxHorasRecojo();
             Problematica.MAX_HORAS_ESTANCIA = parameters.getMaxHorasEstancia();
@@ -117,13 +118,26 @@ public class AlgorithmService {
             Solucion.f_DE = parameters.getFactorDeDesviacionEspacial();
             Solucion.f_DO = parameters.getFactorDeDisposicionOperacional();
         }
-        Problematica problematica = new Problematica(aeropuertoService,clienteService,planService,pedidoService,aeropuertoAdapter,clienteAdapter,planAdapter,pedidoAdapter);
+
+        Problematica problematica = new Problematica(
+                aeropuertoService, clienteService, planService, pedidoService,
+                aeropuertoAdapter, clienteAdapter, planAdapter, pedidoAdapter
+        );
         problematica.cargarDatos();
+
         GVNS gvns = new GVNS();
         gvns.planificar(problematica);
-        Solucion sAux = gvns.getSolucionINI();
-        actualizarPorSolucion(sAux);
-        return new PlanificationResponse(true, "Planificación correctamene concluida.");
+
+        Solucion solucion = gvns.getSolucionINI();
+        actualizarPorSolucion(solucion);
+
+        // Limpiar pools después de persistir
+        problematica.limpiarPools();
+        vueloAdapter.clearPools();
+        rutaAdapter.clearPools();
+        loteAdapter.clearPools();
+
+        return new PlanificationResponse(true, "Planificación correctamente concluida.");
     }
 
     @Transactional
@@ -132,17 +146,136 @@ public class AlgorithmService {
             return;
         }
 
-        for (Pedido pedidoAlg : solucion.getPedidosAtendidos()) {
-            System.out.println("CONVIRTIENDO PEDIDO");
-            PedidoEntity pedidoEntity = pedidoAdapter.toEntity(pedidoAlg);
-            if (pedidoEntity == null) {
-                continue;
+        System.out.println("\n════════════════════════════════════════════════");
+        System.out.println("   INICIANDO PERSISTENCIA DE SOLUCIÓN");
+        System.out.println("════════════════════════════════════════════════\n");
+
+        // ============================================
+        // FASE 1: PERSISTIR VUELOS
+        // ============================================
+        System.out.println("┌─ FASE 1: Persistiendo Vuelos");
+        System.out.println("│");
+
+        int contadorVuelos = 0;
+        for (Vuelo vueloAlg : solucion.getVuelosEnTransito()) {
+            VueloEntity vueloEntity = vueloAdapter.toEntity(vueloAlg);
+            if (vueloEntity != null && vueloEntity.getId() == null) {
+                vueloService.save(vueloEntity);
+                contadorVuelos++;
+                System.out.println("│  ✓ Vuelo: " + vueloEntity.getCodigo());
             }
-            System.out.println("GUARDANDO PEDIDO");
-            pedidoService.save(pedidoEntity);
-            System.out.println("PEDIDO GUARDADO");
         }
 
-        System.out.println("Solución actualizada correctamente en la base de datos.");
+        System.out.println("│");
+        System.out.println("└─ Total vuelos: " + contadorVuelos);
+        System.out.println();
+
+        // ============================================
+        // FASE 2: PERSISTIR RUTAS (con vuelos ya persistidos)
+        // ============================================
+        System.out.println("┌─ FASE 2: Persistiendo Rutas");
+        System.out.println("│");
+
+        int contadorRutas = 0;
+        for (Ruta rutaAlg : solucion.getRutasEnOperacion()) {
+            RutaEntity rutaEntity = rutaAdapter.toEntity(rutaAlg);
+            if (rutaEntity != null) {
+                // Asignar vuelos (ya tienen ID del pool)
+                rutaEntity.getVuelos().clear();
+                for (Vuelo vuelo : rutaAlg.getVuelos()) {
+                    VueloEntity vueloEntity = vueloAdapter.toEntity(vuelo);
+                    if (vueloEntity != null) {
+                        rutaEntity.getVuelos().add(vueloEntity);
+                    }
+                }
+
+                if (rutaEntity.getId() == null) {
+                    rutaService.save(rutaEntity);
+                    contadorRutas++;
+                    System.out.println("│  ✓ Ruta: " + rutaEntity.getCodigo() +
+                            " (vuelos: " + rutaEntity.getVuelos().size() + ")");
+                }
+            }
+        }
+
+        System.out.println("│");
+        System.out.println("└─ Total rutas: " + contadorRutas);
+        System.out.println();
+
+        // ============================================
+        // FASE 3: PERSISTIR PEDIDOS CON LOTES (todo junto)
+        // ============================================
+        System.out.println("┌─ FASE 3: Persistiendo Pedidos con Lotes");
+        System.out.println("│");
+
+        int contadorPedidos = 0;
+        int contadorLotes = 0;
+
+        for (Pedido pedidoAlg : solucion.getPedidosAtendidos()) {
+            System.out.println("│  → Procesando: " + pedidoAlg.getCodigo());
+
+            // Convertir pedido (sin relaciones todavía)
+            PedidoEntity pedidoEntity = pedidoService.findByCodigo(pedidoAlg.getCodigo()).orElse(null);
+            if (pedidoEntity == null) {
+                System.out.println("│    ✗ No encontrado en BD");
+                continue;
+            }
+
+            // Actualizar fechas de expiración
+            pedidoEntity.setFechaHoraExpiracionLocal(pedidoAlg.getFechaHoraExpiracionLocal());
+            pedidoEntity.setFechaHoraExpiracionUTC(pedidoAlg.getFechaHoraExpiracionUTC());
+
+            // Limpiar relaciones anteriores
+            pedidoEntity.getRutas().clear();
+            pedidoEntity.getLotes().clear();
+
+            // Procesar cada lote por ruta
+            for (Map.Entry<Ruta, Lote> entry : pedidoAlg.getLotesPorRuta().entrySet()) {
+                Ruta rutaAlg = entry.getKey();
+                Lote loteAlg = entry.getValue();
+
+                // Obtener ruta del pool (ya persistida con ID)
+                RutaEntity rutaEntity = rutaAdapter.toEntity(rutaAlg);
+                if (rutaEntity == null || rutaEntity.getId() == null) {
+                    System.out.println("│    ✗ Ruta sin ID: " + rutaAlg.getCodigo());
+                    continue;
+                }
+
+                // Convertir lote (sin persistir todavía)
+                LoteEntity loteEntity = loteAdapter.toEntity(loteAlg);
+                if (loteEntity == null) {
+                    System.out.println("│    ✗ Lote no pudo convertirse");
+                    continue;
+                }
+
+                // Establecer relaciones bidireccionales
+                loteEntity.setRuta(rutaEntity);
+                loteEntity.setPedido(pedidoEntity);  // ✅ Ahora SÍ asignar pedido
+
+                // Agregar a las colecciones del pedido
+                if (!pedidoEntity.getRutas().contains(rutaEntity)) {
+                    pedidoEntity.getRutas().add(rutaEntity);
+                }
+                pedidoEntity.getLotes().add(loteEntity);
+
+                contadorLotes++;
+            }
+
+            // Persistir pedido (con cascade a lotes y productos)
+            pedidoService.save(pedidoEntity);
+            contadorPedidos++;
+
+            System.out.println("│  ✓ Pedido: " + pedidoEntity.getCodigo() +
+                    " (rutas: " + pedidoEntity.getRutas().size() +
+                    ", lotes: " + pedidoEntity.getLotes().size() + ")");
+        }
+
+        System.out.println("│");
+        System.out.println("└─ Total pedidos: " + contadorPedidos + " | Total lotes: " + contadorLotes);
+        System.out.println();
+
+        System.out.println("════════════════════════════════════════════════");
+        System.out.println("   PERSISTENCIA COMPLETADA");
+        System.out.println("════════════════════════════════════════════════\n");
     }
 }

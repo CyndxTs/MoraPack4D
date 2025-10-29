@@ -57,7 +57,7 @@ public class PlanEntity {
     @JsonBackReference
     private AeropuertoEntity destino;
 
-    @OneToMany(mappedBy = "plan", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "plan", fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST, CascadeType.REFRESH})
     @JsonManagedReference
     private List<VueloEntity> vuelosActivados = new ArrayList<>();
 

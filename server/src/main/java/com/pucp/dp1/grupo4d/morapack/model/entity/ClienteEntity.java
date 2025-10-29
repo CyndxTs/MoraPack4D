@@ -36,7 +36,7 @@ public class ClienteEntity {
     @Column(name = "estado", nullable = false)
     private EstadoUsuario estado = EstadoUsuario.OFFLINE;
 
-    @OneToMany(mappedBy = "cliente", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "cliente", fetch = FetchType.LAZY)
     @JsonManagedReference
     private List<PedidoEntity> pedidos = new ArrayList<>();
 

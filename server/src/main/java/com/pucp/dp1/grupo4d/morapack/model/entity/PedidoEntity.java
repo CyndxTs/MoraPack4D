@@ -51,7 +51,7 @@ public class PedidoEntity {
     @JsonBackReference
     private AeropuertoEntity destino;
 
-    @ManyToMany(cascade = CascadeType.MERGE)
+    @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
             name = "PEDIDO_POR_RUTA",
             joinColumns = @JoinColumn(name = "id_pedido"),

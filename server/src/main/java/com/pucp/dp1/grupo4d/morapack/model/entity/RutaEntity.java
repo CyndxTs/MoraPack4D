@@ -59,7 +59,7 @@ public class RutaEntity {
     @JsonBackReference
     private AeropuertoEntity destino;
 
-    @ManyToMany(fetch = FetchType.LAZY, cascade = CascadeType.MERGE)
+    @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
             name = "RUTA_POR_VUELO",
             joinColumns = @JoinColumn(name = "id_ruta"),
@@ -72,7 +72,7 @@ public class RutaEntity {
     @JsonBackReference
     private List<PedidoEntity> pedidos = new ArrayList<>();
 
-    @OneToMany(mappedBy = "ruta", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "ruta", fetch = FetchType.LAZY)
     @JsonManagedReference
     private List<LoteEntity> lotes = new ArrayList<>();
 

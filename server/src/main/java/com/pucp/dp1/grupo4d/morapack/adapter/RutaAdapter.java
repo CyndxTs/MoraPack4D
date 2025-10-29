@@ -90,16 +90,6 @@ public class RutaAdapter {
         AeropuertoEntity destino = aeropuertoAdapter.toEntity(algorithm.getDestino());
         entity.setOrigen(origen);
         entity.setDestino(destino);
-        if (algorithm.getVuelos() != null) {
-            entity.getVuelos().clear();
-            for (Vuelo vuelo : algorithm.getVuelos()) {
-                VueloEntity vueloEntity = vueloAdapter.toEntity(vuelo);
-                if(vueloEntity != null) {
-                    vueloEntity.getRutas().add(entity);
-                    entity.getVuelos().add(vueloEntity);
-                }
-            }
-        }
         poolEntity.put(entity.getCodigo(), entity);
         return entity;
     }

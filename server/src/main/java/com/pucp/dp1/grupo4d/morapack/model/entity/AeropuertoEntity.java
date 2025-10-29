@@ -55,27 +55,27 @@ public class AeropuertoEntity {
     @Column(name = "es_sede")
     private Boolean esSede = false;
 
-    @OneToMany(mappedBy = "destino", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "destino", fetch = FetchType.LAZY)
     @JsonManagedReference
     private List<PedidoEntity> pedidosComoDestino = new ArrayList<>();
 
-    @OneToMany(mappedBy = "aeropuerto", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "aeropuerto", fetch = FetchType.LAZY)
     @JsonManagedReference
     private List<RegistroEntity> registros = new ArrayList<>();
 
-    @OneToMany(mappedBy = "origen", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "origen", fetch = FetchType.LAZY)
     @JsonManagedReference
     private List<PlanEntity> planesComoOrigen = new ArrayList<>();
 
-    @OneToMany(mappedBy = "destino", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "destino", fetch = FetchType.LAZY)
     @JsonManagedReference
     private List<PlanEntity> planesComoDestino = new ArrayList<>();
 
-    @OneToMany(mappedBy = "origen", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "origen", fetch = FetchType.LAZY)
     @JsonManagedReference
     private List<RutaEntity> rutasComoOrigen = new ArrayList<>();
 
-    @OneToMany(mappedBy = "destino", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "destino", fetch = FetchType.LAZY)
     @JsonManagedReference
     private List<RutaEntity> rutasComoDestino = new ArrayList<>();
 

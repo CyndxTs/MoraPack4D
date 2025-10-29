@@ -68,13 +68,6 @@ public class VueloAdapter {
         entity.setCapacidadDisponible(algorithm.getCapacidadDisponible());
         PlanEntity planEntity = planAdapter.toEntity(algorithm.getPlan());
         entity.setPlan(planEntity);
-        if (planEntity != null) {
-            final String codigo = entity.getCodigo();
-            boolean existe = planEntity.getVuelosActivados().stream().anyMatch(v -> v.getCodigo().equals(codigo));
-            if (!existe) {
-                planEntity.getVuelosActivados().add(entity);
-            }
-        }
         poolEntity.put(entity.getCodigo(), entity);
         return entity;
     }
