@@ -25,7 +25,6 @@ import com.pucp.dp1.grupo4d.morapack.model.algorithm.Lote;
 import com.pucp.dp1.grupo4d.morapack.model.algorithm.Pedido;
 import com.pucp.dp1.grupo4d.morapack.model.algorithm.Plan;
 import com.pucp.dp1.grupo4d.morapack.model.algorithm.Ruta;
-import com.pucp.dp1.grupo4d.morapack.model.algorithm.Solucion;
 import com.pucp.dp1.grupo4d.morapack.model.enums.TipoRuta;
 import com.pucp.dp1.grupo4d.morapack.model.algorithm.Vuelo;
 import com.pucp.dp1.grupo4d.morapack.util.G4D;
@@ -61,6 +60,7 @@ public class GVNS {
         G4D.Logger.Stats.log_stat_local_sol();
         imprimirSolucion(x, "SolucionInicial.txt");
         this.solucionINI = x;
+        /*
         // Optimización inicial (Variable Neighborhood Descent)
         G4D.Logger.Stats.set_local_start();
         G4D.Logger.log("Realizando optimización inicial.. ");
@@ -78,6 +78,7 @@ public class GVNS {
         G4D.Logger.logf("[+] OPTIMIZACION FINAL REALIZADA! (FITNESS: %.3f)%n", x.getFitness());
         G4D.Logger.Stats.log_stat_local_sol();
         imprimirSolucion(x, "SolucionGVNS.txt");
+         */
         this.solucionVNS = x;
         G4D.Logger.Stats.set_global_duration();
         G4D.Logger.Stats.log_stat_global_sol();

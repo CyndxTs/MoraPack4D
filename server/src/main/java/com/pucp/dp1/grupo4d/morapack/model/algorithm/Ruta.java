@@ -16,7 +16,6 @@ import com.pucp.dp1.grupo4d.morapack.model.enums.TipoRuta;
 import com.pucp.dp1.grupo4d.morapack.util.G4D;
 
 public class Ruta {
-    private Integer id;
     private String codigo;
     private Double duracion;
     private Double distancia;
@@ -30,7 +29,6 @@ public class Ruta {
     private List<Vuelo> vuelos;
 
     public Ruta() {
-        this.id = null;
         this.codigo = G4D.Generator.getUniqueString("RUT");
         this.duracion = 0.0;
         this.distancia = 0.0;
@@ -104,7 +102,6 @@ public class Ruta {
 
     public Ruta replicar(Map<String,Aeropuerto> poolAeropuertos, Map<String, Lote> poolLotes, Map<String,Vuelo> poolVuelos, Map<String, Plan> poolPlanes) {
         Ruta ruta = new Ruta();
-        ruta.id = this.id;
         ruta.codigo = this.codigo;
         ruta.duracion = this.duracion;
         ruta.distancia = this.distancia;
@@ -130,14 +127,6 @@ public class Ruta {
     @Override
     public int hashCode() {
         return codigo != null ? codigo.hashCode() : 0;
-    }
-
-    public Integer getId() {
-        return id;
-    }
-
-    public void setId(int id) {
-        this.id = id;
     }
 
     public String getCodigo() {

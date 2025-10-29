@@ -41,14 +41,10 @@ public class RegistroEntity {
     @JsonBackReference
     private AeropuertoEntity aeropuerto;
 
-    @ManyToMany(fetch = FetchType.LAZY)
-    @JoinTable(
-            name = "REGISTRO_POR_LOTE",
-            joinColumns = @JoinColumn(name = "id_registro"),
-            inverseJoinColumns = @JoinColumn(name = "id_lote")
-    )
-    @JsonManagedReference
-    private List<LoteEntity> lotes = new ArrayList<>();
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_lote", nullable = false)
+    @JsonBackReference
+    private LoteEntity lote;
 
     public RegistroEntity() {}
 
@@ -65,6 +61,7 @@ public class RegistroEntity {
         return Objects.hash(codigo);
     }
 
+    // Getters y setters
     public Integer getId() { return id; }
     public void setId(Integer id) { this.id = id; }
     public String getCodigo() { return codigo; }
@@ -79,6 +76,6 @@ public class RegistroEntity {
     public void setFechaHoraEgresoUTC(LocalDateTime fechaHoraEgresoUTC) { this.fechaHoraEgresoUTC = fechaHoraEgresoUTC; }
     public AeropuertoEntity getAeropuerto() { return aeropuerto; }
     public void setAeropuerto(AeropuertoEntity aeropuerto) { this.aeropuerto = aeropuerto; }
-    public List<LoteEntity> getLotes() { return lotes; }
-    public void setLotes(List<LoteEntity> lotes) { this.lotes = lotes; }
+    public LoteEntity getLote() { return lote; }
+    public void setLote(LoteEntity lote) { this.lote = lote; }
 }

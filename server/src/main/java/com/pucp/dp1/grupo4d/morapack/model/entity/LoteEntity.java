@@ -38,8 +38,8 @@ public class LoteEntity {
     @JsonBackReference
     private RutaEntity ruta;
 
-    @ManyToMany(mappedBy = "lotes", fetch = FetchType.LAZY)
-    @JsonBackReference
+    @OneToMany(mappedBy = "lote", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference
     private List<RegistroEntity> registros = new ArrayList<>();
 
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)

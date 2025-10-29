@@ -56,29 +56,6 @@ CREATE TABLE IF NOT EXISTS `morapack4d`.`AEROPUERTO` (
 
 
 -- -----------------------------------------------------
--- Table `morapack4d`.`REGISTRO`
--- -----------------------------------------------------
-DROP TABLE IF EXISTS `morapack4d`.`REGISTRO` ;
-
-CREATE TABLE IF NOT EXISTS `morapack4d`.`REGISTRO` (
-  `id` INT NOT NULL AUTO_INCREMENT,
-  `codigo` VARCHAR(20) NOT NULL,
-  `fecha_hora_ingreso_local` TIMESTAMP NOT NULL,
-  `fecha_hora_ingreso_utc` TIMESTAMP NOT NULL,
-  `fecha_hora_egreso_local` TIMESTAMP NOT NULL,
-  `fecha_hora_egreso_utc` TIMESTAMP NOT NULL,
-  `id_aeropuerto` INT NOT NULL,
-  PRIMARY KEY (`id`),
-  INDEX `fk_REGISTRO_AEROPUERTO1_idx` (`id_aeropuerto` ASC) VISIBLE,
-  UNIQUE INDEX `codigo_UNIQUE` (`codigo` ASC) VISIBLE,
-  CONSTRAINT `fk_REGISTRO_AEROPUERTO1`
-    FOREIGN KEY (`id_aeropuerto`)
-    REFERENCES `morapack4d`.`AEROPUERTO` (`id`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION);
-
-
--- -----------------------------------------------------
 -- Table `morapack4d`.`PEDIDO`
 -- -----------------------------------------------------
 DROP TABLE IF EXISTS `morapack4d`.`PEDIDO` ;
@@ -170,6 +147,36 @@ CREATE TABLE IF NOT EXISTS `morapack4d`.`LOTE` (
 
 
 -- -----------------------------------------------------
+-- Table `morapack4d`.`REGISTRO`
+-- -----------------------------------------------------
+DROP TABLE IF EXISTS `morapack4d`.`REGISTRO` ;
+
+CREATE TABLE IF NOT EXISTS `morapack4d`.`REGISTRO` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `codigo` VARCHAR(20) NOT NULL,
+  `fecha_hora_ingreso_local` TIMESTAMP NOT NULL,
+  `fecha_hora_ingreso_utc` TIMESTAMP NOT NULL,
+  `fecha_hora_egreso_local` TIMESTAMP NOT NULL,
+  `fecha_hora_egreso_utc` TIMESTAMP NOT NULL,
+  `id_aeropuerto` INT NOT NULL,
+  `id_lote` INT NOT NULL,
+  PRIMARY KEY (`id`),
+  INDEX `fk_REGISTRO_AEROPUERTO1_idx` (`id_aeropuerto` ASC) VISIBLE,
+  UNIQUE INDEX `codigo_UNIQUE` (`codigo` ASC) VISIBLE,
+  INDEX `fk_REGISTRO_LOTE1_idx` (`id_lote` ASC) VISIBLE,
+  CONSTRAINT `fk_REGISTRO_AEROPUERTO1`
+    FOREIGN KEY (`id_aeropuerto`)
+    REFERENCES `morapack4d`.`AEROPUERTO` (`id`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION,
+  CONSTRAINT `fk_REGISTRO_LOTE1`
+    FOREIGN KEY (`id_lote`)
+    REFERENCES `morapack4d`.`LOTE` (`id`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION);
+
+
+-- -----------------------------------------------------
 -- Table `morapack4d`.`PRODUCTO`
 -- -----------------------------------------------------
 DROP TABLE IF EXISTS `morapack4d`.`PRODUCTO` ;
@@ -182,29 +189,6 @@ CREATE TABLE IF NOT EXISTS `morapack4d`.`PRODUCTO` (
   UNIQUE INDEX `codigo_UNIQUE` (`codigo` ASC) VISIBLE,
   INDEX `fk_PRODUCTO_LOTE_DE_PRODUCTOS_idx` (`id_lote` ASC) VISIBLE,
   CONSTRAINT `fk_PRODUCTO_LOTE_DE_PRODUCTOS`
-    FOREIGN KEY (`id_lote`)
-    REFERENCES `morapack4d`.`LOTE` (`id`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION);
-
-
--- -----------------------------------------------------
--- Table `morapack4d`.`REGISTRO_POR_LOTE`
--- -----------------------------------------------------
-DROP TABLE IF EXISTS `morapack4d`.`REGISTRO_POR_LOTE` ;
-
-CREATE TABLE IF NOT EXISTS `morapack4d`.`REGISTRO_POR_LOTE` (
-  `id_registro` INT NOT NULL,
-  `id_lote` INT NOT NULL,
-  PRIMARY KEY (`id_registro`, `id_lote`),
-  INDEX `fk_REGISTRO_DE_ALMACEN_has_LOTE_LOTE1_idx` (`id_lote` ASC) VISIBLE,
-  INDEX `fk_REGISTRO_DE_ALMACEN_has_LOTE_REGISTRO_DE_ALMACEN1_idx` (`id_registro` ASC) VISIBLE,
-  CONSTRAINT `fk_REGISTRO_DE_ALMACEN_has_LOTE_REGISTRO_DE_ALMACEN1`
-    FOREIGN KEY (`id_registro`)
-    REFERENCES `morapack4d`.`REGISTRO` (`id`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION,
-  CONSTRAINT `fk_REGISTRO_DE_ALMACEN_has_LOTE_LOTE1`
     FOREIGN KEY (`id_lote`)
     REFERENCES `morapack4d`.`LOTE` (`id`)
     ON DELETE NO ACTION

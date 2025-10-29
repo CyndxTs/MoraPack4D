@@ -15,7 +15,6 @@ import com.pucp.dp1.grupo4d.morapack.model.enums.TipoRuta;
 import com.pucp.dp1.grupo4d.morapack.util.G4D;
 
 public class Pedido {
-    private Integer id;
     private String codigo;
     private Cliente cliente;
     private Integer cantidadSolicitada;
@@ -27,7 +26,6 @@ public class Pedido {
     private Map<Ruta, Lote> lotesPorRuta;
 
     public Pedido() {
-        this.id = null;
         this.codigo = G4D.Generator.getUniqueString("PED");
         this.cantidadSolicitada = 0;
         this.lotesPorRuta = new HashMap<>();
@@ -40,7 +38,6 @@ public class Pedido {
 
     public Pedido replicar(Map<String, Cliente> poolClientes, Map<String,Aeropuerto> poolAeropuertos, Map<String, Lote> poolLotes, Map<String, Ruta> poolRutas, Map<String,Vuelo> poolVuelos, Map<String, Plan> poolPlanes) {
         Pedido pedido = new Pedido();
-        pedido.id = this.id;
         pedido.codigo = this.codigo;
         pedido.cliente = (this.cliente != null) ? poolClientes.computeIfAbsent(this.cliente.getCodigo(), codigo -> this.cliente.replicar()) : null;
         pedido.cantidadSolicitada = this.cantidadSolicitada;
@@ -68,14 +65,6 @@ public class Pedido {
     @Override
     public int hashCode() {
         return Objects.hash(codigo);
-    }
-
-    public Integer getId() {
-        return id;
-    }
-
-    public void setId(int id) {
-        this.id = id;
     }
 
     public String getCodigo() {

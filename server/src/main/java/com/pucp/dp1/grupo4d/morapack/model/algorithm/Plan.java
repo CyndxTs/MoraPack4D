@@ -16,7 +16,6 @@ import com.pucp.dp1.grupo4d.morapack.algorithm.Problematica;
 import com.pucp.dp1.grupo4d.morapack.util.G4D;
 
 public class Plan {
-    private Integer id;
     private String codigo;
     private Integer capacidad;
     private Double duracion;
@@ -29,7 +28,6 @@ public class Plan {
     private Aeropuerto destino;
 
     public Plan() {
-        this.id = null;
         this.codigo = G4D.Generator.getUniqueString("PLA");
         this.capacidad = 0;
         this.duracion = 0.0;
@@ -80,7 +78,6 @@ public class Plan {
 
     public Plan replicar(Map<String,Aeropuerto> poolAeropuertos, Map<String, Lote> poolLotes) {
         Plan plan = new Plan();
-        plan.id = this.id;
         plan.codigo = this.codigo;
         plan.capacidad = this.capacidad;
         plan.duracion = this.duracion;
@@ -105,14 +102,6 @@ public class Plan {
     @Override
     public int hashCode() {
         return codigo != null ? codigo.hashCode() : 0;
-    }
-
-    public Integer getId() {
-        return id;
-    }
-
-    public void setId(int id) {
-        this.id = id;
     }
 
     public String getCodigo() {

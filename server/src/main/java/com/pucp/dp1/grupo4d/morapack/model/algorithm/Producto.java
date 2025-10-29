@@ -9,17 +9,14 @@ package com.pucp.dp1.grupo4d.morapack.model.algorithm;
 import com.pucp.dp1.grupo4d.morapack.util.G4D;
 
 public class Producto {
-    private Integer id;
     private String codigo;
 
     public Producto() {
-        this.id = null;
-        this.codigo = G4D.Generator.getUniqueString("PRO");
+        this.codigo = G4D.Generator.getUniqueString("MPE");
     }
 
     public Producto replicar() {
         Producto producto = new Producto();
-        producto.id = this.id;
         producto.codigo = this.codigo;
         return producto;
     }
@@ -35,14 +32,6 @@ public class Producto {
     @Override
     public int hashCode() {
         return codigo != null ? codigo.hashCode() : 0;
-    }
-
-    public Integer getId() {
-        return id;
-    }
-
-    public void setId(int id) {
-        this.id = id;
     }
 
     public String getCodigo() {

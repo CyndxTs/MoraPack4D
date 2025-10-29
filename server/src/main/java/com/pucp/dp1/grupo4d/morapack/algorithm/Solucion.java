@@ -4,7 +4,7 @@
  >> File:       Solucion.java
  [**/
 
-package com.pucp.dp1.grupo4d.morapack.model.algorithm;
+package com.pucp.dp1.grupo4d.morapack.algorithm;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -13,18 +13,20 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import com.pucp.dp1.grupo4d.morapack.model.algorithm.*;
 import com.pucp.dp1.grupo4d.morapack.util.G4D;
 
 public class Solucion {
     private String codigo;
     private Double fitness;
-    private static final Double f_UA = 1.015;
+    public static Double f_UA = 1.015;
     private Double ratioPromedioDeUtilizacionTemporal;
-    private static final Double f_UT = 5000.0;
+    public static Double f_UT = 5000.0;
     private Double ratioPromedioDeDesviacionEspacial;
-    private static final Double f_DE = 2000.0;
+    public static Double f_DE = 2000.0;
     private Double ratioPromedioDeDisposicionOperacional;
-    private static final Double f_DO = 3000.0;
+    public static Double f_DO = 3000.0;
     private List<Pedido> pedidosAtendidos;
     private Set<Vuelo> vuelosEnTransito;
     private Set<Ruta> rutasEnOperacion;

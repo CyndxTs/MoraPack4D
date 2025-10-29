@@ -14,7 +14,6 @@ import java.util.TreeMap;
 import com.pucp.dp1.grupo4d.morapack.util.G4D;
 
 public class Aeropuerto {
-    private Integer id;
     private String codigo;
     private String ciudad;
     private String pais;
@@ -29,7 +28,6 @@ public class Aeropuerto {
     private List<Registro> registros;
 
     public Aeropuerto() {
-        this.id = null;
         this.codigo = G4D.Generator.getUniqueString("AER");
         this.capacidad = 0;
         this.registros = new ArrayList<>();
@@ -86,7 +84,6 @@ public class Aeropuerto {
 
     public Aeropuerto replicar(Map<String, Lote> poolLotes) {
         Aeropuerto aeropuerto = new Aeropuerto();
-        aeropuerto.id = this.id;
         aeropuerto.codigo = this.codigo;
         aeropuerto.ciudad = this.ciudad;
         aeropuerto.pais = this.pais;
@@ -118,14 +115,6 @@ public class Aeropuerto {
     @Override
     public int hashCode() {
         return codigo != null ? codigo.hashCode() : 0;
-    }
-
-    public Integer getId() {
-        return id;
-    }
-
-    public void setId(int id) {
-        this.id = id;
     }
 
     public String getCodigo() {

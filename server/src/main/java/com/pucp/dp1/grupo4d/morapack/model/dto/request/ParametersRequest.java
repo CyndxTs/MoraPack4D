@@ -12,25 +12,12 @@ public class ParametersRequest {
     private Double maxHorasRecojo = 2.0;
     private Double maxHorasEstancia = 12.0;
     private Double minHorasEstancia = 2.0;
+    private Double factorDeUmbralDeAberracion = 1.015;
+    private Double factorDeUtilizacionTemporal = 5000.0;
+    private Double factorDeDesviacionEspacial = 2000.0;
+    private Double factorDeDisposicionOperacional = 3000.0;
 
     public ParametersRequest() {}
-
-    public ParametersRequest(Integer eleMin, Integer eleMax, Integer kMin, Integer kMax, Integer tMax,
-                             Integer maxIntentos, Integer maxDiasEntregaIntracontinental,
-                             Integer maxDiasEntregaIntercontinental, Double maxHorasRecojo,
-                             Double maxHorasEstancia, Double minHorasEstancia) {
-        this.eleMin = eleMin;
-        this.eleMax = eleMax;
-        this.kMin = kMin;
-        this.kMax = kMax;
-        this.tMax = tMax;
-        this.maxIntentos = maxIntentos;
-        this.maxDiasEntregaIntracontinental = maxDiasEntregaIntracontinental;
-        this.maxDiasEntregaIntercontinental = maxDiasEntregaIntercontinental;
-        this.maxHorasRecojo = maxHorasRecojo;
-        this.maxHorasEstancia = maxHorasEstancia;
-        this.minHorasEstancia = minHorasEstancia;
-    }
 
     public Integer getEleMin() { return eleMin; }
     public void setEleMin(Integer eleMin) { this.eleMin = eleMin; }
@@ -54,4 +41,36 @@ public class ParametersRequest {
     public void setMaxHorasEstancia(Double maxHorasEstancia) { this.maxHorasEstancia = maxHorasEstancia; }
     public Double getMinHorasEstancia() { return minHorasEstancia; }
     public void setMinHorasEstancia(Double minHorasEstancia) { this.minHorasEstancia = minHorasEstancia; }
+    public Double getFactorDeUmbralDeAberracion() {
+        return factorDeUmbralDeAberracion;
+    }
+
+    public void setFactorDeUmbralDeAberracion(Double factorDeUmbralDeAberracion) {
+        this.factorDeUmbralDeAberracion = factorDeUmbralDeAberracion;
+    }
+
+    public Double getFactorDeUtilizacionTemporal() {
+        return factorDeUtilizacionTemporal;
+    }
+
+    public void setFactorDeUtilizacionTemporal(Double factorDeUtilizacionTemporal) {
+        this.factorDeUtilizacionTemporal = factorDeUtilizacionTemporal;
+    }
+
+    public Double getFactorDeDesviacionEspacial() {
+        return factorDeDesviacionEspacial;
+    }
+
+    public void setFactorDeDesviacionEspacial(Double factorDeDesviacionEspacial) {
+        this.factorDeDesviacionEspacial = factorDeDesviacionEspacial;
+    }
+
+    public Double getFactorDeDisposicionOperacional() {
+        return factorDeDisposicionOperacional;
+    }
+
+    public void setFactorDeDisposicionOperacional(Double factorDeDisposicionOperacional) {
+        this.factorDeDisposicionOperacional = factorDeDisposicionOperacional;
+    }
+
 }

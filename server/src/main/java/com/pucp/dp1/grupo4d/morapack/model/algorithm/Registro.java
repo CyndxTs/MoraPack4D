@@ -11,7 +11,6 @@ import java.util.Map;
 import com.pucp.dp1.grupo4d.morapack.util.G4D;
 
 public class Registro {
-    private Integer id;
     private String codigo;
     private LocalDateTime fechaHoraIngresoLocal;
     private LocalDateTime fechaHoraIngresoUTC;
@@ -20,13 +19,11 @@ public class Registro {
     private Lote lote;
 
     public Registro() {
-        this.id = null;
         this.codigo = G4D.Generator.getUniqueString("REG");
     }
 
     public Registro replicar(Map<String, Lote> poolLotes) {
         Registro registro = new Registro();
-        registro.id = this.id;
         registro.codigo = this.codigo;
         registro.fechaHoraIngresoLocal = this.fechaHoraIngresoLocal;
         registro.fechaHoraIngresoUTC = this.fechaHoraIngresoUTC;
@@ -47,14 +44,6 @@ public class Registro {
     @Override
     public int hashCode() {
         return codigo != null ? codigo.hashCode() : 0;
-    }
-
-    public Integer getId() {
-        return this.id;
-    }
-
-    public void setId(int id) {
-        this.id = id;
     }
 
     public String getCodigo() {
