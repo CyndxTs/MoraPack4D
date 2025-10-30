@@ -11,10 +11,7 @@ import com.pucp.dp1.grupo4d.morapack.repository.ClienteRepository;
 import com.pucp.dp1.grupo4d.morapack.util.G4D;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.Optional;
-import java.util.Scanner;
+import java.util.*;
 
 @Service
 public class ClienteService {
@@ -61,21 +58,15 @@ public class ClienteService {
         return clienteRepository.findByCorreo(correo).isPresent();
     }
 
-    //
     public void importarDesdeArchivo(MultipartFile archivo) {
-        // Declaracion de variables
-        int cantUsu = 0;
+        List<ClienteEntity> clientes = new ArrayList<>();
         String linea;
         Scanner archivoSC = null, lineaSC;
-        // Carga de datos
         try {
             G4D.Logger.logf("Cargando clientes desde '%s'..%n", archivo.getName());
-            // Inicializaion del archivo y scanner
             archivoSC = new Scanner(archivo.getInputStream(), G4D.getFileCharset(archivo));
-            // Iterativa de lectura y carga
             while (archivoSC.hasNextLine()) {
                 linea = archivoSC.nextLine().trim();
-                // Inicializacion de scanner de linea
                 lineaSC = new Scanner(linea);
                 lineaSC.useDelimiter("\\s{2,}");
                 ClienteEntity cliente = new ClienteEntity();
@@ -83,10 +74,10 @@ public class ClienteService {
                 cliente.setNombre(lineaSC.next());
                 cliente.setCorreo(lineaSC.next());
                 cliente.setContrasenia(lineaSC.next());
-                save(cliente);
-                cantUsu++;
+                clientes.add(cliente);
                 lineaSC.close();
             }
+            clientes.forEach(this::save);
         } catch (NoSuchElementException e) {
             G4D.Logger.logf_err("[X] FORMATO DE ARCHIVO INVALIDO! (RUTA: '%s')%n", archivo.getName());
             System.exit(1);
@@ -96,6 +87,6 @@ public class ClienteService {
         } finally {
             if (archivoSC != null) archivoSC.close();
         }
-        G4D.Logger.logf("[<] CLIENTES CARGADOS! ('%d' usuarios)%n", cantUsu);
+        G4D.Logger.logf("[<] CLIENTES CARGADOS! ('%d')%n", clientes.size());
     }
 }

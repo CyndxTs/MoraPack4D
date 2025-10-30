@@ -60,7 +60,6 @@ public class GVNS {
         G4D.Logger.Stats.log_stat_local_sol();
         imprimirSolucion(x, "SolucionInicial.txt");
         this.solucionINI = x;
-        /*
         // Optimización inicial (Variable Neighborhood Descent)
         G4D.Logger.Stats.set_local_start();
         G4D.Logger.log("Realizando optimización inicial.. ");
@@ -78,7 +77,6 @@ public class GVNS {
         G4D.Logger.logf("[+] OPTIMIZACION FINAL REALIZADA! (FITNESS: %.3f)%n", x.getFitness());
         G4D.Logger.Stats.log_stat_local_sol();
         imprimirSolucion(x, "SolucionGVNS.txt");
-         */
         this.solucionVNS = x;
         G4D.Logger.Stats.set_global_duration();
         G4D.Logger.Stats.log_stat_global_sol();
@@ -87,7 +85,7 @@ public class GVNS {
     private void solucionInicial(Problematica problematica, Solucion solucion) {
         G4D.Logger.logln("[NN]");
         // Declaracion de variables
-        List<Aeropuerto> origenes = new ArrayList<>(problematica.origenes.values());
+        List<Aeropuerto> origenes = new ArrayList<>(problematica.origenes);
         List<Plan> planes = problematica.planes;
         List<Pedido> pedidos = problematica.pedidos;
         Set<Vuelo> vuelosEnTransito = new HashSet<>();

@@ -1,10 +1,15 @@
+/**]
+ >> Project:    MoraPack
+ >> Author:     Grupo 4D
+ >> File:       UserResponse.java
+ [**/
+
 package com.pucp.dp1.grupo4d.morapack.model.dto.response;
 
 import com.pucp.dp1.grupo4d.morapack.model.entity.AdministradorEntity;
 import com.pucp.dp1.grupo4d.morapack.model.entity.ClienteEntity;
 
 public class UserResponse {
-    private Integer id;
     private String codigo;
     private String nombre;
     private String correo;
@@ -12,7 +17,6 @@ public class UserResponse {
     private String estado;
 
     public UserResponse(ClienteEntity cliente) {
-        this.id = cliente.getId();
         this.codigo = cliente.getCodigo();
         this.nombre = cliente.getNombre();
         this.correo = cliente.getCorreo();
@@ -21,7 +25,6 @@ public class UserResponse {
     }
 
     public UserResponse(AdministradorEntity administrador) {
-        this.id = administrador.getId();
         this.codigo = administrador.getCodigo();
         this.nombre = administrador.getNombre();
         this.correo = administrador.getCorreo();
@@ -29,8 +32,6 @@ public class UserResponse {
         this.tipoUsuario = "ADMINISTRADOR";
     }
 
-    public Integer getId() { return id; }
-    public void setId(Integer id) { this.id = id; }
     public String getCodigo() { return codigo; }
     public void setCodigo(String codigo) { this.codigo = codigo; }
     public String getNombre() { return nombre; }

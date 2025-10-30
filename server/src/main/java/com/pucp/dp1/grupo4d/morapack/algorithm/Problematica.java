@@ -1,3 +1,9 @@
+/**]
+ >> Project:    MoraPack
+ >> Author:     Grupo 4D
+ >> File:       Problematica.java
+ [**/
+
 package com.pucp.dp1.grupo4d.morapack.algorithm;
 
 import com.pucp.dp1.grupo4d.morapack.adapter.AeropuertoAdapter;
@@ -20,12 +26,17 @@ import com.pucp.dp1.grupo4d.morapack.util.G4D;
 import java.util.*;
 
 public class Problematica {
-
     public static Integer MAX_DIAS_ENTREGA_INTRACONTINENTAL = 2;
     public static Integer MAX_DIAS_ENTREGA_INTERCONTINENTAL = 3;
     public static Double MAX_HORAS_RECOJO = 2.0;
     public static Double MIN_HORAS_ESTANCIA = 1.0;
     public static Double MAX_HORAS_ESTANCIA = 12.0;
+    public static List<String> CODIGOS_DE_ORIGENES = List.of("SPIM", "EBCI", "UBBB");
+    public List<Aeropuerto> origenes;
+    public List<Aeropuerto> destinos;
+    public List<Plan> planes;
+    public List<Cliente> clientes;
+    public List<Pedido> pedidos;
     private final AeropuertoService aeropuertoService;
     private final ClienteService clienteService;
     private final PlanService planService;
@@ -34,11 +45,6 @@ public class Problematica {
     private final ClienteAdapter clienteAdapter;
     private final PlanAdapter planAdapter;
     private final PedidoAdapter pedidoAdapter;
-    public Map<String, Aeropuerto> origenes;
-    public List<Aeropuerto> destinos;
-    public List<Plan> planes;
-    public List<Cliente> clientes;
-    public List<Pedido> pedidos;
 
     public Problematica(AeropuertoService aeropuertoService,
                         ClienteService clienteService,
@@ -56,10 +62,7 @@ public class Problematica {
         this.clienteAdapter = clienteAdapter;
         this.planAdapter = planAdapter;
         this.pedidoAdapter = pedidoAdapter;
-        this.origenes = new HashMap<>();
-        origenes.put("SPIM", null);
-        origenes.put("EBCI", null);
-        origenes.put("UBBB", null);
+        this.origenes = new ArrayList<>();
         this.destinos = new ArrayList<>();
         this.planes = new ArrayList<>();
         this.clientes = new ArrayList<>();
@@ -72,8 +75,8 @@ public class Problematica {
         List<AeropuertoEntity> aeropuertosEntities = aeropuertoService.findAll();
         for (AeropuertoEntity entity : aeropuertosEntities) {
             Aeropuerto aeropuerto = aeropuertoAdapter.toAlgorithm(entity);
-            if (origenes.containsKey(aeropuerto.getCodigo())) {
-                origenes.put(aeropuerto.getCodigo(), aeropuerto);
+            if (CODIGOS_DE_ORIGENES.contains(aeropuerto.getCodigo())) {
+                origenes.add(aeropuerto);
             } else {
                 destinos.add(aeropuerto);
             }

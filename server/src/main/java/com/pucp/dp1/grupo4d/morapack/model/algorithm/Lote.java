@@ -6,8 +6,6 @@
 
 package com.pucp.dp1.grupo4d.morapack.model.algorithm;
 
-import java.util.ArrayList;
-import java.util.List;
 import com.pucp.dp1.grupo4d.morapack.util.G4D;
 
 public class Lote {

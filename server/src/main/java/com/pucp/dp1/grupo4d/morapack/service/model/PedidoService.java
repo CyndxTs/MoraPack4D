@@ -14,7 +14,6 @@ import com.pucp.dp1.grupo4d.morapack.util.G4D;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -63,21 +62,15 @@ public class PedidoService {
         return pedidoRepository.findByCodigo(codigo).isPresent();
     }
 
-    //
     public void importarDesdeArchivo(MultipartFile archivo) {
-        // Declaracion de variables
-        int numPed = 0;
         String linea;
         Scanner archivoSC = null, lineaSC;
-        // Carga de datos
+        List<PedidoEntity> pedidos = new ArrayList<>();
         try {
             G4D.Logger.logf("Cargando pedidos desde '%s'..%n",archivo.getName());
-            // Inicializaion del archivo y scanner
             archivoSC = new Scanner(archivo.getInputStream(), G4D.getFileCharset(archivo));
-            // Iterativa de lectura y carga
             while (archivoSC.hasNextLine()) {
                 linea = archivoSC.nextLine().trim();
-                // Inicializacion de scanner de linea
                 lineaSC = new Scanner(linea);
                 lineaSC.useDelimiter("-");
                 PedidoEntity pedido = new PedidoEntity();
@@ -99,12 +92,13 @@ public class PedidoService {
                         pedido.setFechaHoraGeneracionLocal(fechaHoraCreacionLocal);
                         pedido.setFechaHoraGeneracionUTC(G4D.toUTC(fechaHoraCreacionLocal, pedido.getDestino().getHusoHorario()));
                         pedido.setCodigo(G4D.Generator.getUniqueString("PED"));
-                        save(pedido);
-                        numPed++;
+                        pedidos.add(pedido);
                     }
                 }
                 lineaSC.close();
             }
+            pedidos.sort(Comparator.comparing(PedidoEntity::getFechaHoraGeneracionUTC));
+            pedidos.forEach(this::save);
         } catch (NoSuchElementException e) {
             G4D.Logger.logf_err("[X] FORMATO DE ARCHIVO INVALIDO! (RUTA: '%s')%n", archivo.getName());
             System.exit(1);
@@ -114,6 +108,6 @@ public class PedidoService {
         } finally {
             if (archivoSC != null) archivoSC.close();
         }
-        G4D.Logger.logf("[<] PEDIDOS CARGADOS! ('%d' pedidos )%n", numPed);
+        G4D.Logger.logf("[<] PEDIDOS CARGADOS! ('%d' pedidos )%n", pedidos.size());
     }
 }

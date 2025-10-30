@@ -14,10 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.Optional;
-import java.util.Scanner;
+import java.util.*;
 
 @Service
 public class PlanService {
@@ -59,22 +56,16 @@ public class PlanService {
         return planRepository.findByCodigo(codigo).isPresent();
     }
 
-    // Cargas de datos de planes de vuelo
     public void importarDesdeArchivo(MultipartFile archivo) {
-        // Declaracion de variables
-        int cantPlanes = 0;
+        List<PlanEntity> planes = new ArrayList<>();
         String linea;
         Scanner archivoSC = null, lineaSC;
-        // Carga de datos
         try {
             G4D.Logger.logf("Cargando planes de vuelo desde '%s'..%n",archivo.getName());
-            // Inicializaion del archivo y scanner
             archivoSC = new Scanner(archivo.getInputStream(), G4D.getFileCharset(archivo));
-            // Iterativa de lectura y carga
             while (archivoSC.hasNextLine()) {
                 linea = archivoSC.nextLine().trim();
                 if (linea.isEmpty()) continue;
-                // Inicializacion de scanner de linea
                 lineaSC = new Scanner(linea);
                 lineaSC.useDelimiter("-");
                 PlanEntity plan = new PlanEntity();
@@ -92,13 +83,13 @@ public class PlanService {
                         plan.setDuracion(G4D.getElapsedHours(plan.getHoraSalidaUTC(), plan.getHoraLlegadaUTC()));
                         plan.setCapacidad(lineaSC.nextInt());
                         plan.setCodigo(G4D.Generator.getUniqueString("PLA"));
-                        save(plan);
-                        cantPlanes++;
+                        planes.add(plan);
                     }
                 }
                 lineaSC.close();
             }
-            G4D.Logger.logf("[<] PLANES DE VUELO CARGADOS! ('%d' planes)%n", cantPlanes);
+            planes.forEach(this::save);
+            G4D.Logger.logf("[<] PLANES DE VUELO CARGADOS! ('%d')%n", planes.size());
         } catch (NoSuchElementException e) {
             G4D.Logger.logf_err("[X] FORMATO DE ARCHIVO INVALIDO! (RUTA: '%s')%n", archivo.getName());
             System.exit(1);

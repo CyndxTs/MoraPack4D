@@ -12,10 +12,7 @@ import com.pucp.dp1.grupo4d.morapack.util.G4D;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.Optional;
-import java.util.Scanner;
+import java.util.*;
 
 @Service
 public class AeropuertoService {
@@ -62,29 +59,22 @@ public class AeropuertoService {
         return aeropuertoRepository.findByAlias(alias).isPresent();
     }
 
-    //
     public void importarDesdeArchivo(MultipartFile archivo) {
-        // Declaracion de variables
-        List<String> origenes = List.of("SPIM","EBCI","UBBB");
-        int numOrig = 0, numDest = 0;
+        List<String> origCods = List.of("SPIM","EBCI","UBBB");
+        List<AeropuertoEntity> origenes = new ArrayList<>();
+        List<AeropuertoEntity> destinos = new ArrayList<>();
         String continente = "", linea;
         Scanner archivoSC = null, lineaSC;
-        // Carga de datos
         try {
             G4D.Logger.logf("Cargando aeropuertos desde '%s'..%n", archivo.getName());
-            // Inicializaion del archivo y scanner
             archivoSC = new Scanner(archivo.getInputStream(), G4D.getFileCharset(archivo));
-            // Descarte de cabezera
             if (archivoSC.hasNextLine()) archivoSC.nextLine();
             if (archivoSC.hasNextLine()) archivoSC.nextLine();
-            // Iterativa de lectura y carga
             while (archivoSC.hasNextLine()) {
                 linea = archivoSC.nextLine().trim();
-                if (linea.isEmpty()) continue; // Validacion por linea vacia
-                // Inicializacion de scanner de linea
+                if (linea.isEmpty()) continue;
                 lineaSC = new Scanner(linea);
-                lineaSC.useDelimiter("\\s{2,}"); // Configuracion de separador a "2 espacios"
-                // Validacion por tipo de linea a partir de primer caracter
+                lineaSC.useDelimiter("\\s{2,}");
                 if (Character.isDigit(linea.charAt(0))) {
                     AeropuertoEntity aeropuerto = new AeropuertoEntity();
                     lineaSC.nextInt();
@@ -102,18 +92,19 @@ public class AeropuertoService {
                     lineaSC.next();
                     aeropuerto.setLongitudDMS(lineaSC.next() + " " + lineaSC.next() + " " + lineaSC.next() + " " + lineaSC.next());
                     aeropuerto.setLongitudDEC(G4D.toLonDEC(aeropuerto.getLongitudDMS()));
-                    if (origenes.contains(aeropuerto.getCodigo())) {
-                        numOrig++;
+                    if (origCods.contains(aeropuerto.getCodigo())) {
                         aeropuerto.setEsSede(true);
+                        origenes.add(aeropuerto);
                     } else {
-                        numDest++;
                         aeropuerto.setEsSede(false);
+                        destinos.add(aeropuerto);
                     }
-                    save(aeropuerto);
                 } else continente = lineaSC.next();
                 lineaSC.close();
             }
-            G4D.Logger.logf("[<] AEROPUERTOS CARGADOS! ('%d' origenes | '%d' destinos)%n", numOrig, numDest);
+            origenes.forEach(this::save);
+            destinos.forEach(this::save);
+            G4D.Logger.logf("[<] AEROPUERTOS CARGADOS! ('%d' origenes | '%d' destinos)%n", origenes.size(), destinos.size());
         } catch (NoSuchElementException e) {
             G4D.Logger.logf_err("[X] FORMATO DE ARCHIVO INVALIDO! (RUTA: '%s')%n", archivo.getName());
             System.exit(1);

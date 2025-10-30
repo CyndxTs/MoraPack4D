@@ -57,13 +57,13 @@ public class AeropuertoEntity {
     @Column(name = "es_sede")
     private Boolean esSede = false;
 
-    @OneToMany(mappedBy = "destino", fetch = FetchType.LAZY)
-    @JsonManagedReference
-    private List<PedidoEntity> pedidosComoDestino = new ArrayList<>();
-
     @OneToMany(mappedBy = "aeropuerto", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference
     private List<RegistroEntity> registros = new ArrayList<>();
+
+    @OneToMany(mappedBy = "destino", fetch = FetchType.LAZY)
+    @JsonManagedReference
+    private List<PedidoEntity> pedidosComoDestino = new ArrayList<>();
 
     @OneToMany(mappedBy = "origen", fetch = FetchType.LAZY)
     @JsonManagedReference

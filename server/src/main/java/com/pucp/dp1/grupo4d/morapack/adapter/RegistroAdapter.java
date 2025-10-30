@@ -7,7 +7,9 @@
 package com.pucp.dp1.grupo4d.morapack.adapter;
 
 import com.pucp.dp1.grupo4d.morapack.model.algorithm.Registro;
+import com.pucp.dp1.grupo4d.morapack.model.entity.LoteEntity;
 import com.pucp.dp1.grupo4d.morapack.model.entity.RegistroEntity;
+import com.pucp.dp1.grupo4d.morapack.service.model.LoteService;
 import com.pucp.dp1.grupo4d.morapack.service.model.RegistroService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -19,6 +21,9 @@ public class RegistroAdapter {
 
     @Autowired
     private RegistroService registroService;
+
+    @Autowired
+    private LoteService loteService;
 
     private final LoteAdapter loteAdapter;
 
@@ -59,8 +64,11 @@ public class RegistroAdapter {
         entity.setFechaHoraIngresoUTC(algorithm.getFechaHoraIngresoUTC());
         entity.setFechaHoraEgresoLocal(algorithm.getFechaHoraEgresoLocal());
         entity.setFechaHoraEgresoUTC(algorithm.getFechaHoraEgresoUTC());
-        entity.setLote(loteAdapter.toEntity(algorithm.getLote()));
-        if (entity.getLote() != null) entity.getLote().getRegistros().add(entity);
+        String codigoLote = algorithm.getLote().getCodigo();
+        LoteEntity loteEntity = loteService.findByCodigo(codigoLote).orElse(null);
+        if (loteEntity != null) {
+            entity.setLote(loteEntity);
+        }
         poolEntity.put(entity.getCodigo(), entity);
         return entity;
     }

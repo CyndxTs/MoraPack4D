@@ -40,7 +40,7 @@ public class AlgorithmController {
     }
 
     @PostMapping("/planificar")
-    public ResponseEntity<PlanificationResponse> importarDesdeArchivo(@RequestBody PlanificationRequest request) {
+    public ResponseEntity<PlanificationResponse> planificar(@RequestBody PlanificationRequest request) {
         try {
             PlanificationResponse response = algorithmService.planificar(request);
             if (response.isExito()) {
@@ -50,7 +50,7 @@ public class AlgorithmController {
             }
         } catch (Exception e) {
             return ResponseEntity.internalServerError()
-                    .body(new PlanificationResponse(false, "ERROR INTERNO: " + e.getMessage()));
+                    .body(new PlanificationResponse(false, "ERROR INTERNO: " + e.getMessage(), null, null));
         }
     }
 }
