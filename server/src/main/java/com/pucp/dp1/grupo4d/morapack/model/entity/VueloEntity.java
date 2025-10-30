@@ -7,6 +7,7 @@
 package com.pucp.dp1.grupo4d.morapack.model.entity;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -15,6 +16,7 @@ import java.util.Objects;
 
 @Entity
 @Table(name = "VUELO", schema = "morapack4d")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class VueloEntity {
 
     @Id

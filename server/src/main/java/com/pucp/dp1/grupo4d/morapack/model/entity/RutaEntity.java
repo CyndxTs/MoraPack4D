@@ -7,6 +7,7 @@
 package com.pucp.dp1.grupo4d.morapack.model.entity;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.pucp.dp1.grupo4d.morapack.model.enums.TipoRuta;
 import jakarta.persistence.*;
@@ -17,6 +18,7 @@ import java.util.Objects;
 
 @Entity
 @Table(name = "RUTA", schema = "morapack4d")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class RutaEntity {
 
     @Id
