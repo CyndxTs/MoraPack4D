@@ -7,6 +7,7 @@
 package com.pucp.dp1.grupo4d.morapack.service.model;
 
 import com.pucp.dp1.grupo4d.morapack.model.entity.ClienteEntity;
+import com.pucp.dp1.grupo4d.morapack.model.enums.EstadoUsuario;
 import com.pucp.dp1.grupo4d.morapack.repository.ClienteRepository;
 import com.pucp.dp1.grupo4d.morapack.util.G4D;
 import org.springframework.stereotype.Service;
@@ -89,4 +90,22 @@ public class ClienteService {
         }
         G4D.Logger.logf("[<] CLIENTES CARGADOS! ('%d')%n", clientes.size());
     }
+
+    //Filtrado
+    public List<ClienteEntity> filtrarClientes(String nombre, String correo, String estado) {
+        EstadoUsuario estadoEnum = null;
+        if (estado != null && !estado.isBlank()) {
+            try {
+                estadoEnum = EstadoUsuario.valueOf(estado.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                return new ArrayList<>(); // Si el estado no es válido, devolver vacío
+            }
+        }
+
+        String nombreFiltro = (nombre == null || nombre.isBlank()) ? null : nombre;
+        String correoFiltro = (correo == null || correo.isBlank()) ? null : correo;
+
+        return clienteRepository.filtrarClientes(nombreFiltro, correoFiltro, estadoEnum);
+    }
+
 }

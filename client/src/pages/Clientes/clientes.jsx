@@ -3,14 +3,14 @@ import "./clientes.scss";
 import { ButtonAdd, Input, Radio, Table, LoadingOverlay, Pagination, Notification, SidebarActions } from "../../components/UI/ui";
 import plus from "../../assets/icons/plus.svg";
 import hideIcon from "../../assets/icons/hide-sidebar.png";
-import { listarClientes } from "../../services/clienteService";
+import { listarClientes, filtrarClientes  } from "../../services/clienteService";
 import { importarClientes } from "../../services/generalService";
 
 export default function Clientes() {
   const [collapsed, setCollapsed] = useState(false);
   const [nombreFiltro, setNombreFiltro] = useState("");
   const [correoFiltro, setCorreoFiltro] = useState("");
-  const [estadoFiltro, setEstadoFiltro] = useState("");
+  const [estadoFiltro, setEstadoFiltro] = useState("ONLINE");
 
   const [clientes, setClientes] = useState([]);
   const [nombre, setNombre] = useState("");
@@ -24,13 +24,14 @@ export default function Clientes() {
 
   const showNotification = (type, message) => {
     setNotification({ type, message });
-    setTimeout(() => setNotification(null), 10000);
+    setTimeout(() => setNotification(null), 5000);
   };
 
   useEffect(() => {
+    setEstadoFiltro("ONLINE");
     const fetchClientes = async () => {
       try {
-        const data = await listarClientes();
+        const data = await filtrarClientes(null, null, "ONLINE");
         setClientes(data);
       } catch (err) {
         console.error(err);
@@ -65,6 +66,68 @@ export default function Clientes() {
       setArchivo(e.target.files[0]);
     } else {
       setArchivo(null);
+    }
+  };
+
+  //Filtrar
+  const handleFilter = async () => {
+    const noFilters =
+      !nombreFiltro.trim() &&
+      !correoFiltro.trim() &&
+      !estadoFiltro;
+
+    if (noFilters) {
+      showNotification("info", "No hay filtros para aplicar");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const data = await filtrarClientes(
+        nombreFiltro.trim() || null,
+        correoFiltro.trim() || null,
+        estadoFiltro || null
+      );
+      setClientes(data);
+      setCurrentPage(1);
+      showNotification("success", "Filtro aplicado correctamente");
+    } catch (error) {
+      console.error(error);
+      showNotification("danger", "Error al filtrar clientes");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
+
+  //Limpiar filtros
+  const handleCleanFilters = async () => {
+    const isClean =
+      !nombreFiltro.trim() &&
+      !correoFiltro.trim() &&
+      estadoFiltro === "ONLINE";
+
+    if (isClean) {
+      showNotification("info", "No hay filtros que limpiar");
+      return;
+    }
+
+    setNombreFiltro("");
+    setCorreoFiltro("");
+    setEstadoFiltro("ONLINE");
+
+    try {
+      setLoading(true);
+      const data = await filtrarClientes(null, null, "ONLINE");
+      setClientes(data);
+      setCurrentPage(1);
+      showNotification("info", "Filtros limpiados");
+    } catch (error) {
+      console.error(error);
+      showNotification("danger", "Error al limpiar filtros");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -174,11 +237,18 @@ export default function Clientes() {
               checked={estadoFiltro === "OFFLINE"}
               onChange={(e) => setEstadoFiltro(e.target.value)}
             />
+            <Radio
+              name="estadoCliente"
+              label="Disabled"
+              value="DISABLED"
+              checked={estadoFiltro === "DISABLED"}
+              onChange={(e) => setEstadoFiltro(e.target.value)}
+            />
           </div>
 
           <SidebarActions 
-            onFilter={() => console.log("Filtrar clicado")}
-            onClean={() => console.log("Limpiar clicado")}
+            onFilter={handleFilter}
+            onClean={handleCleanFilters}
           />
         </div>
       </aside>

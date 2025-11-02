@@ -25,5 +25,13 @@ public class ClienteController {
         return clienteService.findAll();
     }
 
-    
+    //Filtrado
+    @GetMapping("/filtrar")
+    public List<ClienteEntity> filtrarClientes(
+            @RequestParam(required = false) String nombre,
+            @RequestParam(required = false) String correo,
+            @RequestParam(required = false) String estado
+    ) {
+        return clienteService.filtrarClientes(nombre, correo, estado);
+    }
 }

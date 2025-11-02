@@ -11,3 +11,19 @@ export const listarClientes = async () => {
     throw error;
   }
 };
+
+//filtrado
+export const filtrarClientes = async (nombre, correo, estado) => {
+  try {
+    const params = {};
+    if (nombre) params.nombre = nombre;
+    if (correo) params.correo = correo;
+    if (estado) params.estado = estado;
+
+    const response = await axios.get(`${API_URL}/filtrar`, { params });
+    return response.data;
+  } catch (error) {
+    console.error("Error al filtrar clientes:", error);
+    throw error;
+  }
+};
