@@ -50,6 +50,12 @@ export default function Clientes() {
     { label: "Acciones", key: "acciones" },
   ];
 
+  const estadoColors = {
+    ONLINE: "#2E7D32", 
+    OFFLINE: "#616161",  
+    DISABLED: "#C62828", 
+  };
+
   // --- Paginación ---
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 20;
@@ -150,7 +156,7 @@ export default function Clientes() {
       setProcessing(true);
 
       if (archivo) {
-        // 👇 Usamos AlgorithmController
+        //  Usamos AlgorithmController
         await importarClientes(archivo, "CLIENTES");
         showNotification("success", "Clientes importados correctamente");
       } else {
@@ -269,7 +275,7 @@ export default function Clientes() {
           <LoadingOverlay text="Cargando clientes..." />
         ) : (
           <>
-            <Table headers={headers} data={currentClientes} />
+            <Table headers={headers} data={currentClientes} statusColors={estadoColors}/>
             <Pagination
               totalItems={clientes.length}
               itemsPerPage={itemsPerPage}

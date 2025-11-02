@@ -1,6 +1,7 @@
 // src/components/ui/ui.jsx
 import React, { useState } from "react";
 import "./ui.scss";
+import StatusBadge from "../Status/status";
 
 import planeMora from "../../assets/icons/planeMora.svg"; 
 import viewIcon from "../../assets/icons/view.svg";
@@ -126,7 +127,7 @@ export function Dropdown({ options = [], onSelect, placeholder = "Seleccionar...
 }
 
 
-export function Table({ headers = [], data = [] }) {
+export function Table({ headers = [], data = [], statusColors = {} }) {
   return (
     <div className="table-container">
       <table className="custom-table">
@@ -143,15 +144,42 @@ export function Table({ headers = [], data = [] }) {
             data.map((row, i) => (
               <tr key={i}>
                 {headers.map((h, j) => {
+                  // Columna de acciones
                   if (h.key === "acciones") {
                     return (
                       <td key={j} className="acciones">
-                        <img src={viewIcon} alt="Ver" title="Ver" />
-                        <img src={editIcon} alt="Editar" title="Editar" />
-                        <img src={deleteIcon} alt="Eliminar" title="Eliminar" />
+                        <img
+                          src={viewIcon}
+                          alt="Ver"
+                          title="Ver"
+                          className="icon"
+                        />
+                        <img
+                          src={editIcon}
+                          alt="Editar"
+                          title="Editar"
+                          className="icon"
+                        />
+                        <img
+                          src={deleteIcon}
+                          alt="Eliminar"
+                          title="Eliminar"
+                          className="icon"
+                        />
                       </td>
                     );
                   }
+
+                  // Columna de estado (rectángulo de color)
+                  if (h.key === "estado") {
+                    return (
+                      <td key={j}>
+                        <StatusBadge value={row[h.key]} colorMap={statusColors} />
+                      </td>
+                    );
+                  }
+
+                  // Celdas normales
                   return <td key={j}>{row[h.key] ?? ""}</td>;
                 })}
               </tr>
