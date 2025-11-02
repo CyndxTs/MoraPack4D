@@ -24,4 +24,6 @@ public class ClienteController {
     public List<ClienteEntity> listar() {
         return clienteService.findAll();
     }
+
+    
 }

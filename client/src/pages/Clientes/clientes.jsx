@@ -1,53 +1,130 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "./clientes.scss";
-import { ButtonAdd, Input, Dropdown, Table } from "../../components/UI/ui";
-
+import { ButtonAdd, Input, Radio, Table, LoadingOverlay, Pagination, Notification, SidebarActions } from "../../components/UI/ui";
 import plus from "../../assets/icons/plus.svg";
 import hideIcon from "../../assets/icons/hide-sidebar.png";
+import { listarClientes } from "../../services/clienteService";
+import { importarClientes } from "../../services/generalService";
 
 export default function Clientes() {
   const [collapsed, setCollapsed] = useState(false);
-  const [orden, setOrden] = useState("");
   const [nombreFiltro, setNombreFiltro] = useState("");
+  const [correoFiltro, setCorreoFiltro] = useState("");
+  const [estadoFiltro, setEstadoFiltro] = useState("");
 
+  const [clientes, setClientes] = useState([]);
   const [nombre, setNombre] = useState("");
   const [correo, setCorreo] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [archivo, setArchivo] = useState(null);
 
+  const [loading, setLoading] = useState(true);
+  const [processing, setProcessing] = useState(false); 
+  const [notification, setNotification] = useState(null);
+
+  const showNotification = (type, message) => {
+    setNotification({ type, message });
+    setTimeout(() => setNotification(null), 10000);
+  };
+
+  useEffect(() => {
+    const fetchClientes = async () => {
+      try {
+        const data = await listarClientes();
+        setClientes(data);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchClientes();
+  }, []);
+
   const headers = [
     { label: "Código", key: "codigo" },
     { label: "Nombre completo", key: "nombre" },
     { label: "Correo", key: "correo" },
+    { label: "Estado", key: "estado" },
     { label: "Acciones", key: "acciones" },
   ];
 
-  // Datos de ejemplo
-  const data = [
-    { codigo: "0000001", nombre: "Victoria Isabella Sofía Pacheco Ramírez", correo: "blink.frost_crux@G4D.com" },
-    { codigo: "0000002", nombre: "Elena Denisovna", correo: "pulse_onyx.glint@G4D.com" },
-    { codigo: "0000003", nombre: "Ji-hun Lim", correo: "blu.shine_pulse@G4D.com" },
-    { codigo: "0000004", nombre: "Hye-jin Sim", correo: "crux_joy.fizz.crux51@G4D.com" },
-    { codigo: "0000005", nombre: "Ha-eun Ye-seo Baek", correo: "lunar_zen.lux@G4D.com" },
-  ];
+  // --- Paginación ---
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 20;
+
+  // Calcular los clientes visibles en esta página
+  const indexOfLast = currentPage * itemsPerPage;
+  const indexOfFirst = indexOfLast - itemsPerPage;
+  const currentClientes = clientes.slice(indexOfFirst, indexOfLast);
+
 
   // Manejo de archivo
   const handleFileChange = (e) => {
     if (e.target.files.length > 0) {
-      setArchivo(e.target.files[0].name);
+      setArchivo(e.target.files[0]);
     } else {
       setArchivo(null);
     }
   };
 
   // Manejo del modal
-  const handleAdd = () => {
-    console.log({ nombre, correo });
-    setIsModalOpen(false);
+  const handleAdd = async () => {
+    if (!archivo && (!nombre.trim() || !correo.trim())) {
+      showNotification(
+        "warning",
+        "Por favor selecciona un archivo o completa los campos antes de continuar."
+      );
+      return;
+    }
+
+    if (archivo && archivo.name !== "Clientes.txt") {
+      showNotification("warning", "El archivo debe llamarse exactamente 'Clientes.txt'.");
+      return;
+    }
+
+    try {
+      setProcessing(true);
+
+      if (archivo) {
+        // 👇 Usamos AlgorithmController
+        await importarClientes(archivo, "CLIENTES");
+        showNotification("success", "Clientes importados correctamente");
+      } else {
+        showNotification("success", "Cliente agregado correctamente");
+      }
+
+      const data = await listarClientes();
+      setClientes(data);
+      setIsModalOpen(false);
+      setArchivo(null);
+      setNombre("");
+      setCorreo("");
+    } catch (error) {
+      console.error(error);
+      showNotification("danger", "Error al agregar el cliente");
+    } finally {
+      setProcessing(false);
+    }
   };
+
 
   return (
     <div className="page">
+      {(loading || processing) && (
+        <LoadingOverlay
+          text={processing ? "Cargando clientes..." : "Cargando clientes..."}
+        />
+      )}
+
+      {notification && (
+        <Notification
+          type={notification.type}
+          message={notification.message}
+          onClose={() => setNotification(null)}
+        />
+      )}
+
       {/* Sidebar */}
       <aside className={`sidebar ${collapsed ? "collapsed" : ""}`}>
         <div className="sidebar-header">
@@ -73,16 +150,36 @@ export default function Clientes() {
           </div>
 
           <div className="filter-group">
-            <span className="sidebar-subtitle-strong">Orden</span>
-            <Dropdown
-              placeholder="Seleccionar..."
-              options={[
-                { label: "Ascendente", value: "ascendente" },
-                { label: "Descendente", value: "descendente" },
-              ]}
-              onSelect={(val) => setOrden(val)}
+            <span className="sidebar-subtitle-strong">Correo</span>
+            <Input
+              placeholder="Escribir..."
+              value={correoFiltro}
+              onChange={(e) => setCorreoFiltro(e.target.value)}
             />
           </div>
+
+          <div className="filter-group">
+            <span className="sidebar-subtitle-strong">Estado</span>
+            <Radio
+              name="estadoCliente"
+              label="Online"
+              value="ONLINE"
+              checked={estadoFiltro === "ONLINE"}
+              onChange={(e) => setEstadoFiltro(e.target.value)}
+            />
+            <Radio
+              name="estadoCliente"
+              label="Offline"
+              value="OFFLINE"
+              checked={estadoFiltro === "OFFLINE"}
+              onChange={(e) => setEstadoFiltro(e.target.value)}
+            />
+          </div>
+
+          <SidebarActions 
+            onFilter={() => console.log("Filtrar clicado")}
+            onClean={() => console.log("Limpiar clicado")}
+          />
         </div>
       </aside>
 
@@ -98,10 +195,19 @@ export default function Clientes() {
         </div>
 
         {/* Tabla de clientes */}
-        <Table
-          headers={headers}
-          data={data}
-        />
+        {loading ? (
+          <LoadingOverlay text="Cargando clientes..." />
+        ) : (
+          <>
+            <Table headers={headers} data={currentClientes} />
+            <Pagination
+              totalItems={clientes.length}
+              itemsPerPage={itemsPerPage}
+              currentPage={currentPage}
+              onPageChange={setCurrentPage}
+            />
+          </>
+        )}
       </section>
 
       {/* Modal */}
@@ -122,7 +228,7 @@ export default function Clientes() {
             </div>
 
             <div className="file-name">
-              {archivo || "Ningún archivo seleccionado"}
+              {archivo ? archivo.name : "Ningún archivo seleccionado"}
             </div>
 
             <div className="modal-body">
@@ -132,6 +238,7 @@ export default function Clientes() {
                 placeholder="Escribe el nombre"
                 value={nombre}
                 onChange={(e) => setNombre(e.target.value)}
+                disabled={!!archivo}
               />
 
               <label htmlFor="correoModal">Correo</label>
@@ -140,6 +247,7 @@ export default function Clientes() {
                 placeholder="Escribe el correo electrónico"
                 value={correo}
                 onChange={(e) => setCorreo(e.target.value)}
+                disabled={!!archivo}
               />
             </div>
 
