@@ -8,6 +8,7 @@ import 'leaflet/dist/leaflet.css';
 import L from "leaflet";
 
 import planeIconImg from "../../assets/icons/planeMora.svg";
+import { getAeropuertosMap  } from "../../services/aeropuertoService";
 
 export default function Simulacion() {
   const [collapsed, setCollapsed] = useState(false);
@@ -17,13 +18,18 @@ export default function Simulacion() {
   const [estadoVuelo, setEstadoVuelo] = useState({ enCurso: false, finalizado: false, cancelado: false });
   const [archivo, setArchivo] = useState(null);
   const [tipoSimulacion, setTipoSimulacion] = useState("");
-
+  //Aeropuertos
+  const [airports, setAirports] = useState(null);
+  const [loadingAirports, setLoadingAirports] = useState(true);
   // Controles de tiempo
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
   const [time, setTime] = useState(new Date().toTimeString().slice(0,5));
   const [seconds, setSeconds] = useState(0);
   const [timerRunning, setTimerRunning] = useState(false);
   const [timerActive, setTimerActive] = useState(false); // indica si inició cronómetro (start clickeado)
+
+  // Cargar aeropuertos del back una sola vez
+
 
   // Botones
   const [btnState, setBtnState] = useState({
@@ -127,7 +133,7 @@ export default function Simulacion() {
 
   //EJEMPLO
   // Coordenadas de vuelos
-  const airports = {
+  /*const airports = {
     SKBO: { name: "Bogotá", lat: 4.701, lng: -74.146, gmt: -5 },
     SEQM: { name: "Quito", lat: -0.1807, lng: -78.4678, gmt: -5 },
     SVMI: { name: "Caracas", lat: 10.6031, lng: -66.9906, gmt: -4 },
@@ -138,7 +144,7 @@ export default function Simulacion() {
     SABE: { name: "Buenos Aires", lat: -34.559, lng: -58.415, gmt: -3 },
     SGAS: { name: "Asunción", lat: -25.239, lng: -57.518, gmt: -4 },
     SUAA: { name: "Montevideo", lat: -34.789, lng: -56.264, gmt: -3 },
-  };
+  };*/
 
   const flightData = [
     { from: "SKBO", to: "SEQM", start: "03:34", end: "05:21", capacity: 300 },
@@ -150,7 +156,7 @@ export default function Simulacion() {
     { from: "SKBO", to: "SPIM", start: "01:58", end: "05:14", capacity: 340 },
     { from: "SPIM", to: "SKBO", start: "04:35", end: "08:51", capacity: 340 },
   ];
-
+/*
   const [flights, setFlights] = useState(
     flightData.map((f, i) => {
       const origin = airports[f.from];
@@ -176,8 +182,46 @@ export default function Simulacion() {
         position: { lat: origin.lat, lng: origin.lng },
       };
     })
-  );
-
+  );*/
+  const [flights, setFlights] = useState([]);
+  // 1) Cargar aeropuertos desde el back (solo una vez)
+  useEffect(() => {
+    const ac = new AbortController();
+    getAeropuertosMap(ac.signal)
+      .then(map => setAirports(map))
+      .catch(err => console.error("Error cargando aeropuertos:", err))
+      .finally(() => setLoadingAirports(false));
+    return () => ac.abort();
+  }, []);
+  // 2) Inicializar flights cuando airports ya esté disponible
+  useEffect(() => {
+    if (!airports) return;
+    const init = flightData.map((f, i) => {
+      const origin = airports[f.from];
+      const dest   = airports[f.to];
+      if (!origin || !dest) return null; // por si falta alguno en el back
+      const [startH, startM] = f.start.split(":").map(Number);
+      const [endH, endM]     = f.end.split(":").map(Number);
+      const durationMinutes  = (endH * 60 + endM) - (startH * 60 + startM);
+      const durationSec      = Math.max(durationMinutes * 60, 60);
+      return {
+        code: `${f.from}-${f.to}-${i + 1}`,
+        origin,
+        originName: origin.name,
+        destination: dest,
+        destinationName: dest.name,
+        startTime: f.start,
+        endTime: f.end,
+        capacity: f.capacity,
+        durationSec,
+        progress: 0,
+        arrived: false,
+        position: { lat: origin.lat, lng: origin.lng },
+        rotation: 0,
+      };
+    }).filter(Boolean);
+    setFlights(init);
+  }, [airports]);
   const createColoredIcon = (filterCss, rotation) =>
   L.divIcon({
     html: `<img src="${planeIconImg}" style="width:35px; transform: rotate(${rotation}deg); filter:${filterCss}; transition: transform 0.2s linear;">`,
