@@ -24,11 +24,11 @@ import java.util.List;
 public class AlgorithmController {
 
     private final AlgorithmService algorithmService;
-    private final AeropuertoService aeropuertoService;
+    //private final AeropuertoService aeropuertoService;
 
-    public AlgorithmController(AlgorithmService algorithmService, AeropuertoService aeropuertoService) {
+    public AlgorithmController(AlgorithmService algorithmService) {
         this.algorithmService = algorithmService;
-        this.aeropuertoService = aeropuertoService;
+        //this.aeropuertoService = aeropuertoService;
     }
 
     @PostMapping("/importar")
@@ -60,7 +60,8 @@ public class AlgorithmController {
                     .body(new PlanificationResponse(false, "ERROR INTERNO: " + e.getMessage(), null, null));
         }
     }
-    @GetMapping("/aeropuertos")//cargar aeropuertos
+    /*
+    @GetMapping("/aeropuertos")//cargar aeropuertos-> borrarlo porque se trabajara en websockets
     public ResponseEntity<List<AeropuertoResponse>> listarAeropuertos() {
         try {
             List<AeropuertoResponse> aeropuertos = aeropuertoService.findAll().stream()
@@ -85,6 +86,6 @@ public class AlgorithmController {
         } catch (Exception e) {
             return ResponseEntity.internalServerError().build();
         }
-    }
+    }*/
 
 }
