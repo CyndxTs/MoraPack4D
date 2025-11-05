@@ -148,24 +148,11 @@ export function Table({ headers = [], data = [], statusColors = {} }) {
                   if (h.key === "acciones") {
                     return (
                       <td key={j} className="acciones">
-                        <img
-                          src={viewIcon}
-                          alt="Ver"
-                          title="Ver"
-                          className="icon"
-                        />
-                        <img
-                          src={editIcon}
-                          alt="Editar"
-                          title="Editar"
-                          className="icon"
-                        />
-                        <img
-                          src={deleteIcon}
-                          alt="Eliminar"
-                          title="Eliminar"
-                          className="icon"
-                        />
+                        <div className="acciones-container">
+                          <img src={viewIcon} alt="Ver" title="Ver" className="icon" />
+                          <img src={editIcon} alt="Editar" title="Editar" className="icon" />
+                          <img src={deleteIcon} alt="Eliminar" title="Eliminar" className="icon" />
+                        </div>
                       </td>
                     );
                   }

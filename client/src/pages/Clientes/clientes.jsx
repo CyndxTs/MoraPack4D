@@ -206,58 +206,64 @@ export default function Clientes() {
           />
         </div>
 
-        <div className="sidebar-content">
-          <span className="sidebar-subtitle">Filtros</span>
+        {!collapsed && ( // Ocultamos todo el contenido si está colapsado
+          <>
+            <div className="sidebar-content">
+              <span className="sidebar-subtitle">Filtros</span>
 
-          <div className="filter-group">
-            <span className="sidebar-subtitle-strong">Nombre</span>
-            <Input
-              placeholder="Escribir..."
-              value={nombreFiltro}
-              onChange={(e) => setNombreFiltro(e.target.value)}
-            />
-          </div>
+              <div className="filter-group">
+                <span className="sidebar-subtitle-strong">Nombre</span>
+                <Input
+                  placeholder="Escribir..."
+                  value={nombreFiltro}
+                  onChange={(e) => setNombreFiltro(e.target.value)}
+                />
+              </div>
 
-          <div className="filter-group">
-            <span className="sidebar-subtitle-strong">Correo</span>
-            <Input
-              placeholder="Escribir..."
-              value={correoFiltro}
-              onChange={(e) => setCorreoFiltro(e.target.value)}
-            />
-          </div>
+              <div className="filter-group">
+                <span className="sidebar-subtitle-strong">Correo</span>
+                <Input
+                  placeholder="Escribir..."
+                  value={correoFiltro}
+                  onChange={(e) => setCorreoFiltro(e.target.value)}
+                />
+              </div>
 
-          <div className="filter-group">
-            <span className="sidebar-subtitle-strong">Estado</span>
-            <Radio
-              name="estadoCliente"
-              label="Online"
-              value="ONLINE"
-              checked={estadoFiltro === "ONLINE"}
-              onChange={(e) => setEstadoFiltro(e.target.value)}
-            />
-            <Radio
-              name="estadoCliente"
-              label="Offline"
-              value="OFFLINE"
-              checked={estadoFiltro === "OFFLINE"}
-              onChange={(e) => setEstadoFiltro(e.target.value)}
-            />
-            <Radio
-              name="estadoCliente"
-              label="Disabled"
-              value="DISABLED"
-              checked={estadoFiltro === "DISABLED"}
-              onChange={(e) => setEstadoFiltro(e.target.value)}
-            />
-          </div>
+              <div className="filter-group">
+                <span className="sidebar-subtitle-strong">Estado</span>
+                <Radio
+                  name="estadoCliente"
+                  label="Online"
+                  value="ONLINE"
+                  checked={estadoFiltro === "ONLINE"}
+                  onChange={(e) => setEstadoFiltro(e.target.value)}
+                />
+                <Radio
+                  name="estadoCliente"
+                  label="Offline"
+                  value="OFFLINE"
+                  checked={estadoFiltro === "OFFLINE"}
+                  onChange={(e) => setEstadoFiltro(e.target.value)}
+                />
+                <Radio
+                  name="estadoCliente"
+                  label="Disabled"
+                  value="DISABLED"
+                  checked={estadoFiltro === "DISABLED"}
+                  onChange={(e) => setEstadoFiltro(e.target.value)}
+                />
+              </div>
 
-          <SidebarActions 
-            onFilter={handleFilter}
-            onClean={handleCleanFilters}
-          />
-        </div>
+              {/* Colocamos las acciones aquí, dentro del contenido */}
+              <SidebarActions 
+                onFilter={handleFilter}
+                onClean={handleCleanFilters}
+              />
+            </div>
+          </>
+        )}
       </aside>
+
 
       {/* Contenido principal */}
       <section className="contenido">

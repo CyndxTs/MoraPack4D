@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import "./planificacion.scss";
-import { ButtonAdd, Input, Checkbox, Dropdown, Table } from "../../components/UI/ui";
+import { ButtonAdd, Input, Checkbox, Dropdown, Table, SidebarActions } from "../../components/UI/ui";
 import plus from '../../assets/icons/plus.svg';
 import hideIcon from '../../assets/icons/hide-sidebar.png';
 
@@ -83,6 +83,16 @@ export default function Planificacion() {
     setIsModalOpen(false);
   };
 
+  //Filtros
+  const handleFilter = async () => {
+
+  };
+
+  //Limpiar filtros
+  const handleCleanFilters = async () => {
+
+  };
+
   return (
     <div className="page">
       {/* Sidebar */}
@@ -96,33 +106,41 @@ export default function Planificacion() {
             onClick={() => setCollapsed(!collapsed)}
           />
         </div>
+        {!collapsed && (
+          <>
+            <div className="sidebar-content">
+              <span className="sidebar-subtitle">Filtros</span>
+              <div className="filter-group">
+                <span className="sidebar-subtitle-strong">Código de vuelo</span>
+                <Input placeholder="Escribir..." value={codigoVuelo} onChange={e => setCodigoVuelo(e.target.value)} />
+              </div>
 
-        <div className="sidebar-content">
-          <span className="sidebar-subtitle">Filtros</span>
-          <div className="filter-group">
-            <span className="sidebar-subtitle-strong">Código de vuelo</span>
-            <Input placeholder="Escribir..." value={codigoVuelo} onChange={e => setCodigoVuelo(e.target.value)} />
-          </div>
+              <div className="filter-group">
+                <span className="sidebar-subtitle-strong">Ciudad destino</span>
+                <Dropdown
+                  placeholder="Seleccionar..."
+                  options={[
+                    { label: "Ejemplo 1", value: "ejemplo1" },
+                    { label: "Ejemplo 2", value: "ejemplo2" }
+                  ]}
+                  onSelect={val => setCiudadDestino(val)}
+                />
+              </div>
 
-          <div className="filter-group">
-            <span className="sidebar-subtitle-strong">Ciudad destino</span>
-            <Dropdown
-              placeholder="Seleccionar..."
-              options={[
-                { label: "Ejemplo 1", value: "ejemplo1" },
-                { label: "Ejemplo 2", value: "ejemplo2" }
-              ]}
-              onSelect={val => setCiudadDestino(val)}
-            />
-          </div>
-
-          <div className="filter-group">
-            <span className="sidebar-subtitle-strong">Continente</span>
-            <Checkbox label="América" value="america" checked={continente.america} onChange={e => setContinente({ ...continente, america: e.target.checked })} />
-            <Checkbox label="Europa" value="europa" checked={continente.europa} onChange={e => setContinente({ ...continente, europa: e.target.checked })} />
-            <Checkbox label="Asia" value="asia" checked={continente.asia} onChange={e => setContinente({ ...continente, asia: e.target.checked })} />
-          </div>
-        </div>
+              <div className="filter-group">
+                <span className="sidebar-subtitle-strong">Continente</span>
+                <Checkbox label="América" value="america" checked={continente.america} onChange={e => setContinente({ ...continente, america: e.target.checked })} />
+                <Checkbox label="Europa" value="europa" checked={continente.europa} onChange={e => setContinente({ ...continente, europa: e.target.checked })} />
+                <Checkbox label="Asia" value="asia" checked={continente.asia} onChange={e => setContinente({ ...continente, asia: e.target.checked })} />
+              </div>
+              
+              <SidebarActions 
+                onFilter={handleFilter}
+                onClean={handleCleanFilters}
+              />
+            </div>
+          </>
+        )}
       </aside>
 
       {/* Contenido principal */}

@@ -372,9 +372,14 @@
 }
 
 .custom-table td.acciones {
+  vertical-align: middle;
+}
+
+.custom-table td.acciones .acciones-container {
   display: flex;
   gap: 10px;
   align-items: center;
+  justify-content: center;
 }
 
 .custom-table td.acciones img {

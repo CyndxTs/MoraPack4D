@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "./aeropuertos.scss";
-import { ButtonAdd, Input, Checkbox, Dropdown, Table } from "../../components/UI/ui";
+import { ButtonAdd, Input, Checkbox, Dropdown, Table, SidebarActions, Notification, LoadingOverlay, Pagination } from "../../components/UI/ui";
+import { listarAeropuertos  } from "../../services/aeropuertoService";
 import plus from '../../assets/icons/plus.svg';
 import hideIcon from '../../assets/icons/hide-sidebar.png';
 
@@ -8,31 +9,49 @@ export default function Aeropuertos() {
   const [collapsed, setCollapsed] = useState(false);
   const [codigoFiltro, setCodigoFiltro] = useState("");
   const [orden, setOrden] = useState("");
-  const [continente, setContinente] = useState({ america: false, europa: false, asia: false });
+  const [continenteFiltro, setContinenteFiltro] = useState({ america: false, europa: false, asia: false });
 
+  const [aeropuertos, setAeropuertos] = useState([]);
   const [codigo, setCodigo] = useState("");
   const [ciudad, setCiudad] = useState("");
+  const [pais, setPais] = useState("");
+  const [capacidad, setCapacidad] = useState("");
+  const [continente, setContinente] = useState("")
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [archivo, setArchivo] = useState(null);
+
+  const [loading, setLoading] = useState(true);
+  const [processing, setProcessing] = useState(false);
+  const [notification, setNotification] = useState(null);
+
+  const showNotification = (type, message) => {
+    setNotification({ type, message });
+    setTimeout(() => setNotification(null), 5000);
+  };
+
+  useEffect(() => {
+    const fetchAeropuertos = async () => {
+      try {
+        const data = await listarAeropuertos();
+        setAeropuertos(data);
+      } catch (err) {
+        console.error(err);
+        showNotification("danger", "Error al cargar aeropuertos");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchAeropuertos();
+  }, []);
 
   const headers = [
     { label: "Código", key: "codigo" },
     { label: "Ciudad", key: "ciudad" },
     { label: "País", key: "pais" },
     { label: "Capacidad", key: "capacidad" },
-    { label: "Estado", key: "estado" },
     { label: "Acciones", key: "acciones" },
   ];
-
-  const data = [
-    { codigo: "SPIM", ciudad: "Lima", pais: "Perú", capacidad: 440, estado: "Activo" },
-    { codigo: "SKBO", ciudad: "Bogotá", pais: "Colombia", capacidad: 430, estado: "Activo" },
-    { codigo: "SEQM", ciudad: "Quito", pais: "Ecuador", capacidad: 410, estado: "Activo" },
-    { codigo: "SBBR", ciudad: "Brasilia", pais: "Brasil", capacidad: 480, estado: "Activo" },
-    { codigo: "SVMI", ciudad: "Caracas", pais: "Venezuela", capacidad: 400, estado: "Inactivo" },
-  ];
-
 
   const handleFileChange = (e) => {
     if (e.target.files.length > 0) {
@@ -48,8 +67,40 @@ export default function Aeropuertos() {
     setIsModalOpen(false); // cerramos modal después de agregar
   };
 
+  //Filtros
+  const handleFilter = async () => {
+
+  };
+
+  //Limpiar filtros
+  const handleCleanFilters = async () => {
+
+  };
+
+  // --- Paginación ---
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 20;
+  const indexOfLast = currentPage * itemsPerPage;
+  const indexOfFirst = indexOfLast - itemsPerPage;
+  const currentAeropuertos = aeropuertos.slice(indexOfFirst, indexOfLast);
+
   return (
     <div className="page">
+
+      {(loading || processing) && (
+        <LoadingOverlay
+          text={processing ? "Cargando aeropuertos..." : "Cargando aeropuertos..."}
+        />
+      )}
+
+      {notification && (
+        <Notification
+          type={notification.type}
+          message={notification.message}
+          onClose={() => setNotification(null)}
+        />
+      )}
+
       {/* Sidebar */}
       <aside className={`sidebar ${collapsed ? "collapsed" : ""}`}>
         <div className="sidebar-header">
@@ -62,46 +113,55 @@ export default function Aeropuertos() {
           />
         </div>
 
-        <div className="sidebar-content">
-          <span className="sidebar-subtitle">Filtros</span>
+        {!collapsed && (
+          <>
+            <div className="sidebar-content">
+              <span className="sidebar-subtitle">Filtros</span>
 
-          <div className="filter-group">
-            <span className="sidebar-subtitle-strong">Código</span>
-            <Input placeholder="Escribir..." value={codigoFiltro} onChange={(e) => setCodigoFiltro(e.target.value)} />
-          </div>
+              <div className="filter-group">
+                <span className="sidebar-subtitle-strong">Código</span>
+                <Input placeholder="Escribir..." value={codigoFiltro} onChange={(e) => setCodigoFiltro(e.target.value)} />
+              </div>
 
-          <div className="filter-group">
-            <span className="sidebar-subtitle-strong">Ciudad</span>
-            <Dropdown
-              placeholder="Seleccionar..."
-              options={[
-                { label: "Ejemplo 1", value: "ejemplo1" },
-                { label: "Ejemplo 2", value: "ejemplo2" }, 
-                { label: "Ejemplo 3", value: "ejemplo3" },
-              ]}
-              onSelect={(val) => setCiudad(val)}
-            />
-          </div>
+              <div className="filter-group">
+                <span className="sidebar-subtitle-strong">Ciudad</span>
+                <Dropdown
+                  placeholder="Seleccionar..."
+                  options={[
+                    { label: "Ejemplo 1", value: "ejemplo1" },
+                    { label: "Ejemplo 2", value: "ejemplo2" }, 
+                    { label: "Ejemplo 3", value: "ejemplo3" },
+                  ]}
+                  onSelect={(val) => setCiudad(val)}
+                />
+              </div>
 
-          <div className="filter-group">
-            <span className="sidebar-subtitle-strong">Continente</span>
-            <Checkbox label="América" value="america" checked={continente.america} onChange={(e) => setContinente({ ...continente, america: e.target.checked })} />
-            <Checkbox label="Europa" value="europa" checked={continente.europa} onChange={(e) => setContinente({ ...continente, europa: e.target.checked })} />
-            <Checkbox label="Asia" value="asia" checked={continente.asia} onChange={(e) => setContinente({ ...continente, asia: e.target.checked })} />
-          </div>
+              <div className="filter-group">
+                <span className="sidebar-subtitle-strong">Continente</span>
+                <Checkbox label="América" value="america" checked={continenteFiltro.america} onChange={(e) => setContinenteFiltro({ ...continenteFiltro, america: e.target.checked })} />
+                <Checkbox label="Europa" value="europa" checked={continenteFiltro.europa} onChange={(e) => setContinenteFiltro({ ...continenteFiltro, europa: e.target.checked })} />
+                <Checkbox label="Asia" value="asia" checked={continenteFiltro.asia} onChange={(e) => setContinenteFiltro({ ...continenteFiltro, asia: e.target.checked })} />
+              </div>
 
-          <div className="filter-group">
-            <span className="sidebar-subtitle-strong">Orden</span>
-            <Dropdown
-              placeholder="Seleccionar..."
-              options={[
-                { label: "Ascendente", value: "ascendente" },
-                { label: "Descendente", value: "descendente" },          
-              ]}
-              onSelect={(val) => setOrden(val)}
-            />
-          </div>
-        </div>
+              <div className="filter-group">
+                <span className="sidebar-subtitle-strong">Orden de capacidad</span>
+                <Dropdown
+                  placeholder="Seleccionar..."
+                  options={[
+                    { label: "Ascendente", value: "ascendente" },
+                    { label: "Descendente", value: "descendente" },          
+                  ]}
+                  onSelect={(val) => setOrden(val)}
+                />
+              </div>
+
+              <SidebarActions 
+                onFilter={handleFilter}
+                onClean={handleCleanFilters}
+              />
+            </div>
+          </>
+        )}
       </aside>
 
       {/* Contenido principal */}
@@ -111,7 +171,22 @@ export default function Aeropuertos() {
           <ButtonAdd icon={plus} label="Agregar aeropuerto" onClick={() => setIsModalOpen(true)} />
         </div>
 
-        <Table headers={headers} data={data} />
+        {loading ? (
+          <LoadingOverlay text="Cargando aeropuertos..." />
+        ) : (
+          <>
+            <Table
+              headers={headers}
+              data={currentAeropuertos}
+            />
+            <Pagination
+              totalItems={aeropuertos.length}
+              itemsPerPage={itemsPerPage}
+              currentPage={currentPage}
+              onPageChange={setCurrentPage}
+            />
+          </>
+        )}
       </section>
 
       {/* Modal */}
