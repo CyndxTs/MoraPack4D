@@ -8,6 +8,8 @@ import 'leaflet/dist/leaflet.css';
 import L from "leaflet";
 
 import planeIconImg from "../../assets/icons/planeMora.svg";
+//import { getAeropuertosMap  } from "../../services/aeropuertoService";
+import { getAeropuertosMapWS, getVuelosWS, disconnectWS } from "../../services/simulationService";
 
 export default function Simulacion() {
   const [collapsed, setCollapsed] = useState(false);
@@ -17,13 +19,18 @@ export default function Simulacion() {
   const [estadoVuelo, setEstadoVuelo] = useState({ enCurso: false, finalizado: false, cancelado: false });
   const [archivo, setArchivo] = useState(null);
   const [tipoSimulacion, setTipoSimulacion] = useState("");
-
+  //Aeropuertos
+  const [airports, setAirports] = useState(null);
+  const [loadingAirports, setLoadingAirports] = useState(true);
   // Controles de tiempo
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
   const [time, setTime] = useState(new Date().toTimeString().slice(0,5));
   const [seconds, setSeconds] = useState(0);
   const [timerRunning, setTimerRunning] = useState(false);
   const [timerActive, setTimerActive] = useState(false); // indica si inició cronómetro (start clickeado)
+
+  // Cargar aeropuertos del back una sola vez
+
 
   // Botones
   const [btnState, setBtnState] = useState({
@@ -90,32 +97,37 @@ export default function Simulacion() {
     setTimerActive(false);
     setSeconds(0);
 
-    // Reiniciar posiciones y progreso
-    setFlights(flightData.map((f, i) => {
-      const origin = airports[f.from];
-      const dest = airports[f.to];
-      const startH = parseInt(f.start.split(":")[0]);
-      const startM = parseInt(f.start.split(":")[1]);
-      const endH = parseInt(f.end.split(":")[0]);
-      const endM = parseInt(f.end.split(":")[1]);
-      const durationMinutes = (endH * 60 + endM) - (startH * 60 + startM);
-      const durationSec = Math.max(durationMinutes * 60, 60);
-      return {
-        code: `${f.from}-${f.to}-${i + 1}`,
-        origin,
-        originName: origin.name,
-        destination: dest,
-        destinationName: dest.name,
-        startTime: f.start,
-        endTime: f.end,
-        capacity: f.capacity,
-        durationSec,
-        progress: 0,
-        arrived: false,
-        position: { lat: origin.lat, lng: origin.lng },
-        rotation: 0,
-      };
-    }));
+    if (airports && rawFlights.length > 0) {
+      const reset = rawFlights.map((f) => {
+        const origin = airports[f.origenCodigo];
+        const dest   = airports[f.destinoCodigo];
+        if (!origin || !dest) return null;
+
+        const salida  = new Date(f.fechaSalida);
+        const llegada = new Date(f.fechaLlegada);
+        const durationSec = Math.max((llegada - salida) / 1000, 60);
+
+        return {
+          code: f.codigo,
+          origin,
+          originName: origin.name,
+          destination: dest,
+          destinationName: dest.name,
+          startTime: f.fechaSalida,
+          endTime: f.fechaLlegada,
+          capacity: f.capacidadOcupada,
+          durationSec,
+          progress: 0,
+          arrived: false,
+          position: { lat: origin.lat, lng: origin.lng },
+          rotation: 0,
+        };
+      }).filter(Boolean);
+
+      setFlights(reset);
+    } else {
+      setFlights([]);
+    }
 
     setBtnState({
       start: { disabled: false, color: "blue" },
@@ -125,58 +137,74 @@ export default function Simulacion() {
   };
 
 
-  //EJEMPLO
-  // Coordenadas de vuelos
-  const airports = {
-    SKBO: { name: "Bogotá", lat: 4.701, lng: -74.146, gmt: -5 },
-    SEQM: { name: "Quito", lat: -0.1807, lng: -78.4678, gmt: -5 },
-    SVMI: { name: "Caracas", lat: 10.6031, lng: -66.9906, gmt: -4 },
-    SBBR: { name: "Brasilia", lat: -15.8711, lng: -47.9186, gmt: -3 },
-    SPIM: { name: "Lima", lat: -12.0464, lng: -77.0428, gmt: -5 },
-    SLLP: { name: "La Paz", lat: -16.509, lng: -68.113, gmt: -4 },
-    SCEL: { name: "Santiago de Chile", lat: -33.3929, lng: -70.7858, gmt: -3 },
-    SABE: { name: "Buenos Aires", lat: -34.559, lng: -58.415, gmt: -3 },
-    SGAS: { name: "Asunción", lat: -25.239, lng: -57.518, gmt: -4 },
-    SUAA: { name: "Montevideo", lat: -34.789, lng: -56.264, gmt: -3 },
-  };
+  // Vuelos
+  const [flights, setFlights] = useState([]);
+  const [rawFlights, setRawFlights] = useState([]);
+  // 1) Cargar aeropuertos desde el back (solo una vez)
+  /*
+  useEffect(() => {
+    const ac = new AbortController();
+    getAeropuertosMap(ac.signal)
+      .then(map => setAirports(map))
+      .catch(err => console.error("Error cargando aeropuertos:", err))
+      .finally(() => setLoadingAirports(false));
+    return () => ac.abort();
+  }, []);*/
 
-  const flightData = [
-    { from: "SKBO", to: "SEQM", start: "03:34", end: "05:21", capacity: 300 },
-    { from: "SEQM", to: "SKBO", start: "04:29", end: "06:16", capacity: 340 },
-    { from: "SKBO", to: "SVMI", start: "07:24", end: "11:47", capacity: 300 },
-    { from: "SVMI", to: "SKBO", start: "06:33", end: "08:56", capacity: 340 },
-    { from: "SKBO", to: "SBBR", start: "06:23", end: "14:58", capacity: 320 },
-    { from: "SBBR", to: "SKBO", start: "03:02", end: "07:37", capacity: 320 },
-    { from: "SKBO", to: "SPIM", start: "01:58", end: "05:14", capacity: 340 },
-    { from: "SPIM", to: "SKBO", start: "04:35", end: "08:51", capacity: 340 },
-  ];
+ // 1) Cargar aeropuertos por WebSocket (y cerrar al desmontar)
+ useEffect(() => {
+   let mounted = true;
+   getAeropuertosMapWS()
+     .then(map => { if (mounted) setAirports(map); })
+     .catch(err => console.error("WS aeropuertos:", err))
+     .finally(() => setLoadingAirports(false));
+   return () => {
+     mounted = false;
+     disconnectWS(); // cierra la conexión WS cuando sales del componente
+   };
+ }, []);
 
-  const [flights, setFlights] = useState(
-    flightData.map((f, i) => {
-      const origin = airports[f.from];
-      const dest = airports[f.to];
-      const startH = parseInt(f.start.split(":")[0]);
-      const startM = parseInt(f.start.split(":")[1]);
-      const endH = parseInt(f.end.split(":")[0]);
-      const endM = parseInt(f.end.split(":")[1]);
-      const durationMinutes = (endH * 60 + endM) - (startH * 60 + startM);
-      const durationSec = Math.max(durationMinutes * 60, 60);
-      return {
-        code: `${f.from}-${f.to}-${i + 1}`,
-        origin,
-        originName: origin.name,
-        destination: dest,
-        destinationName: dest.name,
-        startTime: f.start,
-        endTime: f.end,
-        capacity: f.capacity,
-        durationSec,
-        progress: 0,
-        arrived: false,
-        position: { lat: origin.lat, lng: origin.lng },
-      };
-    })
-  );
+  useEffect(() => {
+    if (!airports) return;
+
+    getVuelosWS()
+      .then(data => {
+        setRawFlights(data); // guardamos crudo para poder rearmar en "Detener"
+
+        const mapped = data.map((f) => {
+          const origin = airports[f.origenCodigo];
+          const dest   = airports[f.destinoCodigo];
+          if (!origin || !dest) {
+            console.warn(` Vuelo ${f.codigo} omitido: ${f.origenCodigo} → ${f.destinoCodigo} no está en airports`);
+            return null;
+          }
+
+          const salida   = new Date(f.fechaSalida);
+          const llegada  = new Date(f.fechaLlegada);
+          const durationSec = Math.max((llegada - salida) / 1000, 60);
+
+          return {
+            code: f.codigo,
+            origin,
+            originName: origin.name,
+            destination: dest,
+            destinationName: dest.name,
+            startTime: f.fechaSalida,
+            endTime: f.fechaLlegada,
+            capacity: f.capacidadOcupada,  // mantiene tu Popup igual
+            durationSec,
+            progress: 0,
+            arrived: false,
+            position: { lat: origin.lat, lng: origin.lng },
+            rotation: 0,
+          };
+        }).filter(Boolean);
+
+        setFlights(mapped);
+        console.log("✈️ Vuelos WS mapeados:", mapped.length);
+      })
+      .catch(err => console.error("WS vuelos:", err));
+  }, [airports]);
 
   const createColoredIcon = (filterCss, rotation) =>
   L.divIcon({

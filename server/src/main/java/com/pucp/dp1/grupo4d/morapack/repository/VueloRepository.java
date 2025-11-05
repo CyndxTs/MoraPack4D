@@ -8,10 +8,29 @@ package com.pucp.dp1.grupo4d.morapack.repository;
 
 import com.pucp.dp1.grupo4d.morapack.model.entity.VueloEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
+
+import java.util.List;
 import java.util.Optional;
 
 @Repository
 public interface VueloRepository extends JpaRepository<VueloEntity, Integer> {
     Optional<VueloEntity> findByCodigo(String codigo);
+
+    @Query(value = """
+        SELECT 
+            v.id,
+            v.codigo,
+            ao.codigo AS origen_codigo,
+            ad.codigo AS destino_codigo,
+            v.fecha_hora_salida_local AS fecha_salida,
+            v.fecha_hora_llegada_local AS fecha_llegada,
+            (p.capacidad - v.capacidad_disponible) AS capacidad_ocupada
+        FROM vuelo v
+        JOIN plan p ON v.id_plan = p.id
+        JOIN aeropuerto ao ON p.id_aeropuerto_origen = ao.id
+        JOIN aeropuerto ad ON p.id_aeropuerto_destino = ad.id
+    """, nativeQuery = true)
+    List<Object[]> listarVuelosSimulacion();
 }
