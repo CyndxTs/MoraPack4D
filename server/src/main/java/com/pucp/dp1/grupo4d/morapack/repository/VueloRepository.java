@@ -24,8 +24,8 @@ public interface VueloRepository extends JpaRepository<VueloEntity, Integer> {
             v.codigo,
             ao.codigo AS origen_codigo,
             ad.codigo AS destino_codigo,
-            v.fecha_hora_salida_local AS fecha_salida,
-            v.fecha_hora_llegada_local AS fecha_llegada,
+            v.fecha_hora_salida_utc AS fecha_salida,
+            v.fecha_hora_llegada_utc AS fecha_llegada,
             (p.capacidad - v.capacidad_disponible) AS capacidad_ocupada
         FROM vuelo v
         JOIN plan p ON v.id_plan = p.id
