@@ -15,7 +15,7 @@ public enum TipoRuta {
     private final Double maxHorasParaEntrega;
 
     TipoRuta(Integer maxDiasParaEntrega) {
-        this.maxMinutosParaEntrega = (long)(60*24*maxDiasParaEntrega);
+        this.maxMinutosParaEntrega = 1440L*maxDiasParaEntrega;
         this.maxHorasParaEntrega = 24.0*maxDiasParaEntrega;
     }
 

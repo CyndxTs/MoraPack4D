@@ -36,7 +36,6 @@ public class Solucion {
     private Set<Vuelo> vuelosEnTransito;
     private Set<Ruta> rutasEnOperacion;
     
-
     public Solucion() {
         this.codigo = G4D.Generator.getUniqueString("SOL");
         this.fitness = 9999.999;
@@ -81,9 +80,9 @@ public class Solucion {
         this.ratioPromedioDeUtilizacionTemporal = solucion.ratioPromedioDeUtilizacionTemporal;
         this.ratioPromedioDeDesviacionEspacial = solucion.ratioPromedioDeDesviacionEspacial;
         this.ratioPromedioDeDisposicionOperacional = solucion.ratioPromedioDeDisposicionOperacional;
-        this.pedidosAtendidos = solucion.pedidosAtendidos;
-        this.vuelosEnTransito = solucion.vuelosEnTransito;
-        this.rutasEnOperacion = solucion.rutasEnOperacion;
+        this.pedidosAtendidos = new ArrayList<>(solucion.pedidosAtendidos);
+        this.vuelosEnTransito = new HashSet<>(solucion.vuelosEnTransito);
+        this.rutasEnOperacion = new HashSet<>(solucion.rutasEnOperacion);
     }
 
     @Override
@@ -187,7 +186,7 @@ public class Solucion {
         double sumaRatios = 0.0;
         for (Ruta ruta : this.rutasEnOperacion) {
             int rCapDisp = ruta.obtenerCapacidadDisponible();
-            double rCap = ((double)(ruta.obtenerCapacidad()));
+            double rCap = ((double)(ruta.obtenerCapacidadMaxima()));
             sumaRatios +=  rCapDisp/rCap ;
         }
         if (this.rutasEnOperacion.isEmpty()) {

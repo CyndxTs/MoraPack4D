@@ -1,7 +1,7 @@
 /**]
  >> Project:    MoraPack
  >> Author:     Grupo 4D
- >> File:       RutaEntity.java
+ >> File:       Ruta.java
 [**/
 
 package pucp.dp1.grupo4d.model;
@@ -11,7 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
+import java.util.stream.Stream;
 import pucp.dp1.grupo4d.algorithm.Problematica;
 import pucp.dp1.grupo4d.enums.TipoRuta;
 import pucp.dp1.grupo4d.util.G4D;
@@ -36,6 +36,17 @@ public class Ruta {
         this.vuelos = new ArrayList<>();
     }
 
+    public Ruta(Ruta ruta) {
+        this.reasignar(ruta);
+    }
+
+    public List<Aeropuerto> obtenerSecuenciaDeAeropuertos() {
+        return Stream.concat(
+                Stream.of(origen),
+                vuelos.stream().map(v -> v.getPlan().getDestino())
+        ).toList();
+    }
+
     public Integer obtenerCapacidadDisponible() {
         int minCapDisp = Integer.MAX_VALUE;
         for(int i = 0; i < this.vuelos.size(); i++) {
@@ -48,15 +59,15 @@ public class Ruta {
         return minCapDisp;
     }
 
-    public Integer obtenerCapacidad() {
-        int minCap = Integer.MAX_VALUE;
+    public Integer obtenerCapacidadMaxima() {
+        int maxCap = 0;
         for(int i = 0; i < this.vuelos.size(); i++) {
             Plan plan = this.vuelos.get(i).getPlan();
             int aDestCap = plan.getDestino().getCapacidad();
             int vCap = plan.getCapacidad();
-            minCap = Math.min(minCap, Math.min(aDestCap, vCap));
+            maxCap = Math.max(maxCap, Math.max(aDestCap, vCap));
         }
-        return minCap;
+        return maxCap;
     }
 
     public Double obtenerDuracionActivaTotal() {
@@ -72,6 +83,13 @@ public class Ruta {
             duracionPasiva += G4D.getElapsedHours(vA.getFechaHoraLlegadaUTC(), vB.getFechaHoraSalidaUTC());
         }
         return duracionPasiva;
+    }
+
+    public Boolean esAlcanzable(LocalDateTime fechaHoraInicial, LocalDateTime fechaHoraLimite) {
+        if(this.fechaHoraSalidaUTC.isBefore(fechaHoraInicial)) return false;
+        if(this.fechaHoraLlegadaUTC.isAfter(fechaHoraLimite)) return false;
+        if(this.obtenerCapacidadDisponible() < 1) return false;
+        return true;
     }
 
     public void instanciarHorarios() {
@@ -98,7 +116,7 @@ public class Ruta {
             if(vuelo.getCapacidadDisponible() == vuelo.getPlan().getCapacidad()) vuelosEnTransito.remove(vuelo);
             vuelo.getPlan().getDestino().eliminarRegistroDeLoteDeProductos(lote);
         }
-        if(this.obtenerCapacidadDisponible() == this.obtenerCapacidad()) rutasEnOperacion.remove(this);
+        if(this.obtenerCapacidadDisponible() == this.obtenerCapacidadMaxima()) rutasEnOperacion.remove(this);
     }
 
     public Ruta replicar(Map<String,Aeropuerto> poolAeropuertos, Map<String, Lote> poolLotes, Map<String,Vuelo> poolVuelos, Map<String, Plan> poolPlanes) {
@@ -115,6 +133,20 @@ public class Ruta {
         ruta.destino = (this.destino != null) ? poolAeropuertos.computeIfAbsent(this.destino.getCodigo(), codigo -> this.destino.replicar(poolLotes)) : null;
         for (Vuelo vuelo : this.vuelos) ruta.vuelos.add(poolVuelos.computeIfAbsent(vuelo.getCodigo(), codigo -> vuelo.replicar(poolAeropuertos, poolLotes, poolPlanes)));
         return ruta;
+    }
+
+    public void reasignar(Ruta ruta) {
+        this.codigo = ruta.codigo;
+        this.duracion = ruta.duracion;
+        this.distancia = ruta.distancia;
+        this.fechaHoraSalidaLocal = ruta.fechaHoraSalidaLocal;
+        this.fechaHoraSalidaUTC = ruta.fechaHoraSalidaUTC;
+        this.fechaHoraLlegadaLocal = ruta.fechaHoraLlegadaLocal;
+        this.fechaHoraLlegadaUTC = ruta.fechaHoraLlegadaUTC;
+        this.tipo = ruta.tipo;
+        this.origen = ruta.origen;
+        this.destino = ruta.destino;
+        this.vuelos = new ArrayList<>(ruta.vuelos);
     }
 
     @Override

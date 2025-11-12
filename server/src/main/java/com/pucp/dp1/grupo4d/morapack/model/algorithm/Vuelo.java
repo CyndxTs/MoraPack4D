@@ -48,8 +48,8 @@ public class Vuelo {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        Vuelo vuelo = (Vuelo) o;
-        return codigo != null && codigo.equals(vuelo.codigo);
+        Vuelo that = (Vuelo) o;
+        return codigo != null && codigo.equals(that.codigo);
     }
 
     @Override
@@ -78,7 +78,7 @@ public class Vuelo {
     }
 
     public void setFechaHoraSalidaLocal() {
-        this.setFechaHoraSalidaLocal(G4D.toLocal(this.fechaHoraSalidaUTC, this.plan.getOrigen().getHusoHorario()));
+        this.fechaHoraSalidaLocal = G4D.toLocal(this.fechaHoraSalidaUTC, this.plan.getOrigen().getHusoHorario());
     }
 
     public void setFechaHoraSalidaLocal(LocalDateTime fechaHoraSalidaLocal) {
@@ -90,7 +90,7 @@ public class Vuelo {
     }
 
     public void setFechaHoraSalidaUTC() {
-        this.setFechaHoraSalidaUTC(G4D.toUTC(this.fechaHoraSalidaLocal, this.plan.getOrigen().getHusoHorario()));
+        this.fechaHoraSalidaUTC = G4D.toUTC(this.fechaHoraSalidaLocal, this.plan.getOrigen().getHusoHorario());
     }
 
     public void setFechaHoraSalidaUTC(LocalDateTime fechaHoraSalidaUTC) {
@@ -102,7 +102,7 @@ public class Vuelo {
     }
 
     public void setFechaHoraLlegadaLocal() {
-        this.setFechaHoraLlegadaLocal(G4D.toLocal(this.fechaHoraLlegadaUTC, this.plan.getDestino().getHusoHorario()));
+        this.fechaHoraLlegadaLocal = G4D.toLocal(this.fechaHoraLlegadaUTC, this.plan.getDestino().getHusoHorario());
     }
 
     public void setFechaHoraLlegadaLocal(LocalDateTime fechaHoraLlegadaLocal) {
@@ -114,7 +114,7 @@ public class Vuelo {
     }
 
     public void setFechaHoraLlegadaUTC() {
-        this.setFechaHoraLlegadaUTC(G4D.toUTC(this.fechaHoraLlegadaLocal, this.plan.getDestino().getHusoHorario()));
+        this.fechaHoraLlegadaUTC = G4D.toUTC(this.fechaHoraLlegadaLocal, this.plan.getDestino().getHusoHorario());
     }
 
     public void setFechaHoraLlegadaUTC(LocalDateTime fechaHoraLlegadaUTC) {
