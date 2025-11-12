@@ -8,7 +8,6 @@ package pucp.dp1.grupo4d.model;
 
 import java.time.LocalDateTime;
 import java.util.Map;
-
 import pucp.dp1.grupo4d.util.G4D;
 
 public class Vuelo {

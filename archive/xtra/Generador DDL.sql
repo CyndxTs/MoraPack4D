@@ -22,8 +22,8 @@ DROP TABLE IF EXISTS `morapack4d`.`CLIENTE` ;
 CREATE TABLE IF NOT EXISTS `morapack4d`.`CLIENTE` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `codigo` VARCHAR(7) NOT NULL,
-  `nombre` VARCHAR(50) NOT NULL,
-  `correo` VARCHAR(40) NOT NULL,
+  `nombre` VARCHAR(60) NOT NULL,
+  `correo` VARCHAR(60) NOT NULL,
   `contrasenia` VARCHAR(255) NOT NULL,
   `estado` ENUM('ONLINE', 'OFFLINE', 'DISABLED') NOT NULL DEFAULT 'OFFLINE',
   PRIMARY KEY (`id`),
@@ -68,6 +68,7 @@ CREATE TABLE IF NOT EXISTS `morapack4d`.`PEDIDO` (
   `fecha_hora_generacion_utc` TIMESTAMP NOT NULL,
   `fecha_hora_expiracion_local` TIMESTAMP NULL DEFAULT NULL,
   `fecha_hora_expiracion_utc` TIMESTAMP NULL DEFAULT NULL,
+  `fue_atendido` TINYINT NOT NULL DEFAULT 0,
   `id_cliente` INT NOT NULL,
   `id_aeropuerto_destino` INT NOT NULL,
   PRIMARY KEY (`id`),
@@ -287,13 +288,38 @@ DROP TABLE IF EXISTS `morapack4d`.`ADMINISTRADOR` ;
 CREATE TABLE IF NOT EXISTS `morapack4d`.`ADMINISTRADOR` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `codigo` VARCHAR(7) NOT NULL,
-  `nombre` VARCHAR(50) NOT NULL,
-  `correo` VARCHAR(40) NOT NULL,
+  `nombre` VARCHAR(60) NOT NULL,
+  `correo` VARCHAR(60) NOT NULL,
   `contrasenia` VARCHAR(255) NOT NULL,
   `estado` ENUM('ONLINE', 'OFFLINE', 'DISABLED') NOT NULL DEFAULT 'OFFLINE',
   PRIMARY KEY (`id`),
   UNIQUE INDEX `correo_UNIQUE` (`correo` ASC) VISIBLE,
   UNIQUE INDEX `codigo_UNIQUE` (`codigo` ASC) VISIBLE);
+
+
+-- -----------------------------------------------------
+-- Table `morapack4d`.`PARAMETRIZACION`
+-- -----------------------------------------------------
+DROP TABLE IF EXISTS `morapack4d`.`PARAMETRIZACION` ;
+
+CREATE TABLE IF NOT EXISTS `morapack4d`.`PARAMETRIZACION` (
+  `id` INT NOT NULL DEFAULT 1,
+  `max_dias_entrega_intercontinental` INT NOT NULL DEFAULT 3,
+  `max_dias_entrega_intracontinental` INT NOT NULL DEFAULT 2,
+  `max_horas_recojo` DOUBLE NOT NULL DEFAULT 2.0,
+  `min_horas_estancia` DOUBLE NOT NULL DEFAULT 1.0,
+  `max_horas_estancia` DOUBLE NOT NULL DEFAULT 12.0,
+  `fecha_hora_inicio` TIMESTAMP NOT NULL DEFAULT '1999-12-31 23:59:59',
+  `fecha_hora_fin` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `d_min` DOUBLE NOT NULL DEFAULT 0.001,
+  `i_max` INT NOT NULL DEFAULT 3,
+  `ele_min` INT NOT NULL DEFAULT 1,
+  `ele_max` INT NOT NULL DEFAULT 2,
+  `k_min` INT NOT NULL DEFAULT 3,
+  `k_max` INT NOT NULL DEFAULT 4,
+  `t_max` INT NOT NULL DEFAULT 60,
+  `max_intentos` INT NOT NULL DEFAULT 5,
+  PRIMARY KEY (`id`));
 
 
 SET SQL_MODE=@OLD_SQL_MODE;

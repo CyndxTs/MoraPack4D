@@ -25,10 +25,10 @@ public class ClienteEntity {
     @Column(name = "codigo", length = 7, nullable = false, unique = true)
     private String codigo;
 
-    @Column(name = "nombre", length = 50, nullable = false)
+    @Column(name = "nombre", length = 60, nullable = false)
     private String nombre;
 
-    @Column(name = "correo", length = 40, nullable = false, unique = true)
+    @Column(name = "correo", length = 60, nullable = false, unique = true)
     private String correo;
 
     @Column(name = "contrasenia", length = 255, nullable = false)

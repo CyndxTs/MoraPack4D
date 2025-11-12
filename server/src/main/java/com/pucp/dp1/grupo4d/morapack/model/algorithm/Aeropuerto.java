@@ -18,7 +18,6 @@ public class Aeropuerto {
     private String ciudad;
     private String pais;
     private String continente;
-    private String alias;
     private Integer husoHorario;
     private Integer capacidad;
     private String latitudDMS;
@@ -37,6 +36,26 @@ public class Aeropuerto {
         Lote lote = new Lote();
         lote.setTamanio(cantProd);
         return lote;
+    }
+
+    public void registrarLoteDeProductos(Lote lote, LocalDateTime fechaHoraIngresoUTC, LocalDateTime fechaHoraEgresoUTC) {
+        Registro registro = new Registro();
+        registro.setFechaHoraIngresoUTC(fechaHoraIngresoUTC);
+        registro.setFechaHoraIngresoLocal(G4D.toLocal(fechaHoraIngresoUTC, this.husoHorario));
+        registro.setFechaHoraEgresoUTC(fechaHoraEgresoUTC);
+        registro.setFechaHoraEgresoLocal(G4D.toLocal(fechaHoraEgresoUTC, this.husoHorario));
+        registro.setLote(lote);
+        this.registros.add(registro);
+    }
+
+    public Boolean eliminarRegistroDeLoteDeProductos(Lote lote) {
+        for(Registro registro : this.registros) {
+            if(registro.getLote().equals(lote)) {
+                this.registros.remove(registro);
+                return true;
+            }
+        }
+        return false;
     }
 
     public Integer obtenerCapacidadDisponible(LocalDateTime fechaHoraInicio, LocalDateTime fechaHoraFin) {
@@ -61,33 +80,12 @@ public class Aeropuerto {
         return G4D.getGeodesicDistance(this.latitudDEC, this.longitudDEC, aDest.latitudDEC, aDest.longitudDEC);
     }
 
-    public void registrarLoteDeProductos(Lote lote, LocalDateTime fechaHoraIngresoUTC, LocalDateTime fechaHoraEgresoUTC) {
-        Registro registro = new Registro();
-        registro.setFechaHoraIngresoUTC(fechaHoraIngresoUTC);
-        registro.setFechaHoraIngresoLocal(G4D.toLocal(fechaHoraIngresoUTC, this.husoHorario));
-        registro.setFechaHoraEgresoUTC(fechaHoraEgresoUTC);
-        registro.setFechaHoraEgresoLocal(G4D.toLocal(fechaHoraEgresoUTC, this.husoHorario));
-        registro.setLote(lote);
-        this.registros.add(registro);
-    }
-
-    public Boolean eliminarLoteDeProductos(Lote lote) {
-        for(Registro registro : this.registros) {
-            if(registro.getLote().equals(lote)) {
-                this.registros.remove(registro);
-                return true;
-            }
-        }
-        return false;
-    }
-
     public Aeropuerto replicar(Map<String, Lote> poolLotes) {
         Aeropuerto aeropuerto = new Aeropuerto();
         aeropuerto.codigo = this.codigo;
         aeropuerto.ciudad = this.ciudad;
         aeropuerto.pais = this.pais;
         aeropuerto.continente = this.continente;
-        aeropuerto.alias = this.alias;
         aeropuerto.husoHorario = this.husoHorario;
         aeropuerto.capacidad = this.capacidad;
         aeropuerto.latitudDMS = this.latitudDMS;
@@ -146,14 +144,6 @@ public class Aeropuerto {
 
     public void setContinente(String continente) {
         this.continente = continente;
-    }
-
-    public String getAlias() {
-        return alias;
-    }
-
-    public void setAlias(String alias) {
-        this.alias = alias;
     }
 
     public Integer getHusoHorario() {

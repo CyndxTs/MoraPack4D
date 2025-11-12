@@ -22,11 +22,13 @@ public class Pedido {
     private LocalDateTime fechaHoraExpiracionLocal;
     private LocalDateTime fechaHoraExpiracionUTC;
     private Aeropuerto destino;
+    private Boolean fueAtendido;
     private Map<Ruta, Lote> lotesPorRuta;
 
     public Pedido() {
         this.codigo = G4D.Generator.getUniqueString("PED");
         this.cantidadSolicitada = 0;
+        this.fueAtendido = false;
         this.lotesPorRuta = new HashMap<>();
     }
 
@@ -45,6 +47,7 @@ public class Pedido {
         pedido.fechaHoraExpiracionLocal = this.fechaHoraExpiracionLocal;
         pedido.fechaHoraExpiracionUTC = this.fechaHoraExpiracionUTC;
         pedido.destino = (this.destino != null) ? poolAeropuertos.computeIfAbsent(this.destino.getCodigo(), codigo -> this.destino.replicar(poolLotes)) : null;
+        pedido.fueAtendido = this.fueAtendido;
         for(Map.Entry<Ruta, Lote> entry : this.lotesPorRuta.entrySet()) {
             Ruta ruta = poolRutas.computeIfAbsent(entry.getKey().getCodigo(), codigo -> entry.getKey().replicar(poolAeropuertos, poolLotes, poolVuelos, poolPlanes));
             Lote lote = poolLotes.computeIfAbsent(entry.getValue().getCodigo(), codigo -> entry.getValue().replicar());
@@ -57,8 +60,8 @@ public class Pedido {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        Pedido pedido = (Pedido) o;
-        return Objects.equals(codigo, pedido.codigo);
+        Pedido that = (Pedido) o;
+        return codigo != null && codigo.equals(that.codigo);
     }
 
     @Override
@@ -151,6 +154,14 @@ public class Pedido {
 
     public void setDestino(Aeropuerto destino) {
         this.destino = destino;
+    }
+
+    public Boolean getFueAtendido() {
+        return fueAtendido;
+    }
+
+    public void setFueAtendido(boolean fueAtendido) {
+        this.fueAtendido = fueAtendido;
     }
 
     public Map<Ruta, Lote> getLotesPorRuta() {

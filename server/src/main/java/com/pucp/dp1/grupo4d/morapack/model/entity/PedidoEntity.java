@@ -43,6 +43,9 @@ public class PedidoEntity {
     @Column(name = "fecha_hora_expiracion_utc")
     private LocalDateTime fechaHoraExpiracionUTC;
 
+    @Column(name = "fue_atendido", nullable = false)
+    private Boolean fueAtendido = false;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_cliente", nullable = false)
     @JsonBackReference
@@ -88,6 +91,7 @@ public class PedidoEntity {
     public LocalDateTime getFechaHoraGeneracionUTC() { return fechaHoraGeneracionUTC; } public void setFechaHoraGeneracionUTC(LocalDateTime fechaHoraGeneracionUTC) { this.fechaHoraGeneracionUTC = fechaHoraGeneracionUTC; }
     public LocalDateTime getFechaHoraExpiracionLocal() { return fechaHoraExpiracionLocal; } public void setFechaHoraExpiracionLocal(LocalDateTime fechaHoraExpiracionLocal) { this.fechaHoraExpiracionLocal = fechaHoraExpiracionLocal; }
     public LocalDateTime getFechaHoraExpiracionUTC() { return fechaHoraExpiracionUTC; } public void setFechaHoraExpiracionUTC(LocalDateTime fechaHoraExpiracionUTC) { this.fechaHoraExpiracionUTC = fechaHoraExpiracionUTC; }
+    public Boolean getFueAtendido() { return fueAtendido; } public void setFueAtendido(Boolean fueAtendido) { this.fueAtendido = fueAtendido; }
     public ClienteEntity getCliente() { return cliente; } public void setCliente(ClienteEntity cliente) { this.cliente = cliente; }
     public AeropuertoEntity getDestino() { return destino; } public void setDestino(AeropuertoEntity destino) { this.destino = destino; }
     public List<RutaEntity> getRutas() { return rutas; } public void setRutas(List<RutaEntity> rutas) { this.rutas = rutas; }
