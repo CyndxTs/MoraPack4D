@@ -6,7 +6,7 @@
 
 package com.pucp.dp1.grupo4d.morapack.service.model;
 
-import com.pucp.dp1.grupo4d.morapack.model.dto.response.VuelosResponse;
+import com.pucp.dp1.grupo4d.morapack.model.dto.model.VueloResponse;
 import com.pucp.dp1.grupo4d.morapack.model.entity.VueloEntity;
 import com.pucp.dp1.grupo4d.morapack.repository.VueloRepository;
 import org.springframework.stereotype.Service;
@@ -52,9 +52,9 @@ public class VueloService {
         return vueloRepository.findByCodigo(codigo).isPresent();
     }
 
-    public List<VuelosResponse> listarVuelosSimulacion() {
+    public List<VueloResponse> listarVuelosSimulacion() {
         List<Object[]> results = vueloRepository.listarVuelosSimulacion();
-        return results.stream().map(r -> new VuelosResponse(
+        return results.stream().map(r -> new VueloResponse(
                 ((Number) r[0]).longValue(),
                 (String) r[1],
                 (String) r[2],

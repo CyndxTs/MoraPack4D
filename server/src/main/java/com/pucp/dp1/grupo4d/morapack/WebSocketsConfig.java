@@ -1,5 +1,10 @@
-package com.pucp.dp1.grupo4d.morapack;
+/**]
+ >> Project:    MoraPack
+ >> Author:     Grupo 4D
+ >> File:       WebSocketsConfig.java
+ [**/
 
+package com.pucp.dp1.grupo4d.morapack;
 
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;

@@ -22,7 +22,7 @@ public interface ClienteRepository extends JpaRepository<ClienteEntity, Integer>
     Optional<ClienteEntity> findByCodigo(String codigo);
     Optional<ClienteEntity> findByCorreo(String correo);
 
-    //Filtrado
+    // Filtrado
     @Query("SELECT c FROM ClienteEntity c " +
            "WHERE (:nombre IS NULL OR LOWER(c.nombre) LIKE LOWER(CONCAT('%', :nombre, '%'))) " +
            "AND (:correo IS NULL OR LOWER(c.correo) LIKE LOWER(CONCAT('%', :correo, '%'))) " +

@@ -11,12 +11,11 @@ import com.pucp.dp1.grupo4d.morapack.algorithm.GVNS;
 import com.pucp.dp1.grupo4d.morapack.algorithm.Problematica;
 import com.pucp.dp1.grupo4d.morapack.algorithm.Solucion;
 import com.pucp.dp1.grupo4d.morapack.model.algorithm.*;
-import com.pucp.dp1.grupo4d.morapack.model.dto.request.ParametersRequest;
+import com.pucp.dp1.grupo4d.morapack.model.dto.request.ReparameterizationRequest;
 import com.pucp.dp1.grupo4d.morapack.model.dto.request.PlanificationRequest;
 import com.pucp.dp1.grupo4d.morapack.model.dto.response.ImportResponse;
 import com.pucp.dp1.grupo4d.morapack.model.dto.response.PlanificationResponse;
-import com.pucp.dp1.grupo4d.morapack.model.dto.response.ProblematicResponse;
-import com.pucp.dp1.grupo4d.morapack.model.dto.response.SolutionResponse;
+import com.pucp.dp1.grupo4d.morapack.model.dto.response.SimulationResponse;
 import com.pucp.dp1.grupo4d.morapack.model.entity.*;
 import com.pucp.dp1.grupo4d.morapack.service.model.*;
 import jakarta.transaction.Transactional;
@@ -102,7 +101,7 @@ public class AlgorithmService {
 
     public PlanificationResponse planificar(PlanificationRequest request) {
         if(request.getReparametrizar()) {
-            ParametersRequest parameters = request.getParameters();
+            ReparameterizationRequest parameters = request.getParameters();
             Problematica.MAX_DIAS_ENTREGA_INTRACONTINENTAL = parameters.getMaxDiasEntregaIntercontinental();
             Problematica.MAX_DIAS_ENTREGA_INTERCONTINENTAL = parameters.getMaxDiasEntregaIntercontinental();
             Problematica.MAX_HORAS_RECOJO = parameters.getMaxHorasRecojo();
@@ -129,7 +128,7 @@ public class AlgorithmService {
         GVNS gvns = new GVNS();
         gvns.planificar(problematica);
         Solucion solucion = gvns.getSolucionVNS();
-        SolutionResponse sAux = new SolutionResponse(solucion);
+        SimulationResponse sAux = new SimulationResponse(solucion);
         almacenarSolucion(solucion, problematica);
         problematica.limpiarPools();
         vueloAdapter.clearPools();

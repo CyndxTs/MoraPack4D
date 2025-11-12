@@ -39,6 +39,10 @@ public class AeropuertoService {
         return aeropuertoRepository.findByAlias(alias);
     }
 
+    public List<AeropuertoEntity> findByEsSede(Boolean esSede) {
+        return aeropuertoRepository.findByEsSede(esSede);
+    }
+
     public AeropuertoEntity save(AeropuertoEntity aeropuerto) {
         return aeropuertoRepository.save(aeropuerto);
     }
