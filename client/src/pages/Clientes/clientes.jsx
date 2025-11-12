@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import "./clientes.scss";
-import { ButtonAdd, Input, Radio, Table, LoadingOverlay, Pagination, Notification, SidebarActions } from "../../components/UI/ui";
+import { ButtonAdd, Input, Radio, Table, LoadingOverlay, Pagination, Notification, SidebarActions, RemoveFileButton } from "../../components/UI/ui";
 import plus from "../../assets/icons/plus.svg";
 import hideIcon from "../../assets/icons/hide-sidebar.png";
 import { listarClientes, filtrarClientes  } from "../../services/clienteService";
@@ -311,6 +311,9 @@ export default function Clientes() {
 
             <div className="file-name">
               {archivo ? archivo.name : "Ningún archivo seleccionado"}
+              {archivo && (
+                <RemoveFileButton onClick={() => setArchivo(null)} />
+              )}
             </div>
 
             <div className="modal-body">

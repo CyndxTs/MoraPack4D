@@ -6,6 +6,7 @@
 
 package com.pucp.dp1.grupo4d.morapack.service.model;
 
+import com.pucp.dp1.grupo4d.morapack.model.dto.response.AeropuertoResponse;
 import com.pucp.dp1.grupo4d.morapack.model.entity.AeropuertoEntity;
 import com.pucp.dp1.grupo4d.morapack.repository.AeropuertoRepository;
 import com.pucp.dp1.grupo4d.morapack.util.G4D;
@@ -115,4 +116,39 @@ public class AeropuertoService {
             if (archivoSC != null) archivoSC.close();
         }
     }
+
+    //LISTAR BASICO
+    public List<AeropuertoResponse> listarBasico() {
+        return aeropuertoRepository.listarBasico();
+    }
+
+    //FILTRADO
+    public List<AeropuertoResponse> filtrarAeropuertos(String codigo, String ciudad, String continente, String ordenCapacidad) {
+        List<String> continentesList = null;
+
+        if (continente != null && !continente.isBlank()) {
+            continentesList = Arrays.stream(continente.split(","))
+                                    .map(String::trim)
+                                    .toList();
+            if (continentesList.isEmpty()) continentesList = null;
+        }
+
+        String codigoParam = (codigo != null && !codigo.isBlank()) ? codigo.trim() : null;
+        String ciudadParam = (ciudad != null && !ciudad.isBlank()) ? ciudad.trim() : null;
+
+        List<AeropuertoResponse> aeropuertos = aeropuertoRepository.filtrarAeropuertos(
+            codigoParam, ciudadParam, continentesList
+        );
+
+        if (ordenCapacidad != null) {
+            if (ordenCapacidad.equalsIgnoreCase("ascendente")) {
+                aeropuertos.sort(Comparator.comparing(AeropuertoResponse::getCapacidad));
+            } else if (ordenCapacidad.equalsIgnoreCase("descendente")) {
+                aeropuertos.sort(Comparator.comparing(AeropuertoResponse::getCapacidad).reversed());
+            }
+        }
+
+        return aeropuertos;
+    }
+
 }

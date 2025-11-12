@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from "react";
 import "./aeropuertos.scss";
-import { ButtonAdd, Input, Checkbox, Dropdown, Table, SidebarActions, Notification, LoadingOverlay, Pagination } from "../../components/UI/ui";
-import { listarAeropuertos  } from "../../services/aeropuertoService";
+import { ButtonAdd, Input, Checkbox, Dropdown, Table, SidebarActions, Notification, LoadingOverlay, Pagination, RemoveFileButton  } from "../../components/UI/ui";
+import { listarAeropuertos, filtrarAeropuertos   } from "../../services/aeropuertoService";
+import { importarAeropuertos } from "../../services/generalService";
 import plus from '../../assets/icons/plus.svg';
 import hideIcon from '../../assets/icons/hide-sidebar.png';
 
 export default function Aeropuertos() {
   const [collapsed, setCollapsed] = useState(false);
   const [codigoFiltro, setCodigoFiltro] = useState("");
+  const [ciudadFiltro, setCiudadFiltro] = useState("");
   const [orden, setOrden] = useState("");
   const [continenteFiltro, setContinenteFiltro] = useState({ america: false, europa: false, asia: false });
 
@@ -16,7 +18,8 @@ export default function Aeropuertos() {
   const [ciudad, setCiudad] = useState("");
   const [pais, setPais] = useState("");
   const [capacidad, setCapacidad] = useState("");
-  const [continente, setContinente] = useState("")
+  const [continente, setContinente] = useState("");
+  const [husoHorario,setHusoHorario]=useState("");
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [archivo, setArchivo] = useState(null);
@@ -49,32 +52,122 @@ export default function Aeropuertos() {
     { label: "Código", key: "codigo" },
     { label: "Ciudad", key: "ciudad" },
     { label: "País", key: "pais" },
+    { label: "Continente", key: "continente" },
     { label: "Capacidad", key: "capacidad" },
+    { label: "Huso horario", key: "husoHorario" },
     { label: "Acciones", key: "acciones" },
   ];
 
   const handleFileChange = (e) => {
     if (e.target.files.length > 0) {
-      setArchivo(e.target.files[0].name);
+      setArchivo(e.target.files[0]);
     } else {
       setArchivo(null);
     }
   };
 
-  const handleAdd = () => {
-    // Aquí podrías agregar la lógica para guardar el aeropuerto
-    console.log({ codigo, ciudad, orden, continente, archivo });
-    setIsModalOpen(false); // cerramos modal después de agregar
+  const handleAdd = async () => {
+    if (!archivo && (!codigo.trim() || !ciudad.trim())) {
+      showNotification(
+        "warning",
+        "Por favor selecciona un archivo o completa los campos antes de continuar."
+      );
+      return;
+    }
+
+    // Validación del nombre exacto
+    if (
+      archivo &&
+      archivo.name !== "c.1inf54.25.2.Aeropuerto.husos.v1.20250818__estudiantes.txt"
+    ) {
+      showNotification(
+        "warning",
+        "El archivo debe llamarse exactamente 'c.1inf54.25.2.Aeropuerto.husos.v1.20250818__estudiantes.txt'."
+      );
+      return;
+    }
+
+    try {
+      setProcessing(true);
+
+      if (archivo) {
+        // Importación mediante AlgorithmController
+        await importarAeropuertos(archivo);
+        showNotification("success", "Aeropuertos importados correctamente");
+      } else {
+        // Aquí podrías agregar lógica para añadir manualmente un aeropuerto si se desea
+        showNotification("success", "Aeropuerto agregado correctamente");
+      }
+
+      const data = await listarAeropuertos();
+      setAeropuertos(data);
+      setIsModalOpen(false);
+      setArchivo(null);
+      setCodigo("");
+      setCiudad("");
+      setPais("");
+      setCapacidad("");
+      setContinente("");
+      setHusoHorario("");
+    } catch (error) {
+      console.error(error);
+      showNotification("danger", "Error al agregar aeropuerto");
+    } finally {
+      setProcessing(false);
+    }
   };
 
   //Filtros
   const handleFilter = async () => {
+    setProcessing(true);
+    try {
+      const continenteSeleccionado = Object.keys(continenteFiltro)
+        .filter((key) => continenteFiltro[key])
+        .map((c) => {
+          if (c === "america") return "América del Sur.";
+          if (c === "europa") return "Europa";
+          if (c === "asia") return "Asia";
+          return c;
+        })
+        .join(",");
 
+      const ordenCapacidad = orden === "ascendente" ? "ascendente" : orden === "descendente" ? "descendente" : "";
+
+
+      const data = await filtrarAeropuertos({
+        codigo: codigoFiltro || null,
+        ciudad: ciudadFiltro || null,
+        continente: continenteSeleccionado || null,
+        ordenCapacidad: ordenCapacidad || null,
+      });
+
+      setAeropuertos(data);
+      setCurrentPage(1);
+      showNotification("success", "Filtro aplicado correctamente");
+    } catch (err) {
+      console.error(err);
+      showNotification("danger", "Error al filtrar aeropuertos");
+    } finally {
+      setProcessing(false);
+    }
   };
 
   //Limpiar filtros
   const handleCleanFilters = async () => {
-
+    setCodigoFiltro("");
+    setCiudadFiltro("");
+    setContinenteFiltro({ america: false, europa: false, asia: false });
+    setOrden("");
+    setProcessing(true);
+    try {
+      const data = await listarAeropuertos();
+      setAeropuertos(data);
+      showNotification("info", "Filtros limpiados");
+    } catch (err) {
+      showNotification("danger", "Error al limpiar filtros");
+    } finally {
+      setProcessing(false);
+    }
   };
 
   // --- Paginación ---
@@ -125,20 +218,12 @@ export default function Aeropuertos() {
 
               <div className="filter-group">
                 <span className="sidebar-subtitle-strong">Ciudad</span>
-                <Dropdown
-                  placeholder="Seleccionar..."
-                  options={[
-                    { label: "Ejemplo 1", value: "ejemplo1" },
-                    { label: "Ejemplo 2", value: "ejemplo2" }, 
-                    { label: "Ejemplo 3", value: "ejemplo3" },
-                  ]}
-                  onSelect={(val) => setCiudad(val)}
-                />
+                <Input placeholder="Escribir..." value={ciudadFiltro} onChange={(e) => setCiudadFiltro(e.target.value)} />
               </div>
 
               <div className="filter-group">
                 <span className="sidebar-subtitle-strong">Continente</span>
-                <Checkbox label="América" value="america" checked={continenteFiltro.america} onChange={(e) => setContinenteFiltro({ ...continenteFiltro, america: e.target.checked })} />
+                <Checkbox label="América del Sur." value="america" checked={continenteFiltro.america} onChange={(e) => setContinenteFiltro({ ...continenteFiltro, america: e.target.checked })} />
                 <Checkbox label="Europa" value="europa" checked={continenteFiltro.europa} onChange={(e) => setContinenteFiltro({ ...continenteFiltro, europa: e.target.checked })} />
                 <Checkbox label="Asia" value="asia" checked={continenteFiltro.asia} onChange={(e) => setContinenteFiltro({ ...continenteFiltro, asia: e.target.checked })} />
               </div>
@@ -147,9 +232,10 @@ export default function Aeropuertos() {
                 <span className="sidebar-subtitle-strong">Orden de capacidad</span>
                 <Dropdown
                   placeholder="Seleccionar..."
+                  value={orden} // hace que el valor dependa del estado
                   options={[
                     { label: "Ascendente", value: "ascendente" },
-                    { label: "Descendente", value: "descendente" },          
+                    { label: "Descendente", value: "descendente" },
                   ]}
                   onSelect={(val) => setOrden(val)}
                 />
@@ -199,24 +285,34 @@ export default function Aeropuertos() {
               <input type="file" id="fileInput" className="file-input" onChange={handleFileChange} />
             </div>
 
-            <div className="file-name">{archivo || "Ningún archivo seleccionado"}</div>
+            <div className="file-name">
+              {archivo ? archivo.name : "Ningún archivo seleccionado"}
+              {archivo && (
+                <RemoveFileButton onClick={() => setArchivo(null)} />
+              )}
+            </div>
+
 
             <div className="modal-body">
               <label htmlFor="codigoModal">Código</label>
-              <Input id="codigoModal" placeholder="Escribe el código" value={codigo} onChange={(e) => setCodigo(e.target.value)} />
+              <Input id="codigoModal" placeholder="Escribe el código" value={codigo} onChange={(e) => setCodigo(e.target.value)} disabled={!!archivo}/>
 
               <label htmlFor="ciudadModal">Ciudad</label>
-              <Dropdown
-                placeholder="Seleccionar..."
-                options={[
-                  { label: "Ejemplo 1", value: "ejemplo1" },
-                  { label: "Ejemplo 2", value: "ejemplo2" },
-                ]}
-                onSelect={(val) => setCiudad(val)}
-              />
+              <Input id="ciudadModal" placeholder="Escribe la ciudad" value={ciudad} onChange={(e) => setCiudad(e.target.value)} disabled={!!archivo}/>
+
+              <label htmlFor="paisModal">País</label>
+              <Input id="paisModal" placeholder="Escribe el pais" value={pais} onChange={(e) => setPais(e.target.value)} disabled={!!archivo}/>
+
+              <label htmlFor="continenteModal">Continente</label>
+              <Input id="continenteModal" placeholder="Escribe el continente" value={continente} onChange={(e) => setContinente(e.target.value)} disabled={!!archivo}/>
 
               <label htmlFor="capacidadModal">Capacidad</label>
-              <Input id="capacidadModal" placeholder="Escribe la capacidad" />
+              <Input id="capacidadModal" placeholder="Escribe la capacidad" value={capacidad} onChange={(e) => setCapacidad(e.target.value)} disabled={!!archivo}/>
+
+
+              <label htmlFor="husoHorarioModal">Huso horario</label>
+              <Input id="husoHorarioModal" placeholder="Escribe el huso horario" value={husoHorario} onChange={(e) => setHusoHorario(e.target.value)} disabled={!!archivo}/>
+
             </div>
 
             <div className="modal-footer">

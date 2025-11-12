@@ -9,6 +9,9 @@ package com.pucp.dp1.grupo4d.morapack.controller.model;
 import com.pucp.dp1.grupo4d.morapack.model.entity.PedidoEntity;
 import com.pucp.dp1.grupo4d.morapack.service.model.PedidoService;
 import org.springframework.web.bind.annotation.*;
+
+import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
 
 @RestController
@@ -25,4 +28,71 @@ public class PedidoController {
     public List<PedidoEntity> listar() {
         return pedidoService.findAll();
     }
+
+    //LISTAR SIMPLE
+    @GetMapping("/listar")
+    public List<PedidoSimplificado> listarSimplificado() {
+        return pedidoService.findAll().stream()
+                .map(p -> new PedidoSimplificado(
+                        p.getId(),
+                        p.getCodigo(),
+                        p.getCantidadSolicitada(),
+                        p.getFechaHoraGeneracionLocal(),
+                        p.getFechaHoraGeneracionUTC(),
+                        p.getFechaHoraExpiracionLocal(),
+                        p.getFechaHoraExpiracionUTC(),
+                        (p.getCliente() != null ? p.getCliente().getId() : null),
+                        (p.getCliente() != null ? p.getCliente().getNombre() : null),
+                        (p.getDestino() != null ? p.getDestino().getId() : null),
+                        (p.getDestino() != null ? p.getDestino().getCodigo() : null)
+                ))
+                .toList();
+    }
+
+    /*DTO local para listar pedidos simplificados*/
+    static class PedidoSimplificado {
+        private Integer id;
+        private String codigo;
+        private Integer cantidadSolicitada;
+        private LocalDateTime fechaHoraGeneracionLocal;
+        private LocalDateTime fechaHoraGeneracionUTC;
+        private LocalDateTime fechaHoraExpiracionLocal;
+        private LocalDateTime fechaHoraExpiracionUTC;
+        private Integer idCliente;
+        private String nombreCliente;
+        private Integer idAeropuertoDestino;
+        private String codigoAeropuertoDestino;
+
+        public PedidoSimplificado(Integer id, String codigo, Integer cantidadSolicitada,
+                                LocalDateTime fechaHoraGeneracionLocal, LocalDateTime fechaHoraGeneracionUTC,
+                                LocalDateTime fechaHoraExpiracionLocal, LocalDateTime fechaHoraExpiracionUTC,
+                                Integer idCliente, String nombreCliente,
+                                Integer idAeropuertoDestino, String codigoAeropuertoDestino) {
+            this.id = id;
+            this.codigo = codigo;
+            this.cantidadSolicitada = cantidadSolicitada;
+            this.fechaHoraGeneracionLocal = fechaHoraGeneracionLocal;
+            this.fechaHoraGeneracionUTC = fechaHoraGeneracionUTC;
+            this.fechaHoraExpiracionLocal = fechaHoraExpiracionLocal;
+            this.fechaHoraExpiracionUTC = fechaHoraExpiracionUTC;
+            this.idCliente = idCliente;
+            this.nombreCliente = nombreCliente;
+            this.idAeropuertoDestino = idAeropuertoDestino;
+            this.codigoAeropuertoDestino = codigoAeropuertoDestino;
+        }
+
+        public Integer getId() { return id; }
+        public String getCodigo() { return codigo; }
+        public Integer getCantidadSolicitada() { return cantidadSolicitada; }
+        public LocalDateTime getFechaHoraGeneracionLocal() { return fechaHoraGeneracionLocal; }
+        public LocalDateTime getFechaHoraGeneracionUTC() { return fechaHoraGeneracionUTC; }
+        public LocalDateTime getFechaHoraExpiracionLocal() { return fechaHoraExpiracionLocal; }
+        public LocalDateTime getFechaHoraExpiracionUTC() { return fechaHoraExpiracionUTC; }
+        public Integer getIdCliente() { return idCliente; }
+        public String getNombreCliente() { return nombreCliente; }
+        public Integer getIdAeropuertoDestino() { return idAeropuertoDestino; }
+        public String getCodigoAeropuertoDestino() { return codigoAeropuertoDestino; }
+    }
+
+
 }

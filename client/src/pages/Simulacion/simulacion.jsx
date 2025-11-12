@@ -496,29 +496,29 @@ useEffect(() => {
               <div className="file-name">{archivo || "Ningún archivo seleccionado"}</div>
 
               <span className="sidebar-subtitle">Filtros</span>
-              <div className="filter-group">
-                <span className="sidebar-subtitle-strong">Código de vuelo</span>
-                <Dropdown
-                  placeholder="Seleccionar..."
-                  options={[
-                    { label: "Ejemplo 1", value: "ejemplo1" },
-                    { label: "Ejemplo 2", value: "ejemplo2" },          
-                  ]}
-                  onSelect={(val) => setCodigoVuelo(val)}
-                />
-              </div>
+                <div className="filter-group">
+                  <span className="sidebar-subtitle-strong">Código de vuelo</span>
+                  <Dropdown
+                    placeholder="Seleccionar..."
+                    options={[
+                      { label: "Ejemplo 1", value: "ejemplo1" },
+                      { label: "Ejemplo 2", value: "ejemplo2" },          
+                    ]}
+                    onSelect={(val) => setCodigoVuelo(val)}
+                  />
+                </div>
 
-              <div className="filter-group">
-                <span className="sidebar-subtitle-strong">Ciudad destino</span>
-                <Dropdown
-                  placeholder="Seleccionar..."
-                  options={[
-                    { label: "Ejemplo 1", value: "ejemplo1" },
-                    { label: "Ejemplo 2", value: "ejemplo2" },          
-                  ]}
-                  onSelect={(val) => setCiudadDestino(val)}
-                />
-
+                <div className="filter-group">
+                  <span className="sidebar-subtitle-strong">Ciudad destino</span>
+                  <Dropdown
+                    placeholder="Seleccionar..."
+                    options={[
+                      { label: "Ejemplo 1", value: "ejemplo1" },
+                      { label: "Ejemplo 2", value: "ejemplo2" },          
+                    ]}
+                    onSelect={(val) => setCiudadDestino(val)}
+                  />
+                </div>
 
                 <div className="filter-group">
                   <span className="sidebar-subtitle-strong">Continente</span>
@@ -526,7 +526,6 @@ useEffect(() => {
                   <Checkbox label="Europa" value="europa" checked={continente.europa} onChange={(e) => setContinente({ ...continente, europa: e.target.checked })} />
                   <Checkbox label="Asia" value="asia" checked={continente.asia} onChange={(e) => setContinente({ ...continente, asia: e.target.checked })} />
                 </div>
-              </div>
 
               <span className="sidebar-subtitle">Leyenda</span>
               <Legend
