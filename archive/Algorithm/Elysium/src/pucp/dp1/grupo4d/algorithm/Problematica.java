@@ -17,7 +17,6 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Scanner;
 import java.util.Set;
-
 import pucp.dp1.grupo4d.model.Aeropuerto;
 import pucp.dp1.grupo4d.model.Cliente;
 import pucp.dp1.grupo4d.model.Lote;
@@ -53,6 +52,10 @@ public class Problematica {
         this.vuelosEnTransito = new HashSet<>();
         this.rutasEnOperacion = new HashSet<>();
     }
+
+    public Problematica(Problematica problematica) {
+        this.reasignar(problematica);
+    }
     
     public Problematica replicar() {
         Problematica problematica = new Problematica();
@@ -73,22 +76,22 @@ public class Problematica {
     }
 
     public void reasignar(Problematica problematica) {
-        this.clientes = problematica.clientes;
-        this.destinos = problematica.destinos;
-        this.origenes = problematica.origenes;
-        this.planes = problematica.planes;
-        this.pedidos = problematica.pedidos;
-        this.rutasEnOperacion = problematica.rutasEnOperacion;
-        this.vuelosEnTransito = problematica.vuelosEnTransito;
+        this.clientes = new ArrayList<>(problematica.clientes);
+        this.destinos = new ArrayList<>(problematica.destinos);
+        this.origenes = new ArrayList<>(problematica.origenes);
+        this.planes = new ArrayList<>(problematica.planes);
+        this.pedidos = new ArrayList<>(problematica.pedidos);
+        this.rutasEnOperacion = new HashSet<>(problematica.rutasEnOperacion);
+        this.vuelosEnTransito = new HashSet<>(problematica.vuelosEnTransito);
     }
-    // 
+
     public void cargarDatos(String rutaArchivoAeropuertos, String rutaArchivoVuelos, String rutaArchivoClientes, String rutaArchivoPedidos) {
         cargarAeropuertos(rutaArchivoAeropuertos);
         cargarPlanesDeVuelo(rutaArchivoVuelos);
         cargarClientes(rutaArchivoClientes);
         cargarPedidos(rutaArchivoPedidos);
     }
-    // 
+
     private void cargarAeropuertos(String rutaArchivo) {
         G4D.Logger.logf("Cargando aeropuertos desde '%s'..%n",rutaArchivo);
         try {
@@ -135,7 +138,7 @@ public class Problematica {
             System.exit(1);
         }
     }
-    // 
+
     private void cargarPlanesDeVuelo(String rutaArchivo) {
         G4D.Logger.logf("Cargando planes de vuelo desde '%s'..%n",rutaArchivo);
         try {
@@ -175,7 +178,7 @@ public class Problematica {
             System.exit(1);
         }
     }
-    //
+
     private void cargarClientes(String rutaArchivo) {
         G4D.Logger.logf("Cargando clientes desde '%s'..%n",rutaArchivo);
         try {
@@ -201,7 +204,7 @@ public class Problematica {
             System.exit(1);
         }
     }
-    //
+
     private void cargarPedidos(String rutaArchivo) {
         G4D.Logger.logf("Cargando pedidos desde '%s'..%n",rutaArchivo);
         try {
@@ -258,11 +261,11 @@ public class Problematica {
             System.exit(1);
         }
     }
-    //
+
     private Aeropuerto obtenerAeropuertoPorCodigo(String codigo) {
         return this.destinos.stream().filter(aDest -> aDest.getCodigo().equals(codigo)).findFirst().orElse(this.origenes.stream().filter(aOrig -> aOrig.getCodigo().equals(codigo)).findFirst().orElse(null));
     }
-    //
+
     private Cliente obtenerClientePorCodigo(String codigo) {
         return this.clientes.stream().filter(c -> c.getCodigo().equals(codigo)).findFirst().orElse(null);
     }
