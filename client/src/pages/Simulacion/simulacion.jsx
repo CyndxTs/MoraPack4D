@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import "./simulacion.scss";
 import { Radio, Checkbox, Dropdown, Legend, Notification, SidebarActions } from "../../components/UI/ui";
 import hideIcon from '../../assets/icons/hide-sidebar.png';
@@ -22,9 +22,34 @@ export default function Simulacion() {
   //Aeropuertos
   const [airports, setAirports] = useState(null);
   const [loadingAirports, setLoadingAirports] = useState(true);
-  // Controles de tiempo
-  const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
-  const [time, setTime] = useState(new Date().toTimeString().slice(0,5));
+  
+  // Inputs de inicio de simulación (no se auto-actualizan)
+  const [inputDate, setInputDate] = useState(new Date().toISOString().split("T")[0]);
+  const [inputTime, setInputTime] = useState(new Date().toTimeString().slice(0,5));
+
+  // Reloj de simulación (ms) y velocidad: 3600 = 1s real -> 1 hora simulada
+  const [simNowMs, setSimNowMs] = useState(() => Date.now());
+  const [simSpeed, setSimSpeed] = useState(3600);
+
+  // Refs internas para el avance suave
+  const baseSimMsRef = useRef(null);
+  const lastRealMsRef = useRef(null);
+
+  // Helpers de tiempo (trabajamos en UTC porque tu JSON está en UTC)
+  const toISODate = (ms) => new Date(ms).toISOString().split("T")[0];
+  const toISOTime = (ms) => new Date(ms).toISOString().slice(11,16);
+
+  const parseUtcToMs = (iso) => {
+    // Si viene sin zona ("2025-11-26T20:06:00") lo forzamos a UTC
+    const s = /Z|[+-]\d{2}:\d{2}$/.test(iso) ? iso : iso + "Z";
+    return new Date(s).getTime();
+  };
+
+  const fromInputsToMsUTC = (d, t) => new Date(`${d}T${t}:00Z`).getTime();
+
+
+
+
   const [seconds, setSeconds] = useState(0);
   const [timerRunning, setTimerRunning] = useState(false);
   const [timerActive, setTimerActive] = useState(false); // indica si inició cronómetro (start clickeado)
@@ -67,7 +92,61 @@ export default function Simulacion() {
     return () => clearInterval(timer);
   }, [timerRunning]);
 
+useEffect(() => {
+  if (!timerRunning) return;
+  let rafId;
+
+  const tick = (now) => {
+    if (lastRealMsRef.current == null) lastRealMsRef.current = now;
+    const elapsedRealMs = now - lastRealMsRef.current; // ms reales desde el último frame
+    lastRealMsRef.current = now;
+
+    // Avanzar reloj simulado: simSpeed = ms_sim / ms_real (3600 => 1s real = 1h simulada)
+    setSimNowMs(prev => prev + elapsedRealMs * simSpeed);
+
+    rafId = requestAnimationFrame(tick);
+  };
+
+  lastRealMsRef.current = performance.now();
+  rafId = requestAnimationFrame(tick);
+  return () => cancelAnimationFrame(rafId);
+}, [timerRunning, simSpeed]);
+
+useEffect(() => {
+  if (!timerActive) return;
+
+  setFlights(prev => prev.map(f => {
+    if (!f || !f.path || f.path.length === 0) return f;
+
+    const total = Math.max(f.endMs - f.startMs, 60 * 1000);
+
+    // Aún no despega
+    if (simNowMs <= f.startMs) {
+      return { ...f, progress: 0, position: f.path[0], arrived: false };
+    }
+
+    const frac = Math.min((simNowMs - f.startMs) / total, 1);
+    const idx  = Math.floor(frac * (f.path.length - 1));
+    const pos  = f.path[idx];
+    const next = f.path[Math.min(idx + 1, f.path.length - 1)];
+
+    // bearing → rotation
+    const toRad = d => d * Math.PI / 180, toDeg = r => r * 180 / Math.PI;
+    const lat1 = toRad(pos.lat),  lon1 = toRad(pos.lng);
+    const lat2 = toRad(next.lat), lon2 = toRad(next.lng);
+    let bearing = Math.atan2(
+      Math.sin(lon2 - lon1) * Math.cos(lat2),
+      Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(lon2 - lon1)
+    );
+    bearing = (toDeg(bearing) + 360) % 360;
+    const rotation = bearing - 45;
+
+    return { ...f, progress: frac, position: pos, rotation, arrived: frac >= 1 };
+  }));
+}, [simNowMs, timerActive]);
+
   // Reloj 
+  /*
   useEffect(() => {
     const clock = setInterval(() => {
       const now = new Date();
@@ -75,7 +154,7 @@ export default function Simulacion() {
       if (!timerActive) setDate(now.toISOString().split("T")[0]); // solo actualiza fecha si no hay simulación activa
     }, 1000);
     return () => clearInterval(clock);
-  }, [timerActive]);
+  }, [timerActive]);*/
 
   const handleFileChange = (e) => {
     if (e.target.files.length > 0) setArchivo(e.target.files[0].name);
@@ -90,6 +169,23 @@ export default function Simulacion() {
 
   // Botones
   const handleStart = () => {
+    // Si ya hay simulación activa pero está en pausa, SOLO reanuda
+    if (timerActive && !timerRunning) {
+      lastRealMsRef.current = performance.now(); // referencia para el RAF
+      setTimerRunning(true);
+      setBtnState({
+        start: { disabled: true, color: "grey" },
+        pause: { disabled: false, color: "red" },
+        stop:  { disabled: false, color: "blue" }
+      });
+      return;
+    }
+
+    // Primer inicio: fija el tiempo de simulación al valor de los inputs
+    const base = fromInputsToMsUTC(inputDate, inputTime);
+    setSimNowMs(base);
+    lastRealMsRef.current = performance.now();
+
     setTimerRunning(true);
     setTimerActive(true);
     setBtnState({
@@ -110,40 +206,38 @@ export default function Simulacion() {
   };
 
   const handleStop = () => {
-    // Detener el cronómetro y el estado de simulación
     setTimerRunning(false);
     setTimerActive(false);
     setSeconds(0);
 
-    // Reiniciar todos los vuelos a su punto de origen
+    // Volver el reloj simulado al valor de los inputs
+    const base = fromInputsToMsUTC(inputDate, inputTime);
+    setSimNowMs(base);
+
+    // Resetear vuelos al origen
     if (airports && rawFlights.length > 0) {
       const reset = rawFlights.map((f) => {
         const origin = airports[f.origenCodigo];
         const dest = airports[f.destinoCodigo];
         if (!origin || !dest) return null;
 
-        const salida = new Date(f.fechaSalida);
-        const llegada = new Date(f.fechaLlegada);
-        const durationSec = Math.max((llegada - salida) / 1000, 60);
-
-        // Regeneramos el path para evitar errores si se había eliminado
+        const startMs = parseUtcToMs(f.fechaSalida);
+        const endMs   = parseUtcToMs(f.fechaLlegada);
         const path = generateGeodesicPath(origin.lat, origin.lng, dest.lat, dest.lng, 120);
 
         return {
           code: f.codigo,
-          origin,
-          originName: origin.name,
-          destination: dest,
-          destinationName: dest.name,
-          startTime: f.fechaSalida,
-          endTime: f.fechaLlegada,
+          origin, originName: origin.name,
+          destination: dest, destinationName: dest.name,
+          startTime: f.fechaSalida, endTime: f.fechaLlegada,
+          startMs, endMs,
           capacity: f.capacidadOcupada,
-          durationSec,
-          progress: 0, // volver al inicio
-          arrived: false, // aún no llegó
-          path, // ruta restaurada
-          position: { lat: origin.lat, lng: origin.lng }, // vuelve al aeropuerto de salida
-          rotation: 0, // sin rotación
+          durationSec: Math.max((endMs - startMs)/1000, 60),
+          progress: 0,
+          arrived: false,
+          path,
+          position: { lat: origin.lat, lng: origin.lng },
+          rotation: 0,
         };
       }).filter(Boolean);
 
@@ -152,11 +246,10 @@ export default function Simulacion() {
       setFlights([]);
     }
 
-    // Restaurar botones
     setBtnState({
       start: { disabled: false, color: "blue" },
       pause: { disabled: true, color: "grey" },
-      stop: { disabled: true, color: "grey" }
+      stop:  { disabled: true, color: "grey" }
     });
   };
   
@@ -202,9 +295,9 @@ export default function Simulacion() {
             return null;
           }
 
-          const salida   = new Date(f.fechaSalida);
-          const llegada  = new Date(f.fechaLlegada);
-          const durationSec = Math.max((llegada - salida) / 1000, 60);
+          const startMs = parseUtcToMs(f.fechaSalida);
+          const endMs   = parseUtcToMs(f.fechaLlegada);
+          const durationSec = Math.max((endMs - startMs) / 1000, 60);
 
           const path = generateGeodesicPath(origin.lat, origin.lng, dest.lat, dest.lng, 120);
 
@@ -216,6 +309,8 @@ export default function Simulacion() {
             destinationName: dest.name,
             startTime: f.fechaSalida,
             endTime: f.fechaLlegada,
+            startMs,
+            endMs,
             capacity: f.capacidadOcupada,
             durationSec,
             progress: 0,
@@ -224,7 +319,6 @@ export default function Simulacion() {
             position: path[0],
             rotation: 0,
           };
-
         }).filter(Boolean);
 
         setFlights(mapped);
@@ -263,6 +357,7 @@ export default function Simulacion() {
 
 
   // === ANIMACIÓN DE LOS VUELOS ===
+/*
   useEffect(() => {
     if (!timerRunning) return;
 
@@ -298,25 +393,23 @@ export default function Simulacion() {
       );
     }, 100); // cada 100 ms, animación fluida
     return () => clearInterval(interval);
-  }, [timerRunning]);
+  }, [timerRunning]);*/
 
   // Detener cronómetro cuando todos los vuelos hayan llegado
   useEffect(() => {
-    if (flights.length > 0 && flights.every(f => f.arrived)) {
-      console.log("✈️ Todos los vuelos han llegado.");
+    if (!timerActive || flights.length === 0) return;
+    const allArrivedByTime = flights.every(f => simNowMs >= f.endMs);
+    if (allArrivedByTime) {
       showNotification("info", "Todos los vuelos han llegado a su destino.");
-
-      // Detenemos la simulación
       setTimerRunning(false);
       setTimerActive(false);
-
       setBtnState({
         start: { disabled: true, color: "grey" },
         pause: { disabled: true, color: "grey" },
         stop:  { disabled: false, color: "blue" }
       });
     }
-  }, [flights]);
+  }, [simNowMs, flights, timerActive]);
 
 
   // Calcula puntos de una ruta geodésica (gran círculo)
@@ -459,28 +552,28 @@ export default function Simulacion() {
 
           <input
             type="date"
-            value={date}
-            onChange={e=>setDate(e.target.value)}
+            value={inputDate}
+            onChange={e=>setInputDate(e.target.value)}
             className="custom-input"
             disabled={timerActive} // desactivado hasta stop
           />
 
           <input
             type="time"
-            value={time}
-            onChange={e=>setTime(e.target.value)}
+            value={inputTime}
+            onChange={e=>setInputTime(e.target.value)}
             className="custom-input"
             disabled={timerActive} // desactivado hasta stop
           />
 
-          <button className={`btn ${btnState.start.color}`} onClick={handleStart} disabled={btnState.start.disabled}>Iniciar</button>
+          <button className={`btn ${btnState.start.color}`} onClick={handleStart} disabled={btnState.start.disabled} title={timerActive && !timerRunning ? "Reanudar simulación" : "Iniciar simulación"} > {timerActive && !timerRunning ? "Reanudar" : "Iniciar"} </button>
           <button className={`btn ${btnState.pause.color}`} onClick={handlePause} disabled={btnState.pause.disabled}>Pausar</button>
           <button className={`btn ${btnState.stop.color}`} onClick={handleStop} disabled={btnState.stop.disabled}>Detener</button>
 
           <span className="info-label">Fecha:</span>
-          <span className="value">{date}</span>
+          <span className="value">{toISODate(simNowMs)}</span>
           <span className="info-label">Hora:</span>
-          <span className="value">{time}</span>
+          <span className="value">{toISOTime(simNowMs)}</span>
           <span className="info-label">Tiempo:</span>
           <span className="value">{formatTime(seconds)}</span>
         </div>
@@ -515,9 +608,9 @@ export default function Simulacion() {
               : "invert(62%) sepia(86%) saturate(421%) hue-rotate(356deg) brightness(94%) contrast(92%)";
 
             return (
-              <React.Fragment key={i}>
+              <React.Fragment key={flight.code}>
                 {/* Línea del vuelo */}
-                {timerRunning && (
+                {timerActive && (
                   <Polyline
                     positions={flight.path.slice(
                       Math.floor(flight.path.length * flight.progress)
