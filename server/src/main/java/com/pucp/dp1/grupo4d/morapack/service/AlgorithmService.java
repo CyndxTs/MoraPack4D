@@ -11,12 +11,10 @@ import com.pucp.dp1.grupo4d.morapack.algorithm.GVNS;
 import com.pucp.dp1.grupo4d.morapack.algorithm.Problematica;
 import com.pucp.dp1.grupo4d.morapack.algorithm.Solucion;
 import com.pucp.dp1.grupo4d.morapack.model.algorithm.*;
-import com.pucp.dp1.grupo4d.morapack.model.dto.request.ParametersRequest;
+import com.pucp.dp1.grupo4d.morapack.model.dto.request.ReparameterizationRequest;
 import com.pucp.dp1.grupo4d.morapack.model.dto.request.PlanificationRequest;
 import com.pucp.dp1.grupo4d.morapack.model.dto.response.ImportResponse;
 import com.pucp.dp1.grupo4d.morapack.model.dto.response.PlanificationResponse;
-import com.pucp.dp1.grupo4d.morapack.model.dto.response.ProblematicResponse;
-import com.pucp.dp1.grupo4d.morapack.model.dto.response.SolutionResponse;
 import com.pucp.dp1.grupo4d.morapack.model.entity.*;
 import com.pucp.dp1.grupo4d.morapack.service.model.*;
 import jakarta.transaction.Transactional;
@@ -102,13 +100,17 @@ public class AlgorithmService {
 
     public PlanificationResponse planificar(PlanificationRequest request) {
         if(request.getReparametrizar()) {
-            ParametersRequest parameters = request.getParameters();
+            ReparameterizationRequest parameters = request.getParameters();
             Problematica.MAX_DIAS_ENTREGA_INTRACONTINENTAL = parameters.getMaxDiasEntregaIntercontinental();
             Problematica.MAX_DIAS_ENTREGA_INTERCONTINENTAL = parameters.getMaxDiasEntregaIntercontinental();
             Problematica.MAX_HORAS_RECOJO = parameters.getMaxHorasRecojo();
             Problematica.MAX_HORAS_ESTANCIA = parameters.getMaxHorasEstancia();
             Problematica.MIN_HORAS_ESTANCIA = parameters.getMinHorasEstancia();
+            Problematica.FECHA_HORA_INICIO = parameters.getFechaHoraIni();
+            Problematica.FECHA_HORA_FIN = parameters.getFechaHoraFin();
             Problematica.CODIGOS_DE_ORIGENES = parameters.getCodigosDeOrigenes();
+            GVNS.D_MIN = parameters.getDMin();
+            GVNS.I_MAX = parameters.getIMax();
             GVNS.L_MIN = parameters.getEleMin();
             GVNS.L_MAX = parameters.getEleMax();
             GVNS.K_MIN = parameters.getKMin();
@@ -125,21 +127,22 @@ public class AlgorithmService {
                 aeropuertoAdapter, clienteAdapter, planAdapter, pedidoAdapter
         );
         problematica.cargarDatos();
-        ProblematicResponse pAux = new ProblematicResponse(problematica);
         GVNS gvns = new GVNS();
         gvns.planificar(problematica);
+        if(gvns.getSolucionINI() == null) {
+            return new PlanificationResponse(false, "COLAPSO!");
+        }
         Solucion solucion = gvns.getSolucionVNS();
-        SolutionResponse sAux = new SolutionResponse(solucion);
-        almacenarSolucion(solucion, problematica);
+        guardarSolucion(solucion, problematica);
         problematica.limpiarPools();
         vueloAdapter.clearPools();
         rutaAdapter.clearPools();
         loteAdapter.clearPools();
-        return new PlanificationResponse(true, "Planificación correctamente concluida.", sAux, pAux);
+        return new PlanificationResponse(true, "Planificación correctamente concluida!");
     }
 
     @Transactional
-    public void almacenarSolucion(Solucion solucion, Problematica problematica) {
+    public void guardarSolucion(Solucion solucion, Problematica problematica) {
         if (solucion == null || solucion.getPedidosAtendidos() == null) {
             return;
         }

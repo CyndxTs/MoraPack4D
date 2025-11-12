@@ -1,3 +1,9 @@
+/**]
+ >> Project:    MoraPack
+ >> Author:     Grupo 4D
+ >> File:       WebConfig.java
+ [**/
+
 package com.pucp.dp1.grupo4d.morapack;
 
 import org.springframework.context.annotation.Bean;

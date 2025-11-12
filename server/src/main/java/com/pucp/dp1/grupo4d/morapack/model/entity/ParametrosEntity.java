@@ -1,7 +1,7 @@
 /**
  >> Project:    MoraPack
  >> Author:     Grupo 4D
- >> File:       ParametrizacionEntity.java
+ >> File:       ParametrosEntity.java
  **/
 
 package com.pucp.dp1.grupo4d.morapack.model.entity;
@@ -9,11 +9,13 @@ package com.pucp.dp1.grupo4d.morapack.model.entity;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
-@Table(name = "PARAMETRIZACION", schema = "morapack4d")
+@Table(name = "PARAMETROS", schema = "morapack4d")
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
-public class ParametrizacionEntity {
+public class ParametrosEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -65,6 +67,21 @@ public class ParametrizacionEntity {
     @Column(name = "max_intentos", nullable = false)
     private Integer maxIntentos = 5;
 
+    @Column(name = "f_ua", nullable = false)
+    private Double factorDeUmbralDeAberracion = 1.015;
+
+    @Column(name = "f_ut", nullable = false)
+    private Double factorDeUtilizacionTemporal = 5000.0;
+
+    @Column(name = "f_de", nullable = false)
+    private Double factorDeDesviacionEspacial = 2000.0;
+
+    @Column(name = "f_do", nullable = false)
+    private Double factorDeDisposicionOperacional = 3000.0;
+
+    @Transient
+    private List<String> codOrigenes = new ArrayList<>();
+
     public Integer getId() { return id; } public void setId(Integer id) { this.id = id; }
     public Integer getMaxDiasEntregaIntercontinental() { return maxDiasEntregaIntercontinental; } public void setMaxDiasEntregaIntercontinental(Integer maxDiasEntregaIntercontinental) { this.maxDiasEntregaIntercontinental = maxDiasEntregaIntercontinental; }
     public Integer getMaxDiasEntregaIntracontinental() { return maxDiasEntregaIntracontinental; } public void setMaxDiasEntregaIntracontinental(Integer maxDiasEntregaIntracontinental) { this.maxDiasEntregaIntracontinental = maxDiasEntregaIntracontinental; }
@@ -81,4 +98,9 @@ public class ParametrizacionEntity {
     public Integer getKMax() { return kMax; } public void setKMax(Integer kMax) { this.kMax = kMax; }
     public Integer getTMax() { return tMax; } public void setTMax(Integer tMax) { this.tMax = tMax; }
     public Integer getMaxIntentos() { return maxIntentos; } public void setMaxIntentos(Integer maxIntentos) { this.maxIntentos = maxIntentos; }
+    public Double getFactorDeUmbralDeAberracion() { return factorDeUmbralDeAberracion; } public void setFactorDeUmbralDeAberracion(Double factorDeUmbralDeAberracion) { this.factorDeUmbralDeAberracion = factorDeUmbralDeAberracion; }
+    public Double getFactorDeUtilizacionTemporal() { return factorDeUtilizacionTemporal; } public void setFactorDeUtilizacionTemporal(Double factorDeUtilizacionTemporal) { this.factorDeUtilizacionTemporal = factorDeUtilizacionTemporal; }
+    public Double getFactorDeDesviacionEspacial() { return factorDeDesviacionEspacial; } public void setFactorDeDesviacionEspacial(Double factorDeDesviacionEspacial) { this.factorDeDesviacionEspacial = factorDeDesviacionEspacial; }
+    public Double getFactorDeDisposicionOperacional() { return factorDeDisposicionOperacional; } public void setFactorDeDisposicionOperacional(Double factorDeDisposicionOperacional) { this.factorDeDisposicionOperacional = factorDeDisposicionOperacional; }
+    public List<String> getCodOrigenes() { return codOrigenes; } public void setCodOrigenes(List<String> codOrigenes) { this.codOrigenes = codOrigenes; }
 }

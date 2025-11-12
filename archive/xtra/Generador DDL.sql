@@ -298,11 +298,11 @@ CREATE TABLE IF NOT EXISTS `morapack4d`.`ADMINISTRADOR` (
 
 
 -- -----------------------------------------------------
--- Table `morapack4d`.`PARAMETRIZACION`
+-- Table `morapack4d`.`PARAMETROS`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `morapack4d`.`PARAMETRIZACION` ;
+DROP TABLE IF EXISTS `morapack4d`.`PARAMETROS` ;
 
-CREATE TABLE IF NOT EXISTS `morapack4d`.`PARAMETRIZACION` (
+CREATE TABLE IF NOT EXISTS `morapack4d`.`PARAMETROS` (
   `id` INT NOT NULL DEFAULT 1,
   `max_dias_entrega_intercontinental` INT NOT NULL DEFAULT 3,
   `max_dias_entrega_intracontinental` INT NOT NULL DEFAULT 2,
@@ -319,6 +319,10 @@ CREATE TABLE IF NOT EXISTS `morapack4d`.`PARAMETRIZACION` (
   `k_max` INT NOT NULL DEFAULT 4,
   `t_max` INT NOT NULL DEFAULT 60,
   `max_intentos` INT NOT NULL DEFAULT 5,
+  `f_ua` DOUBLE NOT NULL DEFAULT 1.015,
+  `f_ut` DOUBLE NOT NULL DEFAULT 5000.0,
+  `f_de` DOUBLE NOT NULL DEFAULT 2000.0,
+  `f_do` DOUBLE NOT NULL DEFAULT 3000.0,
   PRIMARY KEY (`id`));
 
 

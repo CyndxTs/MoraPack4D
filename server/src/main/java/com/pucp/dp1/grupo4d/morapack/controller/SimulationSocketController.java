@@ -1,8 +1,8 @@
 package com.pucp.dp1.grupo4d.morapack.controller;
 
 
-import com.pucp.dp1.grupo4d.morapack.model.dto.response.AeropuertoResponse;
-import com.pucp.dp1.grupo4d.morapack.model.dto.response.VuelosResponse;
+import com.pucp.dp1.grupo4d.morapack.model.dto.model.AeropuertoResponse;
+import com.pucp.dp1.grupo4d.morapack.model.dto.model.VueloResponse;
 import com.pucp.dp1.grupo4d.morapack.service.model.AeropuertoService;
 import com.pucp.dp1.grupo4d.morapack.service.model.VueloService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -49,7 +49,7 @@ public class SimulationSocketController {
 
     @MessageMapping("/simulator/flights")
     @SendTo("/topic/simulator/flights")
-    public List<VuelosResponse> listarVuelosSimulacion() {
+    public List<VueloResponse> listarVuelosSimulacion() {
         System.out.println("🛫 Mensaje recibido en /app/simulator/flights");
         var vuelos = vueloService.listarVuelosSimulacion();
         System.out.println("✅ Enviando lista de vuelos: " + vuelos.size());

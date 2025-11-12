@@ -7,15 +7,11 @@
 package com.pucp.dp1.grupo4d.morapack.util;
 
 import org.springframework.web.multipart.MultipartFile;
-
 import java.io.*;
 import java.math.BigInteger;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.time.Duration;
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
+import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
@@ -85,9 +81,30 @@ public class G4D {
     public static String toDisplayString(LocalDateTime dt) {
         return dt.format(dtf_display);
     }
+    // Obtener 'DisplayString' a partir de 'Time'
+    public static String toDisplayString(LocalTime t) {
+        return t.format(tf_display);
+    }
     // Obtener 'ServerString' a partir de 'DateTime'
     public static String toServerString(LocalDateTime dt) {
         return dt.format(dtf_server);
+    }
+    // Obtener 'ServerString' a partir de 'Time'
+    public static String toServerString(LocalTime t) {
+        return t.format(tf_server);
+    }
+    // Obtener 'TimeDisplayString' a partir de 'TimeDEC'
+    public static String toTimeDisplayString(double tDEC) {
+        int total = (int) (tDEC * 60);
+        int dias = total / 1440, horas = (total % 1440) / 60, minutos = total % 60;
+        return dias > 0 ? String.format("%dd %2dh %2dm", dias, horas, minutos) : String.format("%2dh %2dm", horas, minutos);
+    }
+    // Obtener 'Date' a partir de 'TimeINT'
+    public static LocalDate toDate(Integer tINT) {
+        int year = tINT / 10000;
+        int month = (tINT / 100) % 100;
+        int day = tINT % 100;
+        return LocalDate.of(year, month, day);
     }
     // Obtener 'DateTime' a partir de 'DateTimeString'
     public static LocalDateTime toDateTime(String dts) {
@@ -105,19 +122,9 @@ public class G4D {
     public static LocalDateTime toDateTime(LocalTime t, LocalDateTime dt_ref) {
         return dt_ref.withHour(t.getHour()).withMinute(t.getMinute()).withSecond(t.getSecond());
     }
-    // Obtener 'DisplayString' a partir de 'Time'
-    public static String toDisplayString(LocalTime t) {
-        return t.format(tf_display);
-    }
-    // Obtener 'ServerString' a partir de 'Time'
-    public static String toServerString(LocalTime t) {
-        return t.format(tf_server);
-    }
-    // Obtener 'TimeDisplayString' a partir de 'TimeDEC'
-    public static String toTimeDisplayString(double tDEC) {
-        int total = (int) (tDEC * 60);
-        int dias = total / 1440, horas = (total % 1440) / 60, minutos = total % 60;
-        return dias > 0 ? String.format("%dd %2dh %2dm", dias, horas, minutos) : String.format("%2dh %2dm", horas, minutos);
+    // Obtener 'Time' a partir de 'DateTime'
+    public static LocalTime toTime(LocalDateTime dt) {
+        return dt.toLocalTime();
     }
     // Obtener 'Time' a partir de 'TimeString'
     public static LocalTime toTime(String ts) {
@@ -126,10 +133,6 @@ public class G4D {
         } catch (Exception e) {
             return LocalTime.parse(ts, tf_server);
         }
-    }
-    // Obtener 'Time' a partir de 'DateTime'
-    public static LocalTime toTime(LocalDateTime dt) {
-        return dt.toLocalTime();
     }
     // Obtener 'DateTime UTC' a partir de 'DateTime Local'
     public static LocalDateTime toUTC(LocalDateTime dt, Integer gmt) {
@@ -204,7 +207,7 @@ public class G4D {
         }
         return StandardCharsets.UTF_8; // default UTF-8
     }
-    // Helper: obtener InputStream desde File o MultipartFile
+    // Obtener InputStream desde File o MultipartFile
     private static InputStream getInputStream(Object file) throws IOException {
         if (file instanceof File f) {
             return new FileInputStream(f);
@@ -214,14 +217,14 @@ public class G4D {
             throw new IllegalArgumentException("Tipo no soportado para getFileCharset: " + file.getClass());
         }
     }
-    //
+    // Obtener combinaciones de elementos en cierto tamaño de grupo
     public static <T> List<List<T>> getPossibleCombinations(List<T> elements, int groupSize) {
         List<List<T>> result = new ArrayList<>();
         if (groupSize > elements.size() || groupSize <= 0) return result;
         generateCombinations(elements, groupSize, 0, new ArrayList<>(), result);
         return result;
     }
-    //
+    // Generar combinaciones por tamaño de grupo
     private static <T> void generateCombinations(List<T> elements, int groupSize, int inicio, List<T> actual, List<List<T>> result) {
         if (actual.size() == groupSize) {
             result.add(new ArrayList<>(actual));
@@ -233,7 +236,7 @@ public class G4D {
             actual.remove(actual.size() - 1);
         }
     }
-    //
+    // Clase 'Wrapper' para enteros
     public static class IntegerWrapper {
         public int value;
 
@@ -244,37 +247,36 @@ public class G4D {
         public IntegerWrapper(int value) {
             this.value = value;
         }
-        //
+
         public void increment() {
             this.value++;
         }
-        //
+
         public void increment(int value) {
             this.value += value;
         }
-        //
+
         public void decrement() {
             this.value--;
         }
-        //
+
         public void decrement(int value) {
             this.value-=value;
         }
-        //
+
         @Override
         public String toString() {
             return String.valueOf(this.value);
         }
-        //
+
         public int compareTo(IntegerWrapper other) {
             return Integer.compare(this.value, other.value);
         }
     }
-    //
+    // Clase 'Auxiliar' para impresión en archivos
     public static class Printer {
         private static PrintWriter pw;
 
-        //
         public static void open(String archDIR) {
             close();
             try {
@@ -285,60 +287,59 @@ public class G4D {
                 e.printStackTrace();
             }
         }
-        //
+
         public static void flush() {
             if(pw != null) {
                 pw.flush();
             }
         }
-        //
+
         public static void close() {
             if (pw != null) {
                 pw.close();
                 pw = null;
             }
         }
-        //
+
         public static void print(String text) {
             pw.print(text);
         }
-        //
+
         public static void println(String text) {
             pw.println(text);
         }
-        //
+
         public static void println() {
             pw.println();
         }
-        //
+
         public static void printf(String text, Object... args) {
             pw.printf(text, args);
         }
-        //
+
         public static void fill_line(char symbol, int lineDim) {
             for (int i = 0; i < lineDim; i++) pw.print(symbol);
             pw.println();
         }
-        //
+
         public static void fill_line(char symbol, int lineDim, int offset) {
             int limit = lineDim - 2 * offset;
             for (int i = 0; i < offset; i++) pw.print(" ");
             for (int i = 0; i < limit; i++) pw.print(symbol);
             pw.println();
         }
-        //
+
         public static void print_centered(String text, int lineDim) {
             pw.printf("%" + ((lineDim + text.length()) / 2) + "s%n", text);
         }
-        //
+
         public static void print_centered(String text, int lineDim, String border) {
             int space = (lineDim - text.length())/2;
             pw.println(String.valueOf(border.charAt(0)).repeat(space - 1) + text + String.valueOf(border.charAt(1)).repeat(space - 1));
         }
     }
-    //
+    // Clase 'Auxiliar' para logeo de acciones
     public static class Logger {
-        //
         private static enum Action {
             UP("U","A"),
             DOWN("D","B"),
@@ -357,15 +358,15 @@ public class G4D {
                 this.id = id;
                 this.code = code;
             }
-            //
+
             public static String delete(int numChars) {
                 return getAnsiString("D",numChars) + getAnsiString("P",numChars);
             }
-            //
+
             public static String delete_current_line() {
                 return getAnsiString("K",2) + getAnsiString("G",1);
             }
-            //
+
             public static String to_ansi(String actionId, int mode) {
                 for(Action action : Action.values()) {
                     if(actionId.compareTo(action.id) == 0) {
@@ -374,12 +375,12 @@ public class G4D {
                 }
                 return "";
             }
-            //
+
             private static String getAnsiString(String code, int mode) {
                 return "\u001B[" + mode + code;
             }
         }
-        //
+
         private static enum Color {
             RESET("0","0"),
             RED("R","31"),
@@ -395,15 +396,15 @@ public class G4D {
                 this.id = id;
                 this.code = code;
             }
-            //
+
             public static String set_color(String colorId) {
                 return to_ansi(colorId);
             }
-            //
+
             public static String reset_color() {
                 return getAnsiString("0");
             }
-            //
+
             public static String to_ansi(String colorId){
                 for(Color color : Color.values()) {
                     if(colorId.compareTo(color.id) == 0) {
@@ -412,7 +413,7 @@ public class G4D {
                 }
                 return "";
             }
-            //
+
             private static String getAnsiString(String code) {
                 return "\u001B[" + code + "m";
             }
@@ -437,59 +438,59 @@ public class G4D {
             logger.addHandler(handler);
             logger.setLevel(Level.INFO);
         }
-        //
+
         public static void toggle_log() {
             enabled = !enabled;
             logger.setLevel(enabled ? Level.INFO : Level.OFF);
         }
-        //
+
         public static void log(String msg) {
             logger.info(String.format(msg));
         }
-        //
+
         public static void logln(String msg) {
             logger.info(String.format(msg + "%n"));
         }
-        //
+
         public static void logln() {
             logger.info(String.format("%n"));
         }
-        //
+
         public static void logf(String msgFormat, Object... args) {
             logger.info(String.format(msgFormat, args));
         }
-        //
+
         public static void log_err(String msg) {
             set_color("R");
             logger.severe(String.format(msg));
             reset_color();
         }
-        //
+
         public static void logln_err(String msg) {
             set_color("R");
             logger.severe(String.format(msg + "%n"));
             reset_color();
         }
-        //
+
         public static void logf_err(String msgFormat, Object... args) {
             set_color("R");
             logger.severe(String.format(msgFormat, args));
             reset_color();
         }
-        //
+
         public static void delete(int numChars) {
             logger.info(Action.delete(numChars));
         }
-        //
+
         public static void delete_current_line() {
             logger.info(Action.delete_current_line());
         }
-        //
+
         public static void delete_upper_line() {
             G4D.Logger.delete_current_line();
             logger.info(getCustomAction("U1Cl2"));
         }
-        //
+
         public static void delete_lines(int numLines) {
             logger.info(Action.delete_current_line());
             for(int i = 0;i < numLines - 1;i++) {
@@ -497,15 +498,15 @@ public class G4D {
                 logger.info(Action.delete_current_line());
             }
         }
-        //
+
         public static void set_color(String colorId) {
             logger.info(Color.set_color(colorId));
         }
-        //
+
         public static void reset_color() {
             logger.info(Color.reset_color());
         }
-        //
+
         private static String getCustomAction(String actions) {
             String ansiString = "";
             Pattern pattern = Pattern.compile("[A-Z][a-z]?\\d*");
@@ -526,7 +527,7 @@ public class G4D {
             }
             return ansiString;
         }
-        //
+
         public static class Stats {
             private static Instant g_start;
             private static Instant l_start;
@@ -625,7 +626,7 @@ public class G4D {
             }
         }
     }
-    //
+    // Clase 'Auxiliar' para generación de valores
     public static class Generator {
         public static final String[] NOMBRES_ES_H = {
                 "Mateo", "Santiago", "Sebastián", "Diego", "Daniel",
@@ -772,25 +773,42 @@ public class G4D {
         public static final String[] morfemas = {
                 "zap","lux","neo","sky","fox","cat","red","blu","sun","moon",
                 "star","fly","run","joy","ice","gem","arc","wave","ray","nova",
-                "blink","spark","drift","myst","puff","glow","whiz","dash","frost","blink",
-                "quake","ember","flare","blink","shine","blink","gale","mist","cinder","lume",
-                "flare","draco","glint","pulse","shade","drift","breeze","gleam","echo","nimbus",
-                "aero","vibe","crux","zen","tide","fizz","whirl","blink","sparkle","rift",
-                "halo","dusk","lunar","sol","nova","orbit","fable","glyph","tango","vortex",
-                "flux","onyx","jade","sable","aether","blink","quark","zephyr","drift","cove",
-                "pixel","roam","blink","nova","prism","blink","ember","blink","pico","flare",
-                "glow","myst","echo","frost","vibe","lume","arc","shade","pulse","draco"
+                "spark","drift","myst","puff","glow","whiz","dash","frost","quake","ember",
+                "flare","shine","gale","mist","cinder","lume","draco","glint","pulse","shade",
+                "breeze","gleam","echo","nimbus","aero","vibe","crux","zen","tide","fizz",
+                "whirl","sparkle","rift","halo","dusk","lunar","sol","orbit","fable","glyph",
+                "tango","vortex","flux","onyx","jade","sable","aether","quark","zephyr","cove",
+                "fern","moss","vale","peak","reef","dune","storm","misty","cloud","wind",
+                "rune","stone","thorn","flint","brine","river","flora","terra","blaze","petra",
+                "aqua","frosty","solis","astra","cyra","volt","neon","kron","byte","core",
+                "data","nexu","quant","lyra","tron","delta","sigma","omega","ionix","matrix",
+                "vector","logic","synth","cobalt","radon","plasm","react","proto","meta","ultra",
+                "phase","hyper","aura","spirit","dream","myth","mira","veil","phant","glypho",
+                "orion","eonix","cosma","ether","aeris","miron","seren","celis","puffi","mew",
+                "chirp","buzz","woof","claw","snug","furr","tiny","nibb","hopp","bark",
+                "wing","snip","cub","peep","howl","meep","wisp","rux","kel","dar",
+                "rinx","lom","pon","fal","jor","mel","tis","zan","vor","lek",
+                "nar","hil","rak","lin","zor","tev","gan","pix","ruk","dov"
         };
         // Obtener 'UniqueString' a partir de prefijo
         public static String getUniqueString(String prefix) {
-            long millis = System.nanoTime();
+            long millis = System.currentTimeMillis();
             String base36Millis = Long.toString(millis, 36);
-            String uuid = UUID.randomUUID().toString().replace("-", "").substring(0, 12);
+            String uuid = UUID.randomUUID().toString().replace("-", "").substring(0, 8);
             BigInteger uuidNum = new BigInteger(uuid, 16);
             String base36Uuid = uuidNum.toString(36);
             return prefix + "-" + base36Millis + base36Uuid;
         }
-        //
+        // Obtener 'UniqueString' a partir de prefijo y nivel de precisión
+        public static String getUniqueString(String prefix, int precision) {
+            long millis = System.currentTimeMillis();
+            String base36Millis = Long.toString(millis, 36).substring(0, precision);
+            String uuid = UUID.randomUUID().toString().replace("-", "").substring(0, precision);
+            BigInteger uuidNum = new BigInteger(uuid, 16);
+            String base36Uuid = uuidNum.toString(36);
+            return prefix + "-" + base36Millis + base36Uuid;
+        }
+        // Obtener 'UniqueName'
         public static String getUniqueName() {
             Random random = new Random();
             int idioma = random.nextInt(6);
@@ -854,31 +872,21 @@ public class G4D {
 
             return String.join(" ", partes);
         }
-        //
+        // Obtener 'UniqueEmail'
         public static String getUniqueEmail() {
             Random random = new Random();
-            StringBuilder usuario = new StringBuilder();
-            int longitudObjetivo = 8 + random.nextInt(13);
-
-            while (usuario.length() < longitudObjetivo) {
-                String morfema = morfemas[random.nextInt(morfemas.length)];
-                if (usuario.length() > 0 && usuario.length() + morfema.length() + 1 <= 20) {
-                    char separador = random.nextBoolean() ? '.' : '_';
-                    usuario.append(separador);
-                }
-                if (usuario.length() + morfema.length() <= 20) {
-                    usuario.append(morfema);
-                } else {
-                    break;
-                }
+            String uniqueString = getUniqueString("", 4);
+            char[] positions = uniqueString.substring(uniqueString.indexOf('-') + 1).toCharArray();
+            StringBuilder email = new StringBuilder();
+            for (int i = 0; i < positions.length; i++) {
+                char c = positions[i];
+                int startAt = random.nextInt(5);
+                int index = 36*startAt + Character.digit(c, 36);
+                email.append(morfemas[index]);
+                boolean addSeparator = random.nextBoolean();
+                if(addSeparator && i != positions.length - 1) email.append((random.nextBoolean())? "_": ".");
             }
-            if (usuario.length() < 20 && random.nextBoolean()) {
-                int num = random.nextInt(100); // 0–99
-                if (usuario.length() + String.valueOf(num).length() <= 20) {
-                    usuario.append(num);
-                }
-            }
-            return usuario.toString() + "@G4D.com";
+            return email + "@G4D.com";
         }
     }
 }
