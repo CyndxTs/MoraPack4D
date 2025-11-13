@@ -33,3 +33,19 @@ export const importarAeropuertos = async (file) => {
     throw error;
   }
 };
+
+export const importarPedidos = async (file) => {
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("type", "PEDIDOS");
+
+  try {
+    const response = await axios.post(`${API_URL}/importar`, formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error al importar pedidos:", error);
+    throw error;
+  }
+};

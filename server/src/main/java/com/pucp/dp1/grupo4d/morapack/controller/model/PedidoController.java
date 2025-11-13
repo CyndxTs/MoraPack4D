@@ -11,7 +11,6 @@ import com.pucp.dp1.grupo4d.morapack.service.model.PedidoService;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
-import java.util.HashMap;
 import java.util.List;
 
 @RestController
@@ -94,5 +93,36 @@ public class PedidoController {
         public String getCodigoAeropuertoDestino() { return codigoAeropuertoDestino; }
     }
 
+    //FILTRADO
+    @GetMapping("/filtrar")
+    public List<PedidoSimplificado> listarOrdenado(
+            @RequestParam(required = false, defaultValue = "codigo") List<String> campos,
+            @RequestParam(required = false, defaultValue = "asc") List<String> orden
+    ) {
+        // Validación básica: mismo tamaño o usar asc por defecto
+        if (orden.size() < campos.size()) {
+            while (orden.size() < campos.size()) {
+                orden.add("asc");
+            }
+        }
+
+        List<PedidoEntity> pedidos = pedidoService.findAllOrdenado(campos, orden);
+
+        return pedidos.stream()
+                .map(p -> new PedidoSimplificado(
+                        p.getId(),
+                        p.getCodigo(),
+                        p.getCantidadSolicitada(),
+                        p.getFechaHoraGeneracionLocal(),
+                        p.getFechaHoraGeneracionUTC(),
+                        p.getFechaHoraExpiracionLocal(),
+                        p.getFechaHoraExpiracionUTC(),
+                        (p.getCliente() != null ? p.getCliente().getId() : null),
+                        (p.getCliente() != null ? p.getCliente().getNombre() : null),
+                        (p.getDestino() != null ? p.getDestino().getId() : null),
+                        (p.getDestino() != null ? p.getDestino().getCodigo() : null)
+                ))
+                .toList();
+    }
 
 }

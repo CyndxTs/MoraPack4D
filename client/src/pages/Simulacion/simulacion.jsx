@@ -3,7 +3,7 @@ import "./simulacion.scss";
 import { Radio, Checkbox, Dropdown, Legend, Notification, SidebarActions } from "../../components/UI/ui";
 import hideIcon from '../../assets/icons/hide-sidebar.png';
 
-import { MapContainer, TileLayer, Marker, Popup, Polyline  } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, Polyline, useMapEvent  } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from "leaflet";
 
@@ -19,6 +19,8 @@ export default function Simulacion() {
   const [estadoVuelo, setEstadoVuelo] = useState({ enCurso: false, finalizado: false, cancelado: false });
   const [archivo, setArchivo] = useState(null);
   const [tipoSimulacion, setTipoSimulacion] = useState("");
+  const [selectedItem, setSelectedItem] = useState(null);
+
   //Aeropuertos
   const [airports, setAirports] = useState(null);
   const [loadingAirports, setLoadingAirports] = useState(true);
@@ -447,6 +449,13 @@ useEffect(() => {
   }
   //
 
+  function ClickHandler({ onMapClick }) {
+    useMapEvent("click", () => onMapClick());
+    return null; // no renderiza nada visible
+  }
+
+
+
   return (
     <div className="page">
 
@@ -530,9 +539,9 @@ useEffect(() => {
               <span className="sidebar-subtitle">Leyenda</span>
               <Legend
                 items={[
-                  { label: "En curso", status: "en-curso" },
-                  { label: "Finalizado", status: "finalizado" },
-                  { label: "Cancelado", status: "cancelado" }
+                  { label: "50% Capacidad", status: "en-curso" },
+                  { label: "75% Capacidad", status: "finalizado" },
+                  { label: "100% Capacidad", status: "cancelado" }
                 ]}
               />
 
@@ -577,78 +586,109 @@ useEffect(() => {
           <span className="value">{formatTime(seconds)}</span>
         </div>
      
-        <MapContainer id="map" center={[-12.0464, -77.0428]} zoom={3}>
-          <TileLayer
-            url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png"
-            attribution='&copy; <a href="https://carto.com/">Carto</a>'
-          />
+        <div className="map-and-info">
+          <MapContainer id="map" center={[-12.0464, -77.0428]} zoom={3}>
+            <TileLayer
+              url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png"
+              attribution='&copy; <a href="https://carto.com/">Carto</a>'
+            />
 
-          {/* Marcadores de aeropuertos */}
-          {airports && Object.values(airports).map((ap, i) => (
-            <Marker key={i} position={[ap.lat, ap.lng]} icon={airportIcon}>
-              <Popup>
-                <b>{ap.name}</b><br />
-                Código: {ap.code}<br />
-                Ciudad: {ap.city}<br />
-                País: {ap.country}
-              </Popup>
-            </Marker>
-          ))}
-
-
-          {flights.map((flight, i) => {
-            // Si el vuelo o su path aún no existen, no renderizamos nada
-            if (!flight || !flight.path || !Array.isArray(flight.path) || flight.path.length === 0) {
-              return null;
-            }
-
-            const filterCss = flight.arrived
-              ? "invert(35%) sepia(82%) saturate(1595%) hue-rotate(185deg) brightness(94%) contrast(92%)"
-              : "invert(62%) sepia(86%) saturate(421%) hue-rotate(356deg) brightness(94%) contrast(92%)";
-
-            return (
-              <React.Fragment key={flight.code}>
-                {/* Línea del vuelo */}
-                {timerActive && (
-                  <Polyline
-                    positions={flight.path.slice(
-                      Math.floor(flight.path.length * flight.progress)
-                    )}
-                    color="#777"
-                    weight={2}
-                    opacity={0.3}
-                    dashArray="6, 10" // punteado
-                  />
-                )}
-
-                {/* Mostramos el avión solo si no ha llegado */}
-                {!flight.arrived && (
-                  <Marker
-                    position={flight.position}
-                    icon={createColoredIcon(filterCss, flight.rotation || 0)}
-                  >
-                    <Popup>
-                      <b>{flight.code}</b>
-                      Rumbo: {Math.round(flight.rotation)}°<br />
-                      <br />
-                      {flight.originName} → {flight.destinationName}
-                      <br />
-                      Salida: {flight.startTime} | Llegada: {flight.endTime}
-                      <br />
-                      Capacidad: {flight.capacity} pax
-                      <br />
-                      Estado: {flight.arrived ? "Finalizado" : "En curso"}
-                    </Popup>
-                  </Marker>
-                )}
-
-              </React.Fragment>
-            );
-          })}
-
-        </MapContainer>
+            {/* Marcadores de aeropuertos */}
+            {airports && Object.values(airports).map((ap, i) => (
+              <Marker
+                key={i}
+                position={[ap.lat, ap.lng]}
+                icon={airportIcon}
+                eventHandlers={{
+                  click: () =>
+                    setSelectedItem(`Aeropuerto ${ap.name} (${ap.code}) - ${ap.city}, ${ap.country}`)
+                }}
+              >
+                <Popup>
+                  <b>{ap.name}</b><br />
+                  Código: {ap.code}<br />
+                  Ciudad: {ap.city}<br />
+                  País: {ap.country}
+                </Popup>
+              </Marker>
+            ))}
 
 
+            {flights.map((flight, i) => {
+              // Si el vuelo o su path aún no existen, no renderizamos nada
+              if (!flight || !flight.path || !Array.isArray(flight.path) || flight.path.length === 0) {
+                return null;
+              }
+
+              const filterCss = flight.arrived
+                ? "invert(35%) sepia(82%) saturate(1595%) hue-rotate(185deg) brightness(94%) contrast(92%)"
+                : "invert(62%) sepia(86%) saturate(421%) hue-rotate(356deg) brightness(94%) contrast(92%)";
+
+              return (
+                <React.Fragment key={flight.code}>
+                  {/* Línea del vuelo: solo mostrar cuando el vuelo ya ha despegado */}
+                  {timerActive && simNowMs >= flight.startMs && simNowMs < flight.endMs && (
+                    <Polyline
+                      positions={flight.path.slice(
+                        Math.floor(flight.path.length * flight.progress)
+                      )}
+                      color="#DC3545"
+                      weight={3}
+                      opacity={0.5}
+                      dashArray="6, 10" // punteado
+                    />
+                  )}
+
+
+                  {/* Mostramos el avión solo si no ha llegado */}
+                  {!flight.arrived && (
+                    <Marker
+                      position={flight.position}
+                      icon={createColoredIcon(filterCss, flight.rotation || 0)}
+                      eventHandlers={{
+                        click: () =>
+                          setSelectedItem(
+                            `Vuelo ${flight.code}: ${flight.originName} → ${flight.destinationName}
+                            | Salida: ${flight.startTime} | Llegada: ${flight.endTime}`
+                          )
+                      }}
+                    >
+                      <Popup>
+                        <b>{flight.code}</b>
+                        <br />
+                        {flight.originName} → {flight.destinationName}
+                        <br />
+                        Salida: {flight.startTime} | Llegada: {flight.endTime}
+                        <br />
+                        Capacidad: {flight.capacity} pax
+                        <br />
+                        Estado: {flight.arrived ? "Finalizado" : "En curso"}
+                      </Popup>
+                    </Marker>
+                  )}
+
+                </React.Fragment>
+              );
+            })}
+
+            <ClickHandler onMapClick={() => setSelectedItem(null)} />
+          </MapContainer>
+
+          {/* PANEL INFORMATIVO DEBAJO DEL MAPA */}
+          <div className={`info-panel ${selectedItem ? "expanded" : ""}`}>
+            <div className="info-content">
+              {selectedItem ? (
+                <>
+                  <h3>Información seleccionada</h3>
+                  <body>{selectedItem}</body>
+                </>
+              ) : (
+                <body className="placeholder">Haz clic en un avión o aeropuerto para ver detalles.</body>
+              )}
+            </div>
+            <div className="info-triangle"></div>
+          </div>
+        </div>
       </section>
     </div>
   );

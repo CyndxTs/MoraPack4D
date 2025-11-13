@@ -110,4 +110,72 @@ public class PedidoService {
         }
         G4D.Logger.logf("[<] PEDIDOS CARGADOS! ('%d' pedidos )%n", pedidos.size());
     }
+
+    //FILTRADO
+    public List<PedidoEntity> findAllOrdenado(List<String> campos, List<String> orden) {
+        List<PedidoEntity> pedidos = pedidoRepository.findAll();
+
+        Comparator<PedidoEntity> comparator = null;
+
+        for (int i = 0; i < campos.size(); i++) {
+            String campo = campos.get(i);
+            boolean asc = orden.get(i).equalsIgnoreCase("asc");
+
+            Comparator<PedidoEntity> actual = null;
+
+            switch (campo) {
+                case "codigo":
+                    actual = Comparator.comparing(
+                            PedidoEntity::getCodigo,
+                            Comparator.nullsLast(String::compareToIgnoreCase)
+                    );
+                    break;
+
+                case "nombreCliente":
+                    actual = Comparator.comparing(
+                            p -> p.getCliente() != null ? p.getCliente().getNombre() : "",
+                            Comparator.nullsLast(String::compareToIgnoreCase)
+                    );
+                    break;
+
+                case "codigoAeropuertoDestino":
+                    actual = Comparator.comparing(
+                            p -> p.getDestino() != null ? p.getDestino().getCodigo() : "",
+                            Comparator.nullsLast(String::compareToIgnoreCase)
+                    );
+                    break;
+
+                case "cantidadSolicitada":
+                    actual = Comparator.comparing(
+                            PedidoEntity::getCantidadSolicitada,
+                            Comparator.nullsLast(Integer::compareTo)
+                    );
+                    break;
+
+                case "fechaHoraGeneracionUTC":
+                    actual = Comparator.comparing(
+                            PedidoEntity::getFechaHoraGeneracionUTC,
+                            Comparator.nullsLast(LocalDateTime::compareTo)
+                    );
+                    break;
+
+                default:
+                    continue; // ignora campos inválidos
+            }
+
+            if (actual != null && !asc) {
+                actual = actual.reversed();
+            }
+
+            comparator = (comparator == null) ? actual : comparator.thenComparing(actual);
+        }
+
+        if (comparator != null) {
+            pedidos.sort(comparator);
+        }
+
+        return pedidos;
+    }
+
+
 }

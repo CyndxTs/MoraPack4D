@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import "./pedidos.scss";
 import { ButtonAdd, Input, Checkbox, Dropdown, Table, SidebarActions, Notification, LoadingOverlay, Pagination, RemoveFileButton  } from "../../components/UI/ui";
-import { listarPedidos  } from "../../services/pedidoService";
+import { listarPedidos, filtrarPedidos  } from "../../services/pedidoService";
+import { importarPedidos } from "../../services/generalService";
 import plus from '../../assets/icons/plus.svg';
 import hideIcon from '../../assets/icons/hide-sidebar.png';
 
@@ -27,6 +28,8 @@ export default function Pedidos() {
 
   const [pedidos, setPedidos] = useState([]);
   const [codigo, setCodigo] = useState("");
+  const [cliente, setCliente] = useState("");
+  const [destino, setDestino] = useState("");
 
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false); 
@@ -70,19 +73,122 @@ export default function Pedidos() {
     }
   };
 
-  const handleAdd = () => {
-    console.log({ archivo, codigoFiltro, estadoFiltro, clienteFiltro, vueloFiltro });
-    setIsModalOpen(false);
+  const handleAdd = async () => {
+    if (!archivo && !codigo.trim()) {
+      showNotification(
+        "warning",
+        "Por favor selecciona un archivo o completa los campos antes de continuar."
+      );
+      return;
+    }
+
+    // Validar nombre exacto de archivo esperado
+    if (
+      archivo &&
+      archivo.name !== "Pedidos.txt"
+    ) {
+      showNotification(
+        "warning",
+        "El archivo debe llamarse exactamente 'Pedidos.txt'."
+      );
+      return;
+    }
+
+    try {
+      setProcessing(true);
+
+      if (archivo) {
+        // --- Importación mediante AlgorithmController ---
+        await importarPedidos(archivo);
+        showNotification("success", "Pedidos importados correctamente");
+      } else {
+        // Aquí podrías agregar lógica manual si fuera necesario
+        showNotification("success", "Pedido agregado correctamente");
+      }
+
+      const data = await listarPedidos();
+      setPedidos(data);
+      setIsModalOpen(false);
+      setArchivo(null);
+      setCodigo("");
+    } catch (error) {
+      console.error(error);
+      showNotification("danger", "Error al agregar pedidos");
+    } finally {
+      setProcessing(false);
+    }
   };
 
   //Filtros
   const handleFilter = async () => {
+    setProcessing(true);
+    try {
+      const campos = [];
+      const orden = [];
 
+      // Orden dinámico
+      if (ordenCantidad) {
+        campos.push("cantidadSolicitada");
+        orden.push(ordenCantidad === "ascendente" ? "asc" : "desc");
+      }
+      if (ordenFecha) {
+        campos.push("fechaHoraGeneracionUTC");
+        orden.push(ordenFecha === "ascendente" ? "asc" : "desc");
+      }
+
+      // Si no hay campos de orden, usar "codigo" por defecto
+      if (campos.length === 0) {
+        campos.push("codigo");
+        orden.push("asc");
+      }
+
+      const data = await filtrarPedidos(campos, orden);
+
+      // Filtrado adicional (por texto simple en frontend)
+      const filtrado = data.filter((p) => {
+        const matchCodigo =
+          !codigoFiltro ||
+          p.codigo.toLowerCase().includes(codigoFiltro.toLowerCase());
+        const matchCliente =
+          !clienteFiltro ||
+          p.nombreCliente.toLowerCase().includes(clienteFiltro.toLowerCase());
+        const matchDestino =
+          !destinoFiltro ||
+          p.codigoAeropuertoDestino
+            ?.toLowerCase()
+            .includes(destinoFiltro.toLowerCase());
+        return matchCodigo && matchCliente && matchDestino;
+      });
+
+      setPedidos(filtrado);
+      setCurrentPage(1);
+      showNotification("success", "Filtro aplicado correctamente");
+    } catch (err) {
+      console.error(err);
+      showNotification("danger", "Error al filtrar pedidos");
+    } finally {
+      setProcessing(false);
+    }
   };
 
   //Limpiar filtros
   const handleCleanFilters = async () => {
-
+    setCodigoFiltro("");
+    setClienteFiltro("");
+    setDestinoFiltro("");
+    setOrdenCantidad("");
+    setOrdenFecha("");
+    setProcessing(true);
+    try {
+      const data = await listarPedidos();
+      setPedidos(data);
+      showNotification("info", "Filtros limpiados");
+    } catch (err) {
+      console.error(err);
+      showNotification("danger", "Error al limpiar filtros");
+    } finally {
+      setProcessing(false);
+    }
   };
 
   // --- Paginación ---
@@ -210,31 +316,23 @@ export default function Pedidos() {
               <input type="file" id="fileInput" className="file-input" onChange={handleFileChange} />
             </div>
 
-            <div className="file-name">{archivo || "Ningún archivo seleccionado"}</div>
+            <div className="file-name">
+              {archivo ? archivo.name : "Ningún archivo seleccionado"}
+              {archivo && (
+                <RemoveFileButton onClick={() => setArchivo(null)} />
+              )}
+            </div>
+
 
             <div className="modal-body">
               <label htmlFor="codigoModal">Código</label>
-              <Input id="codigoModal" placeholder="Escribe el código" value={codigo} onChange={e => setCodigo(e.target.value)} />
+              <Input id="codigoModal" placeholder="Escribe el código" value={codigo} onChange={e => setCodigo(e.target.value)} disabled={!!archivo}/>
 
               <label htmlFor="clienteModal">Cliente</label>
-              <Dropdown
-                placeholder="Seleccionar..."
-                options={[
-                  { label: "Ejemplo 1", value: "ejemplo1" },
-                  { label: "Ejemplo 2", value: "ejemplo2" }
-                ]}
-                onSelect={val => setClienteFiltro(val)}
-              />
+              <Input id="clienteModal" placeholder="Escribe el cliente" value={cliente} onChange={e => setCliente(e.target.value)} disabled={!!archivo}/>
 
-              <label htmlFor="vueloModal">Vuelo</label>
-              <Dropdown
-                placeholder="Seleccionar..."
-                options={[
-                  { label: "Ejemplo 1", value: "ejemplo1" },
-                  { label: "Ejemplo 2", value: "ejemplo2" }
-                ]}
-                onSelect={val => setVueloFiltro(val)}
-              />
+              <label htmlFor="destinoModal">Destino</label>
+              <Input id="destinoModal" placeholder="Escribe el destino" value={destino} onChange={e => setDestino(e.target.value)} disabled={!!archivo}/>
             </div>
 
             <div className="modal-footer">

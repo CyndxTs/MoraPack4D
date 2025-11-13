@@ -58,18 +58,51 @@
   }
 }
 
-/* MAPA */
-#map {
-  flex: 1;              /* el mapa ocupa todo lo que queda */
+/* PANEL INFORMATIVO */
+.map-and-info {
+  display: flex;
+  flex-direction: column;
   width: 100%;
-  border: 1px solid #ccc;
-}
+  height: auto; /* ← importante: ya no forzamos altura total */
+  position: relative;
 
-//EJEMPLO
-.leaflet-marker-icon.plane-flying {
-  filter: invert(62%) sepia(86%) saturate(421%) hue-rotate(356deg) brightness(94%) contrast(92%);
-}
+  #map {
+    width: 100%;
+    min-height: 800px;
+    position: relative;
+  }
 
-.leaflet-marker-icon.plane-arrived {
-  filter: invert(35%) sepia(82%) saturate(1595%) hue-rotate(185deg) brightness(94%) contrast(92%);
+  .info-panel {
+    width: 100%;
+    background-color: var(--color-dark-blue);
+    color: white;
+    border-top: 2px solid var(--color-dark-blue);
+    margin-top: 20px; /* mantiene espacio bajo el mapa */
+    overflow: hidden;
+    transition: all 0.3s ease;
+    padding: 0 20px;
+
+    /* Estado cerrado */
+    padding-top: 10px;
+    padding-bottom: 10px;
+
+    &.expanded {
+      padding: 20px;
+      background-color: var(--color-dark-blue);
+    }
+
+    .info-content {
+      opacity: 0.8;
+      transition: opacity 0.3s ease;
+    }
+
+    &.expanded .info-content {
+      opacity: 1;
+    }
+
+    .placeholder {
+      opacity: 0.7;
+      font-style: italic;
+    }
+  }
 }
