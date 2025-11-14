@@ -4,7 +4,6 @@
  >> File:       SignOutRequest.java
  [**/
 
-
 package com.pucp.dp1.grupo4d.morapack.model.dto.request;
 
 public class SignOutRequest {

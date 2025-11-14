@@ -1,21 +1,16 @@
 /**]
  >> Project:    MoraPack
  >> Author:     Grupo 4D
- >> File:       LoteResponse.java
+ >> File:       LoteDTO.java
  [**/
 
-package com.pucp.dp1.grupo4d.morapack.model.dto.model;
+package com.pucp.dp1.grupo4d.morapack.model.dto;
 
-import com.pucp.dp1.grupo4d.morapack.model.entity.LoteEntity;
-
-public class LoteResponse {
+public class LoteDTO {
     private String codigo;
     private Integer tamanio;
 
-    public LoteResponse(LoteEntity lote) {
-        this.codigo = lote.getCodigo();
-        this.tamanio = lote.getTamanio();
-    }
+    public LoteDTO() {}
 
     public String getCodigo() { return codigo; }
     public void setCodigo(String codigo) { this.codigo = codigo; }

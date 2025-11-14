@@ -12,6 +12,7 @@ import com.pucp.dp1.grupo4d.morapack.model.entity.ClienteEntity;
 import com.pucp.dp1.grupo4d.morapack.repository.PedidoRepository;
 import com.pucp.dp1.grupo4d.morapack.util.G4D;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import java.time.LocalDate;
@@ -62,6 +63,10 @@ public class PedidoService {
         return pedidoRepository.findByCodigo(codigo).isPresent();
     }
 
+    public List<PedidoEntity> listarParaSimulacion(LocalDateTime fechaHoraInicio, LocalDateTime fechaHoraFin, Integer desfaseDeDias) {
+        return  pedidoRepository.listarParaSimulacion(fechaHoraInicio, fechaHoraFin, desfaseDeDias);
+    }
+
     public void importarDesdeArchivo(MultipartFile archivo) {
         String linea;
         Scanner archivoSC = null, lineaSC;
@@ -74,8 +79,9 @@ public class PedidoService {
                 lineaSC = new Scanner(linea);
                 lineaSC.useDelimiter("-");
                 PedidoEntity pedido = new PedidoEntity();
-                LocalDateTime fechaHoraCreacionLocal = LocalDateTime.of(
-                        LocalDate.now().withDayOfMonth(lineaSC.nextInt()),
+                String numPed = lineaSC.next();
+                LocalDateTime fechaHoraGeneracionLocal = LocalDateTime.of(
+                        G4D.toDate(lineaSC.nextInt()),
                         LocalTime.of(
                                 lineaSC.nextInt(),
                                 lineaSC.nextInt(),
@@ -84,16 +90,24 @@ public class PedidoService {
                 );
                 AeropuertoEntity aDest = aeropuertoService.findByCodigo(lineaSC.next()).orElse(null);
                 if(aDest != null) {
+                    LocalDateTime fechaHoraGeneracionUTC = G4D.toUTC(fechaHoraGeneracionLocal, pedido.getDestino().getHusoHorario());
+                    pedido.setCodigo(aDest.getCodigo() + numPed);
                     pedido.setDestino(aDest);
                     pedido.setCantidadSolicitada(lineaSC.nextInt());
-                    ClienteEntity cliente = clienteService.findByCodigo(lineaSC.next()).orElse(null);
-                    if(cliente != null) {
-                        pedido.setCliente(cliente);
-                        pedido.setFechaHoraGeneracionLocal(fechaHoraCreacionLocal);
-                        pedido.setFechaHoraGeneracionUTC(G4D.toUTC(fechaHoraCreacionLocal, pedido.getDestino().getHusoHorario()));
-                        pedido.setCodigo(G4D.Generator.getUniqueString("PED"));
-                        pedidos.add(pedido);
+                    String codCliente = lineaSC.next();
+                    ClienteEntity cliente = clienteService.findByCodigo(codCliente).orElse(null);
+                    if(cliente == null) {
+                        cliente = new ClienteEntity();
+                        cliente.setCodigo(codCliente);
+                        cliente.setNombre(G4D.Generator.getUniqueName());
+                        cliente.setCorreo(G4D.Generator.getUniqueEmail());
+                        cliente.setContrasenia("12345678");
+                        clienteService.save(cliente);
                     }
+                    pedido.setCliente(cliente);
+                    pedido.setFechaHoraGeneracionLocal(fechaHoraGeneracionLocal);
+                    pedido.setFechaHoraGeneracionUTC(fechaHoraGeneracionUTC);
+                    pedidos.add(pedido);
                 }
                 lineaSC.close();
             }

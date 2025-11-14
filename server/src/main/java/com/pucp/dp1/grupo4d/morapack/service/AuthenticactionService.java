@@ -6,11 +6,11 @@
 
 package com.pucp.dp1.grupo4d.morapack.service;
 
+import com.pucp.dp1.grupo4d.morapack.model.dto.UsuarioDTO;
 import com.pucp.dp1.grupo4d.morapack.model.dto.request.SignInRequest;
 import com.pucp.dp1.grupo4d.morapack.model.dto.request.SignOutRequest;
 import com.pucp.dp1.grupo4d.morapack.model.dto.request.SignUpRequest;
 import com.pucp.dp1.grupo4d.morapack.model.dto.response.AuthenticationResponse;
-import com.pucp.dp1.grupo4d.morapack.model.dto.response.UserResponse;
 import com.pucp.dp1.grupo4d.morapack.model.entity.ClienteEntity;
 import com.pucp.dp1.grupo4d.morapack.model.entity.AdministradorEntity;
 import com.pucp.dp1.grupo4d.morapack.model.enums.EstadoUsuario;
@@ -37,45 +37,45 @@ public class AuthenticactionService {
             String tipoUsuario = request.getTipoUsuario();
 
             if (tipoUsuario == null || (!tipoUsuario.equals("CLIENTE") && !tipoUsuario.equals("ADMINISTRADOR"))) {
-                return new AuthenticationResponse("Tipo de usuario inválido.", null);
+                return new AuthenticationResponse(false, "Tipo de usuario inválido.");
             }
 
             if (tipoUsuario.equals("CLIENTE")) {
                 Optional<ClienteEntity> clienteOpt = clienteService.findByCorreo(correo);
                 if (clienteOpt.isEmpty()) {
-                    return new AuthenticationResponse("Correo no registrado.", null);
+                    return new AuthenticationResponse(false, "Correo no registrado.");
                 }
                 ClienteEntity cliente = clienteOpt.get();
                 if (contrasenia.equals(cliente.getContrasenia())) {
-                    return new AuthenticationResponse("Contraseña incorrecta.", null);
+                    return new AuthenticationResponse(false, "Contraseña incorrecta.");
                 }
                 if (cliente.getEstado() == EstadoUsuario.DISABLED) {
-                    return new AuthenticationResponse("Cuenta deshabilitada.", null);
+                    return new AuthenticationResponse(false, "Cuenta deshabilitada.");
                 }
                 cliente.setEstado(EstadoUsuario.ONLINE);
                 clienteService.save(cliente);
-                UserResponse userResponse = new UserResponse(cliente);
-                return new AuthenticationResponse("SignIn exitoso!", userResponse);
+                UsuarioDTO usuarioDTO = new UsuarioDTO(cliente);
+                return new AuthenticationResponse(false, "SignIn exitoso!", usuarioDTO);
             } else {
                 Optional<AdministradorEntity> adminOpt = administradorService.findByCorreo(correo);
                 if (adminOpt.isEmpty()) {
-                    return new AuthenticationResponse("Correo no registrado.", null);
+                    return new AuthenticationResponse(false, "Correo no registrado.");
                 }
                 AdministradorEntity administrador = adminOpt.get();
                 if (contrasenia.compareTo(administrador.getContrasenia()) != 0) {
-                    return new AuthenticationResponse("Contraseña incorrecta.", null);
+                    return new AuthenticationResponse(false, "Contraseña incorrecta.");
                 }
                 if (administrador.getEstado() == EstadoUsuario.DISABLED) {
-                    return new AuthenticationResponse("Cuenta deshabilitada.", null);
+                    return new AuthenticationResponse(false, "Cuenta deshabilitada.");
                 }
                 administrador.setEstado(EstadoUsuario.ONLINE);
                 administradorService.save(administrador);
-                UserResponse userResponse = new UserResponse(administrador);
-                return new AuthenticationResponse("SignIn exitoso!", userResponse);
+                UsuarioDTO usuarioDTO = new UsuarioDTO(administrador);
+                return new AuthenticationResponse(true, "SignIn exitoso!", usuarioDTO);
             }
         } catch (Exception e) {
             e.printStackTrace();
-            return new AuthenticationResponse("ERROR - SIGNIN: " + e.getMessage(), null);
+            return new AuthenticationResponse(false, "ERROR - SIGNIN: " + e.getMessage());
         }
     }
 
@@ -86,11 +86,11 @@ public class AuthenticactionService {
             String contrasenia = request.getContrasenia();
             String tipoUsuario = request.getTipoUsuario();
             if (tipoUsuario == null || (!tipoUsuario.equals("CLIENTE") && !tipoUsuario.equals("ADMINISTRADOR"))) {
-                return new AuthenticationResponse("Tipo de usuario inválido.", null);
+                return new AuthenticationResponse(false, "Tipo de usuario inválido.");
             }
             if (tipoUsuario.equals("CLIENTE")) {
                 if (clienteService.findByCorreo(correo).isPresent()) {
-                    return new AuthenticationResponse("Correo en uso.", null);
+                    return new AuthenticationResponse(false, "Correo en uso.");
                 }
                 ClienteEntity cliente = new ClienteEntity();
                 cliente.setCodigo(obtenerNuevoCodigo(tipoUsuario));
@@ -99,11 +99,11 @@ public class AuthenticactionService {
                 cliente.setContrasenia(contrasenia);
                 cliente.setEstado(EstadoUsuario.ONLINE);
                 ClienteEntity clienteGuardado = clienteService.save(cliente);
-                UserResponse userResponse = new UserResponse(clienteGuardado);
-                return new AuthenticationResponse("SignUp Exitoso!", userResponse);
+                UsuarioDTO usuarioDTO = new UsuarioDTO(clienteGuardado);
+                return new AuthenticationResponse(false, "SignUp Exitoso!", usuarioDTO);
             } else {
                 if (administradorService.findByCorreo(correo).isPresent()) {
-                    return new AuthenticationResponse("Correo en uso.", null);
+                    return new AuthenticationResponse(false, "Correo en uso.");
                 }
                 AdministradorEntity administrador = new AdministradorEntity();
                 administrador.setCodigo(obtenerNuevoCodigo(tipoUsuario));
@@ -112,12 +112,12 @@ public class AuthenticactionService {
                 administrador.setContrasenia(contrasenia);
                 administrador.setEstado(EstadoUsuario.ONLINE);
                 AdministradorEntity adminGuardado = administradorService.save(administrador);
-                UserResponse userResponse = new UserResponse(adminGuardado);
-                return new AuthenticationResponse("SignUp Exitoso!", userResponse);
+                UsuarioDTO usuarioDTO = new UsuarioDTO(adminGuardado);
+                return new AuthenticationResponse(true, "SignUp Exitoso!", usuarioDTO);
             }
         } catch (Exception e) {
             e.printStackTrace();
-            return new AuthenticationResponse("ERROR - SIGNUP: " + e.getMessage(), null);
+            return new AuthenticationResponse(false, "ERROR - SIGNUP: " + e.getMessage());
         }
     }
 
@@ -136,36 +136,36 @@ public class AuthenticactionService {
             String correo = request.getCorreo();
             String tipoUsuario = request.getTipoUsuario();
             if (tipoUsuario == null || (!tipoUsuario.equals("CLIENTE") && !tipoUsuario.equals("ADMINISTRADOR"))) {
-                return new AuthenticationResponse("Tipo de usuario inválido.", null);
+                return new AuthenticationResponse(false, "Tipo de usuario inválido.");
             }
             if (tipoUsuario.equals("CLIENTE")) {
                 Optional<ClienteEntity> clienteOpt = clienteService.findByCorreo(correo);
                 if (clienteOpt.isEmpty()) {
-                    return new AuthenticationResponse("Correo no registrado.", null);
+                    return new AuthenticationResponse(false, "Correo no registrado.");
                 }
                 ClienteEntity cliente = clienteOpt.get();
                 if (cliente.getEstado() != EstadoUsuario.ONLINE) {
-                    return new AuthenticationResponse("El usuario no está en línea.", null);
+                    return new AuthenticationResponse(false, "El usuario no está en línea.");
                 }
                 cliente.setEstado(EstadoUsuario.OFFLINE);
                 clienteService.save(cliente);
-                return new AuthenticationResponse("SignOut exitoso!", null);
+                return new AuthenticationResponse(false, "SignOut exitoso!");
             } else {
                 Optional<AdministradorEntity> adminOpt = administradorService.findByCorreo(correo);
                 if (adminOpt.isEmpty()) {
-                    return new AuthenticationResponse("Correo no registrado.", null);
+                    return new AuthenticationResponse(false, "Correo no registrado.");
                 }
                 AdministradorEntity administrador = adminOpt.get();
                 if (administrador.getEstado() != EstadoUsuario.ONLINE) {
-                    return new AuthenticationResponse("El usuario no está en línea.", null);
+                    return new AuthenticationResponse(false, "El usuario no está en línea.");
                 }
                 administrador.setEstado(EstadoUsuario.OFFLINE);
                 administradorService.save(administrador);
-                return new AuthenticationResponse("SignOut exitoso!", null);
+                return new AuthenticationResponse(true, "SignOut exitoso!");
             }
         } catch (Exception e) {
             e.printStackTrace();
-            return new AuthenticationResponse("ERROR - SIGNOUT: " + e.getMessage(), null);
+            return new AuthenticationResponse(false, "ERROR - SIGNOUT: " + e.getMessage());
         }
     }
 }

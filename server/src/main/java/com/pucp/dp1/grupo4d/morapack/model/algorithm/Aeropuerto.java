@@ -18,12 +18,14 @@ public class Aeropuerto {
     private String ciudad;
     private String pais;
     private String continente;
+    private String alias;
     private Integer husoHorario;
     private Integer capacidad;
     private String latitudDMS;
     private Double latitudDEC;
     private String longitudDMS;
     private Double longitudDEC;
+    private Boolean esSede;
     private List<Registro> registros;
 
     public Aeropuerto() {
@@ -86,12 +88,14 @@ public class Aeropuerto {
         aeropuerto.ciudad = this.ciudad;
         aeropuerto.pais = this.pais;
         aeropuerto.continente = this.continente;
+        aeropuerto.alias = this.alias;
         aeropuerto.husoHorario = this.husoHorario;
         aeropuerto.capacidad = this.capacidad;
         aeropuerto.latitudDMS = this.latitudDMS;
         aeropuerto.latitudDEC = this.latitudDEC;
         aeropuerto.longitudDMS = this.longitudDMS;
         aeropuerto.longitudDEC = this.longitudDEC;
+        aeropuerto.esSede = this.esSede;
         for(Registro r : this.registros) aeropuerto.registros.add(r.replicar(poolLotes));
         return aeropuerto;
     }
@@ -144,6 +148,14 @@ public class Aeropuerto {
 
     public void setContinente(String continente) {
         this.continente = continente;
+    }
+
+    public String getAlias() {
+        return alias;
+    }
+
+    public void setAlias(String alias) {
+        this.alias = alias;
     }
 
     public Integer getHusoHorario() {
@@ -208,6 +220,14 @@ public class Aeropuerto {
 
     public void setLongitudDEC(double longitudDEC) {
         this.longitudDEC = longitudDEC;
+    }
+
+    public Boolean getEsSede() {
+        return esSede;
+    }
+
+    public void setEsSede(boolean esSede) {
+        this.esSede = esSede;
     }
 
     public List<Registro> getRegistros() {

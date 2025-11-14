@@ -15,7 +15,7 @@ import java.util.*;
 @Entity
 @Table(name = "CLIENTE", schema = "morapack4d")
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
-public class ClienteEntity {
+public class ClienteEntity extends UsuarioEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

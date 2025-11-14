@@ -1,16 +1,16 @@
 /**]
  >> Project:    MoraPack
  >> Author:     Grupo 4D
- >> File:       ParametrosResponse.java
+ >> File:       ParametrosDTO.java
  [**/
 
-package com.pucp.dp1.grupo4d.morapack.model.dto.model;
+package com.pucp.dp1.grupo4d.morapack.model.dto;
 
-import com.pucp.dp1.grupo4d.morapack.model.entity.ParametrosEntity;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
-public class ParametrosResponse {
+public class ParametrosDTO {
     private Integer maxDiasEntregaIntracontinental;
     private Integer maxDiasEntregaIntercontinental;
     private Double maxHorasRecojo;
@@ -32,27 +32,8 @@ public class ParametrosResponse {
     private Double factorDeDesviacionEspacial;
     private Double factorDeDisposicionOperacional;
 
-    public ParametrosResponse(ParametrosEntity parametrizacion) {
-        this.maxDiasEntregaIntracontinental = parametrizacion.getMaxDiasEntregaIntracontinental();
-        this.maxDiasEntregaIntercontinental = parametrizacion.getMaxDiasEntregaIntercontinental();
-        this.maxHorasRecojo = parametrizacion.getMaxHorasRecojo();
-        this.maxHorasEstancia = parametrizacion.getMaxHorasEstancia();
-        this.minHorasEstancia = parametrizacion.getMinHorasEstancia();
-        this.fechaHoraIni = parametrizacion.getFechaHoraInicio().toLocalDateTime();
-        this.fechaHoraFin = parametrizacion.getFechaHoraFin().toLocalDateTime();
-        this.codigosDeOrigenes = parametrizacion.getCodOrigenes();
-        this.dMin = parametrizacion.getDMin();
-        this.iMax = parametrizacion.getIMax();
-        this.eleMin = parametrizacion.getEleMin();
-        this.eleMax = parametrizacion.getEleMax();
-        this.kMin = parametrizacion.getKMin();
-        this.kMax = parametrizacion.getKMax();
-        this.tMax = parametrizacion.getTMax();
-        this.maxIntentos = parametrizacion.getMaxIntentos();
-        this.factorDeUmbralDeAberracion = parametrizacion.getFactorDeUmbralDeAberracion();
-        this.factorDeUtilizacionTemporal = parametrizacion.getFactorDeUtilizacionTemporal();
-        this.factorDeDesviacionEspacial = parametrizacion.getFactorDeDesviacionEspacial();
-        this.factorDeDisposicionOperacional = parametrizacion.getFactorDeDisposicionOperacional();
+    public ParametrosDTO() {
+        this.codigosDeOrigenes = new ArrayList<>();
     }
 
     public Integer getMaxDiasEntregaIntracontinental() { return maxDiasEntregaIntracontinental; }

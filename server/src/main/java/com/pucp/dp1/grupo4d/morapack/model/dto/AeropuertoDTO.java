@@ -1,16 +1,18 @@
 /**]
  >> Project:    MoraPack
  >> Author:     Grupo 4D
- >> File:       AeropuertoResponse.java
+ >> File:       AeropuertoDTO.java
  [**/
 
-package com.pucp.dp1.grupo4d.morapack.model.dto.model;
+package com.pucp.dp1.grupo4d.morapack.model.dto;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import com.pucp.dp1.grupo4d.morapack.model.algorithm.Aeropuerto;
 import com.pucp.dp1.grupo4d.morapack.model.entity.AeropuertoEntity;
 
-public class AeropuertoResponse {
+public class AeropuertoDTO {
     private String codigo;
     private String ciudad;
     private String pais;
@@ -21,21 +23,10 @@ public class AeropuertoResponse {
     private Double latitudDEC;
     private Double longitudDEC;
     private Boolean esSede;
-    private List<RegistroResponse> registros;
+    private List<RegistroDTO> registros;
 
-    public AeropuertoResponse(AeropuertoEntity aeropuerto) {
-        this.codigo = aeropuerto.getCodigo();
-        this.ciudad = aeropuerto.getCiudad();
-        this.pais = aeropuerto.getPais();
-        this.continente = aeropuerto.getContinente();
-        this.alias = aeropuerto.getAlias();
-        this.husoHorario = aeropuerto.getHusoHorario();
-        this.capacidad = aeropuerto.getCapacidad();
-        this.latitudDEC = aeropuerto.getLatitudDEC();
-        this.longitudDEC = aeropuerto.getLongitudDEC();
-        this.esSede = aeropuerto.getEsSede();
+    public AeropuertoDTO() {
         this.registros = new ArrayList<>();
-        aeropuerto.getRegistros().forEach(r -> this.registros.add(new RegistroResponse(r)));
     }
 
     public String getCodigo() { return codigo; }
@@ -58,6 +49,6 @@ public class AeropuertoResponse {
     public void setLongitudDEC(Double longitudDEC) { this.longitudDEC = longitudDEC; }
     public Boolean getEsSede() { return esSede; }
     public void setEsSede(Boolean esSede) { this.esSede = esSede; }
-    public List<RegistroResponse> getRegistros() { return registros; }
-    public void setRegistros(List<RegistroResponse> registros) { this.registros = registros; }
+    public List<RegistroDTO> getRegistros() { return registros; }
+    public void setRegistros(List<RegistroDTO> registros) { this.registros = registros; }
 }

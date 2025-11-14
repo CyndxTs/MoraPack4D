@@ -30,11 +30,13 @@ public class AuthenticationController {
     public ResponseEntity<AuthenticationResponse> signin(@RequestBody SignInRequest request) {
         try {
             AuthenticationResponse response = authenticactionService.signIn(request);
-            return ResponseEntity.ok(response);
+            if(response.isSuccess()) {
+                return ResponseEntity.ok(response);
+            } else {
+                return ResponseEntity.badRequest().body(response);
+            }
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(
-                    new AuthenticationResponse("Credenciales inválidas.", null)
-            );
+            return ResponseEntity.internalServerError().body(new AuthenticationResponse(false, "ERROR INTERNO: " + e.getMessage()));
         }
     }
 
@@ -42,11 +44,13 @@ public class AuthenticationController {
     public ResponseEntity<AuthenticationResponse> signup(@RequestBody SignUpRequest request) {
         try {
             AuthenticationResponse response = authenticactionService.signUp(request);
-            return ResponseEntity.ok(response);
+            if(response.isSuccess()) {
+                return ResponseEntity.ok(response);
+            } else {
+                return ResponseEntity.badRequest().body(response);
+            }
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(
-                    new AuthenticationResponse("Credenciales inválidas.", null)
-            );
+            return ResponseEntity.internalServerError().body(new AuthenticationResponse(false, "ERROR INTERNO: " + e.getMessage()));
         }
     }
 
@@ -54,11 +58,13 @@ public class AuthenticationController {
     public ResponseEntity<AuthenticationResponse> signout(@RequestBody SignOutRequest request) {
         try {
             AuthenticationResponse response = authenticactionService.signOut(request);
-            return ResponseEntity.ok(response);
+            if(response.isSuccess()) {
+                return ResponseEntity.ok(response);
+            } else {
+                return ResponseEntity.badRequest().body(response);
+            }
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(
-                    new AuthenticationResponse("Credenciales inválidas.", null)
-            );
+            return ResponseEntity.internalServerError().body(new AuthenticationResponse(false, "ERROR INTERNO: " + e.getMessage()));
         }
     }
 }

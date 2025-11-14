@@ -1,17 +1,16 @@
 /**]
  >> Project:    MoraPack
  >> Author:     Grupo 4D
- >> File:       RutaResponse.java
+ >> File:       RutaDTO.java
  [**/
 
-package com.pucp.dp1.grupo4d.morapack.model.dto.model;
+package com.pucp.dp1.grupo4d.morapack.model.dto;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import com.pucp.dp1.grupo4d.morapack.model.entity.RutaEntity;
 
-public class RutaResponse {
+public class RutaDTO {
     private String codigo;
     private Double duracion;
     private Double distancia;
@@ -22,17 +21,8 @@ public class RutaResponse {
     private String codDestino;
     private List<String> codVuelos;
 
-    public RutaResponse(RutaEntity ruta) {
-        this.codigo = ruta.getCodigo();
-        this.duracion = ruta.getDuracion();
-        this.distancia = ruta.getDistancia();
-        this.fechaHoraSalida = ruta.getFechaHoraSalidaUTC();
-        this.fechaHoraLlegada = ruta.getFechaHoraLlegadaUTC();
-        this.tipo = ruta.getTipo().toString();
-        this.codOrigen = ruta.getOrigen().getCodigo();
-        this.codDestino = ruta.getDestino().getCodigo();
+    public RutaDTO() {
         this.codVuelos = new ArrayList<>();
-        ruta.getVuelos().forEach(v -> this.codVuelos.add(v.getCodigo()));
     }
 
     public String getCodigo() { return codigo; }

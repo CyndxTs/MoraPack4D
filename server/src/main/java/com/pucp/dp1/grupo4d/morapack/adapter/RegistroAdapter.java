@@ -6,7 +6,9 @@
 
 package com.pucp.dp1.grupo4d.morapack.adapter;
 
+import com.pucp.dp1.grupo4d.morapack.model.algorithm.Lote;
 import com.pucp.dp1.grupo4d.morapack.model.algorithm.Registro;
+import com.pucp.dp1.grupo4d.morapack.model.dto.RegistroDTO;
 import com.pucp.dp1.grupo4d.morapack.model.entity.LoteEntity;
 import com.pucp.dp1.grupo4d.morapack.model.entity.RegistroEntity;
 import com.pucp.dp1.grupo4d.morapack.service.model.LoteService;
@@ -26,16 +28,15 @@ public class RegistroAdapter {
     private LoteService loteService;
 
     private final LoteAdapter loteAdapter;
-
     private final Map<String, Registro> poolAlgorithm = new HashMap<>();
     private final Map<String, RegistroEntity> poolEntity = new HashMap<>();
+    private final Map<String, RegistroDTO>  poolDTO = new HashMap<>();
 
     public RegistroAdapter(LoteAdapter loteAdapter) {
         this.loteAdapter = loteAdapter;
     }
 
     public Registro toAlgorithm(RegistroEntity entity) {
-        if (entity == null) return null;
         if (poolAlgorithm.containsKey(entity.getCodigo())) {
             return poolAlgorithm.get(entity.getCodigo());
         }
@@ -45,13 +46,13 @@ public class RegistroAdapter {
         algorithm.setFechaHoraIngresoUTC(entity.getFechaHoraIngresoUTC());
         algorithm.setFechaHoraEgresoLocal(entity.getFechaHoraEgresoLocal());
         algorithm.setFechaHoraEgresoUTC(entity.getFechaHoraEgresoUTC());
-        algorithm.setLote(loteAdapter.toAlgorithm(entity.getLote()));
+        Lote lote = loteAdapter.toAlgorithm(entity.getLote());
+        algorithm.setLote(lote);
         poolAlgorithm.put(algorithm.getCodigo(), algorithm);
         return algorithm;
     }
 
     public RegistroEntity toEntity(Registro algorithm) {
-        if (algorithm == null) return null;
         if (poolEntity.containsKey(algorithm.getCodigo())) {
             return poolEntity.get(algorithm.getCodigo());
         }
@@ -64,18 +65,45 @@ public class RegistroAdapter {
         entity.setFechaHoraIngresoUTC(algorithm.getFechaHoraIngresoUTC());
         entity.setFechaHoraEgresoLocal(algorithm.getFechaHoraEgresoLocal());
         entity.setFechaHoraEgresoUTC(algorithm.getFechaHoraEgresoUTC());
-        String codigoLote = algorithm.getLote().getCodigo();
-        LoteEntity loteEntity = loteService.findByCodigo(codigoLote).orElse(null);
-        if (loteEntity != null) {
-            entity.setLote(loteEntity);
-        }
+        String codLote = algorithm.getLote().getCodigo();
+        LoteEntity loteEntity = loteService.findByCodigo(codLote).orElse(null);
+        entity.setLote(loteEntity);
         poolEntity.put(entity.getCodigo(), entity);
         return entity;
+    }
+
+    public RegistroDTO toDTO(Registro algorithm) {
+        if (poolDTO.containsKey(algorithm.getCodigo())) {
+            return poolDTO.get(algorithm.getCodigo());
+        }
+        RegistroDTO dto = new RegistroDTO();
+        dto.setCodigo(algorithm.getCodigo());
+        dto.setFechaHoraIngreso(algorithm.getFechaHoraIngresoUTC());
+        dto.setFechaHoraEgreso(algorithm.getFechaHoraEgresoUTC());
+        Lote lote = algorithm.getLote();
+        dto.setCodLote(lote.getCodigo());
+        poolDTO.put(algorithm.getCodigo(), dto);
+        return dto;
+    }
+
+    public RegistroDTO toDTO(RegistroEntity entity) {
+        if (poolDTO.containsKey(entity.getCodigo())) {
+            return poolDTO.get(entity.getCodigo());
+        }
+        RegistroDTO dto = new RegistroDTO();
+        dto.setCodigo(entity.getCodigo());
+        dto.setFechaHoraIngreso(entity.getFechaHoraIngresoUTC());
+        dto.setFechaHoraEgreso(entity.getFechaHoraEgresoUTC());
+        LoteEntity loteEntity = entity.getLote();
+        dto.setCodLote(loteEntity.getCodigo());
+        poolDTO.put(entity.getCodigo(), dto);
+        return dto;
     }
 
     public void clearPools() {
         poolAlgorithm.clear();
         poolEntity.clear();
+        poolDTO.clear();
         loteAdapter.clearPools();
     }
 }

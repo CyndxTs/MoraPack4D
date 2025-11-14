@@ -6,23 +6,21 @@
 
 package com.pucp.dp1.grupo4d.morapack.model.dto.response;
 
-import com.pucp.dp1.grupo4d.morapack.util.G4D;
+import com.pucp.dp1.grupo4d.morapack.model.dto.UsuarioDTO;
 
-public class AuthenticationResponse {
-    private String token;
-    private String mensaje;
-    private UserResponse usuario;
+public class AuthenticationResponse extends GenericResponse {
+    private UsuarioDTO user;
 
-    public AuthenticationResponse(String mensaje, UserResponse usuario) {
-        this.token = G4D.Generator.getUniqueString("TOK");
-        this.mensaje = mensaje;
-        this.usuario = usuario;
+    public AuthenticationResponse(Boolean success, String message) {
+        super(success, message);
+        this.user = null;
     }
 
-    public String getToken() { return token; }
-    public void setToken(String token) { this.token = token; }
-    public String getMensaje() { return mensaje; }
-    public void setMensaje(String mensaje) { this.mensaje = mensaje; }
-    public UserResponse getUsuario() { return usuario; }
-    public void setUsuario(UserResponse usuario) { this.usuario = usuario; }
+    public AuthenticationResponse(Boolean success, String message, UsuarioDTO user) {
+        super(success, message);
+        this.user = user;
+    }
+
+    public UsuarioDTO getUser() { return user; }
+    public void setUser(UsuarioDTO user) { this.user = user; }
 }

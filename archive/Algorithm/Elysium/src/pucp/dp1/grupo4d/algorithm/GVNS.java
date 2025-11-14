@@ -460,6 +460,12 @@ public class GVNS {
         }
     }
 
+
+    /*
+     *   P  -> RA , RB , RC , RD, RE  => A -> > V3 -> A3-> V3->D
+     * ....
+     */
+
     private Boolean LSFusionar(Solucion solucion, int ele) {
         G4D.Logger.logln("> Realizando búsqueda local por 'Fusión'..");
         // Declaración & inicialización de variables
@@ -882,7 +888,7 @@ public class GVNS {
         List<Pedido> pedidos = solucion.getPedidosAtendidos();
         Set<Vuelo> vuelosEnTransito = solucion.getVuelosEnTransito();
         Set<Ruta> rutasEnOperacion = solucion.getRutasEnOperacion();
-        // Realocación de pedidos
+        // Realocación de lotes
         for (int posPedido = 0; posPedido < pedidos.size(); posPedido++) {
             Pedido pedido = pedidos.get(posPedido);
             // Validación por aptitud de pedido para realocar

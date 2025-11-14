@@ -6,12 +6,14 @@
 
 package com.pucp.dp1.grupo4d.morapack.service.model;
 
-import com.pucp.dp1.grupo4d.morapack.model.dto.model.VueloResponse;
+import com.pucp.dp1.grupo4d.morapack.model.dto.VueloDTO;
+import com.pucp.dp1.grupo4d.morapack.model.entity.PedidoEntity;
 import com.pucp.dp1.grupo4d.morapack.model.entity.VueloEntity;
 import com.pucp.dp1.grupo4d.morapack.repository.VueloRepository;
 import org.springframework.stereotype.Service;
 
 import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -52,16 +54,7 @@ public class VueloService {
         return vueloRepository.findByCodigo(codigo).isPresent();
     }
 
-    public List<VueloResponse> listarVuelosSimulacion() {
-        List<Object[]> results = vueloRepository.listarVuelosSimulacion();
-        return results.stream().map(r -> new VueloResponse(
-                ((Number) r[0]).longValue(),
-                (String) r[1],
-                (String) r[2],
-                (String) r[3],
-                ((Timestamp) r[4]).toLocalDateTime(),
-                ((Timestamp) r[5]).toLocalDateTime(),
-                ((Number) r[6]).intValue()
-        )).toList();
+    public List<VueloEntity> listarParaSimulacion(LocalDateTime fechaHoraInicio, LocalDateTime fechaHoraFin, Integer desfaseDeDias) {
+        return  vueloRepository.listarParaSimulacion(fechaHoraInicio, fechaHoraFin, desfaseDeDias);
     }
 }

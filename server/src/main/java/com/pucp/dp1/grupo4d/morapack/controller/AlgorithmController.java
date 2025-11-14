@@ -7,8 +7,7 @@
 package com.pucp.dp1.grupo4d.morapack.controller;
 
 import com.pucp.dp1.grupo4d.morapack.model.dto.request.PlanificationRequest;
-import com.pucp.dp1.grupo4d.morapack.model.dto.response.ImportResponse;
-import com.pucp.dp1.grupo4d.morapack.model.dto.response.PlanificationResponse;
+import com.pucp.dp1.grupo4d.morapack.model.dto.response.GenericResponse;
 import com.pucp.dp1.grupo4d.morapack.service.AlgorithmService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -25,32 +24,30 @@ public class AlgorithmController {
     }
 
     @PostMapping("/importar")
-    public ResponseEntity<ImportResponse> importarDesdeArchivo(@RequestParam("file") MultipartFile file, @RequestParam("type") String type) {
+    public ResponseEntity<GenericResponse> importarDesdeArchivo(@RequestParam("file") MultipartFile file, @RequestParam("type") String type) {
         try {
-            ImportResponse response = algorithmService.importarDesdeArchivo(file, type);
-            if (response.isExito()) {
+            GenericResponse response = algorithmService.importarDesdeArchivo(file, type);
+            if (response.isSuccess()) {
                 return ResponseEntity.ok(response);
             } else {
                 return ResponseEntity.badRequest().body(response);
             }
         } catch (Exception e) {
-            return ResponseEntity.internalServerError()
-                    .body(new ImportResponse(false, "ERROR INTERNO: " + e.getMessage()));
+            return ResponseEntity.internalServerError().body(new GenericResponse(false, "ERROR INTERNO: " + e.getMessage()));
         }
     }
 
     @PostMapping("/planificar")
-    public ResponseEntity<PlanificationResponse> planificar(@RequestBody PlanificationRequest request) {
+    public ResponseEntity<GenericResponse> planificar(@RequestBody PlanificationRequest request) {
         try {
-            PlanificationResponse response = algorithmService.planificar(request);
-            if (response.isExito()) {
+            GenericResponse response = algorithmService.planificar(request);
+            if (response.isSuccess()) {
                 return ResponseEntity.ok(response);
             } else {
                 return ResponseEntity.badRequest().body(response);
             }
         } catch (Exception e) {
-            return ResponseEntity.internalServerError()
-                    .body(new PlanificationResponse(false, "ERROR INTERNO: " + e.getMessage()));
+            return ResponseEntity.internalServerError().body(new GenericResponse(false, "ERROR INTERNO: " + e.getMessage()));
         }
     }
 }

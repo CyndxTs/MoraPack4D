@@ -7,7 +7,7 @@
 package com.pucp.dp1.grupo4d.morapack.algorithm;
 
 import com.pucp.dp1.grupo4d.morapack.adapter.AeropuertoAdapter;
-import com.pucp.dp1.grupo4d.morapack.adapter.ClienteAdapter;
+import com.pucp.dp1.grupo4d.morapack.adapter.UsuarioAdapter;
 import com.pucp.dp1.grupo4d.morapack.adapter.PedidoAdapter;
 import com.pucp.dp1.grupo4d.morapack.adapter.PlanAdapter;
 import com.pucp.dp1.grupo4d.morapack.model.algorithm.*;
@@ -44,7 +44,7 @@ public class Problematica {
     private PlanService planService;
     private PedidoService pedidoService;
     private AeropuertoAdapter aeropuertoAdapter;
-    private ClienteAdapter clienteAdapter;
+    private UsuarioAdapter usuarioAdapter;
     private PlanAdapter planAdapter;
     private PedidoAdapter pedidoAdapter;
 
@@ -53,7 +53,7 @@ public class Problematica {
                         PlanService planService,
                         PedidoService pedidoService,
                         AeropuertoAdapter aeropuertoAdapter,
-                        ClienteAdapter clienteAdapter,
+                        UsuarioAdapter usuarioAdapter,
                         PlanAdapter planAdapter,
                         PedidoAdapter pedidoAdapter) {
         this.aeropuertoService = aeropuertoService;
@@ -61,7 +61,7 @@ public class Problematica {
         this.planService = planService;
         this.pedidoService = pedidoService;
         this.aeropuertoAdapter = aeropuertoAdapter;
-        this.clienteAdapter = clienteAdapter;
+        this.usuarioAdapter = usuarioAdapter;
         this.planAdapter = planAdapter;
         this.pedidoAdapter = pedidoAdapter;
         this.origenes = new ArrayList<>();
@@ -78,7 +78,7 @@ public class Problematica {
     }
 
     public Problematica replicar() {
-        Problematica problematica = new Problematica(this.aeropuertoService,this.clienteService,this.planService,this.pedidoService,this.aeropuertoAdapter,this.clienteAdapter,this.planAdapter,this.pedidoAdapter);
+        Problematica problematica = new Problematica(this.aeropuertoService,this.clienteService,this.planService,this.pedidoService,this.aeropuertoAdapter,this.usuarioAdapter,this.planAdapter,this.pedidoAdapter);
         Map<String, Aeropuerto> poolAeropuertos = new HashMap<>();
         Map<String, Lote> poolLotes = new HashMap<>();
         Map<String, Cliente> poolClientes = new HashMap<>();
@@ -108,7 +108,7 @@ public class Problematica {
         this.planService = problematica.planService;
         this.pedidoService = problematica.pedidoService;
         this.aeropuertoAdapter = problematica.aeropuertoAdapter;
-        this.clienteAdapter = problematica.clienteAdapter;
+        this.usuarioAdapter = problematica.usuarioAdapter;
         this.planAdapter = problematica.planAdapter;
         this.pedidoAdapter = problematica.pedidoAdapter;
     }
@@ -128,7 +128,7 @@ public class Problematica {
 
         List<ClienteEntity> clienteEntities = clienteService.findAll();
         for (ClienteEntity entity : clienteEntities) {
-            clientes.add(clienteAdapter.toAlgorithm(entity));
+            clientes.add(usuarioAdapter.toAlgorithm(entity));
         }
 
         List<PlanEntity> planEntities = planService.findAll();
@@ -147,7 +147,7 @@ public class Problematica {
 
     public void limpiarPools() {
         aeropuertoAdapter.clearPools();
-        clienteAdapter.clearPools();
+        usuarioAdapter.clearPools();
         planAdapter.clearPools();
         pedidoAdapter.clearPools();
     }

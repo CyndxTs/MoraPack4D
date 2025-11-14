@@ -1,35 +1,26 @@
 /**]
  >> Project:    MoraPack
  >> Author:     Grupo 4D
- >> File:       PedidoResponse.java
+ >> File:       PedidoDTO.java
  [**/
 
-package com.pucp.dp1.grupo4d.morapack.model.dto.model;
+package com.pucp.dp1.grupo4d.morapack.model.dto;
 
-import com.pucp.dp1.grupo4d.morapack.model.algorithm.*;
-import com.pucp.dp1.grupo4d.morapack.model.entity.PedidoEntity;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-public class PedidoResponse {
+public class PedidoDTO {
     private String codigo;
     private String codCliente;
     private Integer cantidadSolicitada;
     private LocalDateTime fechaHoraGeneracion;
     private LocalDateTime fechaHoraExpiracion;
     private String codDestino;
-    private List<LotePorRutaResponse> lotesPorRuta;
+    private List<LotePorRutaDTO> lotesPorRuta;
 
-    public PedidoResponse(PedidoEntity pedido) {
-        this.codigo = pedido.getCodigo();
-        this.codCliente = pedido.getCliente().getCodigo();
-        this.cantidadSolicitada = pedido.getCantidadSolicitada();
-        this.fechaHoraGeneracion = pedido.getFechaHoraGeneracionUTC();
-        this.fechaHoraExpiracion = pedido.getFechaHoraExpiracionUTC();
-        this.codDestino = pedido.getDestino().getCodigo();
+    public PedidoDTO() {
         this.lotesPorRuta = new ArrayList<>();
-        pedido.getLotes().forEach( l -> this.lotesPorRuta.add(new LotePorRutaResponse(l.getRuta().getCodigo(), l)));
     }
 
     public String getCodigo() { return codigo; }
@@ -44,6 +35,6 @@ public class PedidoResponse {
     public void setFechaHoraExpiracion(LocalDateTime fechaHoraExpiracion) { this.fechaHoraExpiracion = fechaHoraExpiracion; }
     public String getCodDestino() { return codDestino; }
     public void setCodDestino(String codDestino) { this.codDestino = codDestino; }
-    public List<LotePorRutaResponse> getLotesPorRuta() { return lotesPorRuta; }
-    public void setLotesPorRuta(List<LotePorRutaResponse> lotesPorRuta) { this.lotesPorRuta = lotesPorRuta; }
+    public List<LotePorRutaDTO> getLotesPorRuta() { return lotesPorRuta; }
+    public void setLotesPorRuta(List<LotePorRutaDTO> lotesPorRuta) { this.lotesPorRuta = lotesPorRuta; }
 }

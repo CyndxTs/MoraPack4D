@@ -19,10 +19,9 @@ import java.util.*;
 public class PlanAdapter {
 
     @Autowired
-    PlanService planService;
+    private PlanService planService;
 
     private final AeropuertoAdapter aeropuertoAdapter;
-
     private final Map<String, Plan> poolAlgorithm = new HashMap<>();
     private final Map<String, PlanEntity> poolEntity = new HashMap<>();
 
@@ -31,7 +30,6 @@ public class PlanAdapter {
     }
 
     public Plan toAlgorithm(PlanEntity entity) {
-        if (entity == null) return null;
         if (poolAlgorithm.containsKey(entity.getCodigo())) {
             return poolAlgorithm.get(entity.getCodigo());
         }
@@ -44,21 +42,22 @@ public class PlanAdapter {
         algorithm.setHoraSalidaUTC(entity.getHoraSalidaUTC());
         algorithm.setHoraLlegadaLocal(entity.getHoraLlegadaLocal());
         algorithm.setHoraLlegadaUTC(entity.getHoraLlegadaUTC());
-        Aeropuerto origenAlg = aeropuertoAdapter.toAlgorithm(entity.getOrigen());
-        Aeropuerto destinoAlg = aeropuertoAdapter.toAlgorithm(entity.getDestino());
-        algorithm.setOrigen(origenAlg);
-        algorithm.setDestino(destinoAlg);
+        Aeropuerto origen = aeropuertoAdapter.toAlgorithm(entity.getOrigen());
+        algorithm.setOrigen(origen);
+        Aeropuerto destino = aeropuertoAdapter.toAlgorithm(entity.getDestino());
+        algorithm.setDestino(destino);
         poolAlgorithm.put(algorithm.getCodigo(), algorithm);
         return algorithm;
     }
 
     public PlanEntity toEntity(Plan algorithm) {
-        if (algorithm == null) return null;
         if(poolEntity.containsKey(algorithm.getCodigo())) {
             return poolEntity.get(algorithm.getCodigo());
         }
         PlanEntity entity = planService.findByCodigo(algorithm.getCodigo()).orElse(null);
-        if (entity == null) return null;
+        if (entity == null) {
+            return null;
+        }
         poolEntity.put(entity.getCodigo(), entity);
         return entity;
     }

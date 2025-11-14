@@ -13,8 +13,7 @@ import com.pucp.dp1.grupo4d.morapack.algorithm.Solucion;
 import com.pucp.dp1.grupo4d.morapack.model.algorithm.*;
 import com.pucp.dp1.grupo4d.morapack.model.dto.request.ReparameterizationRequest;
 import com.pucp.dp1.grupo4d.morapack.model.dto.request.PlanificationRequest;
-import com.pucp.dp1.grupo4d.morapack.model.dto.response.ImportResponse;
-import com.pucp.dp1.grupo4d.morapack.model.dto.response.PlanificationResponse;
+import com.pucp.dp1.grupo4d.morapack.model.dto.response.GenericResponse;
 import com.pucp.dp1.grupo4d.morapack.model.entity.*;
 import com.pucp.dp1.grupo4d.morapack.service.model.*;
 import jakarta.transaction.Transactional;
@@ -42,7 +41,7 @@ public class AlgorithmService {
     private ClienteService clienteService;
 
     @Autowired
-    private ClienteAdapter clienteAdapter;
+    private UsuarioAdapter usuarioAdapter;
 
     @Autowired
     private PlanService planService;
@@ -64,81 +63,89 @@ public class AlgorithmService {
 
     @Autowired
     private AdministradorService administradorService;
+
     @Autowired
     private VueloAdapter vueloAdapter;
+
     @Autowired
     private VueloService vueloService;
+
     @Autowired
     private RegistroAdapter registroAdapter;
 
-    public ImportResponse importarDesdeArchivo(MultipartFile file, String type) {
+    public GenericResponse importarDesdeArchivo(MultipartFile file, String type) {
         try {
             switch (type.toUpperCase()) {
                 case "PEDIDOS":
                     pedidoService.importarDesdeArchivo(file);
-                    return new ImportResponse(true, "Pedidos importados correctamente!");
+                    return new GenericResponse(true, "Pedidos importados correctamente!");
                 case "CLIENTES":
                     clienteService.importarDesdeArchivo(file);
-                    return new ImportResponse(true, "Clientes importados correctamente!");
+                    return new GenericResponse(true, "Clientes importados correctamente!");
                 case "PLANES":
                     planService.importarDesdeArchivo(file);
-                    return new ImportResponse(true, "Planes importados correctamente!");
+                    return new GenericResponse(true, "Planes de vuelo importados correctamente!");
                 case "AEROPUERTOS":
                     aeropuertoService.importarDesdeArchivo(file);
-                    return new ImportResponse(true, "Aeropuertos importados correctamente!");
+                    return new GenericResponse(true, "Aeropuertos importados correctamente!");
                 case "ADMINISTRADORES":
                     administradorService.importarDesdeArchivo(file);
-                    return new ImportResponse(true, "Administradores importados correctamente!");
+                    return new GenericResponse(true, "Administradores importados correctamente!");
                 default:
-                    return new ImportResponse(false, "Tipo de archivo inválido.");
+                    return new GenericResponse(false, "Tipo de archivo inválido.");
             }
         } catch (Exception e) {
             e.printStackTrace();
-            return new ImportResponse(false, "ERROR - IMPORT: " + e.getMessage());
+            return new GenericResponse(false, "ERROR - IMPORTACIÓN: " + e.getMessage());
         }
     }
 
-    public PlanificationResponse planificar(PlanificationRequest request) {
-        if(request.getReparametrizar()) {
-            ReparameterizationRequest parameters = request.getParameters();
-            Problematica.MAX_DIAS_ENTREGA_INTRACONTINENTAL = parameters.getMaxDiasEntregaIntercontinental();
-            Problematica.MAX_DIAS_ENTREGA_INTERCONTINENTAL = parameters.getMaxDiasEntregaIntercontinental();
-            Problematica.MAX_HORAS_RECOJO = parameters.getMaxHorasRecojo();
-            Problematica.MAX_HORAS_ESTANCIA = parameters.getMaxHorasEstancia();
-            Problematica.MIN_HORAS_ESTANCIA = parameters.getMinHorasEstancia();
-            Problematica.FECHA_HORA_INICIO = parameters.getFechaHoraIni();
-            Problematica.FECHA_HORA_FIN = parameters.getFechaHoraFin();
-            Problematica.CODIGOS_DE_ORIGENES = parameters.getCodigosDeOrigenes();
-            GVNS.D_MIN = parameters.getDMin();
-            GVNS.I_MAX = parameters.getIMax();
-            GVNS.L_MIN = parameters.getEleMin();
-            GVNS.L_MAX = parameters.getEleMax();
-            GVNS.K_MIN = parameters.getKMin();
-            GVNS.K_MAX = parameters.getKMax();
-            GVNS.T_MAX = parameters.getTMax();
-            GVNS.MAX_INTENTOS = parameters.getMaxIntentos();
-            Solucion.f_UA = parameters.getFactorDeUmbralDeAberracion();
-            Solucion.f_UT = parameters.getFactorDeUtilizacionTemporal();
-            Solucion.f_DE = parameters.getFactorDeDesviacionEspacial();
-            Solucion.f_DO = parameters.getFactorDeDisposicionOperacional();
+    public GenericResponse planificar(PlanificationRequest request) {
+        try {
+            if(request.getReparametrizar()) {
+                ReparameterizationRequest parameters = request.getParameters();
+                Problematica.MAX_DIAS_ENTREGA_INTRACONTINENTAL = parameters.getMaxDiasEntregaIntercontinental();
+                Problematica.MAX_DIAS_ENTREGA_INTERCONTINENTAL = parameters.getMaxDiasEntregaIntercontinental();
+                Problematica.MAX_HORAS_RECOJO = parameters.getMaxHorasRecojo();
+                Problematica.MAX_HORAS_ESTANCIA = parameters.getMaxHorasEstancia();
+                Problematica.MIN_HORAS_ESTANCIA = parameters.getMinHorasEstancia();
+                Problematica.FECHA_HORA_INICIO = parameters.getFechaHoraIni();
+                Problematica.FECHA_HORA_FIN = parameters.getFechaHoraFin();
+                Problematica.CODIGOS_DE_ORIGENES = parameters.getCodigosDeOrigenes();
+                GVNS.D_MIN = parameters.getDMin();
+                GVNS.I_MAX = parameters.getIMax();
+                GVNS.L_MIN = parameters.getEleMin();
+                GVNS.L_MAX = parameters.getEleMax();
+                GVNS.K_MIN = parameters.getKMin();
+                GVNS.K_MAX = parameters.getKMax();
+                GVNS.T_MAX = parameters.getTMax();
+                GVNS.MAX_INTENTOS = parameters.getMaxIntentos();
+                Solucion.f_UA = parameters.getFactorDeUmbralDeAberracion();
+                Solucion.f_UT = parameters.getFactorDeUtilizacionTemporal();
+                Solucion.f_DE = parameters.getFactorDeDesviacionEspacial();
+                Solucion.f_DO = parameters.getFactorDeDisposicionOperacional();
+            }
+            Problematica problematica = new Problematica(
+                    aeropuertoService, clienteService, planService, pedidoService,
+                    aeropuertoAdapter, usuarioAdapter, planAdapter, pedidoAdapter
+            );
+            problematica.cargarDatos();
+            GVNS gvns = new GVNS();
+            gvns.planificar(problematica);
+            if(gvns.getSolucionINI() == null) {
+                return new GenericResponse(false, "COLAPSO!");
+            }
+            Solucion solucion = gvns.getSolucionVNS();
+            guardarSolucion(solucion, problematica);
+            problematica.limpiarPools();
+            vueloAdapter.clearPools();
+            rutaAdapter.clearPools();
+            loteAdapter.clearPools();
+            return new GenericResponse(true, "Planificación correctamente concluida!");
+        } catch(Exception e) {
+            e.printStackTrace();
+            return new GenericResponse(false, "ERROR - PLANIFICACIÓN: " + e.getMessage());
         }
-        Problematica problematica = new Problematica(
-                aeropuertoService, clienteService, planService, pedidoService,
-                aeropuertoAdapter, clienteAdapter, planAdapter, pedidoAdapter
-        );
-        problematica.cargarDatos();
-        GVNS gvns = new GVNS();
-        gvns.planificar(problematica);
-        if(gvns.getSolucionINI() == null) {
-            return new PlanificationResponse(false, "COLAPSO!");
-        }
-        Solucion solucion = gvns.getSolucionVNS();
-        guardarSolucion(solucion, problematica);
-        problematica.limpiarPools();
-        vueloAdapter.clearPools();
-        rutaAdapter.clearPools();
-        loteAdapter.clearPools();
-        return new PlanificationResponse(true, "Planificación correctamente concluida!");
     }
 
     @Transactional

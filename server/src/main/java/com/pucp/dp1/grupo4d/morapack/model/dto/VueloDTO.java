@@ -1,15 +1,15 @@
 /**]
  >> Project:    MoraPack
  >> Author:     Grupo 4D
- >> File:       VueloResponse.java
+ >> File:       VueloDTO.java
  [**/
 
-package com.pucp.dp1.grupo4d.morapack.model.dto.model;
+package com.pucp.dp1.grupo4d.morapack.model.dto;
 
 import java.time.LocalDateTime;
 import com.pucp.dp1.grupo4d.morapack.model.entity.VueloEntity;
 
-public class VueloResponse {
+public class VueloDTO {
     private String codigo;
     private String codOrigen;
     private String codDestino;
@@ -18,15 +18,7 @@ public class VueloResponse {
     private Integer capacidadOcupada;
     private Integer capacidadMaxima;
 
-    public VueloResponse(VueloEntity vuelo) {
-        this.codigo = vuelo.getCodigo();
-        this.codOrigen = vuelo.getPlan().getOrigen().getCodigo();
-        this.codDestino = vuelo.getPlan().getDestino().getCodigo();
-        this.fechaHoraSalida = vuelo.getFechaHoraSalidaUTC();
-        this.fechaHoraLlegada = vuelo.getFechaHoraLlegadaUTC();
-        this.capacidadOcupada = vuelo.getPlan().getCapacidad() - vuelo.getCapacidadDisponible();
-        this.capacidadMaxima = vuelo.getPlan().getCapacidad();
-    }
+    public VueloDTO() {}
 
     public String getCodigo() { return codigo; }
     public void setCodigo(String codigo) { this.codigo = codigo; }

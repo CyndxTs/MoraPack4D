@@ -12,7 +12,6 @@ public class Cliente {
     private String codigo;
     private String nombre;
     private String correo;
-    private String contrasenia;
 
     public Cliente() {
         this.codigo = G4D.Generator.getUniqueString("CLI");
@@ -23,7 +22,6 @@ public class Cliente {
         cliente.codigo = this.codigo;
         cliente.nombre = this.nombre;
         cliente.correo = this.correo;
-        cliente.contrasenia = this.contrasenia;
         return cliente;
     }
 
@@ -67,13 +65,5 @@ public class Cliente {
 
     public void setCorreo(String correo) {
         this.correo = correo;
-    }
-
-    public String getContrasenia() {
-        return contrasenia;
-    }
-
-    public void setContrasenia(String contrasenia) {
-        this.contrasenia = contrasenia;
     }
 }

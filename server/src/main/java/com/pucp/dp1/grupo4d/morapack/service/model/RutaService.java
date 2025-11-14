@@ -6,9 +6,12 @@
 
 package com.pucp.dp1.grupo4d.morapack.service.model;
 
+import com.pucp.dp1.grupo4d.morapack.model.entity.PedidoEntity;
 import com.pucp.dp1.grupo4d.morapack.model.entity.RutaEntity;
 import com.pucp.dp1.grupo4d.morapack.repository.RutaRepository;
 import org.springframework.stereotype.Service;
+
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -47,5 +50,9 @@ public class RutaService {
 
     public boolean existsByCodigo(String codigo) {
         return rutaRepository.findByCodigo(codigo).isPresent();
+    }
+
+    public List<RutaEntity> listarParaSimulacion(LocalDateTime fechaHoraInicio, LocalDateTime fechaHoraFin, Integer desfaseDeDias) {
+        return  rutaRepository.listarParaSimulacion(fechaHoraInicio, fechaHoraFin, desfaseDeDias);
     }
 }
