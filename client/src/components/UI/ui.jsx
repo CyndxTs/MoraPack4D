@@ -1,5 +1,5 @@
 // src/components/ui/ui.jsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "./ui.scss";
 import StatusBadge from "../Status/status";
 
@@ -83,19 +83,33 @@ export function FileInput({ onChange, label = "Seleccionar archivo" }) {
   );
 }
 
-export function Dropdown({ options = [], onSelect, placeholder = "Seleccionar..." }) {
+export function RemoveFileButton({ label = "❌", onClick }) {
+  return (
+    <button className="remove-file-btn" onClick={onClick}>
+      {label}
+    </button>
+  );
+}
+
+
+export function Dropdown({ options = [], onSelect, placeholder = "Seleccionar...", value }) {
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState("");
 
-  // Insertamos la opción "Seleccionar..." al inicio
+  // Sincroniza el valor externo (prop value) con el interno (selected)
+  useEffect(() => {
+    if (!value) {
+      setSelected("");
+    } else {
+      const opt = options.find((o) => o.value === value);
+      setSelected(opt ? opt.label : "");
+    }
+  }, [value, options]);
+
   const finalOptions = [{ label: placeholder, value: "" }, ...options];
 
   const handleSelect = (opt) => {
-    if (opt.value === "") {
-      setSelected(""); // placeholder
-    } else {
-      setSelected(opt.label);
-    }
+    setSelected(opt.value === "" ? "" : opt.label);
     onSelect && onSelect(opt.value);
     setOpen(false);
   };
@@ -126,7 +140,6 @@ export function Dropdown({ options = [], onSelect, placeholder = "Seleccionar...
   );
 }
 
-
 export function Table({ headers = [], data = [], statusColors = {} }) {
   return (
     <div className="table-container">
@@ -134,7 +147,9 @@ export function Table({ headers = [], data = [], statusColors = {} }) {
         <thead>
           <tr>
             {headers.map((h, i) => (
-              <th key={i}>{h.label}</th>
+              <th key={i} className={h.key === "acciones" ? "acciones" : ""}>
+                {h.label}
+              </th>
             ))}
           </tr>
         </thead>
@@ -245,10 +260,22 @@ export function Legend({ items }) {
 }
 
 export function LoadingOverlay({ text = "Cargando..." }) {
+  const [seconds, setSeconds] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setSeconds((prev) => prev + 1);
+    }, 1000);
+
+    return () => clearInterval(timer); // limpiar al desmontar
+  }, []);
+
   return (
     <div className="loading-overlay">
       <div className="spinner"></div>
-      <p>{text}</p>
+      <p>
+        {text} <strong>({seconds}s)</strong>
+      </p>
     </div>
   );
 }

@@ -226,6 +226,7 @@
   color: var(--color-grey);
   font-style: italic;
   text-align: left; /* queda alineado al botón */
+  padding-bottom: 15px;
 }
 
 /* === Dropdown === */
@@ -371,15 +372,17 @@
   font-style: italic;
 }
 
+.custom-table th.acciones,
 .custom-table td.acciones {
-  vertical-align: middle;
+  text-align: center;       /* centra horizontalmente */
+  vertical-align: middle;   /* centra verticalmente */
 }
 
 .custom-table td.acciones .acciones-container {
   display: flex;
-  gap: 10px;
-  align-items: center;
   justify-content: center;
+  align-items: center;
+  gap: 10px;
 }
 
 .custom-table td.acciones img {
@@ -596,46 +599,67 @@
   left: 50%;
   transform: translateX(-50%);
   display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  padding: 12px 16px;
-  border-radius: 8px;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-  min-width: 320px;
-  max-width: 450px;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 18px;
+  border-radius: 10px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+  background-color: var(--color-blanco);
+  width: auto;              /* se adapta al contenido */
+  max-width: 90%;           /* límite para pantallas pequeñas */
+  min-width: max-content;   /* no se recorta si el texto es corto */
   z-index: 9999;
   animation: fadeInDown 0.3s ease;
+  border: 1px solid currentColor;
+  overflow-wrap: break-word; /*evita desbordes */
 }
 
 .notification-icon {
-  width: 28px;
-  height: 28px;
-  margin-top: 4px;
+  flex-shrink: 0;          /* evita que se reduzca */
+  width: 36px;             /* tamaño visual equilibrado */
+  height: 36px;
+  object-fit: contain;
+  margin-right: 10px;
 }
 
 .notification-content {
-  flex: 1;
   display: flex;
   flex-direction: column;
+  justify-content: center;
+  text-align: left;
 }
 
 .notification-content strong {
   font-size: 16px;
-  margin-bottom: 4px;
+  font-weight: 700;
+  margin-bottom: 3px;
+  line-height: 1.2;
 }
 
 .notification-content p {
   font-size: 14px;
+  line-height: 1.4;
   margin: 0;
+  white-space: normal; /* permite salto de línea */
+  word-break: break-word;
 }
 
 .notification-close {
   background: none;
   border: none;
-  font-size: 18px;
+  font-size: 20px;
   cursor: pointer;
   font-weight: bold;
-  margin-left: 8px;
+  margin-left: 10px;
+  padding: 0;
+  align-self: flex-start;
+  line-height: 1;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.notification-close:hover {
+  transform: scale(1.15);
+  opacity: 0.7;
 }
 
 @keyframes fadeInDown {
@@ -693,4 +717,19 @@
 
 .action-btn.grey:hover {
   background-color: #242424;
+}
+
+//REMOVER ARCHIVO
+.remove-file-btn {
+  margin-top: 6px;
+  background: none;
+  border: none;
+  color: red;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: color 0.2s ease;
+
+  &:hover {
+    color: darkred;
+  }
 }
