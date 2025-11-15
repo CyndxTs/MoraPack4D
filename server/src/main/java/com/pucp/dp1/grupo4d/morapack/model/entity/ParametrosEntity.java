@@ -19,7 +19,6 @@ import java.util.List;
 public class ParametrosEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)
     private Integer id = 1;
 

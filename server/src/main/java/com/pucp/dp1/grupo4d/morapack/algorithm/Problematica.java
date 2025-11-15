@@ -11,50 +11,10 @@ import com.pucp.dp1.grupo4d.morapack.model.algorithm.*;
 import com.pucp.dp1.grupo4d.morapack.model.entity.*;
 import com.pucp.dp1.grupo4d.morapack.service.model.*;
 import com.pucp.dp1.grupo4d.morapack.util.G4D;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 import java.time.LocalDateTime;
 import java.util.*;
 
-@Component
 public class Problematica {
-
-    @Autowired
-    private PedidoService pedidoService;
-
-    @Autowired
-    private PedidoAdapter pedidoAdapter;
-
-    @Autowired
-    private AeropuertoService aeropuertoService;
-
-    @Autowired
-    private AeropuertoAdapter aeropuertoAdapter;
-
-    @Autowired
-    private ClienteService clienteService;
-
-    @Autowired
-    private UsuarioAdapter usuarioAdapter;
-
-    @Autowired
-    private PlanService planService;
-
-    @Autowired
-    private PlanAdapter planAdapter;
-
-    @Autowired
-    private RutaService rutaService;
-
-    @Autowired
-    private RutaAdapter rutaAdapter;
-
-    @Autowired
-    private VueloAdapter vueloAdapter;
-
-    @Autowired
-    private VueloService vueloService;
-
     public static Integer MAX_DIAS_ENTREGA_INTRACONTINENTAL;
     public static Integer MAX_DIAS_ENTREGA_INTERCONTINENTAL;
     public static Double MAX_HORAS_RECOJO;
@@ -113,7 +73,12 @@ public class Problematica {
         this.vuelosEnTransito = new HashSet<>(problematica.vuelosEnTransito);
     }
 
-    public void cargarDatos() {
+    public void cargarDatos(AeropuertoService aeropuertoService, AeropuertoAdapter aeropuertoAdapter,
+                            ClienteService clienteService, UsuarioAdapter usuarioAdapter,
+                            PlanService planService, PlanAdapter planAdapter,
+                            PedidoService pedidoService, PedidoAdapter pedidoAdapter,
+                            RutaService rutaService, RutaAdapter rutaAdapter,
+                            VueloService vueloService, VueloAdapter vueloAdapter ) {
         G4D.Logger.logln("Cargando datos desde base de datos..");
 
         List<AeropuertoEntity> aeropuertosEntity = aeropuertoService.findAll();

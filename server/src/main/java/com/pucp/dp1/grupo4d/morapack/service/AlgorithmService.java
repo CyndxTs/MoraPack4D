@@ -10,9 +10,11 @@ import com.pucp.dp1.grupo4d.morapack.adapter.*;
 import com.pucp.dp1.grupo4d.morapack.algorithm.GVNS;
 import com.pucp.dp1.grupo4d.morapack.algorithm.Problematica;
 import com.pucp.dp1.grupo4d.morapack.algorithm.Solucion;
+import com.pucp.dp1.grupo4d.morapack.mapper.*;
 import com.pucp.dp1.grupo4d.morapack.model.algorithm.*;
 import com.pucp.dp1.grupo4d.morapack.model.dto.*;
-import com.pucp.dp1.grupo4d.morapack.model.dto.request.ImportRequest;
+import com.pucp.dp1.grupo4d.morapack.model.dto.request.FileImportRequest;
+import com.pucp.dp1.grupo4d.morapack.model.dto.request.ListImportRequest;
 import com.pucp.dp1.grupo4d.morapack.model.dto.request.PlanificationRequest;
 import com.pucp.dp1.grupo4d.morapack.model.dto.response.GenericResponse;
 import com.pucp.dp1.grupo4d.morapack.model.dto.response.SolutionResponse;
@@ -84,12 +86,23 @@ public class AlgorithmService {
     private ParametrosService parametrosService;
 
     @Autowired
-    private ParametrosAdapter parametrosAdapter;
+    private ParametrosMapper parametrosMapper;
 
-    public GenericResponse importarDesdeArchivo(MultipartFile file, ImportRequest request) {
+    @Autowired
+    private PedidoMapper pedidoMapper;
+
+    @Autowired
+    private AeropuertoMapper aeropuertoMapper;
+
+    @Autowired
+    private VueloMapper vueloMapper;
+
+    @Autowired
+    private RutaMapper rutaMapper;
+
+    public GenericResponse importarDesdeArchivo(MultipartFile file, FileImportRequest request) {
         try {
-            String tipoDto = request.getTipoDto();
-            switch (tipoDto.toUpperCase()) {
+            switch (request.getTipoArchivo()) {
                 case "PEDIDOS":
                     String fechaHoraInicio = request.getFechaHoraInicio();
                     LocalDateTime fechaHoraInicioImport = (fechaHoraInicio == null || fechaHoraInicio.isBlank()) ? G4D.toDateTime("1999-12-31 23:59:59") : G4D.toDateTime(fechaHoraInicio);
@@ -122,26 +135,48 @@ public class AlgorithmService {
         }
     }
 
+    public GenericResponse importarDesdeLista(ListImportRequest request) {
+        try {
+            switch (request.getTipoDtos()) {
+                case "PEDIDOS":
+                    pedidoService.importar(request.getDtos());
+                    return new GenericResponse(true, "Pedidos importados correctamente!");
+                default:
+                    return new GenericResponse(false, "Tipo de archivo inválido.");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new GenericResponse(false, "ERROR - IMPORTACIÓN: " + e.getMessage());
+        }
+    }
+
     public SolutionResponse planificar(PlanificationRequest request) {
         try {
             boolean guardarPlanificacion = request.getGuardarPlanificacion();
             boolean replanificar = request.getReplanificar();
             if(request.getReparametrizar()) {
                 ParametrosDTO parametrosDTO = request.getParameters();
-                parametrosAdapter.toAlgorithm(parametrosDTO);
+                parametrosMapper.toAlgorithm(parametrosDTO);
                 if(request.getGuardarParametrizacion()) {
-                    ParametrosEntity parametrosEntity = parametrosAdapter.toEntity(parametrosDTO);
+                    ParametrosEntity parametrosEntity = parametrosMapper.toEntity(parametrosDTO);
                     parametrosService.save(parametrosEntity);
                 }
             } else {
                 ParametrosEntity parametrosEntity = parametrosService.findById(1);
-                parametrosAdapter.toAlgorithm(parametrosEntity);
+                parametrosMapper.toAlgorithm(parametrosEntity);
                 if(request.getGuardarParametrizacion()) {
                     parametrosService.save(parametrosEntity);
                 }
             }
             Problematica problematica = new Problematica();
-            problematica.cargarDatos();
+            problematica.cargarDatos(
+                    aeropuertoService, aeropuertoAdapter,
+                    clienteService, usuarioAdapter,
+                    planService, planAdapter,
+                    pedidoService, pedidoAdapter,
+                    rutaService, rutaAdapter,
+                    vueloService, vueloAdapter
+            );
             GVNS gvns = new GVNS();
             gvns.planificar(problematica);
             if(gvns.getSolucionINI() == null) {
@@ -155,6 +190,8 @@ public class AlgorithmService {
         } catch(Exception e) {
             e.printStackTrace();
             return new SolutionResponse(false, "ERROR - PLANIFICACIÓN: " + e.getMessage());
+        } finally {
+            limpiarPools();
         }
     }
 
@@ -256,27 +293,28 @@ public class AlgorithmService {
 
     private SolutionResponse devolverSolucion(Solucion solucion) {
         List<PedidoDTO> pedidosDTO = new ArrayList<>();
-        solucion.getPedidosAtendidos().forEach(p -> pedidosDTO.add(pedidoAdapter.toDTO(p)));
+        solucion.getPedidosAtendidos().forEach(p -> pedidosDTO.add(pedidoMapper.toDTO(p)));
         List<AeropuertoDTO> aeropuertosDTO = new ArrayList<>();
-        aeropuertoService.findAll().forEach(a ->  aeropuertosDTO.add(aeropuertoAdapter.toDTO(a)));
+        aeropuertoService.findAll().forEach(a ->  aeropuertosDTO.add(aeropuertoMapper.toDTO(a)));
         List<VueloDTO> vuelosDTO = new ArrayList<>();
-        solucion.getVuelosEnTransito().forEach(v -> vuelosDTO.add(vueloAdapter.toDTO(v)));
+        solucion.getVuelosEnTransito().forEach(v -> vuelosDTO.add(vueloMapper.toDTO(v)));
         List<RutaDTO> rutasDTO = new ArrayList<>();
-        solucion.getRutasEnOperacion().forEach(r -> rutasDTO.add(rutaAdapter.toDTO(r)));
+        solucion.getRutasEnOperacion().forEach(r -> rutasDTO.add(rutaMapper.toDTO(r)));
         return new SolutionResponse(true, "Planificación correctamente concluida!", pedidosDTO, aeropuertosDTO, vuelosDTO, rutasDTO);
     }
 
     private void limpiarPools() {
         vueloAdapter.clearPools();
+        vueloMapper.clearPools();
         rutaAdapter.clearPools();
+        rutaMapper.clearPools();
         loteAdapter.clearPools();
         pedidoAdapter.clearPools();
+        pedidoMapper.clearPools();
         aeropuertoAdapter.clearPools();
+        aeropuertoMapper.clearPools();
         usuarioAdapter.clearPools();
         planAdapter.clearPools();
-        loteAdapter.clearPools();
-        rutaAdapter.clearPools();
-        vueloAdapter.clearPools();
         registroAdapter.clearPools();
     }
 }

@@ -8,22 +8,22 @@ package com.pucp.dp1.grupo4d.morapack.model.enums;
 import com.pucp.dp1.grupo4d.morapack.algorithm.Problematica;
 
 public enum TipoRuta {
-    INTRACONTINENTAL(Problematica.MAX_DIAS_ENTREGA_INTRACONTINENTAL),
-    INTERCONTINENTAL(Problematica.MAX_DIAS_ENTREGA_INTERCONTINENTAL);
-
-    private final Long maxMinutosParaEntrega;
-    private final Double maxHorasParaEntrega;
-
-    TipoRuta(Integer maxDiasParaEntrega) {
-        this.maxMinutosParaEntrega = 1440L*maxDiasParaEntrega;
-        this.maxHorasParaEntrega = 24.0*maxDiasParaEntrega;
-    }
+    INTRACONTINENTAL,
+    INTERCONTINENTAL;
 
     public Long getMaxMinutosParaEntrega() {
-        return maxMinutosParaEntrega;
+        if(this.equals(TipoRuta.INTERCONTINENTAL)) {
+            return 1440L*Problematica.MAX_DIAS_ENTREGA_INTERCONTINENTAL;
+        } else {
+            return 1440L*Problematica.MAX_DIAS_ENTREGA_INTRACONTINENTAL;
+        }
     }
 
     public Double getMaxHorasParaEntrega() {
-        return maxHorasParaEntrega;
+        if(this.equals(TipoRuta.INTERCONTINENTAL)) {
+            return 24.0*Problematica.MAX_DIAS_ENTREGA_INTERCONTINENTAL;
+        } else {
+            return 24.0*Problematica.MAX_DIAS_ENTREGA_INTRACONTINENTAL;
+        }
     }
 }

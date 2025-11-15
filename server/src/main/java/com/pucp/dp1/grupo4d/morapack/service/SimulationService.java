@@ -11,6 +11,10 @@ import com.pucp.dp1.grupo4d.morapack.adapter.PedidoAdapter;
 import com.pucp.dp1.grupo4d.morapack.adapter.RutaAdapter;
 import com.pucp.dp1.grupo4d.morapack.adapter.VueloAdapter;
 import com.pucp.dp1.grupo4d.morapack.algorithm.Solucion;
+import com.pucp.dp1.grupo4d.morapack.mapper.AeropuertoMapper;
+import com.pucp.dp1.grupo4d.morapack.mapper.PedidoMapper;
+import com.pucp.dp1.grupo4d.morapack.mapper.RutaMapper;
+import com.pucp.dp1.grupo4d.morapack.mapper.VueloMapper;
 import com.pucp.dp1.grupo4d.morapack.model.dto.AeropuertoDTO;
 import com.pucp.dp1.grupo4d.morapack.model.dto.PedidoDTO;
 import com.pucp.dp1.grupo4d.morapack.model.dto.RutaDTO;
@@ -46,16 +50,16 @@ public class SimulationService {
     private VueloService vueloService;
 
     @Autowired
-    private PedidoAdapter pedidoAdapter;
+    private PedidoMapper pedidoMapper;
 
     @Autowired
-    private AeropuertoAdapter aeropuertoAdapter;
+    private AeropuertoMapper aeropuertoMapper;
 
     @Autowired
-    private VueloAdapter vueloAdapter;
+    private VueloMapper vueloMapper;
 
     @Autowired
-    private RutaAdapter rutaAdapter;
+    private RutaMapper rutaMapper;
 
     public SolutionResponse listarParaSimulacion(SimulationRequest request) {
         try {
@@ -78,16 +82,24 @@ public class SimulationService {
     private SolutionResponse devolverSolucion(LocalDateTime fechaHoraInicio, LocalDateTime fechaHoraFin, Integer desfaseDeDias) {
         List<PedidoDTO> pedidosDTO = new ArrayList<>();
         List<PedidoEntity> pedidosEntity = pedidoService.findByDateTimeRange(fechaHoraInicio, fechaHoraFin, desfaseDeDias);
-        pedidosEntity.forEach(p -> pedidosDTO.add(pedidoAdapter.toDTO(p)));
+        pedidosEntity.forEach(p -> pedidosDTO.add(pedidoMapper.toDTO(p)));
         List<AeropuertoDTO> aeropuertosDTO = new ArrayList<>();
         List<AeropuertoEntity> aeropuertosEntity = aeropuertoService.findAll();
-        aeropuertosEntity.forEach(a ->  aeropuertosDTO.add(aeropuertoAdapter.toDTO(a)));
+        aeropuertosEntity.forEach(a ->  aeropuertosDTO.add(aeropuertoMapper.toDTO(a)));
         List<VueloDTO> vuelosDTO = new ArrayList<>();
         List<VueloEntity> vuelosEntity = vueloService.findByDateTimeRange(fechaHoraInicio, fechaHoraFin, desfaseDeDias);
-        vuelosEntity.forEach(v -> vuelosDTO.add(vueloAdapter.toDTO(v)));
+        vuelosEntity.forEach(v -> vuelosDTO.add(vueloMapper.toDTO(v)));
         List<RutaDTO> rutasDTO = new ArrayList<>();
         List<RutaEntity> rutasEntity = rutaService.findByDateTimeRange(fechaHoraInicio, fechaHoraFin, desfaseDeDias);
-        rutasEntity.forEach(r -> rutasDTO.add(rutaAdapter.toDTO(r)));
+        rutasEntity.forEach(r -> rutasDTO.add(rutaMapper.toDTO(r)));
+        limpiarPools();
         return new SolutionResponse(true, "Simulación correctamente enviada!", pedidosDTO, aeropuertosDTO, vuelosDTO, rutasDTO);
+    }
+
+    private void limpiarPools() {
+        pedidoMapper.clearPools();
+        aeropuertoMapper.clearPools();
+        vueloMapper.clearPools();
+        rutaMapper.clearPools();
     }
 }

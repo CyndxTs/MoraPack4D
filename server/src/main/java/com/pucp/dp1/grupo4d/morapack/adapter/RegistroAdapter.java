@@ -13,6 +13,7 @@ import com.pucp.dp1.grupo4d.morapack.model.entity.LoteEntity;
 import com.pucp.dp1.grupo4d.morapack.model.entity.RegistroEntity;
 import com.pucp.dp1.grupo4d.morapack.service.model.LoteService;
 import com.pucp.dp1.grupo4d.morapack.service.model.RegistroService;
+import com.pucp.dp1.grupo4d.morapack.util.G4D;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import java.util.HashMap;
@@ -30,7 +31,6 @@ public class RegistroAdapter {
     private final LoteAdapter loteAdapter;
     private final Map<String, Registro> poolAlgorithm = new HashMap<>();
     private final Map<String, RegistroEntity> poolEntity = new HashMap<>();
-    private final Map<String, RegistroDTO>  poolDTO = new HashMap<>();
 
     public RegistroAdapter(LoteAdapter loteAdapter) {
         this.loteAdapter = loteAdapter;
@@ -72,38 +72,9 @@ public class RegistroAdapter {
         return entity;
     }
 
-    public RegistroDTO toDTO(Registro algorithm) {
-        if (poolDTO.containsKey(algorithm.getCodigo())) {
-            return poolDTO.get(algorithm.getCodigo());
-        }
-        RegistroDTO dto = new RegistroDTO();
-        dto.setCodigo(algorithm.getCodigo());
-        dto.setFechaHoraIngreso(algorithm.getFechaHoraIngresoUTC());
-        dto.setFechaHoraEgreso(algorithm.getFechaHoraEgresoUTC());
-        Lote lote = algorithm.getLote();
-        dto.setCodLote(lote.getCodigo());
-        poolDTO.put(algorithm.getCodigo(), dto);
-        return dto;
-    }
-
-    public RegistroDTO toDTO(RegistroEntity entity) {
-        if (poolDTO.containsKey(entity.getCodigo())) {
-            return poolDTO.get(entity.getCodigo());
-        }
-        RegistroDTO dto = new RegistroDTO();
-        dto.setCodigo(entity.getCodigo());
-        dto.setFechaHoraIngreso(entity.getFechaHoraIngresoUTC());
-        dto.setFechaHoraEgreso(entity.getFechaHoraEgresoUTC());
-        LoteEntity loteEntity = entity.getLote();
-        dto.setCodLote(loteEntity.getCodigo());
-        poolDTO.put(entity.getCodigo(), dto);
-        return dto;
-    }
-
     public void clearPools() {
         poolAlgorithm.clear();
         poolEntity.clear();
-        poolDTO.clear();
         loteAdapter.clearPools();
     }
 }

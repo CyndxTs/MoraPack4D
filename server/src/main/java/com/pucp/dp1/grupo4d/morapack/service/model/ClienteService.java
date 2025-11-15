@@ -6,7 +6,7 @@
 
 package com.pucp.dp1.grupo4d.morapack.service.model;
 
-import com.pucp.dp1.grupo4d.morapack.adapter.UsuarioAdapter;
+import com.pucp.dp1.grupo4d.morapack.mapper.UsuarioMapper;
 import com.pucp.dp1.grupo4d.morapack.model.dto.DTO;
 import com.pucp.dp1.grupo4d.morapack.model.dto.UsuarioDTO;
 import com.pucp.dp1.grupo4d.morapack.model.dto.request.FilterRequest;
@@ -15,21 +15,22 @@ import com.pucp.dp1.grupo4d.morapack.model.entity.ClienteEntity;
 import com.pucp.dp1.grupo4d.morapack.model.enums.EstadoUsuario;
 import com.pucp.dp1.grupo4d.morapack.repository.ClienteRepository;
 import com.pucp.dp1.grupo4d.morapack.util.G4D;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-
 import java.time.LocalDateTime;
 import java.util.*;
 
 @Service
 public class ClienteService {
 
-    private final ClienteRepository clienteRepository;
-    private final UsuarioAdapter usuarioAdapter;
+    @Autowired
+    private UsuarioMapper usuarioMapper;
 
-    public ClienteService(ClienteRepository clienteRepository, UsuarioAdapter usuarioAdapter) {
+    private final ClienteRepository clienteRepository;
+
+    public ClienteService(ClienteRepository clienteRepository) {
         this.clienteRepository = clienteRepository;
-        this.usuarioAdapter = usuarioAdapter;
     }
 
     public List<ClienteEntity> findAll() {
@@ -90,7 +91,7 @@ public class ClienteService {
             String correoFiltro = (correo == null || correo.isBlank()) ? null : correo;
             List<DTO> clientesDTO = new ArrayList<>();
             List<ClienteEntity> clientesEntity = clienteRepository.filterBy(nombreFiltro, correoFiltro, estadoFiltro);
-            clientesEntity.forEach(c -> clientesDTO.add(usuarioAdapter.toDTO(c)));
+            clientesEntity.forEach(c -> clientesDTO.add(usuarioMapper.toDTO(c)));
             return new FilterResponse(true, "Filtro aplicado correctamente!", clientesDTO);
         } catch (Exception e) {
             e.printStackTrace();

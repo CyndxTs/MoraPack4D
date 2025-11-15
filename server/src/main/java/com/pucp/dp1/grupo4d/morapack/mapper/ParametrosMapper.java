@@ -1,10 +1,10 @@
 /**]
  >> Project:    MoraPack
  >> Author:     Grupo 4D
- >> File:       ParametrosAdapter.java
+ >> File:       ParametrosMapper.java
  [**/
 
-package com.pucp.dp1.grupo4d.morapack.adapter;
+package com.pucp.dp1.grupo4d.morapack.mapper;
 
 import com.pucp.dp1.grupo4d.morapack.algorithm.GVNS;
 import com.pucp.dp1.grupo4d.morapack.algorithm.Problematica;
@@ -15,7 +15,7 @@ import com.pucp.dp1.grupo4d.morapack.util.G4D;
 import org.springframework.stereotype.Component;
 
 @Component
-public class ParametrosAdapter {
+public class ParametrosMapper {
 
     public void toAlgorithm(ParametrosEntity entity) {
         Problematica.MAX_DIAS_ENTREGA_INTRACONTINENTAL = entity.getMaxDiasEntregaIntracontinental();
@@ -87,5 +87,34 @@ public class ParametrosAdapter {
         entity.setFactorDeDesviacionEspacial(dto.getFactorDeDesviacionEspacial());
         entity.setFactorDeDisposicionOperacional(dto.getFactorDeDisposicionOperacional());
         return entity;
+    }
+
+    public ParametrosDTO toDTO(ParametrosEntity entity) {
+        ParametrosDTO dto = new ParametrosDTO();
+        dto.setMaxDiasEntregaIntracontinental(entity.getMaxDiasEntregaIntracontinental());
+        dto.setMaxDiasEntregaIntercontinental(entity.getMaxDiasEntregaIntercontinental());
+        dto.setMaxHorasRecojo(entity.getMaxHorasRecojo());
+        dto.setMaxHorasEstancia(entity.getMaxHorasEstancia());
+        dto.setMinHorasEstancia(entity.getMinHorasEstancia());
+        dto.setFechaHoraInicio(G4D.toDisplayString(entity.getFechaHoraInicio()));
+        dto.setFechaHoraFin(G4D.toDisplayString(entity.getFechaHoraFin()));
+        dto.setConsiderarDesfaseTemporal(entity.getDesfaseTemporal() > 0);
+        dto.setCodOrigenes(entity.getCodOrigenes());
+        dto.setDMin(entity.getDMin());
+        dto.setIMax(entity.getIMax());
+        dto.setEleMin(entity.getEleMin());
+        dto.setEleMax(entity.getEleMax());
+        dto.setKMin(entity.getKMin());
+        dto.setKMax(entity.getKMax());
+        dto.setTMax(entity.getTMax());
+        dto.setMaxIntentos(entity.getMaxIntentos());
+        dto.setFactorDeUmbralDeAberracion(entity.getFactorDeUmbralDeAberracion());
+        dto.setFactorDeUtilizacionTemporal(entity.getFactorDeUtilizacionTemporal());
+        dto.setFactorDeDesviacionEspacial(entity.getFactorDeDesviacionEspacial());
+        dto.setFactorDeDisposicionOperacional(entity.getFactorDeDisposicionOperacional());
+        return dto;
+    }
+
+    public void clearPools() {
     }
 }

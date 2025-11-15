@@ -6,6 +6,8 @@
 
 package com.pucp.dp1.grupo4d.morapack.controller;
 
+import com.pucp.dp1.grupo4d.morapack.model.dto.request.FileImportRequest;
+import com.pucp.dp1.grupo4d.morapack.model.dto.request.ListImportRequest;
 import com.pucp.dp1.grupo4d.morapack.model.dto.request.PlanificationRequest;
 import com.pucp.dp1.grupo4d.morapack.model.dto.response.GenericResponse;
 import com.pucp.dp1.grupo4d.morapack.model.dto.response.SolutionResponse;
@@ -25,9 +27,23 @@ public class AlgorithmController {
     }
 
     @PostMapping("/importarDesdeArchivo")
-    public ResponseEntity<GenericResponse> importarDesdeArchivo(@RequestParam("file") MultipartFile file, @RequestParam("type") String type) {
+    public ResponseEntity<GenericResponse> importarDesdeArchivo(@RequestPart("file") MultipartFile file, @RequestPart("request") FileImportRequest request) {
         try {
-            GenericResponse response = algorithmService.importarDesdeArchivo(file, type);
+            GenericResponse response = algorithmService.importarDesdeArchivo(file, request);
+            if (response.isSuccess()) {
+                return ResponseEntity.ok(response);
+            } else {
+                return ResponseEntity.badRequest().body(response);
+            }
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(new GenericResponse(false, "ERROR INTERNO: " + e.getMessage()));
+        }
+    }
+
+    @PostMapping("/importarDesdeLista")
+    public ResponseEntity<GenericResponse> importarDesdeArchivo(@RequestBody ListImportRequest request) {
+        try {
+            GenericResponse response = algorithmService.importarDesdeLista(request);
             if (response.isSuccess()) {
                 return ResponseEntity.ok(response);
             } else {

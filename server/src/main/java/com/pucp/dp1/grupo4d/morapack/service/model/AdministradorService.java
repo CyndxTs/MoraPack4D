@@ -6,7 +6,7 @@
 
 package com.pucp.dp1.grupo4d.morapack.service.model;
 
-import com.pucp.dp1.grupo4d.morapack.adapter.UsuarioAdapter;
+import com.pucp.dp1.grupo4d.morapack.mapper.UsuarioMapper;
 import com.pucp.dp1.grupo4d.morapack.model.dto.DTO;
 import com.pucp.dp1.grupo4d.morapack.model.dto.UsuarioDTO;
 import com.pucp.dp1.grupo4d.morapack.model.dto.request.FilterRequest;
@@ -15,6 +15,7 @@ import com.pucp.dp1.grupo4d.morapack.model.entity.AdministradorEntity;
 import com.pucp.dp1.grupo4d.morapack.model.enums.EstadoUsuario;
 import com.pucp.dp1.grupo4d.morapack.repository.AdministradorRepository;
 import com.pucp.dp1.grupo4d.morapack.util.G4D;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import java.util.*;
@@ -22,12 +23,13 @@ import java.util.*;
 @Service
 public class AdministradorService {
 
-    private final AdministradorRepository administradorRepository;
-    private final UsuarioAdapter usuarioAdapter;
+    @Autowired
+    private UsuarioMapper usuarioMapper;
 
-    public AdministradorService(AdministradorRepository administradorRepository, UsuarioAdapter usuarioAdapter) {
+    private final AdministradorRepository administradorRepository;
+
+    public AdministradorService(AdministradorRepository administradorRepository) {
         this.administradorRepository = administradorRepository;
-        this.usuarioAdapter = usuarioAdapter;
     }
 
     public List<AdministradorEntity> findAll() {
@@ -84,7 +86,7 @@ public class AdministradorService {
             String correoFiltro = (correo == null || correo.isBlank()) ? null : correo;
             List<DTO> administradoresDTO = new ArrayList<>();
             List<AdministradorEntity> administradoresEntity = administradorRepository.filterBy(nombreFiltro, correoFiltro, estadoFiltro);
-            administradoresEntity.forEach(a -> administradoresDTO.add(usuarioAdapter.toDTO(a)));
+            administradoresEntity.forEach(a -> administradoresDTO.add(usuarioMapper.toDTO(a)));
             return new FilterResponse(true, "Filtro aplicado correctamente!", administradoresDTO);
         } catch (Exception e) {
             e.printStackTrace();
