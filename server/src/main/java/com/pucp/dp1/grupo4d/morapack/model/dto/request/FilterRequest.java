@@ -11,7 +11,9 @@ import com.pucp.dp1.grupo4d.morapack.model.dto.DTO;
 public class FilterRequest {
     private DTO dto;
 
-    public FilterRequest() {}
+    public FilterRequest(DTO dto) {
+        this.dto = dto;
+    }
 
     public DTO getDto() { return dto; }
     public void setDto(DTO dto) { this.dto = dto; }

@@ -1,48 +1,35 @@
 /**]
  >> Project:    MoraPack
  >> Author:     Grupo 4D
- >> File:       ImportRequest.java
+ >> File:       FileImportRequest.java
  [**/
 
 package com.pucp.dp1.grupo4d.morapack.model.dto.request;
 
-import com.pucp.dp1.grupo4d.morapack.model.dto.DTO;
-
-public class ImportRequest {
-    private DTO dto;
-    private String tipoDto;
+public class FileImportRequest {
+    private String tipoArchivo;
     private String fechaHoraInicio;
     private String fechaHoraFin;
     private Integer desfaseTemporal;
 
-    public ImportRequest(DTO dto, String tipoDto) {
-        this.dto = dto;
-        this.tipoDto = tipoDto;
+    public FileImportRequest() {}
+
+    public FileImportRequest(String tipoArchivo) {
+        this.tipoArchivo = tipoArchivo;
         this.fechaHoraInicio = "";
         this.fechaHoraFin = "";
         this.desfaseTemporal = -1;
     }
 
-    public ImportRequest(String tipoDto) {
-        this.dto = null;
-        this.tipoDto =  tipoDto;
-        this.fechaHoraInicio = "";
-        this.fechaHoraFin = "";
-        this.desfaseTemporal = -1;
-    }
-
-    public ImportRequest(String tipoDto, String fechaHoraInicio, String fechaHoraFin, Integer desfaseTemporal) {
-        this.dto = null;
-        this.tipoDto = tipoDto;
+    public FileImportRequest(String tipoArchivo, String fechaHoraInicio, String fechaHoraFin, Integer desfaseTemporal) {
+        this.tipoArchivo = tipoArchivo;
         this.fechaHoraInicio = fechaHoraInicio;
         this.fechaHoraFin = fechaHoraFin;
         this.desfaseTemporal = desfaseTemporal;
     }
 
-    public DTO getDto() { return dto; }
-    public void setDto(DTO dto) { this.dto = dto; }
-    public String getTipoDto() { return tipoDto; }
-    public void setTipoDto(String tipoDto) { this.tipoDto = tipoDto; }
+    public String getTipoArchivo() { return tipoArchivo; }
+    public void setTipoArchivo(String tipoArchivo) { this.tipoArchivo = tipoArchivo; }
     public String getFechaHoraInicio() { return fechaHoraInicio; }
     public void setFechaHoraInicio(String fechaHoraInicio) { this.fechaHoraInicio = fechaHoraInicio; }
     public String getFechaHoraFin() { return fechaHoraFin; }

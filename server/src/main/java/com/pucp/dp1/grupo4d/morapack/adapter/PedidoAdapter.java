@@ -16,6 +16,7 @@ import com.pucp.dp1.grupo4d.morapack.model.dto.LotePorRutaDTO;
 import com.pucp.dp1.grupo4d.morapack.model.dto.PedidoDTO;
 import com.pucp.dp1.grupo4d.morapack.model.entity.*;
 import com.pucp.dp1.grupo4d.morapack.service.model.PedidoService;
+import com.pucp.dp1.grupo4d.morapack.util.G4D;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import java.util.*;
@@ -32,7 +33,6 @@ public class PedidoAdapter {
     private final LoteAdapter loteAdapter;
     private final Map<String, Pedido> poolAlgorithm = new HashMap<>();
     private final Map<String, PedidoEntity> poolEntity = new HashMap<>();
-    private final Map<String, PedidoDTO> poolDTO = new HashMap<>();
 
     public PedidoAdapter(UsuarioAdapter usuarioAdapter, AeropuertoAdapter aeropuertoAdapter, RutaAdapter rutaAdapter, LoteAdapter loteAdapter) {
         this.usuarioAdapter = usuarioAdapter;
@@ -86,67 +86,9 @@ public class PedidoAdapter {
         return entity;
     }
 
-    public PedidoDTO toDTO(Pedido algorithm) {
-        if(poolDTO.containsKey(algorithm.getCodigo())) {
-            return poolDTO.get(algorithm.getCodigo());
-        }
-        PedidoDTO dto = new PedidoDTO();
-        dto.setCodigo(algorithm.getCodigo());
-        dto.setCantidadSolicitada(algorithm.getCantidadSolicitada());
-        dto.setFechaHoraGeneracion(algorithm.getFechaHoraGeneracionUTC());
-        dto.setFechaHoraExpiracion(algorithm.getFechaHoraExpiracionUTC());
-        Cliente cliente = algorithm.getCliente();
-        dto.setCodCliente(cliente.getCodigo());
-        Aeropuerto destino = algorithm.getDestino();
-        dto.setCodDestino(destino.getCodigo());
-        List<LotePorRutaDTO> lotesPorRutaDTO = new ArrayList<>();
-        Map<Ruta, Lote> lotesPorRuta = algorithm.getLotesPorRuta();
-        for (Map.Entry<Ruta, Lote> entry : lotesPorRuta.entrySet()) {
-            LotePorRutaDTO lotePorRutaDTO = new LotePorRutaDTO();
-            Ruta ruta = entry.getKey();
-            lotePorRutaDTO.setCodRuta(ruta.getCodigo());
-            Lote lote = entry.getValue();
-            LoteDTO loteDTO = loteAdapter.toDTO(lote);
-            lotePorRutaDTO.setLote(loteDTO);
-            lotesPorRutaDTO.add(lotePorRutaDTO);
-        }
-        dto.setLotesPorRuta(lotesPorRutaDTO);
-        poolDTO.put(algorithm.getCodigo(), dto);
-        return dto;
-    }
-
-    public PedidoDTO toDTO(PedidoEntity entity) {
-        if(poolDTO.containsKey(entity.getCodigo())) {
-            return poolDTO.get(entity.getCodigo());
-        }
-        PedidoDTO dto = new PedidoDTO();
-        dto.setCodigo(entity.getCodigo());
-        dto.setCantidadSolicitada(entity.getCantidadSolicitada());
-        dto.setFechaHoraGeneracion(entity.getFechaHoraGeneracionUTC());
-        dto.setFechaHoraExpiracion(entity.getFechaHoraExpiracionUTC());
-        ClienteEntity clienteEntity = entity.getCliente();
-        dto.setCodCliente(clienteEntity.getCodigo());
-        AeropuertoEntity destinoEntity = entity.getDestino();
-        dto.setCodDestino(destinoEntity.getCodigo());
-        List<LotePorRutaDTO> lotesPorRutaDTO = new ArrayList<>();
-        List<LoteEntity> lotesEntity = entity.getLotes();
-        for (LoteEntity loteEntity : lotesEntity) {
-            LotePorRutaDTO lotePorRutaDTO = new LotePorRutaDTO();
-            RutaEntity rutaEntity = loteEntity.getRuta();
-            lotePorRutaDTO.setCodRuta(rutaEntity.getCodigo());
-            LoteDTO loteDTO = loteAdapter.toDTO(loteEntity);
-            lotePorRutaDTO.setLote(loteDTO);
-            lotesPorRutaDTO.add(lotePorRutaDTO);
-        }
-        dto.setLotesPorRuta(lotesPorRutaDTO);
-        poolDTO.put(entity.getCodigo(), dto);
-        return dto;
-    }
-
     public void clearPools() {
         poolAlgorithm.clear();
         poolEntity.clear();
-        poolDTO.clear();
         usuarioAdapter.clearPools();
         aeropuertoAdapter.clearPools();
         rutaAdapter.clearPools();

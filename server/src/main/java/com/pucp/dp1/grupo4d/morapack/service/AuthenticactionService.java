@@ -6,7 +6,7 @@
 
 package com.pucp.dp1.grupo4d.morapack.service;
 
-import com.pucp.dp1.grupo4d.morapack.adapter.UsuarioAdapter;
+import com.pucp.dp1.grupo4d.morapack.mapper.UsuarioMapper;
 import com.pucp.dp1.grupo4d.morapack.model.dto.UsuarioDTO;
 import com.pucp.dp1.grupo4d.morapack.model.dto.request.SignInRequest;
 import com.pucp.dp1.grupo4d.morapack.model.dto.request.SignOutRequest;
@@ -30,8 +30,9 @@ public class AuthenticactionService {
 
     @Autowired
     private AdministradorService administradorService;
+
     @Autowired
-    private UsuarioAdapter usuarioAdapter;
+    private UsuarioMapper usuarioMapper;
 
     public AuthenticationResponse signIn(SignInRequest request) {
         try {
@@ -57,7 +58,7 @@ public class AuthenticactionService {
                 }
                 cliente.setEstado(EstadoUsuario.ONLINE);
                 clienteService.save(cliente);
-                UsuarioDTO usuarioDTO = usuarioAdapter.toDTO(cliente);
+                UsuarioDTO usuarioDTO = usuarioMapper.toDTO(cliente);
                 return new AuthenticationResponse(false, "SignIn exitoso!", usuarioDTO);
             } else {
                 Optional<AdministradorEntity> adminOpt = administradorService.findByCorreo(correo);
@@ -73,12 +74,14 @@ public class AuthenticactionService {
                 }
                 administrador.setEstado(EstadoUsuario.ONLINE);
                 administradorService.save(administrador);
-                UsuarioDTO usuarioDTO = usuarioAdapter.toDTO(administrador);
+                UsuarioDTO usuarioDTO = usuarioMapper.toDTO(administrador);
                 return new AuthenticationResponse(true, "SignIn exitoso!", usuarioDTO);
             }
         } catch (Exception e) {
             e.printStackTrace();
             return new AuthenticationResponse(false, "ERROR - SIGNIN: " + e.getMessage());
+        } finally {
+            limpiarPools();
         }
     }
 
@@ -102,7 +105,7 @@ public class AuthenticactionService {
                 cliente.setContrasenia(contrasenia);
                 cliente.setEstado(EstadoUsuario.ONLINE);
                 ClienteEntity clienteGuardado = clienteService.save(cliente);
-                UsuarioDTO usuarioDTO = usuarioAdapter.toDTO(clienteGuardado);
+                UsuarioDTO usuarioDTO = usuarioMapper.toDTO(clienteGuardado);
                 return new AuthenticationResponse(false, "SignUp Exitoso!", usuarioDTO);
             } else {
                 if (administradorService.findByCorreo(correo).isPresent()) {
@@ -115,12 +118,14 @@ public class AuthenticactionService {
                 administrador.setContrasenia(contrasenia);
                 administrador.setEstado(EstadoUsuario.ONLINE);
                 AdministradorEntity adminGuardado = administradorService.save(administrador);
-                UsuarioDTO usuarioDTO = usuarioAdapter.toDTO(adminGuardado);
+                UsuarioDTO usuarioDTO = usuarioMapper.toDTO(adminGuardado);
                 return new AuthenticationResponse(true, "SignUp Exitoso!", usuarioDTO);
             }
         } catch (Exception e) {
             e.printStackTrace();
             return new AuthenticationResponse(false, "ERROR - SIGNUP: " + e.getMessage());
+        } finally {
+            limpiarPools();
         }
     }
 
@@ -169,6 +174,12 @@ public class AuthenticactionService {
         } catch (Exception e) {
             e.printStackTrace();
             return new AuthenticationResponse(false, "ERROR - SIGNOUT: " + e.getMessage());
+        } finally {
+            limpiarPools();
         }
+    }
+
+    private void limpiarPools() {
+        usuarioMapper.clearPools();
     }
 }

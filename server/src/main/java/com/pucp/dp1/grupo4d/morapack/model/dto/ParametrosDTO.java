@@ -6,6 +6,8 @@
 
 package com.pucp.dp1.grupo4d.morapack.model.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -19,13 +21,25 @@ public class ParametrosDTO implements DTO {
     private String fechaHoraFin;
     private Boolean considerarDesfaseTemporal;
     private List<String> codOrigenes;
+
+    @JsonProperty("dMin")
     private Double dMin;
+
+    @JsonProperty("iMax")
     private Integer iMax;
+
     private Integer eleMin;
     private Integer eleMax;
+
+    @JsonProperty("kMin")
     private Integer kMin;
+
+    @JsonProperty("kMax")
     private Integer kMax;
+
+    @JsonProperty("tMax")
     private Integer tMax;
+
     private Integer maxIntentos;
     private Double factorDeUmbralDeAberracion;
     private Double factorDeUtilizacionTemporal;

@@ -7,7 +7,6 @@
 package com.pucp.dp1.grupo4d.morapack.adapter;
 
 import com.pucp.dp1.grupo4d.morapack.model.algorithm.Lote;
-import com.pucp.dp1.grupo4d.morapack.model.dto.LoteDTO;
 import com.pucp.dp1.grupo4d.morapack.model.entity.LoteEntity;
 import com.pucp.dp1.grupo4d.morapack.service.model.LoteService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,7 +22,6 @@ public class LoteAdapter {
 
     private final Map<String, Lote> poolAlgorithm = new HashMap<>();
     private final Map<String, LoteEntity> poolEntity = new HashMap<>();
-    private final Map<String, LoteDTO> poolDTO = new HashMap<>();
 
     public Lote toAlgorithm(LoteEntity entity) {
         if (poolAlgorithm.containsKey(entity.getCodigo())) {
@@ -50,31 +48,8 @@ public class LoteAdapter {
         return entity;
     }
 
-    public LoteDTO toDTO(Lote algorithm) {
-        if (poolDTO.containsKey(algorithm.getCodigo())) {
-            return poolDTO.get(algorithm.getCodigo());
-        }
-        LoteDTO dto = new LoteDTO();
-        dto.setCodigo(algorithm.getCodigo());
-        dto.setTamanio(algorithm.getTamanio());
-        poolDTO.put(algorithm.getCodigo(), dto);
-        return dto;
-    }
-
-    public LoteDTO toDTO(LoteEntity entity) {
-        if (poolDTO.containsKey(entity.getCodigo())) {
-            return poolDTO.get(entity.getCodigo());
-        }
-        LoteDTO dto = new LoteDTO();
-        dto.setCodigo(entity.getCodigo());
-        dto.setTamanio(entity.getTamanio());
-        poolDTO.put(entity.getCodigo(), dto);
-        return dto;
-    }
-
     public void clearPools() {
         poolAlgorithm.clear();
         poolEntity.clear();
-        poolDTO.clear();
     }
 }

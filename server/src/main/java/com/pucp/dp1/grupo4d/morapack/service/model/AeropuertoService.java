@@ -6,7 +6,7 @@
 
 package com.pucp.dp1.grupo4d.morapack.service.model;
 
-import com.pucp.dp1.grupo4d.morapack.adapter.AeropuertoAdapter;
+import com.pucp.dp1.grupo4d.morapack.mapper.AeropuertoMapper;
 import com.pucp.dp1.grupo4d.morapack.model.dto.AeropuertoDTO;
 import com.pucp.dp1.grupo4d.morapack.model.dto.DTO;
 import com.pucp.dp1.grupo4d.morapack.model.dto.request.FilterRequest;
@@ -14,6 +14,7 @@ import com.pucp.dp1.grupo4d.morapack.model.dto.response.FilterResponse;
 import com.pucp.dp1.grupo4d.morapack.model.entity.AeropuertoEntity;
 import com.pucp.dp1.grupo4d.morapack.repository.AeropuertoRepository;
 import com.pucp.dp1.grupo4d.morapack.util.G4D;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import java.util.*;
@@ -21,12 +22,13 @@ import java.util.*;
 @Service
 public class AeropuertoService {
 
-    private final AeropuertoRepository aeropuertoRepository;
-    private final AeropuertoAdapter aeropuertoAdapter;
+    @Autowired
+    private AeropuertoMapper aeropuertoMapper;
 
-    public AeropuertoService(AeropuertoRepository aeropuertoRepository, AeropuertoAdapter aeropuertoAdapter) {
+    private final AeropuertoRepository aeropuertoRepository;
+
+    public AeropuertoService(AeropuertoRepository aeropuertoRepository) {
         this.aeropuertoRepository = aeropuertoRepository;
-        this.aeropuertoAdapter = aeropuertoAdapter;
     }
 
     public List<AeropuertoEntity> findAll() {
@@ -85,7 +87,7 @@ public class AeropuertoService {
             Boolean esSedeFiltro = dto.getEsSede();
             List<DTO> aeropuertosDTO = new ArrayList<>();
             List<AeropuertoEntity> aeropuertosEntity = aeropuertoRepository.filterBy(codigoFiltro, aliasFiltro, continenteFiltro, paisFiltro, ciudadFiltro, esSedeFiltro);
-            aeropuertosEntity.forEach(a -> aeropuertosDTO.add(aeropuertoAdapter.toDTO(a)));
+            aeropuertosEntity.forEach(a -> aeropuertosDTO.add(aeropuertoMapper.toDTO(a)));
             return new FilterResponse(true, "Filtro aplicado correctamente!", aeropuertosDTO);
         } catch (Exception e) {
             e.printStackTrace();

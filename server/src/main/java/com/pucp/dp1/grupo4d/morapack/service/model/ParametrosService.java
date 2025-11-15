@@ -16,10 +16,10 @@ import java.util.*;
 @Service
 public class ParametrosService {
 
-    private final ParametrosRepository parametrosRepository;
-
     @Autowired
     private AeropuertoService aeropuertoService;
+
+    private final ParametrosRepository parametrosRepository;
 
     public ParametrosService(ParametrosRepository parametrosRepository) {
         this.parametrosRepository = parametrosRepository;
