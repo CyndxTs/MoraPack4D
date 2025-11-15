@@ -1066,9 +1066,9 @@ public class GVNS {
                     }
                     G4D.Printer.fill_line('.', dimLinea, 8);
                     G4D.Printer.printf("%27s%22s%16s%n", "Resumen de la ruta:","INDIVIDUAL","LOTE");
-                    G4D.Printer.printf("%8s%-30s%11s%20s%n", " ", ">> Duración 'Activa':", G4D.toTimeDisplayString(rut_duracionActivaTotalInd), G4D.toTimeDisplayString(rut_duracionActivaTotalLot));
-                    G4D.Printer.printf("%8s%-30s%11s%20s%n", " ", ">> Duración 'Pasiva':", G4D.toTimeDisplayString(rut_duracionPasivaTotalInd), G4D.toTimeDisplayString(rut_duracionPasivaTotalLot));
-                    G4D.Printer.printf("%8s%-30s%11s%20s%n", " ", ">> Tiempo optimizado:", G4D.toTimeDisplayString(rut_tiempoOptimizadoInd), G4D.toTimeDisplayString(rut_tiempoOptimizadoLot));
+                    G4D.Printer.printf("%8s%-30s%11s%20s%n", " ", ">> Duración 'Activa':", G4D.toDisplayString(rut_duracionActivaTotalInd), G4D.toDisplayString(rut_duracionActivaTotalLot));
+                    G4D.Printer.printf("%8s%-30s%11s%20s%n", " ", ">> Duración 'Pasiva':", G4D.toDisplayString(rut_duracionPasivaTotalInd), G4D.toDisplayString(rut_duracionPasivaTotalLot));
+                    G4D.Printer.printf("%8s%-30s%11s%20s%n", " ", ">> Tiempo optimizado:", G4D.toDisplayString(rut_tiempoOptimizadoInd), G4D.toDisplayString(rut_tiempoOptimizadoLot));
                     if (posRuta != cantRutas - 1) G4D.Printer.fill_line('*', dimLinea, 8);
                     ped_duracionActivaTotal += rut_duracionActivaTotalLot;
                     ped_duracionPasivaTotal += rut_duracionPasivaTotalLot;
@@ -1076,9 +1076,9 @@ public class GVNS {
                 }
                 G4D.Printer.fill_line('-', dimLinea, 4);
                 G4D.Printer.printf("%23s%23s%n", "Resumen del pedido:","TOTAL");
-                G4D.Printer.printf("%4s%-30s%15s%n", " ", ">> Duración 'Activa':", G4D.toTimeDisplayString(ped_duracionActivaTotal));
-                G4D.Printer.printf("%4s%-30s%15s%n", " ", ">> Duración 'Pasiva':", G4D.toTimeDisplayString(ped_duracionPasivaTotal));
-                G4D.Printer.printf("%4s%-30s%15s%n", " ", ">> Tiempo optimizado:", G4D.toTimeDisplayString(ped_tiempoOptimizado));
+                G4D.Printer.printf("%4s%-30s%15s%n", " ", ">> Duración 'Activa':", G4D.toDisplayString(ped_duracionActivaTotal));
+                G4D.Printer.printf("%4s%-30s%15s%n", " ", ">> Duración 'Pasiva':", G4D.toDisplayString(ped_duracionPasivaTotal));
+                G4D.Printer.printf("%4s%-30s%15s%n", " ", ">> Tiempo optimizado:", G4D.toDisplayString(ped_tiempoOptimizado));
                 G4D.Printer.fill_line('=', dimLinea);
             }
             G4D.Printer.flush();

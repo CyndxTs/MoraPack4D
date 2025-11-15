@@ -29,10 +29,6 @@ public class RegistroService {
         return registroRepository.findById(id);
     }
 
-    public Optional<RegistroEntity> findByCodigo(String codigo) {
-        return registroRepository.findByCodigo(codigo);
-    }
-
     public RegistroEntity save(RegistroEntity registro) {
         return registroRepository.save(registro);
     }
@@ -43,6 +39,10 @@ public class RegistroService {
 
     public boolean existsById(Integer id) {
         return registroRepository.existsById(id);
+    }
+
+    public Optional<RegistroEntity> findByCodigo(String codigo) {
+        return registroRepository.findByCodigo(codigo);
     }
 
     public boolean existsByCodigo(String codigo) {

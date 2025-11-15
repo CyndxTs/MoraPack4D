@@ -7,8 +7,9 @@
 package com.pucp.dp1.grupo4d.morapack.model.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.pucp.dp1.grupo4d.morapack.util.G4D;
 import jakarta.persistence.*;
-import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -38,10 +39,13 @@ public class ParametrosEntity {
     private Double maxHorasEstancia = 12.0;
 
     @Column(name = "fecha_hora_inicio", nullable = false)
-    private Timestamp fechaHoraInicio = Timestamp.valueOf("1999-12-31 23:59:59");
+    private LocalDateTime fechaHoraInicio = G4D.toDateTime("1999-12-31 23:59:59");
 
     @Column(name = "fecha_hora_fin", nullable = false)
-    private Timestamp fechaHoraFin = new Timestamp(System.currentTimeMillis());
+    private LocalDateTime fechaHoraFin = LocalDateTime.now();
+
+    @Column(name = "desfase_temporal", nullable = false)
+    private Integer desfaseTemporal = 3;
 
     @Column(name = "d_min", nullable = false)
     private Double dMin = 0.001;
@@ -88,8 +92,9 @@ public class ParametrosEntity {
     public Double getMaxHorasRecojo() { return maxHorasRecojo; } public void setMaxHorasRecojo(Double maxHorasRecojo) { this.maxHorasRecojo = maxHorasRecojo; }
     public Double getMinHorasEstancia() { return minHorasEstancia; } public void setMinHorasEstancia(Double minHorasEstancia) { this.minHorasEstancia = minHorasEstancia; }
     public Double getMaxHorasEstancia() { return maxHorasEstancia; } public void setMaxHorasEstancia(Double maxHorasEstancia) { this.maxHorasEstancia = maxHorasEstancia; }
-    public Timestamp getFechaHoraInicio() { return fechaHoraInicio; } public void setFechaHoraInicio(Timestamp fechaHoraInicio) { this.fechaHoraInicio = fechaHoraInicio; }
-    public Timestamp getFechaHoraFin() { return fechaHoraFin; } public void setFechaHoraFin(Timestamp fechaHoraFin) { this.fechaHoraFin = fechaHoraFin; }
+    public LocalDateTime getFechaHoraInicio() { return fechaHoraInicio; } public void setFechaHoraInicio(LocalDateTime fechaHoraInicio) { this.fechaHoraInicio = fechaHoraInicio; }
+    public LocalDateTime getFechaHoraFin() { return fechaHoraFin; } public void setFechaHoraFin(LocalDateTime fechaHoraFin) { this.fechaHoraFin = fechaHoraFin; }
+    public Integer getDesfaseTemporal() { return desfaseTemporal; } public void setDesfaseTemporal(Integer desfaseTemporal) { this.desfaseTemporal = desfaseTemporal; }
     public Double getDMin() { return dMin; } public void setDMin(Double dMin) { this.dMin = dMin; }
     public Integer getIMax() { return iMax; } public void setIMax(Integer iMax) { this.iMax = iMax; }
     public Integer getEleMin() { return eleMin; } public void setEleMin(Integer eleMin) { this.eleMin = eleMin; }

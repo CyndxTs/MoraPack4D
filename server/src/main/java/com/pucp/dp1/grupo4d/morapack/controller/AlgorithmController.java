@@ -8,6 +8,7 @@ package com.pucp.dp1.grupo4d.morapack.controller;
 
 import com.pucp.dp1.grupo4d.morapack.model.dto.request.PlanificationRequest;
 import com.pucp.dp1.grupo4d.morapack.model.dto.response.GenericResponse;
+import com.pucp.dp1.grupo4d.morapack.model.dto.response.SolutionResponse;
 import com.pucp.dp1.grupo4d.morapack.service.AlgorithmService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -23,7 +24,7 @@ public class AlgorithmController {
         this.algorithmService = algorithmService;
     }
 
-    @PostMapping("/importar")
+    @PostMapping("/importarDesdeArchivo")
     public ResponseEntity<GenericResponse> importarDesdeArchivo(@RequestParam("file") MultipartFile file, @RequestParam("type") String type) {
         try {
             GenericResponse response = algorithmService.importarDesdeArchivo(file, type);
@@ -38,16 +39,16 @@ public class AlgorithmController {
     }
 
     @PostMapping("/planificar")
-    public ResponseEntity<GenericResponse> planificar(@RequestBody PlanificationRequest request) {
+    public ResponseEntity<SolutionResponse> planificar(@RequestBody PlanificationRequest request) {
         try {
-            GenericResponse response = algorithmService.planificar(request);
+            SolutionResponse response = algorithmService.planificar(request);
             if (response.isSuccess()) {
                 return ResponseEntity.ok(response);
             } else {
                 return ResponseEntity.badRequest().body(response);
             }
         } catch (Exception e) {
-            return ResponseEntity.internalServerError().body(new GenericResponse(false, "ERROR INTERNO: " + e.getMessage()));
+            return ResponseEntity.internalServerError().body(new SolutionResponse(false, "ERROR INTERNO: " + e.getMessage()));
         }
     }
 }

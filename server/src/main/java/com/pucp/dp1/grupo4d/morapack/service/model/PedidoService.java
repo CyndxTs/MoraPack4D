@@ -12,10 +12,8 @@ import com.pucp.dp1.grupo4d.morapack.model.entity.ClienteEntity;
 import com.pucp.dp1.grupo4d.morapack.repository.PedidoRepository;
 import com.pucp.dp1.grupo4d.morapack.util.G4D;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.*;
@@ -43,10 +41,6 @@ public class PedidoService {
         return pedidoRepository.findById(id);
     }
 
-    public Optional<PedidoEntity> findByCodigo(String codigo) {
-        return pedidoRepository.findByCodigo(codigo);
-    }
-
     public PedidoEntity save(PedidoEntity pedido) {
         return pedidoRepository.save(pedido);
     }
@@ -59,24 +53,26 @@ public class PedidoService {
         return pedidoRepository.existsById(id);
     }
 
+    public Optional<PedidoEntity> findByCodigo(String codigo) {
+        return pedidoRepository.findByCodigo(codigo);
+    }
+
     public boolean existsByCodigo(String codigo) {
         return pedidoRepository.findByCodigo(codigo).isPresent();
     }
 
-    public List<PedidoEntity> listarParaSimulacion(LocalDateTime fechaHoraInicio, LocalDateTime fechaHoraFin, Integer desfaseDeDias) {
-        return  pedidoRepository.listarParaSimulacion(fechaHoraInicio, fechaHoraFin, desfaseDeDias);
+    public List<PedidoEntity> findByDateTimeRange(LocalDateTime fechaHoraInicio, LocalDateTime fechaHoraFin, Integer desfaseDeDias) {
+        return  pedidoRepository.findByDateTimeRange(fechaHoraInicio, fechaHoraFin, desfaseDeDias);
     }
 
-    public void importarDesdeArchivo(MultipartFile archivo) {
-        String linea;
-        Scanner archivoSC = null, lineaSC;
+    public void importar(MultipartFile archivo, LocalDateTime fechaHoraInicio, LocalDateTime fechaHoraFin) {
         List<PedidoEntity> pedidos = new ArrayList<>();
         try {
             G4D.Logger.logf("Cargando pedidos desde '%s'..%n",archivo.getName());
-            archivoSC = new Scanner(archivo.getInputStream(), G4D.getFileCharset(archivo));
+            Scanner archivoSC = new Scanner(archivo.getInputStream(), G4D.getFileCharset(archivo));
             while (archivoSC.hasNextLine()) {
-                linea = archivoSC.nextLine().trim();
-                lineaSC = new Scanner(linea);
+                String linea = archivoSC.nextLine().trim();
+                Scanner lineaSC = new Scanner(linea);
                 lineaSC.useDelimiter("-");
                 PedidoEntity pedido = new PedidoEntity();
                 String numPed = lineaSC.next();
@@ -91,37 +87,48 @@ public class PedidoService {
                 AeropuertoEntity aDest = aeropuertoService.findByCodigo(lineaSC.next()).orElse(null);
                 if(aDest != null) {
                     LocalDateTime fechaHoraGeneracionUTC = G4D.toUTC(fechaHoraGeneracionLocal, pedido.getDestino().getHusoHorario());
-                    pedido.setCodigo(aDest.getCodigo() + numPed);
-                    pedido.setDestino(aDest);
-                    pedido.setCantidadSolicitada(lineaSC.nextInt());
-                    String codCliente = lineaSC.next();
-                    ClienteEntity cliente = clienteService.findByCodigo(codCliente).orElse(null);
-                    if(cliente == null) {
-                        cliente = new ClienteEntity();
-                        cliente.setCodigo(codCliente);
-                        cliente.setNombre(G4D.Generator.getUniqueName());
-                        cliente.setCorreo(G4D.Generator.getUniqueEmail());
-                        cliente.setContrasenia("12345678");
-                        clienteService.save(cliente);
+                    if(!fechaHoraGeneracionUTC.isBefore(fechaHoraInicio) && !fechaHoraGeneracionUTC.isAfter(fechaHoraFin)) {
+                        pedido.setCodigo(aDest.getCodigo() + numPed);
+                        pedido.setDestino(aDest);
+                        pedido.setCantidadSolicitada(lineaSC.nextInt());
+                        String codCliente = lineaSC.next();
+                        ClienteEntity cliente = clienteService.findByCodigo(codCliente).orElse(null);
+                        if(cliente == null) {
+                            cliente = new ClienteEntity();
+                            cliente.setCodigo(codCliente);
+                            cliente.setNombre(G4D.Generator.getUniqueName());
+                            String correo = G4D.Generator.getUniqueEmail();
+                            boolean existeCorreo = clienteService.existsByCorreo(correo);
+                            if(existeCorreo) {
+                                String newCorreo = "";
+                                while (existeCorreo) {
+                                    newCorreo = G4D.Generator.addRandomInteger(correo, correo.indexOf('@'));
+                                    existeCorreo = clienteService.existsByCorreo(newCorreo);
+                                }
+                                cliente.setCorreo(newCorreo);
+                            } else cliente.setCorreo(correo);
+                            cliente.setContrasenia("12345678");
+                            clienteService.save(cliente);
+                        }
+                        pedido.setCliente(cliente);
+                        pedido.setFechaHoraGeneracionLocal(fechaHoraGeneracionLocal);
+                        pedido.setFechaHoraGeneracionUTC(fechaHoraGeneracionUTC);
+                        pedidos.add(pedido);
                     }
-                    pedido.setCliente(cliente);
-                    pedido.setFechaHoraGeneracionLocal(fechaHoraGeneracionLocal);
-                    pedido.setFechaHoraGeneracionUTC(fechaHoraGeneracionUTC);
-                    pedidos.add(pedido);
                 }
                 lineaSC.close();
             }
+            archivoSC.close();
+            pedidos.removeIf(p -> this.existsByCodigo(p.getCodigo()));
             pedidos.sort(Comparator.comparing(PedidoEntity::getFechaHoraGeneracionUTC));
             pedidos.forEach(this::save);
+            G4D.Logger.logf("[<] PEDIDOS CARGADOS! ('%d' pedidos )%n", pedidos.size());
         } catch (NoSuchElementException e) {
             G4D.Logger.logf_err("[X] FORMATO DE ARCHIVO INVALIDO! (RUTA: '%s')%n", archivo.getName());
             System.exit(1);
         } catch (Exception e) {
             e.printStackTrace();
             System.exit(1);
-        } finally {
-            if (archivoSC != null) archivoSC.close();
         }
-        G4D.Logger.logf("[<] PEDIDOS CARGADOS! ('%d' pedidos )%n", pedidos.size());
     }
 }

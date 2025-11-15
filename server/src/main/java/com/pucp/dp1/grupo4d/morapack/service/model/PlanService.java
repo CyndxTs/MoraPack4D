@@ -13,7 +13,6 @@ import com.pucp.dp1.grupo4d.morapack.util.G4D;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-
 import java.util.*;
 
 @Service
@@ -36,10 +35,6 @@ public class PlanService {
         return planRepository.findById(id);
     }
 
-    public Optional<PlanEntity> findByCodigo(String codigo) {
-        return planRepository.findByCodigo(codigo);
-    }
-
     public PlanEntity save(PlanEntity plan) {
         return planRepository.save(plan);
     }
@@ -52,21 +47,23 @@ public class PlanService {
         return planRepository.existsById(id);
     }
 
+    public Optional<PlanEntity> findByCodigo(String codigo) {
+        return planRepository.findByCodigo(codigo);
+    }
+
     public boolean existsByCodigo(String codigo) {
         return planRepository.findByCodigo(codigo).isPresent();
     }
 
-    public void importarDesdeArchivo(MultipartFile archivo) {
+    public void importar(MultipartFile archivo) {
         List<PlanEntity> planes = new ArrayList<>();
-        String linea;
-        Scanner archivoSC = null, lineaSC;
         try {
             G4D.Logger.logf("Cargando planes de vuelo desde '%s'..%n",archivo.getName());
-            archivoSC = new Scanner(archivo.getInputStream(), G4D.getFileCharset(archivo));
+            Scanner archivoSC = new Scanner(archivo.getInputStream(), G4D.getFileCharset(archivo));
             while (archivoSC.hasNextLine()) {
-                linea = archivoSC.nextLine().trim();
+                String linea = archivoSC.nextLine().trim();
                 if (linea.isEmpty()) continue;
-                lineaSC = new Scanner(linea);
+                Scanner lineaSC = new Scanner(linea);
                 lineaSC.useDelimiter("-");
                 PlanEntity plan = new PlanEntity();
                 AeropuertoEntity aOrig = aeropuertoService.findByCodigo(lineaSC.next()).orElse(null);
@@ -88,6 +85,7 @@ public class PlanService {
                 }
                 lineaSC.close();
             }
+            archivoSC.close();
             planes.forEach(this::save);
             G4D.Logger.logf("[<] PLANES DE VUELO CARGADOS! ('%d')%n", planes.size());
         } catch (NoSuchElementException e) {
@@ -96,8 +94,6 @@ public class PlanService {
         } catch (Exception e) {
             e.printStackTrace();
             System.exit(1);
-        } finally {
-            if (archivoSC != null) archivoSC.close();
         }
     }
 }

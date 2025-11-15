@@ -19,6 +19,7 @@ import java.util.Optional;
 public interface PedidoRepository extends JpaRepository<PedidoEntity, Integer> {
     Optional<PedidoEntity> findByCodigo(String codigo);
 
+    // Pedidos de simulación a partir de rango temporal
     @Query(value = """
     SELECT p.* 
     FROM PEDIDO p
@@ -26,7 +27,7 @@ public interface PedidoRepository extends JpaRepository<PedidoEntity, Integer> {
           BETWEEN DATE_SUB(:fechaHoraInicio, INTERVAL :desfaseDeDias DAY)
           AND DATE_ADD(:fechaHoraFin, INTERVAL :desfaseDeDias DAY)
     """, nativeQuery = true)
-    List<PedidoEntity> listarParaSimulacion(
+    List<PedidoEntity> findByDateTimeRange(
             @Param("fechaHoraInicio") LocalDateTime fechaHoraInicio,
             @Param("fechaHoraFin") LocalDateTime fechaHoraFin,
             @Param("desfaseDeDias") Integer desfaseDeDias

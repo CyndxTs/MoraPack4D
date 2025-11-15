@@ -6,13 +6,9 @@
 
 package com.pucp.dp1.grupo4d.morapack.service.model;
 
-import com.pucp.dp1.grupo4d.morapack.model.dto.VueloDTO;
-import com.pucp.dp1.grupo4d.morapack.model.entity.PedidoEntity;
 import com.pucp.dp1.grupo4d.morapack.model.entity.VueloEntity;
 import com.pucp.dp1.grupo4d.morapack.repository.VueloRepository;
 import org.springframework.stereotype.Service;
-
-import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -34,10 +30,6 @@ public class VueloService {
         return vueloRepository.findById(id);
     }
 
-    public Optional<VueloEntity> findByCodigo(String codigo) {
-        return vueloRepository.findByCodigo(codigo);
-    }
-
     public VueloEntity save(VueloEntity vuelo) {
         return vueloRepository.save(vuelo);
     }
@@ -50,11 +42,15 @@ public class VueloService {
         return vueloRepository.existsById(id);
     }
 
+    public Optional<VueloEntity> findByCodigo(String codigo) {
+        return vueloRepository.findByCodigo(codigo);
+    }
+
     public boolean existsByCodigo(String codigo) {
         return vueloRepository.findByCodigo(codigo).isPresent();
     }
 
-    public List<VueloEntity> listarParaSimulacion(LocalDateTime fechaHoraInicio, LocalDateTime fechaHoraFin, Integer desfaseDeDias) {
-        return  vueloRepository.listarParaSimulacion(fechaHoraInicio, fechaHoraFin, desfaseDeDias);
+    public List<VueloEntity> findByDateTimeRange(LocalDateTime fechaHoraInicio, LocalDateTime fechaHoraFin, Integer desfaseDeDias) {
+        return  vueloRepository.findByDateTimeRange(fechaHoraInicio, fechaHoraFin, desfaseDeDias);
     }
 }

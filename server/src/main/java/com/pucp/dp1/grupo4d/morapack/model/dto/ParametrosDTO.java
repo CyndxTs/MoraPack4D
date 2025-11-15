@@ -6,19 +6,19 @@
 
 package com.pucp.dp1.grupo4d.morapack.model.dto;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ParametrosDTO {
+public class ParametrosDTO implements DTO {
     private Integer maxDiasEntregaIntracontinental;
     private Integer maxDiasEntregaIntercontinental;
     private Double maxHorasRecojo;
     private Double maxHorasEstancia;
     private Double minHorasEstancia;
-    private LocalDateTime fechaHoraIni;
-    private LocalDateTime fechaHoraFin;
-    private List<String> codigosDeOrigenes;
+    private String fechaHoraInicio;
+    private String fechaHoraFin;
+    private Boolean considerarDesfaseTemporal;
+    private List<String> codOrigenes;
     private Double dMin;
     private Integer iMax;
     private Integer eleMin;
@@ -33,7 +33,7 @@ public class ParametrosDTO {
     private Double factorDeDisposicionOperacional;
 
     public ParametrosDTO() {
-        this.codigosDeOrigenes = new ArrayList<>();
+        this.codOrigenes = new ArrayList<>();
     }
 
     public Integer getMaxDiasEntregaIntracontinental() { return maxDiasEntregaIntracontinental; }
@@ -46,12 +46,14 @@ public class ParametrosDTO {
     public void setMaxHorasEstancia(Double maxHorasEstancia) { this.maxHorasEstancia = maxHorasEstancia; }
     public Double getMinHorasEstancia() { return minHorasEstancia; }
     public void setMinHorasEstancia(Double minHorasEstancia) { this.minHorasEstancia = minHorasEstancia; }
-    public LocalDateTime getFechaHoraIni() { return fechaHoraIni; }
-    public void setFechaHoraIni(LocalDateTime fechaHoraIni) { this.fechaHoraIni = fechaHoraIni; }
-    public LocalDateTime getFechaHoraFin() { return fechaHoraFin; }
-    public void setFechaHoraFin(LocalDateTime fechaHoraFin) { this.fechaHoraFin = fechaHoraFin; }
-    public List<String> getCodigosDeOrigenes() { return codigosDeOrigenes; }
-    public void setCodigosDeOrigenes(List<String> codigosDeOrigenes) { this.codigosDeOrigenes = codigosDeOrigenes; }
+    public String getFechaHoraInicio() { return fechaHoraInicio; }
+    public void setFechaHoraInicio(String fechaHoraInicio) { this.fechaHoraInicio = fechaHoraInicio; }
+    public String getFechaHoraFin() { return fechaHoraFin; }
+    public void setFechaHoraFin(String fechaHoraFin) { this.fechaHoraFin = fechaHoraFin; }
+    public Boolean getConsiderarDesfaseTemporal() { return considerarDesfaseTemporal; }
+    public void setConsiderarDesfaseTemporal(Boolean considerarDesfaseTemporal) { this.considerarDesfaseTemporal = considerarDesfaseTemporal; }
+    public List<String> getCodOrigenes() { return codOrigenes; }
+    public void setCodOrigenes(List<String> codOrigenes) { this.codOrigenes = codOrigenes; }
     public Double getDMin() { return dMin; }
     public void setDMin(Double dMin) { this.dMin = dMin; }
     public Integer getIMax() { return iMax; }

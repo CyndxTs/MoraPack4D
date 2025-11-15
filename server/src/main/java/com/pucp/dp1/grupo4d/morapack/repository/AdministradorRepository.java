@@ -25,7 +25,7 @@ public interface AdministradorRepository extends JpaRepository<AdministradorEnti
             "WHERE (:nombre IS NULL OR LOWER(a.nombre) LIKE LOWER(CONCAT('%', :nombre, '%'))) " +
             "AND (:correo IS NULL OR LOWER(a.correo) LIKE LOWER(CONCAT('%', :correo, '%'))) " +
             "AND (:estado IS NULL OR a.estado = :estado)")
-    List<AdministradorEntity> filtrarAdministradores(
+    List<AdministradorEntity> filterBy(
             @Param("nombre") String nombre,
             @Param("correo") String correo,
             @Param("estado") EstadoUsuario estado

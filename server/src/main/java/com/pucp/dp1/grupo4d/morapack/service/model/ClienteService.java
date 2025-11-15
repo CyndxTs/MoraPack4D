@@ -6,21 +6,30 @@
 
 package com.pucp.dp1.grupo4d.morapack.service.model;
 
+import com.pucp.dp1.grupo4d.morapack.adapter.UsuarioAdapter;
+import com.pucp.dp1.grupo4d.morapack.model.dto.DTO;
+import com.pucp.dp1.grupo4d.morapack.model.dto.UsuarioDTO;
+import com.pucp.dp1.grupo4d.morapack.model.dto.request.FilterRequest;
+import com.pucp.dp1.grupo4d.morapack.model.dto.response.FilterResponse;
 import com.pucp.dp1.grupo4d.morapack.model.entity.ClienteEntity;
 import com.pucp.dp1.grupo4d.morapack.model.enums.EstadoUsuario;
 import com.pucp.dp1.grupo4d.morapack.repository.ClienteRepository;
 import com.pucp.dp1.grupo4d.morapack.util.G4D;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.time.LocalDateTime;
 import java.util.*;
 
 @Service
 public class ClienteService {
 
     private final ClienteRepository clienteRepository;
+    private final UsuarioAdapter usuarioAdapter;
 
-    public ClienteService(ClienteRepository clienteRepository) {
+    public ClienteService(ClienteRepository clienteRepository, UsuarioAdapter usuarioAdapter) {
         this.clienteRepository = clienteRepository;
+        this.usuarioAdapter = usuarioAdapter;
     }
 
     public List<ClienteEntity> findAll() {
@@ -29,14 +38,6 @@ public class ClienteService {
 
     public Optional<ClienteEntity> findById(Integer id) {
         return clienteRepository.findById(id);
-    }
-
-    public Optional<ClienteEntity> findByCodigo(String codigo) {
-        return clienteRepository.findByCodigo(codigo);
-    }
-
-    public Optional<ClienteEntity> findByCorreo(String correo) {
-        return clienteRepository.findByCorreo(correo);
     }
 
     public ClienteEntity save(ClienteEntity cliente) {
@@ -51,24 +52,60 @@ public class ClienteService {
         return clienteRepository.existsById(id);
     }
 
+    public Optional<ClienteEntity> findByCodigo(String codigo) {
+        return clienteRepository.findByCodigo(codigo);
+    }
+
     public boolean existsByCodigo(String codigo) {
         return clienteRepository.findByCodigo(codigo).isPresent();
+    }
+
+    public Optional<ClienteEntity> findByCorreo(String correo) {
+        return clienteRepository.findByCorreo(correo);
     }
 
     public boolean existsByCorreo(String correo) {
         return clienteRepository.findByCorreo(correo).isPresent();
     }
 
-    public void importarDesdeArchivo(MultipartFile archivo) {
+    public List<ClienteEntity> findByDateTimeRange(LocalDateTime fechaHoraInicio, LocalDateTime fechaHoraFin, Integer desfaseDeDias) {
+        return  clienteRepository.findByDateTimeRange(fechaHoraInicio, fechaHoraFin, desfaseDeDias);
+    }
+
+    public FilterResponse filtrar(FilterRequest request) {
+        try {
+            UsuarioDTO dto = (UsuarioDTO) request.getDto();
+            String nombre = dto.getNombre();
+            String correo = dto.getCorreo();
+            String estado = dto.getEstado();
+            EstadoUsuario estadoFiltro = null;
+            if (estado != null && !estado.isBlank()) {
+                try {
+                    estadoFiltro = EstadoUsuario.valueOf(estado.toUpperCase());
+                } catch (IllegalArgumentException e) {
+                    estadoFiltro = null;
+                }
+            }
+            String nombreFiltro = (nombre == null || nombre.isBlank()) ? null : nombre;
+            String correoFiltro = (correo == null || correo.isBlank()) ? null : correo;
+            List<DTO> clientesDTO = new ArrayList<>();
+            List<ClienteEntity> clientesEntity = clienteRepository.filterBy(nombreFiltro, correoFiltro, estadoFiltro);
+            clientesEntity.forEach(c -> clientesDTO.add(usuarioAdapter.toDTO(c)));
+            return new FilterResponse(true, "Filtro aplicado correctamente!", clientesDTO);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new FilterResponse(false, "ERROR - FILTRADO: " + e.getMessage());
+        }
+    }
+
+    public void importar(MultipartFile archivo) {
         List<ClienteEntity> clientes = new ArrayList<>();
-        String linea;
-        Scanner archivoSC = null, lineaSC;
         try {
             G4D.Logger.logf("Cargando clientes desde '%s'..%n", archivo.getName());
-            archivoSC = new Scanner(archivo.getInputStream(), G4D.getFileCharset(archivo));
+            Scanner archivoSC = new Scanner(archivo.getInputStream(), G4D.getFileCharset(archivo));
             while (archivoSC.hasNextLine()) {
-                linea = archivoSC.nextLine().trim();
-                lineaSC = new Scanner(linea);
+                String linea = archivoSC.nextLine().trim();
+                Scanner lineaSC = new Scanner(linea);
                 lineaSC.useDelimiter("\\s{2,}");
                 ClienteEntity cliente = new ClienteEntity();
                 cliente.setCodigo(lineaSC.next());
@@ -78,34 +115,15 @@ public class ClienteService {
                 clientes.add(cliente);
                 lineaSC.close();
             }
+            archivoSC.close();
             clientes.forEach(this::save);
+            G4D.Logger.logf("[<] CLIENTES CARGADOS! ('%d')%n", clientes.size());
         } catch (NoSuchElementException e) {
-            G4D.Logger.logf_err("[X] FORMATO DE ARCHIVO INVALIDO! (RUTA: '%s')%n", archivo.getName());
+            G4D.Logger.logf_err("[X] FORMATO DE ARCHIVO INVALIDO! ('%s')%n", archivo.getName());
             System.exit(1);
         } catch (Exception e) {
             e.printStackTrace();
             System.exit(1);
-        } finally {
-            if (archivoSC != null) archivoSC.close();
         }
-        G4D.Logger.logf("[<] CLIENTES CARGADOS! ('%d')%n", clientes.size());
     }
-
-    //Filtrado
-    public List<ClienteEntity> filtrarClientes(String nombre, String correo, String estado) {
-        EstadoUsuario estadoEnum = null;
-        if (estado != null && !estado.isBlank()) {
-            try {
-                estadoEnum = EstadoUsuario.valueOf(estado.toUpperCase());
-            } catch (IllegalArgumentException e) {
-                return new ArrayList<>(); // Si el estado no es válido, devolver vacío
-            }
-        }
-
-        String nombreFiltro = (nombre == null || nombre.isBlank()) ? null : nombre;
-        String correoFiltro = (correo == null || correo.isBlank()) ? null : correo;
-
-        return clienteRepository.filtrarClientes(nombreFiltro, correoFiltro, estadoEnum);
-    }
-
 }

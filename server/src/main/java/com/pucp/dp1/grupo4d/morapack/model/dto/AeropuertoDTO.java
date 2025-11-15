@@ -9,10 +9,7 @@ package com.pucp.dp1.grupo4d.morapack.model.dto;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.pucp.dp1.grupo4d.morapack.model.algorithm.Aeropuerto;
-import com.pucp.dp1.grupo4d.morapack.model.entity.AeropuertoEntity;
-
-public class AeropuertoDTO {
+public class AeropuertoDTO implements DTO {
     private String codigo;
     private String ciudad;
     private String pais;

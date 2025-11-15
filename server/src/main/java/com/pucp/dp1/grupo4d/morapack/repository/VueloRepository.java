@@ -20,18 +20,19 @@ import java.util.Optional;
 public interface VueloRepository extends JpaRepository<VueloEntity, Integer> {
     Optional<VueloEntity> findByCodigo(String codigo);
 
+    // Vuelos pertenecientes a rutas pertenecientes a pedidos de simulación a partir de rango temporal
     @Query(value = """
-    SELECT DISTINCT v.* 
-    FROM VUELO v
-    INNER JOIN RUTA_POR_VUELO rv ON rv.id_vuelo = v.id
-    INNER JOIN RUTA r ON r.id = rv.id_ruta
-    INNER JOIN PEDIDO_POR_RUTA pr ON pr.id_ruta = r.id
-    INNER JOIN PEDIDO p ON p.id = pr.id_pedido
-    WHERE p.fecha_hora_generacion_utc 
-          BETWEEN DATE_SUB(:fechaHoraInicio, INTERVAL :desfaseDeDias DAY)
-          AND DATE_ADD(:fechaHoraFin, INTERVAL :desfaseDeDias DAY)
-    """, nativeQuery = true)
-    List<VueloEntity> listarParaSimulacion(
+        SELECT DISTINCT v.*
+        FROM VUELO v
+        JOIN RUTA_POR_VUELO rv ON rv.id_vuelo = v.id
+        JOIN RUTA r ON r.id = rv.id_ruta
+        JOIN PEDIDO_POR_RUTA pr ON pr.id_ruta = r.id
+        JOIN PEDIDO p ON p.id = pr.id_pedido
+        WHERE p.fecha_hora_generacion_utc 
+              BETWEEN DATE_SUB(:fechaHoraInicio, INTERVAL :desfaseDeDias DAY)
+              AND DATE_ADD(:fechaHoraFin, INTERVAL :desfaseDeDias DAY)
+        """, nativeQuery = true)
+    List<VueloEntity> findByDateTimeRange(
             @Param("fechaHoraInicio") LocalDateTime fechaHoraInicio,
             @Param("fechaHoraFin") LocalDateTime fechaHoraFin,
             @Param("desfaseDeDias") Integer desfaseDeDias

@@ -6,25 +6,32 @@
 
 package com.pucp.dp1.grupo4d.morapack.model.dto.request;
 
-public class PlanificationRequest {
-    private Boolean guardarSolucion;
-    private Boolean replanificar;
-    private Boolean reparametrizar;
-    private ReparameterizationRequest parameters;
+import com.pucp.dp1.grupo4d.morapack.model.dto.ParametrosDTO;
 
-    public PlanificationRequest(Boolean guardarSolucion, Boolean replanificar, Boolean reparametrizar, ReparameterizationRequest parameters) {
-        this.guardarSolucion = guardarSolucion;
+public class PlanificationRequest {
+    private Boolean replanificar;
+    private Boolean guardarPlanificacion;
+    private Boolean reparametrizar;
+    private ParametrosDTO parameters;
+    private Boolean guardarParametrizacion;
+
+    public PlanificationRequest(Boolean replanificar, Boolean guardarPlanificacion, Boolean reparametrizar,
+                                ParametrosDTO parameters, Boolean guardarParametrizacion) {
         this.replanificar = replanificar;
+        this.guardarPlanificacion = guardarPlanificacion;
         this.reparametrizar = reparametrizar;
         this.parameters = parameters;
+        this.guardarParametrizacion = guardarParametrizacion;
     }
 
-    public Boolean getGuardarSolucion() { return guardarSolucion; }
-    public void setGuardarSolucion(Boolean guardarSolucion) { this.guardarSolucion = guardarSolucion; }
     public Boolean getReplanificar() { return replanificar; }
     public void setReplanificar(Boolean replanificar) { this.replanificar = replanificar; }
+    public Boolean getGuardarPlanificacion() { return guardarPlanificacion; }
+    public void setGuardarPlanificacion(Boolean guardarPlanificacion) { this.guardarPlanificacion = guardarPlanificacion; }
     public Boolean getReparametrizar() { return reparametrizar; }
     public void setReparametrizar(Boolean reparametrizar) { this.reparametrizar = reparametrizar; }
-    public ReparameterizationRequest getParameters() { return parameters; }
-    public void setParameters(ReparameterizationRequest parameters) { this.parameters = parameters; }
+    public ParametrosDTO getParameters() { return parameters; }
+    public void setParameters(ParametrosDTO parameters) { this.parameters = parameters; }
+    public Boolean getGuardarParametrizacion() { return guardarParametrizacion; }
+    public void setGuardarParametrizacion(Boolean guardarParametrizacion) { this.guardarParametrizacion = guardarParametrizacion; }
 }

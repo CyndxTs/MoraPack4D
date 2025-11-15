@@ -26,17 +26,17 @@ public class ParametrosService {
     }
 
     public List<ParametrosEntity> findAll() {
-        List<AeropuertoEntity> sedes = aeropuertoService.findByEsSede(true);
-        List<String> codOrigenes =  new ArrayList<>();
-        sedes.forEach(a -> codOrigenes.add(a.getCodigo()));
-        List<ParametrosEntity> result = parametrosRepository.findAll();
-        result.forEach(p -> p.setCodOrigenes(codOrigenes));
+        List<ParametrosEntity> result = new ArrayList<>();
+        ParametrosEntity parametros = this.findById(1);
+        if (parametros != null) {
+            result.add(parametros);
+        }
         return result;
     }
 
     public ParametrosEntity findById(Integer id) {
-        List<AeropuertoEntity> sedes = aeropuertoService.findByEsSede(true);
         List<String> codOrigenes =  new ArrayList<>();
+        List<AeropuertoEntity> sedes = aeropuertoService.findByEsSede(true);
         sedes.forEach(a -> codOrigenes.add(a.getCodigo()));
         ParametrosEntity result = parametrosRepository.findById(id).orElse(null);
         if (result != null) {
@@ -45,8 +45,24 @@ public class ParametrosService {
         return result;
     }
 
-    public ParametrosEntity save(ParametrosEntity parametrizacion) {
-        return parametrosRepository.save(parametrizacion);
+    public ParametrosEntity save(ParametrosEntity parametros) {
+        List<AeropuertoEntity> sedes = aeropuertoService.findByEsSede(true);
+        sedes.forEach(a -> {
+            a.setEsSede(false);
+            aeropuertoService.save(a);
+        });
+        List<String> codOrigenes = parametros.getCodOrigenes();
+        codOrigenes.forEach(cod -> {
+            AeropuertoEntity aeropuerto = aeropuertoService.findByCodigo(cod).orElse(null);
+            if (aeropuerto != null) {
+                aeropuerto.setEsSede(true);
+                aeropuertoService.save(aeropuerto);
+            }
+        });
+        if(this.existsById(1)) {
+            parametros.setId(1);
+        }
+        return parametrosRepository.save(parametros);
     }
 
     public void deleteById(Integer id) {

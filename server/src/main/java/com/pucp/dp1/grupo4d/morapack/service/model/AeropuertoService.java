@@ -6,23 +6,27 @@
 
 package com.pucp.dp1.grupo4d.morapack.service.model;
 
+import com.pucp.dp1.grupo4d.morapack.adapter.AeropuertoAdapter;
+import com.pucp.dp1.grupo4d.morapack.model.dto.AeropuertoDTO;
+import com.pucp.dp1.grupo4d.morapack.model.dto.DTO;
+import com.pucp.dp1.grupo4d.morapack.model.dto.request.FilterRequest;
+import com.pucp.dp1.grupo4d.morapack.model.dto.response.FilterResponse;
 import com.pucp.dp1.grupo4d.morapack.model.entity.AeropuertoEntity;
-import com.pucp.dp1.grupo4d.morapack.model.entity.PedidoEntity;
 import com.pucp.dp1.grupo4d.morapack.repository.AeropuertoRepository;
 import com.pucp.dp1.grupo4d.morapack.util.G4D;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-
-import java.time.LocalDateTime;
 import java.util.*;
 
 @Service
 public class AeropuertoService {
 
     private final AeropuertoRepository aeropuertoRepository;
+    private final AeropuertoAdapter aeropuertoAdapter;
 
-    public AeropuertoService(AeropuertoRepository aeropuertoRepository) {
+    public AeropuertoService(AeropuertoRepository aeropuertoRepository, AeropuertoAdapter aeropuertoAdapter) {
         this.aeropuertoRepository = aeropuertoRepository;
+        this.aeropuertoAdapter = aeropuertoAdapter;
     }
 
     public List<AeropuertoEntity> findAll() {
@@ -32,16 +36,6 @@ public class AeropuertoService {
     public Optional<AeropuertoEntity> findById(Integer id) {
         return aeropuertoRepository.findById(id);
     }
-
-    public Optional<AeropuertoEntity> findByCodigo(String codigo) {
-        return aeropuertoRepository.findByCodigo(codigo);
-    }
-
-    public Optional<AeropuertoEntity> findByAlias(String alias) {
-        return aeropuertoRepository.findByAlias(alias);
-    }
-
-    public List<AeropuertoEntity> findByEsSede(Boolean esSede) { return aeropuertoRepository.findByEsSede(esSede); }
 
     public AeropuertoEntity save(AeropuertoEntity aeropuerto) {
         return aeropuertoRepository.save(aeropuerto);
@@ -55,29 +49,62 @@ public class AeropuertoService {
         return aeropuertoRepository.existsById(id);
     }
 
+    public Optional<AeropuertoEntity> findByCodigo(String codigo) {
+        return aeropuertoRepository.findByCodigo(codigo);
+    }
+
     public boolean existsByCodigo(String codigo) {
         return aeropuertoRepository.findByCodigo(codigo).isPresent();
+    }
+
+    public Optional<AeropuertoEntity> findByAlias(String alias) {
+        return aeropuertoRepository.findByAlias(alias);
     }
 
     public boolean existsByAlias(String alias) {
         return aeropuertoRepository.findByAlias(alias).isPresent();
     }
 
-    public void importarDesdeArchivo(MultipartFile archivo) {
-        List<String> origCods = List.of("SPIM","EBCI","UBBB");
-        List<AeropuertoEntity> origenes = new ArrayList<>();
-        List<AeropuertoEntity> destinos = new ArrayList<>();
-        String continente = "", linea;
-        Scanner archivoSC = null, lineaSC;
+    public List<AeropuertoEntity> findByEsSede(Boolean esSede) {
+        return aeropuertoRepository.findByEsSede(esSede);
+    }
+
+    public FilterResponse filtrar(FilterRequest request) {
+        try {
+            AeropuertoDTO dto = (AeropuertoDTO) request.getDto();
+            String codigo = dto.getCodigo();
+            String codigoFiltro = (codigo == null || codigo.isBlank()) ? null : codigo;
+            String alias = dto.getAlias();
+            String aliasFiltro = (alias == null || alias.isBlank()) ? null : alias;
+            String continente = dto.getContinente();
+            String continenteFiltro = (continente == null || continente.isBlank()) ? null : continente;
+            String pais = dto.getPais();
+            String paisFiltro = (pais == null || pais.isBlank()) ? null : pais;
+            String ciudad = dto.getCiudad();
+            String ciudadFiltro = (ciudad == null || ciudad.isBlank()) ? null : ciudad;
+            Boolean esSedeFiltro = dto.getEsSede();
+            List<DTO> aeropuertosDTO = new ArrayList<>();
+            List<AeropuertoEntity> aeropuertosEntity = aeropuertoRepository.filterBy(codigoFiltro, aliasFiltro, continenteFiltro, paisFiltro, ciudadFiltro, esSedeFiltro);
+            aeropuertosEntity.forEach(a -> aeropuertosDTO.add(aeropuertoAdapter.toDTO(a)));
+            return new FilterResponse(true, "Filtro aplicado correctamente!", aeropuertosDTO);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new FilterResponse(false, "ERROR - FILTRADO: " + e.getMessage());
+        }
+    }
+
+    public void importar(MultipartFile archivo) {
+        List<AeropuertoEntity> aeropuertos = new ArrayList<>();
+        String continente = "";
         try {
             G4D.Logger.logf("Cargando aeropuertos desde '%s'..%n", archivo.getName());
-            archivoSC = new Scanner(archivo.getInputStream(), G4D.getFileCharset(archivo));
+            Scanner archivoSC = new Scanner(archivo.getInputStream(), G4D.getFileCharset(archivo));
             if (archivoSC.hasNextLine()) archivoSC.nextLine();
             if (archivoSC.hasNextLine()) archivoSC.nextLine();
             while (archivoSC.hasNextLine()) {
-                linea = archivoSC.nextLine().trim();
+                String linea = archivoSC.nextLine().trim();
                 if (linea.isEmpty()) continue;
-                lineaSC = new Scanner(linea);
+                Scanner lineaSC = new Scanner(linea);
                 lineaSC.useDelimiter("\\s{2,}");
                 if (Character.isDigit(linea.charAt(0))) {
                     AeropuertoEntity aeropuerto = new AeropuertoEntity();
@@ -96,27 +123,20 @@ public class AeropuertoService {
                     lineaSC.next();
                     aeropuerto.setLongitudDMS(lineaSC.next() + " " + lineaSC.next() + " " + lineaSC.next() + " " + lineaSC.next());
                     aeropuerto.setLongitudDEC(G4D.toLonDEC(aeropuerto.getLongitudDMS()));
-                    if (origCods.contains(aeropuerto.getCodigo())) {
-                        aeropuerto.setEsSede(true);
-                        origenes.add(aeropuerto);
-                    } else {
-                        aeropuerto.setEsSede(false);
-                        destinos.add(aeropuerto);
-                    }
+                    aeropuerto.setEsSede(false);
+                    aeropuertos.add(aeropuerto);
                 } else continente = lineaSC.next();
                 lineaSC.close();
             }
-            origenes.forEach(this::save);
-            destinos.forEach(this::save);
-            G4D.Logger.logf("[<] AEROPUERTOS CARGADOS! ('%d' origenes | '%d' destinos)%n", origenes.size(), destinos.size());
+            archivoSC.close();
+            aeropuertos.forEach(this::save);
+            G4D.Logger.logf("[<] AEROPUERTOS CARGADOS! ('%d')%n", aeropuertos.size());
         } catch (NoSuchElementException e) {
-            G4D.Logger.logf_err("[X] FORMATO DE ARCHIVO INVALIDO! (RUTA: '%s')%n", archivo.getName());
+            G4D.Logger.logf_err("[X] FORMATO DE ARCHIVO INVALIDO! ('%s')%n", archivo.getName());
             System.exit(1);
         } catch (Exception e) {
             e.printStackTrace();
             System.exit(1);
-        } finally {
-            if (archivoSC != null) archivoSC.close();
         }
     }
 }

@@ -6,16 +6,15 @@
 
 package com.pucp.dp1.grupo4d.morapack.model.dto;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-public class RutaDTO {
+public class RutaDTO implements DTO {
     private String codigo;
     private Double duracion;
     private Double distancia;
-    private LocalDateTime fechaHoraSalida;
-    private LocalDateTime fechaHoraLlegada;
+    private String fechaHoraSalida;
+    private String fechaHoraLlegada;
     private String tipo;
     private String codOrigen;
     private String codDestino;
@@ -31,10 +30,10 @@ public class RutaDTO {
     public void setDuracion(Double duracion) { this.duracion = duracion; }
     public Double getDistancia() { return distancia; }
     public void setDistancia(Double distancia) { this.distancia = distancia; }
-    public LocalDateTime getFechaHoraSalida() { return fechaHoraSalida; }
-    public void setFechaHoraSalida(LocalDateTime fechaHoraSalida) { this.fechaHoraSalida = fechaHoraSalida; }
-    public LocalDateTime getFechaHoraLlegada() { return fechaHoraLlegada; }
-    public void setFechaHoraLlegada(LocalDateTime fechaHoraLlegada) { this.fechaHoraLlegada = fechaHoraLlegada; }
+    public String getFechaHoraSalida() { return fechaHoraSalida; }
+    public void setFechaHoraSalida(String fechaHoraSalida) { this.fechaHoraSalida = fechaHoraSalida; }
+    public String getFechaHoraLlegada() { return fechaHoraLlegada; }
+    public void setFechaHoraLlegada(String fechaHoraLlegada) { this.fechaHoraLlegada = fechaHoraLlegada; }
     public String getTipo() { return tipo; }
     public void setTipo(String tipo) { this.tipo = tipo; }
     public String getCodOrigen() { return codOrigen; }

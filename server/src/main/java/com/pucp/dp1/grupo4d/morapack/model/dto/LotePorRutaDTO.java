@@ -6,7 +6,7 @@
 
 package com.pucp.dp1.grupo4d.morapack.model.dto;
 
-public class LotePorRutaDTO {
+public class LotePorRutaDTO implements DTO {
     private String codRuta;
     private LoteDTO lote;
 

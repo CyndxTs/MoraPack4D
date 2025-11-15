@@ -6,15 +6,12 @@
 
 package com.pucp.dp1.grupo4d.morapack.model.dto;
 
-import java.time.LocalDateTime;
-import com.pucp.dp1.grupo4d.morapack.model.entity.VueloEntity;
-
-public class VueloDTO {
+public class VueloDTO implements DTO {
     private String codigo;
     private String codOrigen;
     private String codDestino;
-    private LocalDateTime fechaHoraSalida;
-    private LocalDateTime fechaHoraLlegada;
+    private String fechaHoraSalida;
+    private String fechaHoraLlegada;
     private Integer capacidadOcupada;
     private Integer capacidadMaxima;
 
@@ -26,10 +23,10 @@ public class VueloDTO {
     public void setCodOrigen(String codOrigen) { this.codOrigen = codOrigen; }
     public String getCodDestino() { return codDestino; }
     public void setCodDestino(String codDestino) { this.codDestino = codDestino; }
-    public LocalDateTime getFechaHoraSalida() { return fechaHoraSalida; }
-    public void setFechaHoraSalida(LocalDateTime fechaHoraSalida) { this.fechaHoraSalida = fechaHoraSalida; }
-    public LocalDateTime getFechaHoraLlegada() { return fechaHoraLlegada; }
-    public void setFechaHoraLlegada(LocalDateTime fechaHoraLlegada) { this.fechaHoraLlegada = fechaHoraLlegada; }
+    public String getFechaHoraSalida() { return fechaHoraSalida; }
+    public void setFechaHoraSalida(String fechaHoraSalida) { this.fechaHoraSalida = fechaHoraSalida; }
+    public String getFechaHoraLlegada() { return fechaHoraLlegada; }
+    public void setFechaHoraLlegada(String fechaHoraLlegada) { this.fechaHoraLlegada = fechaHoraLlegada; }
     public Integer getCapacidadOcupada() { return capacidadOcupada; }
     public void setCapacidadOcupada(Integer capacidadOcupada) { this.capacidadOcupada = capacidadOcupada; }
     public Integer getCapacidadMaxima() { return capacidadMaxima; }

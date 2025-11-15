@@ -6,6 +6,7 @@
 
 package com.pucp.dp1.grupo4d.morapack.service;
 
+import com.pucp.dp1.grupo4d.morapack.adapter.UsuarioAdapter;
 import com.pucp.dp1.grupo4d.morapack.model.dto.UsuarioDTO;
 import com.pucp.dp1.grupo4d.morapack.model.dto.request.SignInRequest;
 import com.pucp.dp1.grupo4d.morapack.model.dto.request.SignOutRequest;
@@ -29,6 +30,8 @@ public class AuthenticactionService {
 
     @Autowired
     private AdministradorService administradorService;
+    @Autowired
+    private UsuarioAdapter usuarioAdapter;
 
     public AuthenticationResponse signIn(SignInRequest request) {
         try {
@@ -54,7 +57,7 @@ public class AuthenticactionService {
                 }
                 cliente.setEstado(EstadoUsuario.ONLINE);
                 clienteService.save(cliente);
-                UsuarioDTO usuarioDTO = new UsuarioDTO(cliente);
+                UsuarioDTO usuarioDTO = usuarioAdapter.toDTO(cliente);
                 return new AuthenticationResponse(false, "SignIn exitoso!", usuarioDTO);
             } else {
                 Optional<AdministradorEntity> adminOpt = administradorService.findByCorreo(correo);
@@ -70,7 +73,7 @@ public class AuthenticactionService {
                 }
                 administrador.setEstado(EstadoUsuario.ONLINE);
                 administradorService.save(administrador);
-                UsuarioDTO usuarioDTO = new UsuarioDTO(administrador);
+                UsuarioDTO usuarioDTO = usuarioAdapter.toDTO(administrador);
                 return new AuthenticationResponse(true, "SignIn exitoso!", usuarioDTO);
             }
         } catch (Exception e) {
@@ -99,7 +102,7 @@ public class AuthenticactionService {
                 cliente.setContrasenia(contrasenia);
                 cliente.setEstado(EstadoUsuario.ONLINE);
                 ClienteEntity clienteGuardado = clienteService.save(cliente);
-                UsuarioDTO usuarioDTO = new UsuarioDTO(clienteGuardado);
+                UsuarioDTO usuarioDTO = usuarioAdapter.toDTO(clienteGuardado);
                 return new AuthenticationResponse(false, "SignUp Exitoso!", usuarioDTO);
             } else {
                 if (administradorService.findByCorreo(correo).isPresent()) {
@@ -112,7 +115,7 @@ public class AuthenticactionService {
                 administrador.setContrasenia(contrasenia);
                 administrador.setEstado(EstadoUsuario.ONLINE);
                 AdministradorEntity adminGuardado = administradorService.save(administrador);
-                UsuarioDTO usuarioDTO = new UsuarioDTO(adminGuardado);
+                UsuarioDTO usuarioDTO = usuarioAdapter.toDTO(adminGuardado);
                 return new AuthenticationResponse(true, "SignUp Exitoso!", usuarioDTO);
             }
         } catch (Exception e) {

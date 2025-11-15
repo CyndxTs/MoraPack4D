@@ -1,7 +1,7 @@
 /**]
  >> Project:    MoraPack
  >> Author:     Grupo 4D
- >> File:       SimulationResponse.java
+ >> File:       SolutionResponse.java
  [**/
 
 package com.pucp.dp1.grupo4d.morapack.model.dto.response;
@@ -10,37 +10,30 @@ import com.pucp.dp1.grupo4d.morapack.model.dto.AeropuertoDTO;
 import com.pucp.dp1.grupo4d.morapack.model.dto.PedidoDTO;
 import com.pucp.dp1.grupo4d.morapack.model.dto.RutaDTO;
 import com.pucp.dp1.grupo4d.morapack.model.dto.VueloDTO;
-import com.pucp.dp1.grupo4d.morapack.model.entity.AeropuertoEntity;
-import com.pucp.dp1.grupo4d.morapack.model.entity.PedidoEntity;
-import com.pucp.dp1.grupo4d.morapack.model.entity.RutaEntity;
-import com.pucp.dp1.grupo4d.morapack.model.entity.VueloEntity;
+
 import java.util.ArrayList;
 import java.util.List;
 
-public class SimulationResponse extends GenericResponse {
+public class SolutionResponse extends GenericResponse {
     private List<PedidoDTO> pedidosAtendidos;
     private List<AeropuertoDTO> aeropuertosTransitados;
     private List<VueloDTO> vuelosEnTransito;
     private List<RutaDTO> rutasEnOperacion;
 
-    public SimulationResponse(Boolean success, String message) {
-        super(success, message);
-        this.pedidosAtendidos = null;
-        this.aeropuertosTransitados = null;
-        this.vuelosEnTransito = null;
-        this.rutasEnOperacion = null;
-    }
-
-    public SimulationResponse(Boolean success, String message,List<PedidoEntity> pedidos, List<AeropuertoEntity> aeropuertos, List<VueloEntity> vuelos, List<RutaEntity> rutas) {
+    public SolutionResponse(Boolean success, String message) {
         super(success, message);
         this.pedidosAtendidos = new ArrayList<>();
-        pedidos.forEach(p -> this.pedidosAtendidos.add(new PedidoDTO(p)));
         this.aeropuertosTransitados = new ArrayList<>();
-        aeropuertos.forEach(a -> this.aeropuertosTransitados.add(new AeropuertoDTO(a)));
         this.vuelosEnTransito = new ArrayList<>();
-        vuelos.forEach(v -> this.vuelosEnTransito.add(new VueloDTO(v)));
         this.rutasEnOperacion = new ArrayList<>();
-        rutas.forEach(r -> this.rutasEnOperacion.add(new RutaDTO(r)));
+    }
+
+    public SolutionResponse(Boolean success, String message, List<PedidoDTO> pedidosDTO, List<AeropuertoDTO> aeropuertosDTO, List<VueloDTO> vuelosDTO, List<RutaDTO> rutasDTO) {
+        super(success, message);
+        this.pedidosAtendidos = pedidosDTO;
+        this.aeropuertosTransitados = aeropuertosDTO;
+        this.vuelosEnTransito = vuelosDTO;
+        this.rutasEnOperacion = rutasDTO;
     }
 
     public List<PedidoDTO> getPedidosAtendidos() { return pedidosAtendidos; }

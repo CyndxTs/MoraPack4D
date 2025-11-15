@@ -6,32 +6,63 @@
 
 package com.pucp.dp1.grupo4d.morapack.algorithm;
 
-import com.pucp.dp1.grupo4d.morapack.adapter.AeropuertoAdapter;
-import com.pucp.dp1.grupo4d.morapack.adapter.UsuarioAdapter;
-import com.pucp.dp1.grupo4d.morapack.adapter.PedidoAdapter;
-import com.pucp.dp1.grupo4d.morapack.adapter.PlanAdapter;
+import com.pucp.dp1.grupo4d.morapack.adapter.*;
 import com.pucp.dp1.grupo4d.morapack.model.algorithm.*;
-import com.pucp.dp1.grupo4d.morapack.model.entity.AeropuertoEntity;
-import com.pucp.dp1.grupo4d.morapack.model.entity.ClienteEntity;
-import com.pucp.dp1.grupo4d.morapack.model.entity.PedidoEntity;
-import com.pucp.dp1.grupo4d.morapack.model.entity.PlanEntity;
-import com.pucp.dp1.grupo4d.morapack.service.model.AeropuertoService;
-import com.pucp.dp1.grupo4d.morapack.service.model.ClienteService;
-import com.pucp.dp1.grupo4d.morapack.service.model.PedidoService;
-import com.pucp.dp1.grupo4d.morapack.service.model.PlanService;
+import com.pucp.dp1.grupo4d.morapack.model.entity.*;
+import com.pucp.dp1.grupo4d.morapack.service.model.*;
 import com.pucp.dp1.grupo4d.morapack.util.G4D;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 import java.time.LocalDateTime;
 import java.util.*;
 
+@Component
 public class Problematica {
-    public static Integer MAX_DIAS_ENTREGA_INTRACONTINENTAL = 2;
-    public static Integer MAX_DIAS_ENTREGA_INTERCONTINENTAL = 3;
-    public static Double MAX_HORAS_RECOJO = 2.0;
-    public static Double MIN_HORAS_ESTANCIA = 1.0;
-    public static Double MAX_HORAS_ESTANCIA = 12.0;
-    public static List<String> CODIGOS_DE_ORIGENES = List.of("SPIM", "EBCI", "UBBB");
-    public static LocalDateTime FECHA_HORA_INICIO = LocalDateTime.now().withYear(1999);
-    public static LocalDateTime FECHA_HORA_FIN = LocalDateTime.now();
+
+    @Autowired
+    private PedidoService pedidoService;
+
+    @Autowired
+    private PedidoAdapter pedidoAdapter;
+
+    @Autowired
+    private AeropuertoService aeropuertoService;
+
+    @Autowired
+    private AeropuertoAdapter aeropuertoAdapter;
+
+    @Autowired
+    private ClienteService clienteService;
+
+    @Autowired
+    private UsuarioAdapter usuarioAdapter;
+
+    @Autowired
+    private PlanService planService;
+
+    @Autowired
+    private PlanAdapter planAdapter;
+
+    @Autowired
+    private RutaService rutaService;
+
+    @Autowired
+    private RutaAdapter rutaAdapter;
+
+    @Autowired
+    private VueloAdapter vueloAdapter;
+
+    @Autowired
+    private VueloService vueloService;
+
+    public static Integer MAX_DIAS_ENTREGA_INTRACONTINENTAL;
+    public static Integer MAX_DIAS_ENTREGA_INTERCONTINENTAL;
+    public static Double MAX_HORAS_RECOJO;
+    public static Double MIN_HORAS_ESTANCIA;
+    public static Double MAX_HORAS_ESTANCIA;
+    public static LocalDateTime FECHA_HORA_INICIO;
+    public static LocalDateTime FECHA_HORA_FIN;
+    public static Integer DESFASE_TEMPORAL;
     public List<Aeropuerto> origenes;
     public List<Aeropuerto> destinos;
     public List<Plan> planes;
@@ -39,31 +70,8 @@ public class Problematica {
     public List<Pedido> pedidos;
     public Set<Vuelo> vuelosEnTransito;
     public Set<Ruta> rutasEnOperacion;
-    private AeropuertoService aeropuertoService;
-    private ClienteService clienteService;
-    private PlanService planService;
-    private PedidoService pedidoService;
-    private AeropuertoAdapter aeropuertoAdapter;
-    private UsuarioAdapter usuarioAdapter;
-    private PlanAdapter planAdapter;
-    private PedidoAdapter pedidoAdapter;
 
-    public Problematica(AeropuertoService aeropuertoService,
-                        ClienteService clienteService,
-                        PlanService planService,
-                        PedidoService pedidoService,
-                        AeropuertoAdapter aeropuertoAdapter,
-                        UsuarioAdapter usuarioAdapter,
-                        PlanAdapter planAdapter,
-                        PedidoAdapter pedidoAdapter) {
-        this.aeropuertoService = aeropuertoService;
-        this.clienteService = clienteService;
-        this.planService = planService;
-        this.pedidoService = pedidoService;
-        this.aeropuertoAdapter = aeropuertoAdapter;
-        this.usuarioAdapter = usuarioAdapter;
-        this.planAdapter = planAdapter;
-        this.pedidoAdapter = pedidoAdapter;
+    public Problematica() {
         this.origenes = new ArrayList<>();
         this.destinos = new ArrayList<>();
         this.planes = new ArrayList<>();
@@ -78,7 +86,7 @@ public class Problematica {
     }
 
     public Problematica replicar() {
-        Problematica problematica = new Problematica(this.aeropuertoService,this.clienteService,this.planService,this.pedidoService,this.aeropuertoAdapter,this.usuarioAdapter,this.planAdapter,this.pedidoAdapter);
+        Problematica problematica = new Problematica();
         Map<String, Aeropuerto> poolAeropuertos = new HashMap<>();
         Map<String, Lote> poolLotes = new HashMap<>();
         Map<String, Cliente> poolClientes = new HashMap<>();
@@ -103,52 +111,59 @@ public class Problematica {
         this.pedidos = new ArrayList<>(problematica.pedidos);
         this.rutasEnOperacion = new HashSet<>(problematica.rutasEnOperacion);
         this.vuelosEnTransito = new HashSet<>(problematica.vuelosEnTransito);
-        this.aeropuertoService = problematica.aeropuertoService;
-        this.clienteService = problematica.clienteService;
-        this.planService = problematica.planService;
-        this.pedidoService = problematica.pedidoService;
-        this.aeropuertoAdapter = problematica.aeropuertoAdapter;
-        this.usuarioAdapter = problematica.usuarioAdapter;
-        this.planAdapter = problematica.planAdapter;
-        this.pedidoAdapter = problematica.pedidoAdapter;
     }
 
     public void cargarDatos() {
         G4D.Logger.logln("Cargando datos desde base de datos..");
 
-        List<AeropuertoEntity> aeropuertosEntities = aeropuertoService.findAll();
-        for (AeropuertoEntity entity : aeropuertosEntities) {
+        List<AeropuertoEntity> aeropuertosEntity = aeropuertoService.findAll();
+        aeropuertosEntity.forEach(entity -> {
             Aeropuerto aeropuerto = aeropuertoAdapter.toAlgorithm(entity);
-            if (CODIGOS_DE_ORIGENES.contains(aeropuerto.getCodigo())) {
+            if (entity.getEsSede()) {
                 origenes.add(aeropuerto);
             } else {
                 destinos.add(aeropuerto);
             }
-        }
+        });
 
-        List<ClienteEntity> clienteEntities = clienteService.findAll();
-        for (ClienteEntity entity : clienteEntities) {
-            clientes.add(usuarioAdapter.toAlgorithm(entity));
-        }
+        List<ClienteEntity> clientesEntity = clienteService.findByDateTimeRange(FECHA_HORA_INICIO, FECHA_HORA_FIN, DESFASE_TEMPORAL);
+        clientesEntity.forEach(entity -> {
+            Cliente cliente = usuarioAdapter.toAlgorithm(entity);
+            clientes.add(cliente);
+        });
 
-        List<PlanEntity> planEntities = planService.findAll();
-        for (PlanEntity entity : planEntities) {
-            planes.add(planAdapter.toAlgorithm(entity));
-        }
+        List<PlanEntity> planesEntity = planService.findAll();
+        planesEntity.forEach(entity -> {
+            Plan plan = planAdapter.toAlgorithm(entity);
+            planes.add(plan);
+        });
 
-        List<PedidoEntity> pedidoEntities = pedidoService.findAll();
-        for (PedidoEntity entity : pedidoEntities) {
-            pedidos.add(pedidoAdapter.toAlgorithm(entity));
-        }
+        G4D.IntegerWrapper cantAtendidos = new G4D.IntegerWrapper();
+        List<PedidoEntity> pedidosEntity = pedidoService.findByDateTimeRange(FECHA_HORA_INICIO, FECHA_HORA_FIN, DESFASE_TEMPORAL);
+        pedidosEntity.forEach(entity -> {
+            if(entity.getFueAtendido()) cantAtendidos.increment();
+            Pedido pedido = pedidoAdapter.toAlgorithm(entity);
+            pedidos.add(pedido);
+        });
 
-        G4D.Logger.logf("[<] DATOS CARGADOS! ('%d' origenes | '%d' destinos | '%d' planes | '%d' clientes | '%d' pedidos)%n",
-                origenes.size(), destinos.size(), planes.size(), clientes.size(), pedidos.size());
-    }
+        List<VueloEntity> vuelosEntity = vueloService.findByDateTimeRange(FECHA_HORA_INICIO, FECHA_HORA_FIN, DESFASE_TEMPORAL);
+        vuelosEntity.forEach(entity -> {
+            Vuelo vuelo = vueloAdapter.toAlgorithm(entity);
+            vuelosEnTransito.add(vuelo);
+        });
 
-    public void limpiarPools() {
-        aeropuertoAdapter.clearPools();
-        usuarioAdapter.clearPools();
-        planAdapter.clearPools();
-        pedidoAdapter.clearPools();
+        List<RutaEntity> rutasEntity = rutaService.findByDateTimeRange(FECHA_HORA_INICIO, FECHA_HORA_FIN, DESFASE_TEMPORAL);
+        rutasEntity.forEach(entity -> {
+            Ruta ruta = rutaAdapter.toAlgorithm(entity);
+            rutasEnOperacion.add(ruta);
+        });
+
+        G4D.Logger.logln("[<] DATOS CARGADOS!");
+        G4D.Logger.logf("[:] Aeropuertos: '%d' origenes! & '%d' destinos!%n", origenes.size(), destinos.size());
+        G4D.Logger.logf("[:] Clientes: '%d'%n", clientes.size());
+        G4D.Logger.logf("[:] Planes: '%d'%n", planes.size());
+        G4D.Logger.logf("[:] Pedidos: '%d' por atender! | '%d' ya atendidos!%n", pedidos.size() - cantAtendidos.value, cantAtendidos.value);
+        G4D.Logger.logf("[:] Vuelos: '%d'%n", vuelosEnTransito.size());
+        G4D.Logger.logf("[:] Rutas: '%d'%n", rutasEnOperacion.size());
     }
 }

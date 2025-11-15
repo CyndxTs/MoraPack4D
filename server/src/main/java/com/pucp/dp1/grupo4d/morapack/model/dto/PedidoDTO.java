@@ -6,16 +6,15 @@
 
 package com.pucp.dp1.grupo4d.morapack.model.dto;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-public class PedidoDTO {
+public class PedidoDTO implements DTO {
     private String codigo;
     private String codCliente;
     private Integer cantidadSolicitada;
-    private LocalDateTime fechaHoraGeneracion;
-    private LocalDateTime fechaHoraExpiracion;
+    private String fechaHoraGeneracion;
+    private String fechaHoraExpiracion;
     private String codDestino;
     private List<LotePorRutaDTO> lotesPorRuta;
 
@@ -29,10 +28,10 @@ public class PedidoDTO {
     public void setCodCliente(String codCliente) { this.codCliente = codCliente; }
     public Integer getCantidadSolicitada() { return cantidadSolicitada; }
     public void setCantidadSolicitada(Integer cantidadSolicitada) { this.cantidadSolicitada = cantidadSolicitada; }
-    public LocalDateTime getFechaHoraGeneracion() { return fechaHoraGeneracion; }
-    public void setFechaHoraGeneracion(LocalDateTime fechaHoraGeneracion) { this.fechaHoraGeneracion = fechaHoraGeneracion; }
-    public LocalDateTime getFechaHoraExpiracion() { return fechaHoraExpiracion; }
-    public void setFechaHoraExpiracion(LocalDateTime fechaHoraExpiracion) { this.fechaHoraExpiracion = fechaHoraExpiracion; }
+    public String getFechaHoraGeneracion() { return fechaHoraGeneracion; }
+    public void setFechaHoraGeneracion(String fechaHoraGeneracion) { this.fechaHoraGeneracion = fechaHoraGeneracion; }
+    public String getFechaHoraExpiracion() { return fechaHoraExpiracion; }
+    public void setFechaHoraExpiracion(String fechaHoraExpiracion) { this.fechaHoraExpiracion = fechaHoraExpiracion; }
     public String getCodDestino() { return codDestino; }
     public void setCodDestino(String codDestino) { this.codDestino = codDestino; }
     public List<LotePorRutaDTO> getLotesPorRuta() { return lotesPorRuta; }

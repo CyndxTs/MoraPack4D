@@ -20,16 +20,17 @@ import java.util.Optional;
 public interface RutaRepository extends JpaRepository<RutaEntity, Integer> {
     Optional<RutaEntity> findByCodigo(String codigo);
 
+    // Rutas pertenecientes a pedidos de simulación a partir de rango temporal
     @Query(value = """
-    SELECT DISTINCT r.* 
-    FROM RUTA r
-    INNER JOIN PEDIDO_POR_RUTA pr ON pr.id_ruta = r.id
-    INNER JOIN PEDIDO p ON p.id = pr.id_pedido
-    WHERE p.fecha_hora_generacion_utc 
-          BETWEEN DATE_SUB(:fechaHoraInicio, INTERVAL :desfaseDeDias DAY)
-          AND DATE_ADD(:fechaHoraFin, INTERVAL :desfaseDeDias DAY)
-    """, nativeQuery = true)
-    List<RutaEntity> listarParaSimulacion(
+        SELECT DISTINCT r.*
+        FROM RUTA r
+        JOIN PEDIDO_POR_RUTA pr ON pr.id_ruta = r.id
+        JOIN PEDIDO p ON p.id = pr.id_pedido
+        WHERE p.fecha_hora_generacion_utc 
+              BETWEEN DATE_SUB(:fechaHoraInicio, INTERVAL :desfaseDeDias DAY)
+              AND DATE_ADD(:fechaHoraFin, INTERVAL :desfaseDeDias DAY)
+        """, nativeQuery = true)
+    List<RutaEntity> findByDateTimeRange(
             @Param("fechaHoraInicio") LocalDateTime fechaHoraInicio,
             @Param("fechaHoraFin") LocalDateTime fechaHoraFin,
             @Param("desfaseDeDias") Integer desfaseDeDias

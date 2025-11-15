@@ -26,10 +26,15 @@ import java.util.regex.Pattern;
 
 public class G4D {
     private static final double EARTH_RADIUS_KM = 6371.0;
-    private static final DateTimeFormatter dtf_display = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
-    private static final DateTimeFormatter dtf_server = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
-    private static final DateTimeFormatter tf_display = DateTimeFormatter.ofPattern("HH:mm");
-    private static final DateTimeFormatter tf_server = DateTimeFormatter.ofPattern("HH:mm:ss");
+    private static final DateTimeFormatter dtf_ui = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+    private static final DateTimeFormatter dtf_db = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    private static final DateTimeFormatter dtf_js = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
+    private static final DateTimeFormatter tf_ui = DateTimeFormatter.ofPattern("HH:mm");
+    private static final DateTimeFormatter tf_db = DateTimeFormatter.ofPattern("HH:mm:ss");
+    private static final DateTimeFormatter tf_js = DateTimeFormatter.ofPattern("HH:mm:ss");
+    private static final DateTimeFormatter df_ui = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+    private static final DateTimeFormatter df_db = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+    private static final DateTimeFormatter df_js = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
     // Obtener latitud 'DEC' a partir de latitud 'DMS'
     public static double toLatDEC(String latDMS) {
@@ -77,92 +82,6 @@ public class G4D {
         int seconds = (int) Math.round(secondsDec);
         return String.format("%03d° %02d' %02d\" %s", degrees, minutes, seconds, hemisphere);
     }
-    // Obtener 'DisplayString' a partir de 'DateTime'
-    public static String toDisplayString(LocalDateTime dt) {
-        return dt.format(dtf_display);
-    }
-    // Obtener 'DisplayString' a partir de 'Time'
-    public static String toDisplayString(LocalTime t) {
-        return t.format(tf_display);
-    }
-    // Obtener 'ServerString' a partir de 'DateTime'
-    public static String toServerString(LocalDateTime dt) {
-        return dt.format(dtf_server);
-    }
-    // Obtener 'ServerString' a partir de 'Time'
-    public static String toServerString(LocalTime t) {
-        return t.format(tf_server);
-    }
-    // Obtener 'TimeDisplayString' a partir de 'TimeDEC'
-    public static String toTimeDisplayString(double tDEC) {
-        int total = (int) (tDEC * 60);
-        int dias = total / 1440, horas = (total % 1440) / 60, minutos = total % 60;
-        return dias > 0 ? String.format("%dd %2dh %2dm", dias, horas, minutos) : String.format("%2dh %2dm", horas, minutos);
-    }
-    // Obtener 'Date' a partir de 'TimeINT'
-    public static LocalDate toDate(Integer tINT) {
-        int year = tINT / 10000;
-        int month = (tINT / 100) % 100;
-        int day = tINT % 100;
-        return LocalDate.of(year, month, day);
-    }
-    // Obtener 'DateTime' a partir de 'DateTimeString'
-    public static LocalDateTime toDateTime(String dts) {
-        try {
-            return LocalDateTime.parse(dts, dtf_display);
-        } catch (Exception e) {
-            return LocalDateTime.parse(dts, dtf_server);
-        }
-    }
-    // Obtener 'DateTime' a partir de 'Time'
-    public static LocalDateTime toDateTime(LocalTime t) {
-        return LocalDateTime.now().withHour(t.getHour()).withMinute(t.getMinute()).withSecond(t.getSecond());
-    }
-    // Obtener 'DateTime' a partir de 'Time' con referencia de otro 'DateTime'
-    public static LocalDateTime toDateTime(LocalTime t, LocalDateTime dt_ref) {
-        return dt_ref.withHour(t.getHour()).withMinute(t.getMinute()).withSecond(t.getSecond());
-    }
-    // Obtener 'Time' a partir de 'DateTime'
-    public static LocalTime toTime(LocalDateTime dt) {
-        return dt.toLocalTime();
-    }
-    // Obtener 'Time' a partir de 'TimeString'
-    public static LocalTime toTime(String ts) {
-        try {
-            return LocalTime.parse(ts, tf_display);
-        } catch (Exception e) {
-            return LocalTime.parse(ts, tf_server);
-        }
-    }
-    // Obtener 'DateTime UTC' a partir de 'DateTime Local'
-    public static LocalDateTime toUTC(LocalDateTime dt, Integer gmt) {
-        return dt.minusHours(Long.valueOf(gmt));
-    }
-    // Obtener 'DateTime Local' a partir de 'DateTime UTC'
-    public static LocalDateTime toLocal(LocalDateTime dt, Integer gmt) {
-        return dt.plusHours(Long.valueOf(gmt));
-    }
-    // Obtener 'Time UTC' a partir de 'Time Local'
-    public static LocalTime toUTC(LocalTime t, Integer gmt) {
-        return t.minusHours(Long.valueOf(gmt));
-    }
-    // Obtener 'Time Local' a partir de 'Time UTC'
-    public static LocalTime toLocal(LocalTime t, Integer gmt) {
-        return t.plusHours(Long.valueOf(gmt));
-    }
-    // Obtener 'DateTimeRange' a partir de 2 'Time' con referencia a 'DateTime'
-    public static LocalDateTime[] getDateTimeRange(LocalTime t_departure, LocalTime t_arrival, LocalDateTime dt_ref) {
-        LocalDateTime departure = G4D.toDateTime(t_departure, dt_ref);
-        LocalDateTime arrival = G4D.toDateTime(t_arrival, dt_ref);
-        if(arrival.isBefore(departure)) {
-            arrival = arrival.plusDays(1);
-        }
-        if(departure.isBefore(dt_ref)) {
-            departure = departure.plusDays(1);
-            arrival = arrival.plusDays(1);
-        }
-        return new LocalDateTime[]{departure, arrival};
-    }
     // Obtener distancia 'Geodésica'
     public static double getGeodesicDistance(double origLat, double origLon, double destLat, double destLon) {
         double lat1 = Math.toRadians(origLat);
@@ -174,15 +93,127 @@ public class G4D {
         double h = Math.pow(Math.sin(dLat / 2), 2) + Math.cos(lat1) * Math.cos(lat2) * Math.pow(Math.sin(dLon / 2), 2);
         return 2 * EARTH_RADIUS_KM * Math.asin(Math.sqrt(h));
     }
+    // Obtener 'DisplayString' a partir de 'TimeDEC'
+    public static String toDisplayString(double tDEC) {
+        int total = (int) (tDEC * 60);
+        int dias = total / 1440, horas = (total % 1440) / 60, minutos = total % 60;
+        return dias > 0 ? String.format("%dd %2dh %2dm", dias, horas, minutos) : String.format("%2dh %2dm", horas, minutos);
+    }
+    // Obtener 'DisplayString' a partir de 'DateTime'
+    public static String toDisplayString(LocalDateTime dt) {
+        return dt.format(dtf_ui);
+    }
+    // Obtener 'DateTime' a partir de 'DateTimeString'
+    public static LocalDateTime toDateTime(String dts) {
+        try {
+            return LocalDateTime.parse(dts, dtf_ui);
+        } catch (Exception e) {
+            try {
+                return LocalDateTime.parse(dts, dtf_db);
+            } catch (Exception ex) {
+                try {
+                    return LocalDateTime.parse(dts, dtf_js);
+                } catch (Exception exc) {
+                    throw new RuntimeException(exc);
+                }
+            }
+        }
+    }
+    // Obtener 'DateTime' a partir de 'Date' y 'Time'
+    public static LocalDateTime toDateTime(LocalDate d, LocalTime t) {
+        return LocalDateTime.of(d, t);
+    }
+    // Obtener 'DateTime' a partir de 'Time'
+    public static LocalDateTime toDateTime(LocalTime t) {
+        return toDateTime(LocalDateTime.now().toLocalDate(), t);
+    }
+    // Obtener 'DateTime' a partir de 'Time' y 'DateTime' de referencia
+    public static LocalDateTime toDateTime(LocalTime t, LocalDateTime dt_ref) {
+        return toDateTime(dt_ref.toLocalDate(), t);
+    }
+    // Obtener 'DateTime {UTC}' a partir de 'DateTime {Local}'
+    public static LocalDateTime toUTC(LocalDateTime dt, Integer gmt) {
+        return dt.minusHours(Long.valueOf(gmt));
+    }
+    // Obtener 'DateTime {Local}' a partir de 'DateTime {UTC}'
+    public static LocalDateTime toLocal(LocalDateTime dt, Integer gmt) {
+        return dt.plusHours(Long.valueOf(gmt));
+    }
     // Obtener tiempo transcurrido en 'horas' entre 2 'DateTime'
-    public static double getElapsedHours(LocalDateTime dtOrig, LocalDateTime dtDest) {
-        return Duration.between(dtOrig, dtDest).toMinutes() / 60.0;
+    public static double getElapsedHours(LocalDateTime dtStart, LocalDateTime dtEnd) {
+        return Duration.between(dtStart, dtEnd).toMinutes() / 60.0;
+    }
+    // Obtener 'DisplayString' a partir de 'Time'
+    public static String toDisplayString(LocalTime t) {
+        return t.format(tf_ui);
+    }
+    // Obtener 'Time' a partir de 'TimeString'
+    public static LocalTime toTime(String ts) {
+        try {
+            return LocalTime.parse(ts, tf_ui);
+        } catch (Exception e) {
+            try {
+                return LocalTime.parse(ts, tf_db);
+            } catch (Exception ex) {
+                try {
+                    return LocalTime.parse(ts, tf_js);
+                } catch (Exception exc) {
+                    throw new RuntimeException(exc);
+                }
+            }
+        }
+    }
+    // Obtener 'Time {UTC}' a partir de 'Time {Local}'
+    public static LocalTime toUTC(LocalTime t, Integer gmt) {
+        return t.minusHours(Long.valueOf(gmt));
+    }
+    // Obtener 'Time {Local}' a partir de 'Time {UTC}'
+    public static LocalTime toLocal(LocalTime t, Integer gmt) {
+        return t.plusHours(Long.valueOf(gmt));
     }
     // Obtener tiempo transcurrido en 'horas' entre 2 'Time'
-    public static double getElapsedHours(LocalTime tOrig, LocalTime tDest) {
-        double duration = Duration.between(tOrig, tDest).toMinutes() / 60.0;
-        if (duration < 0) duration += 24.0;
+    public static double getElapsedHours(LocalTime tStart, LocalTime tEnd) {
+        double duration = Duration.between(tStart, tEnd).toMinutes() / 60.0;
+        if (duration < 0) {
+            duration += 24.0;
+        }
         return duration;
+    }
+    // Obtener 'Date' a partir de 'DateString'
+    public static LocalDate toDate(String ds) {
+        try {
+            return LocalDate.parse(ds, df_ui);
+        } catch (Exception e) {
+            try {
+                return LocalDate.parse(ds, df_db);
+            } catch (Exception ex) {
+                try {
+                    return LocalDate.parse(ds, df_js);
+                } catch (Exception exc) {
+                    throw new RuntimeException(exc);
+                }
+            }
+        }
+    }
+    // Obtener 'Date' a partir de 'TimeINT'
+    public static LocalDate toDate(Integer tINT) {
+        int year = tINT / 10000;
+        int month = (tINT / 100) % 100;
+        int day = tINT % 100;
+        return LocalDate.of(year, month, day);
+    }
+    // Obtener 'DateTimeRange' a partir de 2 'Time' con referencia a 'DateTime'
+    public static LocalDateTime[] getDateTimeRange(LocalTime t_departure, LocalTime t_arrival, LocalDateTime dt_ref) {
+        LocalDateTime departure = toDateTime(t_departure, dt_ref);
+        LocalDateTime arrival = toDateTime(t_arrival, dt_ref);
+        if(arrival.isBefore(departure)) {
+            arrival = arrival.plusDays(1);
+        }
+        if(departure.isBefore(dt_ref)) {
+            departure = departure.plusDays(1);
+            arrival = arrival.plusDays(1);
+        }
+        return new LocalDateTime[]{departure, arrival};
     }
     // Obtener 'Charset' de un archivo
     public static Charset getFileCharset(Object file) {
@@ -318,15 +349,18 @@ public class G4D {
         }
 
         public static void fill_line(char symbol, int lineDim) {
-            for (int i = 0; i < lineDim; i++) pw.print(symbol);
+            for (int i = 0; i < lineDim; i++) {
+                pw.print(symbol);
+            }
             pw.println();
         }
 
         public static void fill_line(char symbol, int lineDim, int offset) {
             int limit = lineDim - 2 * offset;
-            for (int i = 0; i < offset; i++) pw.print(" ");
-            for (int i = 0; i < limit; i++) pw.print(symbol);
-            pw.println();
+            for (int i = 0; i < offset; i++) {
+                pw.print(" ");
+            }
+            fill_line(symbol, limit);
         }
 
         public static void print_centered(String text, int lineDim) {
@@ -492,10 +526,12 @@ public class G4D {
         }
 
         public static void delete_lines(int numLines) {
-            logger.info(Action.delete_current_line());
-            for(int i = 0;i < numLines - 1;i++) {
-                logger.info(Action.to_ansi("U",1));
+            if(numLines > 0) {
                 logger.info(Action.delete_current_line());
+                for(int i = 0;i < numLines - 1;i++) {
+                    logger.info(Action.to_ansi("U",1));
+                    logger.info(Action.delete_current_line());
+                }
             }
         }
 
@@ -508,7 +544,7 @@ public class G4D {
         }
 
         private static String getCustomAction(String actions) {
-            String ansiString = "";
+            StringBuilder ansiString = new StringBuilder();
             Pattern pattern = Pattern.compile("[A-Z][a-z]?\\d*");
             Matcher matcher = pattern.matcher(actions);
             while (matcher.find()) {
@@ -519,13 +555,19 @@ public class G4D {
                     if(Character.isLowerCase(action.charAt(1))) {
                         id += action.charAt(1);
                         if(action.length() > 2) {
-                            mode = Integer.valueOf(action.substring(2));
-                        } else mode = 1;
-                    } else mode = Integer.valueOf(action.substring(1));
-                } else mode = 1;
-                ansiString += Action.to_ansi(id, mode);
+                            mode = Integer.parseInt(action.substring(2));
+                        } else {
+                            mode = 1;
+                        }
+                    } else {
+                        mode = Integer.parseInt(action.substring(1));
+                    }
+                } else {
+                    mode = 1;
+                }
+                ansiString.append(Action.to_ansi(id, mode));
             }
-            return ansiString;
+            return ansiString.toString();
         }
 
         public static class Stats {
@@ -628,6 +670,8 @@ public class G4D {
     }
     // Clase 'Auxiliar' para generación de valores
     public static class Generator {
+        private static final Random random = new Random();
+
         public static final String[] NOMBRES_ES_H = {
                 "Mateo", "Santiago", "Sebastián", "Diego", "Daniel",
                 "Gabriel", "Andrés", "Carlos", "Tomás", "Alejandro",
@@ -887,6 +931,11 @@ public class G4D {
                 if(addSeparator && i != positions.length - 1) email.append((random.nextBoolean())? "_": ".");
             }
             return email + "@G4D.com";
+        }
+        // Obtener 'AgregarRandomInteger' a 'String'
+        public static String addRandomInteger(String str, int index) {
+            int integer = random.nextInt(1000);
+            return str.substring(0, index) + integer + str.substring(index);
         }
     }
 }

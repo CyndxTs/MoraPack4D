@@ -6,7 +6,7 @@
 
 package com.pucp.dp1.grupo4d.morapack.model.dto;
 
-public class UsuarioDTO {
+public class UsuarioDTO implements DTO {
     private String codigo;
     private String nombre;
     private String correo;

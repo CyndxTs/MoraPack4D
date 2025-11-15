@@ -6,22 +6,20 @@
 
 package com.pucp.dp1.grupo4d.morapack.model.dto;
 
-import java.time.LocalDateTime;
-
-public class RegistroDTO {
+public class RegistroDTO implements DTO {
     private String codigo;
-    private LocalDateTime fechaHoraIngreso;
-    private LocalDateTime fechaHoraEgreso;
+    private String fechaHoraIngreso;
+    private String fechaHoraEgreso;
     private String codLote;
 
     public RegistroDTO() {}
 
     public String getCodigo() { return codigo; }
     public void setCodigo(String codigo) { this.codigo = codigo; }
-    public LocalDateTime getFechaHoraIngreso() { return fechaHoraIngreso; }
-    public void setFechaHoraIngreso(LocalDateTime fechaHoraIngreso) { this.fechaHoraIngreso = fechaHoraIngreso; }
-    public LocalDateTime getFechaHoraEgreso() { return fechaHoraEgreso; }
-    public void setFechaHoraEgreso(LocalDateTime fechaHoraEgreso) { this.fechaHoraEgreso = fechaHoraEgreso; }
+    public String getFechaHoraIngreso() { return fechaHoraIngreso; }
+    public void setFechaHoraIngreso(String fechaHoraIngreso) { this.fechaHoraIngreso = fechaHoraIngreso; }
+    public String getFechaHoraEgreso() { return fechaHoraEgreso; }
+    public void setFechaHoraEgreso(String fechaHoraEgreso) { this.fechaHoraEgreso = fechaHoraEgreso; }
     public String getCodLote() { return codLote; }
     public void setCodLote(String codLote) { this.codLote = codLote; }
 }

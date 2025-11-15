@@ -6,8 +6,11 @@
 
 package com.pucp.dp1.grupo4d.morapack.controller.model;
 
+import com.pucp.dp1.grupo4d.morapack.model.dto.request.FilterRequest;
+import com.pucp.dp1.grupo4d.morapack.model.dto.response.FilterResponse;
 import com.pucp.dp1.grupo4d.morapack.model.entity.ClienteEntity;
 import com.pucp.dp1.grupo4d.morapack.service.model.ClienteService;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
@@ -25,13 +28,18 @@ public class ClienteController {
         return clienteService.findAll();
     }
 
-    //Filtrado
+    // Filtrado
     @GetMapping("/filtrar")
-    public List<ClienteEntity> filtrarClientes(
-            @RequestParam(required = false) String nombre,
-            @RequestParam(required = false) String correo,
-            @RequestParam(required = false) String estado
-    ) {
-        return clienteService.filtrarClientes(nombre, correo, estado);
+    public ResponseEntity<FilterResponse> filtrar(@RequestBody FilterRequest request) {
+        try {
+            FilterResponse response = clienteService.filtrar(request);
+            if (response.isSuccess()) {
+                return ResponseEntity.ok(response);
+            } else {
+                return ResponseEntity.badRequest().body(response);
+            }
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(new FilterResponse(false, "ERROR INTERNO: " + e.getMessage()));
+        }
     }
 }

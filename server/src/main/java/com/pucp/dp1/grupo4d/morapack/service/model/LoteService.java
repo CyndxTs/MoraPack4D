@@ -29,10 +29,6 @@ public class LoteService {
         return loteRepository.findById(id);
     }
 
-    public Optional<LoteEntity> findByCodigo(String codigo) {
-        return loteRepository.findByCodigo(codigo);
-    }
-
     public LoteEntity save(LoteEntity lote) {
         return loteRepository.save(lote);
     }
@@ -43,6 +39,10 @@ public class LoteService {
 
     public boolean existsById(Integer id) {
         return loteRepository.existsById(id);
+    }
+
+    public Optional<LoteEntity> findByCodigo(String codigo) {
+        return loteRepository.findByCodigo(codigo);
     }
 
     public boolean existsByCodigo(String codigo) {
