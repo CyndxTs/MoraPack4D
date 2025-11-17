@@ -6,40 +6,51 @@
 
 package com.pucp.dp1.grupo4d.morapack.controller.model;
 
+import com.pucp.dp1.grupo4d.morapack.mapper.UsuarioMapper;
 import com.pucp.dp1.grupo4d.morapack.model.dto.request.FilterRequest;
-import com.pucp.dp1.grupo4d.morapack.model.dto.response.FilterResponse;
-import com.pucp.dp1.grupo4d.morapack.model.entity.AdministradorEntity;
+import com.pucp.dp1.grupo4d.morapack.model.dto.response.ListResponse;
 import com.pucp.dp1.grupo4d.morapack.service.model.AdministradorService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/administradores")
 public class AdministradorController {
     private final AdministradorService administradorService;
+    private final UsuarioMapper usuarioMapper;
 
-    public AdministradorController(AdministradorService administradorService) {
+    public AdministradorController(AdministradorService administradorService, UsuarioMapper usuarioMapper) {
         this.administradorService = administradorService;
+        this.usuarioMapper = usuarioMapper;
     }
 
+    // Listado
     @GetMapping
-    public List<AdministradorEntity> listar() {
-        return administradorService.findAll();
-    }
-
-    // Filtrado
-    @GetMapping("/filtrar")
-    public ResponseEntity<FilterResponse> filtrar(@RequestBody FilterRequest request) {
+    public ResponseEntity<ListResponse> listar() {
         try {
-            FilterResponse response = administradorService.filtrar(request);
-            if (response.isSuccess()) {
+            ListResponse response = administradorService.listar();
+            if (response.getSuccess()) {
                 return ResponseEntity.ok(response);
             } else {
                 return ResponseEntity.badRequest().body(response);
             }
         } catch (Exception e) {
-            return ResponseEntity.internalServerError().body(new FilterResponse(false, "ERROR INTERNO: " + e.getMessage()));
+            return ResponseEntity.internalServerError().body(new ListResponse(false, "ERROR INTERNO: " + e.getMessage()));
+        }
+    }
+
+    // Filtrado
+    @GetMapping("/filtrar")
+    public ResponseEntity<ListResponse> filtrar(@RequestBody FilterRequest request) {
+        try {
+            ListResponse response = administradorService.filtrar(request);
+            if (response.getSuccess()) {
+                return ResponseEntity.ok(response);
+            } else {
+                return ResponseEntity.badRequest().body(response);
+            }
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(new ListResponse(false, "ERROR INTERNO: " + e.getMessage()));
         }
     }
 }

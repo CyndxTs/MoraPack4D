@@ -7,13 +7,10 @@
 package com.pucp.dp1.grupo4d.morapack.controller.model;
 
 import com.pucp.dp1.grupo4d.morapack.model.dto.request.FilterRequest;
-import com.pucp.dp1.grupo4d.morapack.model.dto.response.FilterResponse;
-import com.pucp.dp1.grupo4d.morapack.model.entity.AeropuertoEntity;
+import com.pucp.dp1.grupo4d.morapack.model.dto.response.ListResponse;
 import com.pucp.dp1.grupo4d.morapack.service.model.AeropuertoService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/aeropuertos")
@@ -25,23 +22,33 @@ public class AeropuertoController {
         this.aeropuertoService = aeropuertoService;
     }
 
+    // Listado
     @GetMapping
-    public List<AeropuertoEntity> listar() {
-        return aeropuertoService.findAll();
-    }
-
-    // Filtrado
-    @GetMapping("/filtrar")
-    public ResponseEntity<FilterResponse> filtrar(@RequestBody FilterRequest request) {
+    public ResponseEntity<ListResponse> listar() {
         try {
-            FilterResponse response = aeropuertoService.filtrar(request);
-            if (response.isSuccess()) {
+            ListResponse response = aeropuertoService.listar();
+            if (response.getSuccess()) {
                 return ResponseEntity.ok(response);
             } else {
                 return ResponseEntity.badRequest().body(response);
             }
         } catch (Exception e) {
-            return ResponseEntity.internalServerError().body(new FilterResponse(false, "ERROR INTERNO: " + e.getMessage()));
+            return ResponseEntity.internalServerError().body(new ListResponse(false, "ERROR INTERNO: " + e.getMessage()));
+        }
+    }
+
+    // Filtrado
+    @GetMapping("/filtrar")
+    public ResponseEntity<ListResponse> filtrar(@RequestBody FilterRequest request) {
+        try {
+            ListResponse response = aeropuertoService.filtrar(request);
+            if (response.getSuccess()) {
+                return ResponseEntity.ok(response);
+            } else {
+                return ResponseEntity.badRequest().body(response);
+            }
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(new ListResponse(false, "ERROR INTERNO: " + e.getMessage()));
         }
     }
 }

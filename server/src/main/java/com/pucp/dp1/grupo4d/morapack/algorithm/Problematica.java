@@ -22,7 +22,6 @@ public class Problematica {
     public static Double MAX_HORAS_ESTANCIA;
     public static LocalDateTime FECHA_HORA_INICIO;
     public static LocalDateTime FECHA_HORA_FIN;
-    public static Integer DESFASE_TEMPORAL;
     public List<Aeropuerto> origenes;
     public List<Aeropuerto> destinos;
     public List<Plan> planes;
@@ -91,7 +90,7 @@ public class Problematica {
             }
         });
 
-        List<ClienteEntity> clientesEntity = clienteService.findByDateTimeRange(FECHA_HORA_INICIO, FECHA_HORA_FIN, DESFASE_TEMPORAL);
+        List<ClienteEntity> clientesEntity = clienteService.findByDateTimeRange(FECHA_HORA_INICIO, FECHA_HORA_FIN);
         clientesEntity.forEach(entity -> {
             Cliente cliente = usuarioAdapter.toAlgorithm(entity);
             clientes.add(cliente);
@@ -104,20 +103,20 @@ public class Problematica {
         });
 
         G4D.IntegerWrapper cantAtendidos = new G4D.IntegerWrapper();
-        List<PedidoEntity> pedidosEntity = pedidoService.findByDateTimeRange(FECHA_HORA_INICIO, FECHA_HORA_FIN, DESFASE_TEMPORAL);
+        List<PedidoEntity> pedidosEntity = pedidoService.findByDateTimeRange(FECHA_HORA_INICIO, FECHA_HORA_FIN);
         pedidosEntity.forEach(entity -> {
             if(entity.getFueAtendido()) cantAtendidos.increment();
             Pedido pedido = pedidoAdapter.toAlgorithm(entity);
             pedidos.add(pedido);
         });
 
-        List<VueloEntity> vuelosEntity = vueloService.findByDateTimeRange(FECHA_HORA_INICIO, FECHA_HORA_FIN, DESFASE_TEMPORAL);
+        List<VueloEntity> vuelosEntity = vueloService.findByDateTimeRange(FECHA_HORA_INICIO, FECHA_HORA_FIN);
         vuelosEntity.forEach(entity -> {
             Vuelo vuelo = vueloAdapter.toAlgorithm(entity);
             vuelosEnTransito.add(vuelo);
         });
 
-        List<RutaEntity> rutasEntity = rutaService.findByDateTimeRange(FECHA_HORA_INICIO, FECHA_HORA_FIN, DESFASE_TEMPORAL);
+        List<RutaEntity> rutasEntity = rutaService.findByDateTimeRange(FECHA_HORA_INICIO, FECHA_HORA_FIN);
         rutasEntity.forEach(entity -> {
             Ruta ruta = rutaAdapter.toAlgorithm(entity);
             rutasEnOperacion.add(ruta);

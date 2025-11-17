@@ -30,7 +30,7 @@ public class AuthenticationController {
     public ResponseEntity<AuthenticationResponse> signin(@RequestBody SignInRequest request) {
         try {
             AuthenticationResponse response = authenticactionService.signIn(request);
-            if(response.isSuccess()) {
+            if(response.getSuccess()) {
                 return ResponseEntity.ok(response);
             } else {
                 return ResponseEntity.badRequest().body(response);
@@ -44,7 +44,7 @@ public class AuthenticationController {
     public ResponseEntity<AuthenticationResponse> signup(@RequestBody SignUpRequest request) {
         try {
             AuthenticationResponse response = authenticactionService.signUp(request);
-            if(response.isSuccess()) {
+            if(response.getSuccess()) {
                 return ResponseEntity.ok(response);
             } else {
                 return ResponseEntity.badRequest().body(response);
@@ -58,7 +58,7 @@ public class AuthenticationController {
     public ResponseEntity<AuthenticationResponse> signout(@RequestBody SignOutRequest request) {
         try {
             AuthenticationResponse response = authenticactionService.signOut(request);
-            if(response.isSuccess()) {
+            if(response.getSuccess()) {
                 return ResponseEntity.ok(response);
             } else {
                 return ResponseEntity.badRequest().body(response);

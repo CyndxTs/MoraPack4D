@@ -10,7 +10,7 @@ import com.pucp.dp1.grupo4d.morapack.mapper.UsuarioMapper;
 import com.pucp.dp1.grupo4d.morapack.model.dto.DTO;
 import com.pucp.dp1.grupo4d.morapack.model.dto.UsuarioDTO;
 import com.pucp.dp1.grupo4d.morapack.model.dto.request.FilterRequest;
-import com.pucp.dp1.grupo4d.morapack.model.dto.response.FilterResponse;
+import com.pucp.dp1.grupo4d.morapack.model.dto.response.ListResponse;
 import com.pucp.dp1.grupo4d.morapack.model.entity.ClienteEntity;
 import com.pucp.dp1.grupo4d.morapack.model.enums.EstadoUsuario;
 import com.pucp.dp1.grupo4d.morapack.repository.ClienteRepository;
@@ -69,33 +69,35 @@ public class ClienteService {
         return clienteRepository.findByCorreo(correo).isPresent();
     }
 
-    public List<ClienteEntity> findByDateTimeRange(LocalDateTime fechaHoraInicio, LocalDateTime fechaHoraFin, Integer desfaseDeDias) {
-        return  clienteRepository.findByDateTimeRange(fechaHoraInicio, fechaHoraFin, desfaseDeDias);
+    public List<ClienteEntity> findByDateTimeRange(LocalDateTime fechaHoraInicio, LocalDateTime fechaHoraFin) {
+        return  clienteRepository.findByDateTimeRange(fechaHoraInicio, fechaHoraFin);
     }
 
-    public FilterResponse filtrar(FilterRequest request) {
+    public ListResponse listar() {
         try {
-            UsuarioDTO dto = (UsuarioDTO) request.getDto();
-            String nombre = dto.getNombre();
-            String correo = dto.getCorreo();
-            String estado = dto.getEstado();
-            EstadoUsuario estadoFiltro = null;
-            if (estado != null && !estado.isBlank()) {
-                try {
-                    estadoFiltro = EstadoUsuario.valueOf(estado.toUpperCase());
-                } catch (IllegalArgumentException e) {
-                    estadoFiltro = null;
-                }
-            }
-            String nombreFiltro = (nombre == null || nombre.isBlank()) ? null : nombre;
-            String correoFiltro = (correo == null || correo.isBlank()) ? null : correo;
             List<DTO> clientesDTO = new ArrayList<>();
-            List<ClienteEntity> clientesEntity = clienteRepository.filterBy(nombreFiltro, correoFiltro, estadoFiltro);
+            List<ClienteEntity> clientesEntity = this.findAll();
             clientesEntity.forEach(c -> clientesDTO.add(usuarioMapper.toDTO(c)));
-            return new FilterResponse(true, "Filtro aplicado correctamente!", clientesDTO);
+            return new ListResponse(true, "Clientes listados correctamente!", clientesDTO);
         } catch (Exception e) {
             e.printStackTrace();
-            return new FilterResponse(false, "ERROR - FILTRADO: " + e.getMessage());
+            return new ListResponse(false, "ERROR - LISTADO: " + e.getMessage());
+        }
+    }
+
+    public ListResponse filtrar(FilterRequest request) {
+        try {
+            UsuarioDTO dto = (UsuarioDTO) request.getDto();
+            String nombre = G4D.toAdmissibleValue(dto.getNombre());
+            String correo = G4D.toAdmissibleValue(dto.getCorreo());
+            EstadoUsuario estado = G4D.toAdmissibleValue(dto.getEstado(), EstadoUsuario.class);
+            List<DTO> clientesDTO = new ArrayList<>();
+            List<ClienteEntity> clientesEntity = clienteRepository.filterBy(nombre, correo, estado);
+            clientesEntity.forEach(c -> clientesDTO.add(usuarioMapper.toDTO(c)));
+            return new ListResponse(true, "Clientes filtrados correctamente!", clientesDTO);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new ListResponse(false, "ERROR - FILTRADO: " + e.getMessage());
         }
     }
 

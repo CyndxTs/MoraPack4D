@@ -10,7 +10,7 @@ import com.pucp.dp1.grupo4d.morapack.mapper.AeropuertoMapper;
 import com.pucp.dp1.grupo4d.morapack.model.dto.AeropuertoDTO;
 import com.pucp.dp1.grupo4d.morapack.model.dto.DTO;
 import com.pucp.dp1.grupo4d.morapack.model.dto.request.FilterRequest;
-import com.pucp.dp1.grupo4d.morapack.model.dto.response.FilterResponse;
+import com.pucp.dp1.grupo4d.morapack.model.dto.response.ListResponse;
 import com.pucp.dp1.grupo4d.morapack.model.entity.AeropuertoEntity;
 import com.pucp.dp1.grupo4d.morapack.repository.AeropuertoRepository;
 import com.pucp.dp1.grupo4d.morapack.util.G4D;
@@ -71,27 +71,34 @@ public class AeropuertoService {
         return aeropuertoRepository.findByEsSede(esSede);
     }
 
-    public FilterResponse filtrar(FilterRequest request) {
+    public ListResponse listar() {
         try {
-            AeropuertoDTO dto = (AeropuertoDTO) request.getDto();
-            String codigo = dto.getCodigo();
-            String codigoFiltro = (codigo == null || codigo.isBlank()) ? null : codigo;
-            String alias = dto.getAlias();
-            String aliasFiltro = (alias == null || alias.isBlank()) ? null : alias;
-            String continente = dto.getContinente();
-            String continenteFiltro = (continente == null || continente.isBlank()) ? null : continente;
-            String pais = dto.getPais();
-            String paisFiltro = (pais == null || pais.isBlank()) ? null : pais;
-            String ciudad = dto.getCiudad();
-            String ciudadFiltro = (ciudad == null || ciudad.isBlank()) ? null : ciudad;
-            Boolean esSedeFiltro = dto.getEsSede();
             List<DTO> aeropuertosDTO = new ArrayList<>();
-            List<AeropuertoEntity> aeropuertosEntity = aeropuertoRepository.filterBy(codigoFiltro, aliasFiltro, continenteFiltro, paisFiltro, ciudadFiltro, esSedeFiltro);
+            List<AeropuertoEntity> aeropuertosEntity = this.findAll();
             aeropuertosEntity.forEach(a -> aeropuertosDTO.add(aeropuertoMapper.toDTO(a)));
-            return new FilterResponse(true, "Filtro aplicado correctamente!", aeropuertosDTO);
+            return new ListResponse(true, "Aeropuertos listados correctamente!", aeropuertosDTO);
         } catch (Exception e) {
             e.printStackTrace();
-            return new FilterResponse(false, "ERROR - FILTRADO: " + e.getMessage());
+            return new ListResponse(false, "ERROR - LISTADO: " + e.getMessage());
+        }
+    }
+
+    public ListResponse filtrar(FilterRequest request) {
+        try {
+            AeropuertoDTO dto = (AeropuertoDTO) request.getDto();
+            String codigo = G4D.toAdmissibleValue(dto.getCodigo());
+            String alias = G4D.toAdmissibleValue(dto.getAlias());
+            String continente = G4D.toAdmissibleValue(dto.getContinente());
+            String pais = G4D.toAdmissibleValue(dto.getPais());
+            String ciudad = G4D.toAdmissibleValue(dto.getCiudad());
+            Boolean esSede = dto.getEsSede();
+            List<DTO> aeropuertosDTO = new ArrayList<>();
+            List<AeropuertoEntity> aeropuertosEntity = aeropuertoRepository.filterBy(codigo, alias, continente, pais, ciudad, esSede);
+            aeropuertosEntity.forEach(a -> aeropuertosDTO.add(aeropuertoMapper.toDTO(a)));
+            return new ListResponse(true, "Aeropuertos filtrados correctamente!", aeropuertosDTO);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new ListResponse(false, "ERROR - FILTRADO: " + e.getMessage());
         }
     }
 

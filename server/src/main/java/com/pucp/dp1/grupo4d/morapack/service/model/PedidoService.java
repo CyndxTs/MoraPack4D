@@ -6,9 +6,12 @@
 
 package com.pucp.dp1.grupo4d.morapack.service.model;
 
+import com.pucp.dp1.grupo4d.morapack.mapper.PedidoMapper;
 import com.pucp.dp1.grupo4d.morapack.model.dto.DTO;
 import com.pucp.dp1.grupo4d.morapack.model.dto.PedidoDTO;
+import com.pucp.dp1.grupo4d.morapack.model.dto.response.ListResponse;
 import com.pucp.dp1.grupo4d.morapack.model.entity.AeropuertoEntity;
+import com.pucp.dp1.grupo4d.morapack.model.entity.ParametrosEntity;
 import com.pucp.dp1.grupo4d.morapack.model.entity.PedidoEntity;
 import com.pucp.dp1.grupo4d.morapack.model.entity.ClienteEntity;
 import com.pucp.dp1.grupo4d.morapack.repository.PedidoRepository;
@@ -30,6 +33,8 @@ public class PedidoService {
     private ClienteService clienteService;
 
     private final PedidoRepository pedidoRepository;
+    @Autowired
+    private PedidoMapper pedidoMapper;
 
     public PedidoService(PedidoRepository pedidoRepository) {
         this.pedidoRepository = pedidoRepository;
@@ -63,8 +68,20 @@ public class PedidoService {
         return pedidoRepository.findByCodigo(codigo).isPresent();
     }
 
-    public List<PedidoEntity> findByDateTimeRange(LocalDateTime fechaHoraInicio, LocalDateTime fechaHoraFin, Integer desfaseDeDias) {
-        return  pedidoRepository.findByDateTimeRange(fechaHoraInicio, fechaHoraFin, desfaseDeDias);
+    public List<PedidoEntity> findByDateTimeRange(LocalDateTime fechaHoraInicio, LocalDateTime fechaHoraFin) {
+        return  pedidoRepository.findByDateTimeRange(fechaHoraInicio, fechaHoraFin);
+    }
+
+    public ListResponse listar() {
+        try {
+            List<DTO> pedidosDTO = new ArrayList<>();
+            List<PedidoEntity> pedidosEntity = this.findAll();
+            pedidosEntity.forEach(p -> pedidosDTO.add(pedidoMapper.toDTO(p)));
+            return new ListResponse(true, "Pedidos listados correctamente!", pedidosDTO);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new ListResponse(false, "ERROR - LISTADO: " + e.getMessage());
+        }
     }
 
     public void importar(MultipartFile archivo, LocalDateTime fechaHoraInicio, LocalDateTime fechaHoraFin) {

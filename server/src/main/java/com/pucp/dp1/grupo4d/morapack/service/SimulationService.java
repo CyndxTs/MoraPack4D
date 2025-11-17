@@ -6,11 +6,6 @@
 
 package com.pucp.dp1.grupo4d.morapack.service;
 
-import com.pucp.dp1.grupo4d.morapack.adapter.AeropuertoAdapter;
-import com.pucp.dp1.grupo4d.morapack.adapter.PedidoAdapter;
-import com.pucp.dp1.grupo4d.morapack.adapter.RutaAdapter;
-import com.pucp.dp1.grupo4d.morapack.adapter.VueloAdapter;
-import com.pucp.dp1.grupo4d.morapack.algorithm.Solucion;
 import com.pucp.dp1.grupo4d.morapack.mapper.AeropuertoMapper;
 import com.pucp.dp1.grupo4d.morapack.mapper.PedidoMapper;
 import com.pucp.dp1.grupo4d.morapack.mapper.RutaMapper;
@@ -63,34 +58,33 @@ public class SimulationService {
 
     public SolutionResponse listarParaSimulacion(SimulationRequest request) {
         try {
-            LocalDateTime fechaHoraInicio = G4D.toDateTime(request.getFechaHoraInicio());
-            LocalDateTime fechaHoraFin = G4D.toDateTime(request.getFechaHoraFin());
-            Integer desfaseDeDias = request.getDesfaseDeDias();
+            LocalDateTime fechaHoraInicio = (G4D.isAdmissible(request.getFechaHoraInicio())) ? G4D.toDateTime(request.getFechaHoraInicio()) : G4D.toDateTime("1999-12-31 23:59:59");
+            LocalDateTime fechaHoraFin = (G4D.isAdmissible(request.getFechaHoraFin())) ? G4D.toDateTime(request.getFechaHoraFin()) : LocalDateTime.now();
             if(fechaHoraFin.isBefore(fechaHoraInicio)) {
-                return new SolutionResponse(false, "Mal formato de rango de fechas.");
+                return new SolutionResponse(false, "Rango invalido.");
             }
-            if(desfaseDeDias == null || desfaseDeDias < 0) {
-                return new SolutionResponse(false, "Mal formato de tiempo de desfase.");
-            }
-            return devolverSolucion(fechaHoraInicio, fechaHoraFin, desfaseDeDias);
+            Integer desfaseTemporal = G4D.isAdmissible(request.getDesfaseTemporal()) ? request.getDesfaseTemporal() : Integer.valueOf(0);
+            fechaHoraInicio = fechaHoraInicio.minusDays(desfaseTemporal);
+            fechaHoraFin = fechaHoraFin.plusDays(desfaseTemporal);
+            return devolverSolucion(fechaHoraInicio, fechaHoraFin);
         } catch (Exception e) {
             e.printStackTrace();
             return new SolutionResponse(false, "ERROR - ENVÍO HACIA SIMULACIÓN: " + e.getMessage());
         }
     }
 
-    private SolutionResponse devolverSolucion(LocalDateTime fechaHoraInicio, LocalDateTime fechaHoraFin, Integer desfaseDeDias) {
+    private SolutionResponse devolverSolucion(LocalDateTime fechaHoraInicio, LocalDateTime fechaHoraFin) {
         List<PedidoDTO> pedidosDTO = new ArrayList<>();
-        List<PedidoEntity> pedidosEntity = pedidoService.findByDateTimeRange(fechaHoraInicio, fechaHoraFin, desfaseDeDias);
+        List<PedidoEntity> pedidosEntity = pedidoService.findByDateTimeRange(fechaHoraInicio, fechaHoraFin);
         pedidosEntity.forEach(p -> pedidosDTO.add(pedidoMapper.toDTO(p)));
         List<AeropuertoDTO> aeropuertosDTO = new ArrayList<>();
         List<AeropuertoEntity> aeropuertosEntity = aeropuertoService.findAll();
         aeropuertosEntity.forEach(a ->  aeropuertosDTO.add(aeropuertoMapper.toDTO(a)));
         List<VueloDTO> vuelosDTO = new ArrayList<>();
-        List<VueloEntity> vuelosEntity = vueloService.findByDateTimeRange(fechaHoraInicio, fechaHoraFin, desfaseDeDias);
+        List<VueloEntity> vuelosEntity = vueloService.findByDateTimeRange(fechaHoraInicio, fechaHoraFin);
         vuelosEntity.forEach(v -> vuelosDTO.add(vueloMapper.toDTO(v)));
         List<RutaDTO> rutasDTO = new ArrayList<>();
-        List<RutaEntity> rutasEntity = rutaService.findByDateTimeRange(fechaHoraInicio, fechaHoraFin, desfaseDeDias);
+        List<RutaEntity> rutasEntity = rutaService.findByDateTimeRange(fechaHoraInicio, fechaHoraFin);
         rutasEntity.forEach(r -> rutasDTO.add(rutaMapper.toDTO(r)));
         limpiarPools();
         return new SolutionResponse(true, "Simulación correctamente enviada!", pedidosDTO, aeropuertosDTO, vuelosDTO, rutasDTO);

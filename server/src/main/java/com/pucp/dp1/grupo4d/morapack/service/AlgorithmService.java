@@ -104,22 +104,16 @@ public class AlgorithmService {
         try {
             switch (request.getTipoArchivo()) {
                 case "PEDIDOS":
-                    String fechaHoraInicio = request.getFechaHoraInicio();
-                    LocalDateTime fechaHoraInicioImport = (fechaHoraInicio == null || fechaHoraInicio.isBlank()) ? G4D.toDateTime("1999-12-31 23:59:59") : G4D.toDateTime(fechaHoraInicio);
-                    String fechaHoraFin = request.getFechaHoraFin();
-                    LocalDateTime fechaHoraFinImport = (fechaHoraFin == null || fechaHoraFin.isBlank()) ? LocalDateTime.now() :  G4D.toDateTime(fechaHoraFin);
-                    Integer desfaseTemporal = request.getDesfaseTemporal();
-                    desfaseTemporal = (desfaseTemporal == null || desfaseTemporal < 0) ? 0 : desfaseTemporal;
-                    fechaHoraInicioImport = fechaHoraInicioImport.minusDays(desfaseTemporal);
-                    fechaHoraFinImport = fechaHoraFinImport.plusDays(desfaseTemporal);
-                    pedidoService.importar(file, fechaHoraInicioImport, fechaHoraFinImport);
+                    LocalDateTime fechaHoraInicio = (G4D.isAdmissible(request.getFechaHoraInicio())) ? G4D.toDateTime(request.getFechaHoraInicio()) : G4D.toDateTime("1999-12-31 23:59:59");
+                    LocalDateTime fechaHoraFin = (G4D.isAdmissible(request.getFechaHoraFin())) ? G4D.toDateTime(request.getFechaHoraFin()) : LocalDateTime.now();
+                    pedidoService.importar(file, fechaHoraInicio, fechaHoraFin);
                     return new GenericResponse(true, "Pedidos importados correctamente!");
                 case "CLIENTES":
                     clienteService.importar(file);
                     return new GenericResponse(true, "Clientes importados correctamente!");
                 case "PLANES":
                     planService.importar(file);
-                    return new GenericResponse(true, "Planes de vuelo importados correctamente!");
+                    return new GenericResponse(true, "Planes importados correctamente!");
                 case "AEROPUERTOS":
                     aeropuertoService.importar(file);
                     return new GenericResponse(true, "Aeropuertos importados correctamente!");
@@ -295,7 +289,7 @@ public class AlgorithmService {
         List<PedidoDTO> pedidosDTO = new ArrayList<>();
         solucion.getPedidosAtendidos().forEach(p -> pedidosDTO.add(pedidoMapper.toDTO(p)));
         List<AeropuertoDTO> aeropuertosDTO = new ArrayList<>();
-        aeropuertoService.findAll().forEach(a ->  aeropuertosDTO.add(aeropuertoMapper.toDTO(a)));
+        solucion.getAeropuertosTransitados().forEach(a ->  aeropuertosDTO.add(aeropuertoMapper.toDTO(a)));
         List<VueloDTO> vuelosDTO = new ArrayList<>();
         solucion.getVuelosEnTransito().forEach(v -> vuelosDTO.add(vueloMapper.toDTO(v)));
         List<RutaDTO> rutasDTO = new ArrayList<>();

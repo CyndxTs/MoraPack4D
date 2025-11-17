@@ -25,18 +25,15 @@ public interface ClienteRepository extends JpaRepository<ClienteEntity, Integer>
     Optional<ClienteEntity> findByCorreo(String correo);
 
     // Clientes con pedidos de simulación a partir de rango temporal
-    @Query(value = """
-        SELECT DISTINCT c.*
-        FROM CLIENTE c
-        JOIN PEDIDO p ON p.id_cliente = c.id
-        WHERE p.fecha_hora_generacion_utc 
-              BETWEEN DATE_SUB(:fechaHoraInicio, INTERVAL :desfaseDeDias DAY)
-              AND DATE_ADD(:fechaHoraFin, INTERVAL :desfaseDeDias DAY)
-        """, nativeQuery = true)
+    @Query("""
+        SELECT DISTINCT c
+        FROM ClienteEntity c
+        JOIN c.pedidos p
+        WHERE p.fechaHoraGeneracionUTC BETWEEN :fechaHoraInicio AND :fechaHoraFin
+    """)
     List<ClienteEntity> findByDateTimeRange(
             @Param("fechaHoraInicio") LocalDateTime fechaHoraInicio,
-            @Param("fechaHoraFin") LocalDateTime fechaHoraFin,
-            @Param("desfaseDeDias") Integer desfaseDeDias
+            @Param("fechaHoraFin") LocalDateTime fechaHoraFin
     );
 
     // Filtrado

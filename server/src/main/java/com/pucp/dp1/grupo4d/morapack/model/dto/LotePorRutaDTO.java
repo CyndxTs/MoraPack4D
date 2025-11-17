@@ -6,14 +6,10 @@
 
 package com.pucp.dp1.grupo4d.morapack.model.dto;
 
+import lombok.Data;
+
+@Data
 public class LotePorRutaDTO implements DTO {
     private String codRuta;
     private LoteDTO lote;
-
-    public LotePorRutaDTO() {}
-
-    public String getCodRuta() { return codRuta; }
-    public void setCodRuta(String codRuta) { this.codRuta = codRuta; }
-    public LoteDTO getLote() { return lote; }
-    public void setLote(LoteDTO lote) { this.lote = lote; }
 }

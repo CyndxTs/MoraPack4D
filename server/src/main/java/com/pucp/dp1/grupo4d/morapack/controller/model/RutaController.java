@@ -6,10 +6,10 @@
 
 package com.pucp.dp1.grupo4d.morapack.controller.model;
 
-import com.pucp.dp1.grupo4d.morapack.model.entity.RutaEntity;
+import com.pucp.dp1.grupo4d.morapack.model.dto.response.ListResponse;
 import com.pucp.dp1.grupo4d.morapack.service.model.RutaService;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/rutas")
@@ -20,9 +20,18 @@ public class RutaController {
         this.rutaService = rutaService;
     }
 
+    // Listado
     @GetMapping
-    public List<RutaEntity> listar() {
-        return rutaService.findAll();
+    public ResponseEntity<ListResponse> listar() {
+        try {
+            ListResponse response = rutaService.listar();
+            if (response.getSuccess()) {
+                return ResponseEntity.ok(response);
+            } else {
+                return ResponseEntity.badRequest().body(response);
+            }
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(new ListResponse(false, "ERROR INTERNO: " + e.getMessage()));
+        }
     }
 }
-

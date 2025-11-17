@@ -6,7 +6,11 @@
 
 package com.pucp.dp1.grupo4d.morapack.service.model;
 
+import com.pucp.dp1.grupo4d.morapack.mapper.PlanMapper;
+import com.pucp.dp1.grupo4d.morapack.model.dto.DTO;
+import com.pucp.dp1.grupo4d.morapack.model.dto.response.ListResponse;
 import com.pucp.dp1.grupo4d.morapack.model.entity.AeropuertoEntity;
+import com.pucp.dp1.grupo4d.morapack.model.entity.PedidoEntity;
 import com.pucp.dp1.grupo4d.morapack.model.entity.PlanEntity;
 import com.pucp.dp1.grupo4d.morapack.repository.PlanRepository;
 import com.pucp.dp1.grupo4d.morapack.util.G4D;
@@ -22,6 +26,8 @@ public class PlanService {
     private AeropuertoService aeropuertoService;
 
     private final PlanRepository planRepository;
+    @Autowired
+    private PlanMapper planMapper;
 
     public PlanService(PlanRepository planRepository) {
         this.planRepository = planRepository;
@@ -53,6 +59,18 @@ public class PlanService {
 
     public boolean existsByCodigo(String codigo) {
         return planRepository.findByCodigo(codigo).isPresent();
+    }
+
+    public ListResponse listar() {
+        try {
+            List<DTO> planesDTO = new ArrayList<>();
+            List<PlanEntity> planesEntity = this.findAll();
+            planesEntity.forEach(p -> planesDTO.add(planMapper.toDTO(p)));
+            return new ListResponse(true, "Planes listados correctamente!", planesDTO);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new ListResponse(false, "ERROR - LISTADO: " + e.getMessage());
+        }
     }
 
     public void importar(MultipartFile archivo) {

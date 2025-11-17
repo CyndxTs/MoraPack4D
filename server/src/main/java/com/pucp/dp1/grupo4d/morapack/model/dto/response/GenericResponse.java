@@ -7,7 +7,11 @@
 package com.pucp.dp1.grupo4d.morapack.model.dto.response;
 
 import com.pucp.dp1.grupo4d.morapack.util.G4D;
+import lombok.Getter;
+import lombok.Setter;
 
+@Getter
+@Setter
 public class GenericResponse {
     private String token;
     private Boolean success;
@@ -18,11 +22,4 @@ public class GenericResponse {
         this.success = success;
         this.message = message;
     }
-
-    public String getToken() { return token; }
-    public void setToken(String token) { this.token = token; }
-    public Boolean isSuccess() { return success; }
-    public void setSuccess(Boolean success) { this.success = success; }
-    public String getMessage() { return message; }
-    public void setMessage(String message) { this.message = message; }
 }

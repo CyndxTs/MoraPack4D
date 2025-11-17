@@ -13,10 +13,8 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
-import java.util.UUID;
+import java.util.*;
+import java.util.function.Supplier;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
@@ -95,13 +93,21 @@ public class G4D {
     }
     // Obtener 'DisplayString' a partir de 'TimeDEC'
     public static String toDisplayString(double tDEC) {
-        int total = (int) (tDEC * 60);
-        int dias = total / 1440, horas = (total % 1440) / 60, minutos = total % 60;
-        return dias > 0 ? String.format("%dd %2dh %2dm", dias, horas, minutos) : String.format("%2dh %2dm", horas, minutos);
+        try {
+            int total = (int) (tDEC * 60);
+            int dias = total / 1440, horas = (total % 1440) / 60, minutos = total % 60;
+            return dias > 0 ? String.format("%dd %2dh %2dm", dias, horas, minutos) : String.format("%2dh %2dm", horas, minutos);
+        } catch (Exception e) {
+            return null;
+        }
     }
     // Obtener 'DisplayString' a partir de 'DateTime'
     public static String toDisplayString(LocalDateTime dt) {
-        return dt.format(dtf_ui);
+        try {
+            return dt.format(dtf_ui);
+        } catch (Exception e) {
+            return null;
+        }
     }
     // Obtener 'DateTime' a partir de 'DateTimeString'
     public static LocalDateTime toDateTime(String dts) {
@@ -145,7 +151,11 @@ public class G4D {
     }
     // Obtener 'DisplayString' a partir de 'Time'
     public static String toDisplayString(LocalTime t) {
-        return t.format(tf_ui);
+        try {
+            return t.format(tf_ui);
+        } catch (Exception e) {
+            return null;
+        }
     }
     // Obtener 'Time' a partir de 'TimeString'
     public static LocalTime toTime(String ts) {
@@ -266,6 +276,34 @@ public class G4D {
             generateCombinations(elements, groupSize, i + 1, actual, result);
             actual.remove(actual.size() - 1);
         }
+    }
+    // Validar admisibilidad de formato de 'String'
+    public static Boolean isAdmissible(String str) {
+        return str != null && !str.isBlank();
+    }
+    // Convertir 'String' a valor admisible
+    public static String toAdmissibleValue(String str) {
+        return (isAdmissible(str)) ? str : null;
+    }
+    // Validar admisibilidad de formato de 'Number'
+    public static Boolean isAdmissible(Number num) {
+        return num != null && num.doubleValue() >= 0;
+    }
+    // Convertir 'Number' a valor admisible
+    public static <N extends Number> N toAdmissibleValue(N num) {
+        return (isAdmissible(num)) ? num : null;
+    }
+    // Convertir 'EnumString' a valor admisible
+    public static <E extends Enum<E>> E toAdmissibleValue(String str, Class<E> enumType) {
+        try {
+            return Enum.valueOf(enumType, toAdmissibleValue(str.toUpperCase()));
+        } catch (Exception e) {
+            return null;
+        }
+    }
+    // Convertir 'Collection' a valor admisible
+    public static <T, C extends Collection<T>> C toAdmissibleValue(C collection, Supplier<C> supplier) {
+        return (collection != null) ? collection : supplier.get();
     }
     // Clase 'Wrapper' para enteros
     public static class IntegerWrapper {

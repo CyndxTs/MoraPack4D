@@ -10,7 +10,7 @@ import com.pucp.dp1.grupo4d.morapack.mapper.UsuarioMapper;
 import com.pucp.dp1.grupo4d.morapack.model.dto.DTO;
 import com.pucp.dp1.grupo4d.morapack.model.dto.UsuarioDTO;
 import com.pucp.dp1.grupo4d.morapack.model.dto.request.FilterRequest;
-import com.pucp.dp1.grupo4d.morapack.model.dto.response.FilterResponse;
+import com.pucp.dp1.grupo4d.morapack.model.dto.response.ListResponse;
 import com.pucp.dp1.grupo4d.morapack.model.entity.AdministradorEntity;
 import com.pucp.dp1.grupo4d.morapack.model.enums.EstadoUsuario;
 import com.pucp.dp1.grupo4d.morapack.repository.AdministradorRepository;
@@ -68,29 +68,31 @@ public class AdministradorService {
         return administradorRepository.findByCorreo(correo).isPresent();
     }
 
-    public FilterResponse filtrar(FilterRequest request) {
+    public ListResponse listar() {
         try {
-            UsuarioDTO dto = (UsuarioDTO) request.getDto();
-            String nombre = dto.getNombre();
-            String correo = dto.getCorreo();
-            String estado = dto.getEstado();
-            EstadoUsuario estadoFiltro = null;
-            if (estado != null && !estado.isBlank()) {
-                try {
-                    estadoFiltro = EstadoUsuario.valueOf(estado.toUpperCase());
-                } catch (IllegalArgumentException e) {
-                    estadoFiltro = null;
-                }
-            }
-            String nombreFiltro = (nombre == null || nombre.isBlank()) ? null : nombre;
-            String correoFiltro = (correo == null || correo.isBlank()) ? null : correo;
             List<DTO> administradoresDTO = new ArrayList<>();
-            List<AdministradorEntity> administradoresEntity = administradorRepository.filterBy(nombreFiltro, correoFiltro, estadoFiltro);
+            List<AdministradorEntity> administradoresEntity = this.findAll();
             administradoresEntity.forEach(a -> administradoresDTO.add(usuarioMapper.toDTO(a)));
-            return new FilterResponse(true, "Filtro aplicado correctamente!", administradoresDTO);
+            return new ListResponse(true, "Administradores listados correctamente!", administradoresDTO);
         } catch (Exception e) {
             e.printStackTrace();
-            return new FilterResponse(false, "ERROR - FILTRADO: " + e.getMessage());
+            return new ListResponse(false, "ERROR - LISTADO: " + e.getMessage());
+        }
+    }
+
+    public ListResponse filtrar(FilterRequest request) {
+        try {
+            UsuarioDTO dto = (UsuarioDTO) request.getDto();
+            String nombre = G4D.toAdmissibleValue(dto.getNombre());
+            String correo = G4D.toAdmissibleValue(dto.getCorreo());
+            EstadoUsuario estado = G4D.toAdmissibleValue(dto.getEstado(), EstadoUsuario.class);
+            List<DTO> administradoresDTO = new ArrayList<>();
+            List<AdministradorEntity> administradoresEntity = administradorRepository.filterBy(nombre, correo, estado);
+            administradoresEntity.forEach(a -> administradoresDTO.add(usuarioMapper.toDTO(a)));
+            return new ListResponse(true, "Administradores filtrados correctamente!", administradoresDTO);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new ListResponse(false, "ERROR - FILTRADO: " + e.getMessage());
         }
     }
 

@@ -6,13 +6,10 @@
 
 package com.pucp.dp1.grupo4d.morapack.controller.model;
 
-import com.pucp.dp1.grupo4d.morapack.model.dto.request.FilterRequest;
-import com.pucp.dp1.grupo4d.morapack.model.dto.response.FilterResponse;
-import com.pucp.dp1.grupo4d.morapack.model.entity.PedidoEntity;
+import com.pucp.dp1.grupo4d.morapack.model.dto.response.ListResponse;
 import com.pucp.dp1.grupo4d.morapack.service.model.PedidoService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/pedidos")
@@ -24,8 +21,18 @@ public class PedidoController {
         this.pedidoService = pedidoService;
     }
 
+    // Listado
     @GetMapping
-    public List<PedidoEntity> listar() {
-        return pedidoService.findAll();
+    public ResponseEntity<ListResponse> listar() {
+        try {
+            ListResponse response = pedidoService.listar();
+            if (response.getSuccess()) {
+                return ResponseEntity.ok(response);
+            } else {
+                return ResponseEntity.badRequest().body(response);
+            }
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(new ListResponse(false, "ERROR INTERNO: " + e.getMessage()));
+        }
     }
 }

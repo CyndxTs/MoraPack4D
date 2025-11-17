@@ -89,7 +89,7 @@ public class GVNS {
     private void solucionInicial(Problematica problematica, Solucion solucion) {
         G4D.Logger.logln("[NN]");
         // Declaración & inicialización de variables
-        Boolean errorDeEnrutamiento = false, haySolucion = false;
+        Boolean errorDeEnrutamiento, haySolucion = false;
         Problematica pIni = new Problematica(problematica);
         Solucion sAux = new Solucion();
         solucion.reasignar(sAux);
@@ -131,6 +131,9 @@ public class GVNS {
             }
             // Actualización de solución
             sAux.setPedidosAtendidos(pedidos);
+            sAux.setAeropuertosTransitados(new ArrayList<>());
+            sAux.getAeropuertosTransitados().addAll(new ArrayList<>(pAux.origenes));
+            sAux.getAeropuertosTransitados().addAll(new ArrayList<>(pAux.destinos));
             sAux.setVuelosEnTransito(vuelosEnTransito);
             sAux.setRutasEnOperacion(rutasEnOperacion);
             sAux.setFitness();
@@ -366,7 +369,7 @@ public class GVNS {
         for (int posPedido = 0; posPedido < pedidos.size(); posPedido++) {
             Pedido pedido = pedidos.get(posPedido);
             // Validación de aptitud de pedido para compactación
-            G4D.Logger.logf("- Validando aptitud del pedido #%d de '%d'..", posPedido+1, G4D.Logger.Stats.totalPed);
+            G4D.Logger.logf("- Validando aptitud del pedido #%d de '%d'..", posPedido+1, pedidos.size());
             Map<Ruta, Lote> lotesPorRuta = pedido.getLotesPorRuta();
             if (lotesPorRuta.size() < ele + 1) {
                 G4D.Logger.logln(" [NO APTO]");
@@ -479,7 +482,7 @@ public class GVNS {
         // Fusión de rutas de pedidos
         for (int posPedido = 0; posPedido < pedidos.size(); posPedido++) {
             Pedido pedido = pedidos.get(posPedido);
-            G4D.Logger.logf("- Evaluando rutas del pedido #%d de '%d'..%n", posPedido+1, G4D.Logger.Stats.totalPed);
+            G4D.Logger.logf("- Evaluando rutas del pedido #%d de '%d'..%n", posPedido+1, pedidos.size());
             Map<Ruta, Lote> lotesPorRuta = pedido.getLotesPorRuta();
             List<Ruta> rutasIni = new ArrayList<>(lotesPorRuta.keySet());
             Ruta rMejorIni = null;
@@ -587,7 +590,7 @@ public class GVNS {
         for (int posPedido = 0; posPedido < pedidos.size(); posPedido++) {
             Pedido pedido = pedidos.get(posPedido);
             // Validación de aptitud de pedido para realocación
-            G4D.Logger.logf("- Validando aptitud del pedido #%d de '%d'..", posPedido+1, G4D.Logger.Stats.totalPed);
+            G4D.Logger.logf("- Validando aptitud del pedido #%d de '%d'..", posPedido+1, pedidos.size());
             Map<Ruta, Lote> lotesPorRuta = pedido.getLotesPorRuta();
             if (lotesPorRuta.size() < ele) {
                 G4D.Logger.logln(" [NO APTO]");

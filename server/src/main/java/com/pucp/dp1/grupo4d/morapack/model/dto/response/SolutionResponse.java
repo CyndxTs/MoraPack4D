@@ -10,10 +10,13 @@ import com.pucp.dp1.grupo4d.morapack.model.dto.AeropuertoDTO;
 import com.pucp.dp1.grupo4d.morapack.model.dto.PedidoDTO;
 import com.pucp.dp1.grupo4d.morapack.model.dto.RutaDTO;
 import com.pucp.dp1.grupo4d.morapack.model.dto.VueloDTO;
-
+import lombok.Getter;
+import lombok.Setter;
 import java.util.ArrayList;
 import java.util.List;
 
+@Getter
+@Setter
 public class SolutionResponse extends GenericResponse {
     private List<PedidoDTO> pedidosAtendidos;
     private List<AeropuertoDTO> aeropuertosTransitados;
@@ -35,13 +38,4 @@ public class SolutionResponse extends GenericResponse {
         this.vuelosEnTransito = vuelosDTO;
         this.rutasEnOperacion = rutasDTO;
     }
-
-    public List<PedidoDTO> getPedidosAtendidos() { return pedidosAtendidos; }
-    public void setPedidosAtendidos(List<PedidoDTO> pedidosAtendidos) { this.pedidosAtendidos = pedidosAtendidos; }
-    public List<AeropuertoDTO> getAeropuertosTransitados() { return aeropuertosTransitados; }
-    public void setAeropuertosTransitados(List<AeropuertoDTO> aeropuertosTransitados) { this.aeropuertosTransitados = aeropuertosTransitados; }
-    public List<VueloDTO> getVuelosEnTransito() { return vuelosEnTransito; }
-    public void setVuelosEnTransito(List<VueloDTO> vuelosEnTransito) { this.vuelosEnTransito = vuelosEnTransito; }
-    public List<RutaDTO> getRutasEnOperacion() { return rutasEnOperacion; }
-    public void setRutasEnOperacion(List<RutaDTO> rutasEnOperacion) { this.rutasEnOperacion = rutasEnOperacion; }
 }

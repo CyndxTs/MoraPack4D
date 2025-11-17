@@ -6,7 +6,11 @@
 
 package com.pucp.dp1.grupo4d.morapack.service.model;
 
+import com.pucp.dp1.grupo4d.morapack.mapper.ParametrosMapper;
+import com.pucp.dp1.grupo4d.morapack.model.dto.DTO;
+import com.pucp.dp1.grupo4d.morapack.model.dto.response.ListResponse;
 import com.pucp.dp1.grupo4d.morapack.model.entity.AeropuertoEntity;
+import com.pucp.dp1.grupo4d.morapack.model.entity.LoteEntity;
 import com.pucp.dp1.grupo4d.morapack.model.entity.ParametrosEntity;
 import com.pucp.dp1.grupo4d.morapack.repository.ParametrosRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,6 +24,8 @@ public class ParametrosService {
     private AeropuertoService aeropuertoService;
 
     private final ParametrosRepository parametrosRepository;
+    @Autowired
+    private ParametrosMapper parametrosMapper;
 
     public ParametrosService(ParametrosRepository parametrosRepository) {
         this.parametrosRepository = parametrosRepository;
@@ -71,5 +77,17 @@ public class ParametrosService {
 
     public boolean existsById(Integer id) {
         return parametrosRepository.existsById(id);
+    }
+
+    public ListResponse listar() {
+        try {
+            List<DTO> parametrosDTO = new ArrayList<>();
+            List<ParametrosEntity> parametrosEntity = this.findAll();
+            parametrosEntity.forEach(p -> parametrosDTO.add(parametrosMapper.toDTO(p)));
+            return new ListResponse(true, "Parametros listados correctamente!", parametrosDTO);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new ListResponse(false, "ERROR - LISTADO: " + e.getMessage());
+        }
     }
 }

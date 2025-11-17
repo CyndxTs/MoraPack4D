@@ -30,7 +30,7 @@ public class AlgorithmController {
     public ResponseEntity<GenericResponse> importarDesdeArchivo(@RequestPart("file") MultipartFile file, @RequestPart("request") FileImportRequest request) {
         try {
             GenericResponse response = algorithmService.importarDesdeArchivo(file, request);
-            if (response.isSuccess()) {
+            if (response.getSuccess()) {
                 return ResponseEntity.ok(response);
             } else {
                 return ResponseEntity.badRequest().body(response);
@@ -44,7 +44,7 @@ public class AlgorithmController {
     public ResponseEntity<GenericResponse> importarDesdeArchivo(@RequestBody ListImportRequest request) {
         try {
             GenericResponse response = algorithmService.importarDesdeLista(request);
-            if (response.isSuccess()) {
+            if (response.getSuccess()) {
                 return ResponseEntity.ok(response);
             } else {
                 return ResponseEntity.badRequest().body(response);
@@ -58,7 +58,7 @@ public class AlgorithmController {
     public ResponseEntity<SolutionResponse> planificar(@RequestBody PlanificationRequest request) {
         try {
             SolutionResponse response = algorithmService.planificar(request);
-            if (response.isSuccess()) {
+            if (response.getSuccess()) {
                 return ResponseEntity.ok(response);
             } else {
                 return ResponseEntity.badRequest().body(response);

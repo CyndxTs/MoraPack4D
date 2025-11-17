@@ -26,7 +26,7 @@ public class SimulationController {
     public ResponseEntity<SolutionResponse> listarParaSimulacion(SimulationRequest request) {
         try {
             SolutionResponse response = simulationService.listarParaSimulacion(request);
-            if (response.isSuccess()) {
+            if (response.getSuccess()) {
                 return ResponseEntity.ok(response);
             } else {
                 return ResponseEntity.badRequest().body(response);

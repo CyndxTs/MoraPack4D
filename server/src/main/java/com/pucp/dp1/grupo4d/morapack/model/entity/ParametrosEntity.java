@@ -43,8 +43,8 @@ public class ParametrosEntity {
     @Column(name = "fecha_hora_fin", nullable = false)
     private LocalDateTime fechaHoraFin = LocalDateTime.now();
 
-    @Column(name = "desfase_temporal", nullable = false)
-    private Integer desfaseTemporal = 3;
+    @Column(name = "considerar_desfase_temporal", nullable = false)
+    private Boolean considerarDesfaseTemporal = true;
 
     @Column(name = "d_min", nullable = false)
     private Double dMin = 0.001;
@@ -93,7 +93,7 @@ public class ParametrosEntity {
     public Double getMaxHorasEstancia() { return maxHorasEstancia; } public void setMaxHorasEstancia(Double maxHorasEstancia) { this.maxHorasEstancia = maxHorasEstancia; }
     public LocalDateTime getFechaHoraInicio() { return fechaHoraInicio; } public void setFechaHoraInicio(LocalDateTime fechaHoraInicio) { this.fechaHoraInicio = fechaHoraInicio; }
     public LocalDateTime getFechaHoraFin() { return fechaHoraFin; } public void setFechaHoraFin(LocalDateTime fechaHoraFin) { this.fechaHoraFin = fechaHoraFin; }
-    public Integer getDesfaseTemporal() { return desfaseTemporal; } public void setDesfaseTemporal(Integer desfaseTemporal) { this.desfaseTemporal = desfaseTemporal; }
+    public Boolean getConsiderarDesfaseTemporal() { return considerarDesfaseTemporal; } public void setConsiderarDesfaseTemporal(Boolean considerarDesfaseTemporal) { this.considerarDesfaseTemporal = considerarDesfaseTemporal; }
     public Double getDMin() { return dMin; } public void setDMin(Double dMin) { this.dMin = dMin; }
     public Integer getIMax() { return iMax; } public void setIMax(Integer iMax) { this.iMax = iMax; }
     public Integer getEleMin() { return eleMin; } public void setEleMin(Integer eleMin) { this.eleMin = eleMin; }

@@ -6,10 +6,10 @@
 
 package com.pucp.dp1.grupo4d.morapack.controller.model;
 
-import com.pucp.dp1.grupo4d.morapack.model.entity.ParametrosEntity;
+import com.pucp.dp1.grupo4d.morapack.model.dto.response.ListResponse;
 import com.pucp.dp1.grupo4d.morapack.service.model.ParametrosService;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/parametros")
@@ -20,8 +20,18 @@ public class ParametrosController {
         this.parametrosService = parametrosService;
     }
 
+    // Listado
     @GetMapping
-    public List<ParametrosEntity> listar() {
-        return parametrosService.findAll();
+    public ResponseEntity<ListResponse> listar() {
+        try {
+            ListResponse response = parametrosService.listar();
+            if (response.getSuccess()) {
+                return ResponseEntity.ok(response);
+            } else {
+                return ResponseEntity.badRequest().body(response);
+            }
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(new ListResponse(false, "ERROR INTERNO: " + e.getMessage()));
+        }
     }
 }
