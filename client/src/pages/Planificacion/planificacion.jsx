@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from "react";
 import "./planificacion.scss";
-import { ButtonAdd, Input, Table, SidebarActions, LoadingOverlay, Notification, Radio, DateTimeInline} from "../../components/UI/ui";
+import { ButtonAdd, Input, Table, SidebarActions, LoadingOverlay, Notification, Radio, DateTimeInline, Dropdown, Dropdown2} from "../../components/UI/ui";
 import plus from "../../assets/icons/plus.svg";
 import hideIcon from "../../assets/icons/hide-sidebar.png";
 import { listarRutas } from "../../services/rutaService";
+import { listarParametros } from "../../services/parametrosService";
+import { listarAeropuertos } from "../../services/aeropuertoService";
 import { planificar } from "../../services/planificarService";
 
 export default function Planificacion() {
@@ -27,6 +29,44 @@ export default function Planificacion() {
   const [horaI, setHoraI] = useState("");
   const [fechaF, setFechaF] = useState("");
   const [horaF, setHoraF] = useState("");
+
+  const [loadedOnOpen, setLoadedOnOpen] = useState(false);
+  const [parametros, setParametros] = useState(null);
+  const [aeropuertos, setAeropuertos] = useState([]);
+  const [codOrigenes, setCodOrigenes] = useState([]);
+
+  // estados de todos los parámetros
+  const toBoolean = (v) => v === "true";
+  const parseNumber = (v) => {
+    if (v === "" || v === null || v === undefined) return null;
+    return Number(v);
+  };
+  const [replanificar, setReplanificar] = useState(false);
+  const [guardarPlanificacion, setGuardarPlanificacion] = useState(false);
+  const [reparametrizar, setReparametrizar] = useState(false);   
+  const [guardarParametrizacion, setGuardarParametrizacion] = useState(true);
+
+
+  const [maxDiasEntregaIntercontinental, setMaxDiasEntregaIntercontinental] = useState();
+  const [maxDiasEntregaIntracontinental, setMaxDiasEntregaIntracontinental] = useState();
+  const [maxHorasRecojo, setMaxHorasRecojo] = useState();
+  const [minHorasEstancia, setMinHorasEstancia] = useState();
+  const [maxHorasEstancia, setMaxHorasEstancia] = useState();
+  const [considerarDesfaseTemporal, setConsiderarDesfaseTemporal] = useState();
+
+  const [dMin, setDMin] = useState();
+  const [iMax, setIMax] = useState();
+  const [eleMin, setEleMin] = useState();
+  const [eleMax, setEleMax] = useState();
+  const [kMin, setKMin] = useState();
+  const [kMax, setKMax] = useState();
+  const [tMax, setTMax] = useState();
+  const [maxIntentos, setMaxIntentos] = useState();
+
+  const [factorDeUmbralDeAberracion, setFactorDeUmbralDeAberracion] = useState();
+  const [factorDeUtilizacionTemporal, setFactorDeUtilizacionTemporal] = useState();
+  const [factorDeDesviacionEspacial, setFactorDeDesviacionEspacial] = useState();
+  const [factorDeDisposicionOperacional, setFactorDeDisposicionOperacional] = useState();
 
   const headers = [
     { label: "Código", key: "codigo" },
@@ -54,6 +94,54 @@ export default function Planificacion() {
     };
     fetchRutas();
   }, []);
+
+  useEffect(() => {
+    const fetchParametrosYAeropuertos = async () => {
+      try {
+        const p = (await listarParametros()).dtos[0];
+        const a = await listarAeropuertos();
+
+        setParametros(p);
+        setAeropuertos(a.dtos ?? []);
+
+        // setear parámetros desde BD
+        setMaxDiasEntregaIntercontinental(p.maxDiasEntregaIntercontinental);
+        setMaxDiasEntregaIntracontinental(p.maxDiasEntregaIntracontinental);
+        setMaxHorasRecojo(p.maxHorasRecojo);
+        setMinHorasEstancia(p.minHorasEstancia);
+        setMaxHorasEstancia(p.maxHorasEstancia);
+        setConsiderarDesfaseTemporal(p.considerarDesfaseTemporal);
+
+        setDMin(p.dMin);
+        setIMax(p.iMax);
+        setEleMin(p.eleMin);
+        setEleMax(p.eleMax);
+        setKMin(p.kMin);
+        setKMax(p.kMax);
+        setTMax(p.tMax);
+        setMaxIntentos(p.maxIntentos);
+
+        setFactorDeUmbralDeAberracion(p.factorDeUmbralDeAberracion);
+        setFactorDeUtilizacionTemporal(p.factorDeUtilizacionTemporal);
+        setFactorDeDesviacionEspacial(p.factorDeDesviacionEspacial);
+        setFactorDeDisposicionOperacional(p.factorDeDisposicionOperacional);
+
+        setCodOrigenes(prev =>
+          prev.length === 0 ? (p.codOrigenes || []) : prev
+        );
+
+
+      } catch (err) {
+        showNotification("danger", "Error cargando parámetros");
+      }
+    };
+
+    if (isModalOpen && !loadedOnOpen) {
+      fetchParametrosYAeropuertos();
+      setLoadedOnOpen(true);
+    }
+  }, [isModalOpen, loadedOnOpen]);
+
 
   // Filtros
   const handleFilter = () => {
@@ -97,6 +185,7 @@ export default function Planificacion() {
   const closeModal = () => {
     resetModal();
     setIsModalOpen(false);
+    setLoadedOnOpen(false);  
   };
 
   // Manejo de fechas según tipo de simulación
@@ -112,10 +201,7 @@ export default function Planificacion() {
     }
 
     if (tipoSimulacion === "colapso") {
-      setFechaF("");
-      setHoraF("");
-      setFechaI("");
-      setHoraI("");
+      return;
     }
   }, [tipoSimulacion, fechaI, horaI]);
 
@@ -123,42 +209,46 @@ export default function Planificacion() {
     try {
       setLoading(true);
 
-      const fechaHoraInicio = `${fechaI}T${horaI}:00`;
-      const fechaHoraFin = `${fechaF}T${horaF}:00`;
+      if (!fechaI || !horaI || !fechaF || !horaF) {
+        showNotification("danger", "Completa las fechas antes de continuar");
+        return;
+      }
 
       const body = {
-        replanificar: false,
-        guardarPlanificacion: true,
-        reparametrizar: false,
+        replanificar,
+        guardarPlanificacion,
+        reparametrizar,
+        guardarParametrizacion,
+
         parameters: {
-          maxDiasEntregaIntercontinental: 3,
-          maxDiasEntregaIntracontinental: 2,
-          maxHorasRecojo: 2.0,
-          minHorasEstancia: 1.0,
-          maxHorasEstancia: 12.0,
+          fechaHoraInicio: `${fechaI}T${horaI}:00`,
+          fechaHoraFin: `${fechaF}T${horaF}:00`,
 
-          fechaHoraInicio,
-          fechaHoraFin,
+          maxDiasEntregaIntercontinental: (maxDiasEntregaIntercontinental),
+          maxDiasEntregaIntracontinental: (maxDiasEntregaIntracontinental),
+          maxHorasRecojo: (maxHorasRecojo),
+          minHorasEstancia: (minHorasEstancia),
+          maxHorasEstancia: (maxHorasEstancia),
+          considerarDesfaseTemporal,
+          codOrigenes,
 
-          desfaseTemporal: 3,
-          dMin: 0.001,
-          iMax: 3,
-          eleMin: 1,
-          eleMax: 2,
-          kMin: 3,
-          kMax: 4,
-          tMax: 60,
-          maxIntentos: 5,
-          factorDeUmbralDeAberracion: 1.015,
-          factorDeUtilizacionTemporal: 5000.0,
-          factorDeDesviacionEspacial: 2000.0,
-          factorDeDisposicionOperacional: 3000.0,
-          codOrigenes: []
-        },
+          dMin: (dMin),
+          iMax: (iMax),
+          eleMin: (eleMin),
+          eleMax: (eleMax),
+          kMin: (kMin),
+          kMax: (kMax),
+          tMax: (tMax),
+          maxIntentos: (maxIntentos),
 
-        guardarParametrizacion: false
+          factorDeUmbralDeAberracion: (factorDeUmbralDeAberracion),
+          factorDeUtilizacionTemporal: (factorDeUtilizacionTemporal),
+          factorDeDesviacionEspacial: (factorDeDesviacionEspacial),
+          factorDeDisposicionOperacional: (factorDeDisposicionOperacional)
+        }
       };
 
+      console.log(body)
       const result = await planificar(body);
 
       if (result.success) {
@@ -175,6 +265,7 @@ export default function Planificacion() {
       setLoading(false);
     }
   };
+
 
   return (
     <div className="page">
@@ -249,57 +340,227 @@ export default function Planificacion() {
               <h3 className="modal-title">Planificar</h3>
             </div>
 
-            {/* RADIO BUTTONS */}
             <div className="modal-body">
+
+              {/* TIPO DE SIMULACIÓN */}
               <span className="sidebar-subtitle">Tipo de simulación</span>
 
-              <Radio
-                name="tipoSim"
-                label="Seleccionar fechas"
-                value="seleccionar"
-                checked={tipoSimulacion === "seleccionar"}
-                onChange={(e) => setTipoSimulacion(e.target.value)}
-              />
+              <Radio name="tipoSim" label="Seleccionar fechas" value="seleccionar"
+                checked={tipoSimulacion === "seleccionar"} onChange={(e) => setTipoSimulacion(e.target.value)} />
 
-              <Radio
-                name="tipoSim"
-                label="Semanal"
+              <Radio name="tipoSim" label="Semanal"
                 value="semanal"
                 checked={tipoSimulacion === "semanal"}
-                onChange={(e) => setTipoSimulacion(e.target.value)}
-              />
+                onChange={(e) => setTipoSimulacion(e.target.value)} />
 
-              <Radio
-                name="tipoSim"
-                label="Colapso logístico"
+              <Radio name="tipoSim" label="Colapso logístico"
                 value="colapso"
                 checked={tipoSimulacion === "colapso"}
-                onChange={(e) => setTipoSimulacion(e.target.value)}
+                onChange={(e) => setTipoSimulacion(e.target.value)} />
+
+              <hr />
+
+              <span className="sidebar-subtitle">Planificación</span>
+              {/* === PLANIFICACIÓN === */}
+
+              <label>¿Replanificar?</label>
+              <Radio
+                name="replanificar"
+                label="Sí"
+                value="true"
+                checked={replanificar === true}
+                onChange={(e) => setReplanificar(toBoolean(e.target.value))}
+              />
+              <Radio
+                name="replanificar"
+                label="No"
+                value="false"
+                checked={replanificar === false}
+                onChange={(e) => setReplanificar(toBoolean(e.target.value))}
               />
 
-              {/* FECHAS */}
-              {(tipoSimulacion === "seleccionar" || tipoSimulacion === "semanal") && (
-                <>
-                  <label>Fecha y hora de inicio (UTC)</label>
-                  <DateTimeInline
-                    dateValue={fechaI}
-                    timeValue={horaI}
-                    disabled={tipoSimulacion === "colapso"}
-                    onDateChange={(e) => setFechaI(e.target.value)}
-                    onTimeChange={(e) => setHoraI(e.target.value)}
-                  />
+              <label>¿Guardar planificación?</label>
+              <Radio
+                name="guardarPlanificacion"
+                label="Sí"
+                value="true"
+                checked={guardarPlanificacion === true}
+                onChange={(e) => setGuardarPlanificacion(toBoolean(e.target.value))}
+              />
+              <Radio
+                name="guardarPlanificacion"
+                label="No"
+                value="false"
+                checked={guardarPlanificacion === false}
+                onChange={(e) => setGuardarPlanificacion(toBoolean(e.target.value))}
+              />
 
-                  <label>Fecha y hora de fin (UTC)</label>
-                  <DateTimeInline
-                    dateValue={fechaF}
-                    timeValue={horaF}
-                    disabled={tipoSimulacion !== "seleccionar"}
-                    onDateChange={(e) => setFechaF(e.target.value)}
-                    onTimeChange={(e) => setHoraF(e.target.value)}
-                  />
-                </>
-              )}
+              <label>¿Reparametrizar?</label>
+              <Radio
+                name="reparametrizar"
+                label="Sí"
+                value="true"
+                checked={reparametrizar === true}
+                onChange={(e) => setReparametrizar(toBoolean(e.target.value))}
+              />
+              <Radio
+                name="reparametrizar"
+                label="No"
+                value="false"
+                checked={reparametrizar === false}
+                onChange={(e) => setReparametrizar(toBoolean(e.target.value))}
+              />
+
+              <label>¿Guardar parametrización?</label>
+              <Radio
+                name="guardarParametrizacion"
+                label="Sí"
+                value="true"
+                checked={guardarParametrizacion === true}
+                onChange={(e) => setGuardarParametrizacion(toBoolean(e.target.value))}
+              />
+              <Radio
+                name="guardarParametrizacion"
+                label="No"
+                value="false"
+                checked={guardarParametrizacion === false}
+                onChange={(e) => setGuardarParametrizacion(toBoolean(e.target.value))}
+              />
+
+              <hr />
+
+              <span className="sidebar-subtitle">Parámetros</span>
+
+              {/* FECHAS SIEMPRE VISIBLES, SOLO SE DESHABILITAN */}
+              <label>Fecha y hora de inicio (UTC)</label>
+              <DateTimeInline
+                dateValue={fechaI}
+                timeValue={horaI}
+                onDateChange={(e) => setFechaI(e.target.value)}
+                onTimeChange={(e) => setHoraI(e.target.value)}
+                disabled={tipoSimulacion === "colapso"}
+              />
+
+              <label>Fecha y hora de fin (UTC)</label>
+              <DateTimeInline
+                dateValue={fechaF}
+                timeValue={horaF}
+                onDateChange={(e) => setFechaF(e.target.value)}
+                onTimeChange={(e) => setHoraF(e.target.value)}
+                disabled={tipoSimulacion === "colapso" || tipoSimulacion === "semanal"}
+              />
+
+              <label>Ciudades sede</label>              
+              {/* LISTA DE SELECCIONADOS TIPO CHIP */}
+              <div className="selected-codes">
+                {codOrigenes.map((cod) => (
+                  <div key={cod} className="chip">
+                    <span>{cod}</span>
+                    <button
+                      className="chip-remove"
+                      onClick={() => {
+                        setCodOrigenes(codOrigenes.filter(c => c !== cod));
+                      }}
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+              {/* ORÍGENES */}
+              <Dropdown2
+                label="Códigos Origen"
+                multiple={true}
+                value={codOrigenes}
+                onChange={setCodOrigenes}
+                options={aeropuertos.map(a => ({
+                  label: `${a.codigo} - ${a.ciudad} - ${a.pais}`,
+                  value: a.codigo
+                }))}
+              />
+
+              {/* BOOLEANO */}
+              <label>¿Considerar desfase temporal?</label>
+              <Radio
+                name="desfase"
+                label="Sí"
+                value="true"
+                checked={considerarDesfaseTemporal === true}
+                onChange={(e) => setConsiderarDesfaseTemporal(toBoolean(e.target.value))}
+              />
+              <Radio
+                name="desfase"
+                label="No"
+                value="false"
+                checked={considerarDesfaseTemporal === false}
+                onChange={(e) => setConsiderarDesfaseTemporal(toBoolean(e.target.value))}
+              />
+
+              {/* NUMÉRICOS */}
+              <label>Max días entrega intercontinental</label>
+              <Input label="Max días entrega intercontinental" type="number"
+                value={maxDiasEntregaIntercontinental} onChange={(e) => setMaxDiasEntregaIntercontinental(parseNumber(e.target.value))}/>
+
+              <label>Max días entrega intracontinental</label>
+              <Input label="Max días entrega intracontinental" type="number"
+                value={maxDiasEntregaIntracontinental} onChange={(e) => setMaxDiasEntregaIntracontinental(parseNumber(e.target.value))}/>
+
+              <label>Max horas recojo</label>
+              <Input label="Max horas recojo" type="number"
+                value={maxHorasRecojo} onChange={(e) => setMaxHorasRecojo(parseNumber(e.target.value))}/>
+
+              <label>Min horas estancia</label>
+              <Input label="Min horas estancia" type="number"
+                value={minHorasEstancia} onChange={(e) => setMinHorasEstancia(parseNumber(e.target.value))}/>
+
+              <label>Max horas estancia</label>
+              <Input label="Max horas estancia" type="number"
+                value={maxHorasEstancia} onChange={(e) => setMaxHorasEstancia(parseNumber(e.target.value))}/>
+
+              {/* OPTIMIZACIÓN */}
+              <label>dMin</label>
+              <Input label="dMin" type="number" value={dMin} onChange={(e) => setDMin(parseNumber(e.target.value))}/>
+
+              <label>iMax</label>
+              <Input label="iMax" type="number" value={iMax} onChange={(e) => setIMax(parseNumber(e.target.value))}/>
+
+              <label>eleMin</label>
+              <Input label="eleMin" type="number" value={eleMin} onChange={(e) => setEleMin(parseNumber(e.target.value))}/>
+
+              <label>eleMax</label>
+              <Input label="eleMax" type="number" value={eleMax} onChange={(e) => setEleMax(parseNumber(e.target.value))}/>
+
+              <label>kMin</label>
+              <Input label="kMin" type="number" value={kMin} onChange={(e) => setKMin(parseNumber(e.target.value))}/>
+
+              <label>kMax</label>
+              <Input label="kMax" type="number" value={kMax} onChange={(e) => setKMax(parseNumber(e.target.value))}/>
+
+              <label>tMax</label>
+              <Input label="tMax" type="number" value={tMax} onChange={(e) => setTMax(parseNumber(e.target.value))}/>
+
+              <label>Max intentos</label>
+              <Input label="Max intentos" type="number" value={maxIntentos} onChange={(e) => setMaxIntentos(parseNumber(e.target.value))}/>
+
+              {/* FACTORES */}
+              <label>Factor de Umbral de Aberración</label>
+              <Input label="Factor de Umbral de Aberración" type="number"
+                value={factorDeUmbralDeAberracion} onChange={(e) => setFactorDeUmbralDeAberracion(parseNumber(e.target.value))}/>
+
+              <label>Factor de Utilización Temporal</label>
+              <Input label="Factor de Utilización Temporal" type="number"
+                value={factorDeUtilizacionTemporal} onChange={(e) => setFactorDeUtilizacionTemporal(parseNumber(e.target.value))}/>
+
+              <label>Factor de Desviación Espacial</label>
+              <Input label="Factor de Desviación Espacial" type="number"
+                value={factorDeDesviacionEspacial} onChange={(e) => setFactorDeDesviacionEspacial(parseNumber(e.target.value))}/>
+
+              <label>Factor de Disposición Operacional</label>
+              <Input label="Factor de Disposición Operacional" type="number"
+                value={factorDeDisposicionOperacional} onChange={(e) => setFactorDeDisposicionOperacional(parseNumber(e.target.value))}/>
+
             </div>
+
 
             <div className="modal-footer">
               <button className="btn red" onClick={closeModal}>Cancelar</button>

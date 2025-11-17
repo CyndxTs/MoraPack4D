@@ -39,8 +39,8 @@ export default function Aeropuertos() {
     const fetchAeropuertos = async () => {
       try {
         const data = await listarAeropuertos();
-        setAeropuertos(data);
-        setAeropuertosOriginales(data);
+        setAeropuertos(data.dtos || []);
+        setAeropuertosOriginales(data.dtos || []);
       } catch (err) {
         console.error(err);
         showNotification("danger", "Error al cargar aeropuertos");
@@ -103,7 +103,7 @@ export default function Aeropuertos() {
       }
 
       const data = await listarAeropuertos();
-      setAeropuertos(data);
+      setAeropuertos(data.dtos || []);
       setIsModalOpen(false);
       setArchivo(null);
       setCodigo("");

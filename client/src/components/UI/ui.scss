@@ -516,7 +516,12 @@
   flex-direction: column;
   gap: 16px;
   animation: fadeIn 0.3s ease;
+
+  /* === Scroll automático si se excede la altura === */
+  max-height: 80vh;
+  overflow-y: auto;
 }
+
 
 .modal-header {
   display: flex;

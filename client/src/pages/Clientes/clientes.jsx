@@ -33,8 +33,8 @@ export default function Clientes() {
     const fetchClientes = async () => {
       try {
         const data = await listarClientes();
-        setClientes(data);
-        setClientesOriginales(data); 
+        setClientes(data.dtos || []);
+        setClientesOriginales(data.dtos || []);
       } catch (err) {
         console.error(err);
       } finally {
@@ -147,7 +147,7 @@ export default function Clientes() {
       }
 
       const data = await listarClientes();
-      setClientes(data);
+      setClientes(data.dtos || []);
       setIsModalOpen(false);
       setArchivo(null);
       setNombre("");

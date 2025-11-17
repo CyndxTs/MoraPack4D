@@ -162,6 +162,66 @@ public class AlgorithmService {
                     parametrosService.save(parametrosEntity);
                 }
             }
+
+            G4D.Logger.logln("===== REQUEST - FLAGS =====");
+            G4D.Logger.logf("guardarPlanificacion: %s%n", request.getGuardarPlanificacion());
+            G4D.Logger.logf("replanificar: %s%n", request.getReplanificar());
+            G4D.Logger.logf("reparametrizar: %s%n", request.getReparametrizar());
+            G4D.Logger.logf("guardarParametrizacion: %s%n", request.getGuardarParametrizacion());
+            G4D.Logger.logln("===============================================");
+
+            ParametrosDTO parametrosDTO = request.getParameters();
+            ParametrosEntity parametrosEntityLog = request.getReparametrizar()
+                    ? parametrosMapper.toEntity(parametrosDTO)
+                    : parametrosService.findById(1);
+
+            // LOGS DE TODOS LOS PARÁMETROS USADOS
+            G4D.Logger.logln("===== PARÁMETROS RECIBIDOS / USADOS =====");
+            G4D.Logger.logf("maxDiasEntregaIntracontinental: %s%n", parametrosEntityLog.getMaxDiasEntregaIntracontinental());
+            G4D.Logger.logf("maxDiasEntregaIntercontinental: %s%n", parametrosEntityLog.getMaxDiasEntregaIntercontinental());
+            G4D.Logger.logf("maxHorasRecojo: %s%n", parametrosEntityLog.getMaxHorasRecojo());
+            G4D.Logger.logf("minHorasEstancia: %s%n", parametrosEntityLog.getMinHorasEstancia());
+            G4D.Logger.logf("maxHorasEstancia: %s%n", parametrosEntityLog.getMaxHorasEstancia());
+            G4D.Logger.logf("fechaHoraInicio: %s%n", parametrosEntityLog.getFechaHoraInicio());
+            G4D.Logger.logf("fechaHoraFin: %s%n", parametrosEntityLog.getFechaHoraFin());
+            G4D.Logger.logf("considerarDesfaseTemporal: %s%n", parametrosEntityLog.getConsiderarDesfaseTemporal());
+            G4D.Logger.logf("dMin: %s%n", parametrosEntityLog.getDMin());
+            G4D.Logger.logf("iMax: %s%n", parametrosEntityLog.getIMax());
+            G4D.Logger.logf("eleMin: %s%n", parametrosEntityLog.getEleMin());
+            G4D.Logger.logf("eleMax: %s%n", parametrosEntityLog.getEleMax());
+            G4D.Logger.logf("kMin: %s%n", parametrosEntityLog.getKMin());
+            G4D.Logger.logf("kMax: %s%n", parametrosEntityLog.getKMax());
+            G4D.Logger.logf("tMax: %s%n", parametrosEntityLog.getTMax());
+            G4D.Logger.logf("maxIntentos: %s%n", parametrosEntityLog.getMaxIntentos());
+            G4D.Logger.logf("factorDeUmbralDeAberracion: %s%n", parametrosEntityLog.getFactorDeUmbralDeAberracion());
+            G4D.Logger.logf("factorDeUtilizacionTemporal: %s%n", parametrosEntityLog.getFactorDeUtilizacionTemporal());
+            G4D.Logger.logf("factorDeDesviacionEspacial: %s%n", parametrosEntityLog.getFactorDeDesviacionEspacial());
+            G4D.Logger.logf("factorDeDisposicionOperacional: %s%n", parametrosEntityLog.getFactorDeDisposicionOperacional());
+            // LOG DE COD_ORIGENES
+            G4D.Logger.logln("===== COD ORÍGENES =====");
+            if (request.getReparametrizar()) {
+                // Si viene desde DTO
+                List<String> cods = parametrosDTO.getCodOrigenes();
+                if (cods == null || cods.isEmpty()) {
+                    G4D.Logger.logln("codOrigenes: (vacío)");
+                } else {
+                    G4D.Logger.logln("codOrigenes:");
+                    cods.forEach(c -> G4D.Logger.logf(" - %s%n", c));
+                }
+            } else {
+                // Si NO hay reparametrización, imprimir lista vacía del entity
+                List<String> cods = parametrosEntityLog.getCodOrigenes();
+                if (cods == null || cods.isEmpty()) {
+                    G4D.Logger.logln("codOrigenes: (no enviado, por defecto vacío)");
+                } else {
+                    G4D.Logger.logln("codOrigenes:");
+                    cods.forEach(c -> G4D.Logger.logf(" - %s%n", c));
+                }
+            }
+            G4D.Logger.logln("===============================================");
+
+            G4D.Logger.logln("===============================================");
+
             Problematica problematica = new Problematica();
             problematica.cargarDatos(
                     aeropuertoService, aeropuertoAdapter,

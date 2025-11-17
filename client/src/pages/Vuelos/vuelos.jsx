@@ -42,8 +42,8 @@ export default function Vuelos() {
     const fetchVuelos = async () => {
       try {
         const data = await listarPlanes();
-        setVuelos(data);
-        setVuelosOriginales(data);   // ← copia original
+        setVuelos(data.dtos || []);
+        setVuelosOriginales(data.dtos || []);
       } catch (err) {
         console.error(err);
         showNotification("danger", "Error al cargar vuelos");
@@ -58,8 +58,8 @@ export default function Vuelos() {
   // Columnas nuevas para vuelos
   const headers = [
     { label: "Código", key: "codigo" },
-    { label: "Salida UTC", key: "horaSalidaUTC" },
-    { label: "Llegada UTC", key: "horaLlegadaUTC" },
+    { label: "Salida", key: "horaSalida" },
+    { label: "Llegada", key: "horaLlegada" },
     { label: "Capacidad", key: "capacidad" },
     { label: "Acciones", key: "acciones" },
   ];
@@ -107,7 +107,7 @@ export default function Vuelos() {
 
       // Recargar lista
       const data = await listarPlanes();
-      setVuelos(data);
+      setVuelos(data.dtos || []);
 
       // Reset form & modal
       setIsModalOpen(false);
@@ -141,13 +141,14 @@ export default function Vuelos() {
     }
 
     // 2) Orden por hora
-    if (ordenHora) {
-      lista.sort((a, b) => {
-        const tA = new Date(`1970-01-01T${a.horaSalidaUTC}Z`).getTime();
-        const tB = new Date(`1970-01-01T${b.horaSalidaUTC}Z`).getTime();
+    const parseHora = (h) => new Date(`1970-01-01T${h}:00Z`).getTime();
 
-        return ordenHora === "asc" ? tA - tB : tB - tA;
-      });
+    if (ordenHora) {
+      lista.sort((a, b) =>
+        ordenHora === "asc"
+          ? parseHora(a.horaSalida) - parseHora(b.horaSalida)
+          : parseHora(b.horaSalida) - parseHora(a.horaSalida)
+      );
     }
 
     setVuelos(lista);

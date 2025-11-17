@@ -1,0 +1,30 @@
+.selected-codes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.chip {
+  background: #e5e7eb;
+  padding: 6px 10px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  font-size: 13px;
+}
+
+.chip-remove {
+  background: transparent;
+  border: none;
+  margin-left: 6px;
+  font-size: 16px;
+  cursor: pointer;
+  color: #444;
+  padding: 0;
+  line-height: 1;
+}
+
+.chip-remove:hover {
+  color: #d00;
+}

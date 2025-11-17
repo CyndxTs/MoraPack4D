@@ -42,14 +42,9 @@ export default function Pedidos() {
     const fetchPedidos = async () => {
       try {
         const data = await listarPedidos();
-        const dataFormateada = data.map(p => ({
-          ...p,
-          fechaHoraGeneracionUTC: formatISOToDDMMYYYY(p.fechaHoraGeneracionUTC),
-          fechaHoraExpiracionUTC: formatISOToDDMMYYYY(p.fechaHoraExpiracionUTC)
-        }));
 
-        setPedidos(dataFormateada);
-        setPedidosOriginales(dataFormateada);
+        setPedidos(data.dtos || []);
+        setPedidosOriginales(data.dtos || []);
 
       } catch (err) {
         console.error(err);
@@ -64,8 +59,10 @@ export default function Pedidos() {
   // Tabla
   const headers = [
     { label: "Código", key: "codigo" },
-    { label: "Fecha de generación (UTC)", key: "fechaHoraGeneracionUTC" },
-    { label: "Fecha de expiración (UTC)", key: "fechaHoraExpiracionUTC" },
+    { label: "Cliente", key: "codCliente" },
+    { label: "Fecha de generación", key: "fechaHoraGeneracion" },
+    { label: "Fecha de expiración", key: "fechaHoraExpiracion" },
+    { label: "Destino", key: "codDestino" },
     { label: "Cantidad solicitada", key: "cantidadSolicitada" },
     { label: "Acciones", key: "acciones" },
   ];
@@ -113,14 +110,9 @@ export default function Pedidos() {
       showNotification("success", "Pedidos importados correctamente");
 
       const data = await listarPedidos();
-      const dataFormateada = data.map(p => ({
-        ...p,
-        fechaHoraGeneracionUTC: formatISOToDDMMYYYY(p.fechaHoraGeneracionUTC),
-        fechaHoraExpiracionUTC: formatISOToDDMMYYYY(p.fechaHoraExpiracionUTC),
-      }));
 
-      setPedidos(dataFormateada);
-      setPedidosOriginales(dataFormateada);
+      setPedidos(data.dtos || []);
+      setPedidosOriginales(data.dtos || []);
 
       setIsModalOpen(false);
       setArchivo(null);
@@ -148,12 +140,13 @@ export default function Pedidos() {
     // --- ORDENAR POR FECHA ---
     if (ordenFecha) {
       lista.sort((a, b) => {
-        const f1 = parseDDMMYYYYToDate(a.fechaHoraGeneracionUTC);
-        const f2 = parseDDMMYYYYToDate(b.fechaHoraGeneracionUTC);
+        const f1 = parseFechaHoraDDMMYYYY(a.fechaHoraGeneracion);
+        const f2 = parseFechaHoraDDMMYYYY(b.fechaHoraGeneracion);
 
         return ordenFecha === "ascendente" ? f1 - f2 : f2 - f1;
       });
     }
+
 
     setPedidos(lista);
     setCurrentPage(1);
@@ -179,18 +172,30 @@ export default function Pedidos() {
   const indexOfFirst = indexOfLast - itemsPerPage;
   const curretPedidos = pedidos.slice(indexOfFirst, indexOfLast);
 
-  function convertirLocalAUTCString(fecha, hora) {
-    if (!fecha || !hora) return "";
+  function parseFechaHoraDDMMYYYY(fechaHora) {
+    if (!fechaHora) return null;
 
-    const localDate = new Date(`${fecha}T${hora}:00`);
-    const utcYear = localDate.getUTCFullYear();
-    const utcMonth = String(localDate.getUTCMonth() + 1).padStart(2, "0");
-    const utcDay = String(localDate.getUTCDate()).padStart(2, "0");
-    const utcHour = String(localDate.getUTCHours()).padStart(2, "0");
-    const utcMin = String(localDate.getUTCMinutes()).padStart(2, "0");
+    const [fecha, hora] = fechaHora.split(" ");
+    const [dia, mes, anio] = fecha.split("/");
+    const [hh, mm] = hora.split(":");
 
-    return `${utcYear}-${utcMonth}-${utcDay} ${utcHour}:${utcMin}:00`;
+    return new Date(`${anio}-${mes}-${dia}T${hh}:${mm}:00`);
   }
+
+  function convertirLocalAUTCString(fechaDDMMYYYY, horaHHmm) {
+    if (!fechaDDMMYYYY || !horaHHmm) return "";
+
+    const [dia, mes, anio] = fechaDDMMYYYY.split("-");
+    const [hora, minuto] = horaHHmm.split(":");
+
+    // Construimos una fecha local (sin timezone)
+    const fechaLocal = new Date(anio, mes - 1, dia, hora, minuto);
+
+    // Convertimos a UTC ISO → yyyy-MM-ddTHH:mm:ssZ
+    return fechaLocal.toISOString();
+  }
+
+
 
   return (
     <div className="page">
@@ -307,14 +312,14 @@ export default function Pedidos() {
 
               {archivo && (
                 <>
-                  <label>Fecha y hora de inicio (UTC)</label>
+                  <label>Fecha y hora de inicio</label>
                   <DateTimeInline
                     dateValue={fechaArchivoFechaI}
                     timeValue={fechaArchivoHoraI}
                     onDateChange={(e) => setFechaArchivoFechaI(e.target.value)}
                     onTimeChange={(e) => setFechaArchivoHoraI(e.target.value)}
                   />
-                  <label>Fecha y hora de fin (UTC)</label>
+                  <label>Fecha y hora de fin</label>
                   <DateTimeInline
                     dateValue={fechaArchivoFechaF}
                     timeValue={fechaArchivoHoraF}

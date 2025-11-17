@@ -163,6 +163,64 @@ export function Dropdown({ options = [], onSelect, placeholder = "Seleccionar...
   );
 }
 
+export function Dropdown2({ options = [], value = [], onChange, placeholder = "Seleccionar...", multiple = false }) {
+  const [open, setOpen] = useState(false);
+
+  const handleSelect = (opt) => {
+    if (multiple) {
+      let newValue;
+
+      if (value.includes(opt.value)) {
+        newValue = value.filter(v => v !== opt.value);
+      } else {
+        newValue = [...value, opt.value];
+      }
+
+      onChange && onChange(newValue);
+    } else {
+      onChange && onChange(opt.value);
+      setOpen(false);
+    }
+  };
+
+  const getLabel = () => {
+    if (!multiple) {
+      const opt = options.find(o => o.value === value);
+      return opt ? opt.label : placeholder;
+    }
+
+    if (value.length === 0) return placeholder;
+    return value.join(", ");
+  };
+
+  return (
+    <div className={`custom-dropdown ${open ? "open" : ""}`}>
+      <div
+        className="selected"
+        onClick={() => setOpen(!open)}
+      >
+        {getLabel()}
+      </div>
+
+      {open && (
+        <ul className="options">
+          {options.map((opt, i) => (
+            <li
+              key={i}
+              className={value.includes(opt.value) ? "selected-option" : ""}
+              onClick={() => handleSelect(opt)}
+            >
+              {opt.label}
+              {multiple && value.includes(opt.value) && " ✔"}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+
 export function Table({ headers = [], data = [], statusColors = {} }) {
   return (
     <div className="table-container">
