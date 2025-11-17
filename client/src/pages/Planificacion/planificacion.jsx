@@ -1,100 +1,197 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "./planificacion.scss";
-import { ButtonAdd, Input, Checkbox, Dropdown, Table, SidebarActions } from "../../components/UI/ui";
-import plus from '../../assets/icons/plus.svg';
-import hideIcon from '../../assets/icons/hide-sidebar.png';
+import { ButtonAdd, Input, Table, SidebarActions, LoadingOverlay, Notification, Radio, DateTimeInline} from "../../components/UI/ui";
+import plus from "../../assets/icons/plus.svg";
+import hideIcon from "../../assets/icons/hide-sidebar.png";
+import { listarRutas } from "../../services/rutaService";
+import { planificar } from "../../services/planificarService";
 
 export default function Planificacion() {
   const [collapsed, setCollapsed] = useState(false);
 
-  // Filtros
   const [codigoVuelo, setCodigoVuelo] = useState("");
   const [ciudadDestino, setCiudadDestino] = useState("");
-  const [continente, setContinente] = useState({ america: false, europa: false, asia: false });
 
-  // Modal
+  const [rutas, setRutas] = useState([]);
+  const [rutasOriginales, setRutasOriginales] = useState([]);
+
+  const [loading, setLoading] = useState(true);
+  const [processing, setProcessing] = useState(false);
+  const [notification, setNotification] = useState(null);
+
+  // -------- MODAL --------
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [archivo, setArchivo] = useState(null);
-  const [parametro1, setParametro1] = useState("");
-  const [parametro2, setParametro2] = useState("");
-  const [parametro3, setParametro3] = useState("");
 
-  // Tabla
+  const [tipoSimulacion, setTipoSimulacion] = useState("seleccionar");
+  const [fechaI, setFechaI] = useState("");
+  const [horaI, setHoraI] = useState("");
+  const [fechaF, setFechaF] = useState("");
+  const [horaF, setHoraF] = useState("");
+
   const headers = [
     { label: "Código", key: "codigo" },
-    { label: "Origen", key: "origen" },
-    { label: "Destino", key: "destino" },
-    { label: "Salida", key: "salida" },
-    { label: "Llegada", key: "llegada" },
-    { label: "Estado", key: "estado" },
-    { label: "Acciones", key: "acciones" },
+    { label: "Duración", key: "duracion" },
+    { label: "Hora salida UTC", key: "horaSalidaUTC" },
+    { label: "Hora llegada UTC", key: "horaLlegadaUTC" },
   ];
 
-  const data = [
-    {
-      codigo: "PLA0001",
-      origen: "LIM - Jorge Chávez",
-      destino: "JFK - New York",
-      salida: "2025-10-22 08:30",
-      llegada: "2025-10-22 17:15",
-      estado: "En ruta",
-    },
-    {
-      codigo: "PLA0002",
-      origen: "JFK - New York",
-      destino: "CDG - París",
-      salida: "2025-10-21 12:00",
-      llegada: "2025-10-21 23:40",
-      estado: "Finalizado",
-    },
-    {
-      codigo: "PLA0003",
-      origen: "CDG - París",
-      destino: "FRA - Frankfurt",
-      salida: "2025-10-20 10:45",
-      llegada: "2025-10-20 13:00",
-      estado: "Programado",
-    },
-    {
-      codigo: "PLA0004",
-      origen: "FRA - Frankfurt",
-      destino: "NRT - Tokio",
-      salida: "2025-10-19 20:15",
-      llegada: "2025-10-20 11:00",
-      estado: "En ruta",
-    },
-    {
-      codigo: "PLA0005",
-      origen: "NRT - Tokio",
-      destino: "SYD - Sydney",
-      salida: "2025-10-18 09:20",
-      llegada: "2025-10-18 19:05",
-      estado: "Programado",
-    },
-  ];
-
-  const handleFileChange = (e) => {
-    if (e.target.files.length > 0) setArchivo(e.target.files[0].name);
-    else setArchivo(null);
+  const showNotification = (type, message) => {
+    setNotification({ type, message });
+    setTimeout(() => setNotification(null), 5000);
   };
 
-  const handleAdd = () => {
-    console.log({ codigoVuelo, archivo, ciudadDestino, continente });
+  useEffect(() => {
+    const fetchRutas = async () => {
+      try {
+        const data = await listarRutas();
+        setRutas(data);
+        setRutasOriginales(data);
+      } catch (err) {
+        showNotification("danger", "Error al cargar rutas");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchRutas();
+  }, []);
+
+  // Filtros
+  const handleFilter = () => {
+    let lista = [...rutasOriginales];
+
+    if (codigoVuelo.trim()) {
+      lista = lista.filter((r) =>
+        r.codigo.toLowerCase().includes(codigoVuelo.toLowerCase())
+      );
+    }
+
+    if (ciudadDestino.trim()) {
+      lista = lista.filter((r) =>
+        r.destino?.toLowerCase().includes(ciudadDestino.toLowerCase())
+      );
+    }
+
+    setRutas(lista);
+  };
+
+  const handleCleanFilters = () => {
+    setCodigoVuelo("");
+    setCiudadDestino("");
+    setRutas(rutasOriginales);
+  };
+
+  // LIMPIAR MODAL SIEMPRE QUE SE CIERRA
+  const resetModal = () => {
+    setTipoSimulacion("seleccionar");
+    setFechaI("");
+    setHoraI("");
+    setFechaF("");
+    setHoraF("");
+  };
+
+  const openModal = () => {
+    resetModal();
+    setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
+    resetModal();
     setIsModalOpen(false);
   };
 
-  //Filtros
-  const handleFilter = async () => {
+  // Manejo de fechas según tipo de simulación
+  useEffect(() => {
+    if (tipoSimulacion === "semanal") {
+      if (fechaI && horaI) {
+        const start = new Date(`${fechaI}T${horaI}:00Z`);
+        const end = new Date(start.getTime() + 7 * 24 * 60 * 60 * 1000);
 
-  };
+        setFechaF(end.toISOString().slice(0, 10));
+        setHoraF(end.toISOString().slice(11, 16));
+      }
+    }
 
-  //Limpiar filtros
-  const handleCleanFilters = async () => {
+    if (tipoSimulacion === "colapso") {
+      setFechaF("");
+      setHoraF("");
+      setFechaI("");
+      setHoraI("");
+    }
+  }, [tipoSimulacion, fechaI, horaI]);
 
+  const handlePlanear = async () => {
+    try {
+      setLoading(true);
+
+      const fechaHoraInicio = `${fechaI}T${horaI}:00`;
+      const fechaHoraFin = `${fechaF}T${horaF}:00`;
+
+      const body = {
+        replanificar: false,
+        guardarPlanificacion: true,
+        reparametrizar: false,
+        parameters: {
+          maxDiasEntregaIntercontinental: 3,
+          maxDiasEntregaIntracontinental: 2,
+          maxHorasRecojo: 2.0,
+          minHorasEstancia: 1.0,
+          maxHorasEstancia: 12.0,
+
+          fechaHoraInicio,
+          fechaHoraFin,
+
+          desfaseTemporal: 3,
+          dMin: 0.001,
+          iMax: 3,
+          eleMin: 1,
+          eleMax: 2,
+          kMin: 3,
+          kMax: 4,
+          tMax: 60,
+          maxIntentos: 5,
+          factorDeUmbralDeAberracion: 1.015,
+          factorDeUtilizacionTemporal: 5000.0,
+          factorDeDesviacionEspacial: 2000.0,
+          factorDeDisposicionOperacional: 3000.0,
+          codOrigenes: []
+        },
+
+        guardarParametrizacion: false
+      };
+
+      const result = await planificar(body);
+
+      if (result.success) {
+        showNotification("success", "Plan generado correctamente");
+      } else {
+        showNotification("danger", result.message || "Error generando el plan");
+      }
+
+      closeModal();
+
+    } catch (err) {
+      showNotification("danger", err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div className="page">
+      {(loading || processing) && (
+        <LoadingOverlay
+          text={processing ? "Procesando planificación..." : "Cargando planificación..."}
+        />
+      )}
+
+      {notification && (
+        <Notification
+          type={notification.type}
+          message={notification.message}
+          onClose={() => setNotification(null)}
+        />
+      )}
+
       {/* Sidebar */}
       <aside className={`sidebar ${collapsed ? "collapsed" : ""}`}>
         <div className="sidebar-header">
@@ -106,86 +203,107 @@ export default function Planificacion() {
             onClick={() => setCollapsed(!collapsed)}
           />
         </div>
+
         {!collapsed && (
-          <>
-            <div className="sidebar-content">
-              <span className="sidebar-subtitle">Filtros</span>
-              <div className="filter-group">
-                <span className="sidebar-subtitle-strong">Código de vuelo</span>
-                <Input placeholder="Escribir..." value={codigoVuelo} onChange={e => setCodigoVuelo(e.target.value)} />
-              </div>
+          <div className="sidebar-content">
+            <span className="sidebar-subtitle">Filtros</span>
 
-              <div className="filter-group">
-                <span className="sidebar-subtitle-strong">Ciudad destino</span>
-                <Dropdown
-                  placeholder="Seleccionar..."
-                  options={[
-                    { label: "Ejemplo 1", value: "ejemplo1" },
-                    { label: "Ejemplo 2", value: "ejemplo2" }
-                  ]}
-                  onSelect={val => setCiudadDestino(val)}
-                />
-              </div>
-
-              <div className="filter-group">
-                <span className="sidebar-subtitle-strong">Continente</span>
-                <Checkbox label="América" value="america" checked={continente.america} onChange={e => setContinente({ ...continente, america: e.target.checked })} />
-                <Checkbox label="Europa" value="europa" checked={continente.europa} onChange={e => setContinente({ ...continente, europa: e.target.checked })} />
-                <Checkbox label="Asia" value="asia" checked={continente.asia} onChange={e => setContinente({ ...continente, asia: e.target.checked })} />
-              </div>
-              
-              <SidebarActions 
-                onFilter={handleFilter}
-                onClean={handleCleanFilters}
+            <div className="filter-group">
+              <span className="sidebar-subtitle-strong">Código</span>
+              <Input
+                placeholder="Escribir..."
+                value={codigoVuelo}
+                onChange={(e) => setCodigoVuelo(e.target.value)}
               />
             </div>
-          </>
+
+            <div className="filter-group">
+              <span className="sidebar-subtitle-strong">Ciudad destino</span>
+              <Input
+                placeholder="Escribir..."
+                value={ciudadDestino}
+                onChange={(e) => setCiudadDestino(e.target.value)}
+              />
+            </div>
+
+            <SidebarActions onFilter={handleFilter} onClean={handleCleanFilters} />
+          </div>
         )}
       </aside>
 
       {/* Contenido principal */}
       <section className="contenido">
         <div className="content-header">
-          <h4>Planificación de vuelos</h4>
-          <ButtonAdd icon={plus} label="Generar plan" onClick={() => setIsModalOpen(true)} />
+          <h4>Planificación</h4>
+          <ButtonAdd icon={plus} label="Generar plan" onClick={openModal} />
         </div>
 
-        <Table headers={headers} data={data} />
+        <Table headers={headers} data={rutas} />
       </section>
 
-      {/* Modal */}
+      {/* MODAL */}
       {isModalOpen && (
-        <div className="modal" onClick={() => setIsModalOpen(false)}>
-          <div className="modal-content" onClick={e => e.stopPropagation()}>
+        <div className="modal" onClick={closeModal}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h3 className="modal-title">Planificar</h3>
-              <label htmlFor="fileInput" className="file-label">Agregar archivo</label>
-              <input type="file" id="fileInput" className="file-input" onChange={handleFileChange} />
             </div>
 
-            <div className="file-name">{archivo || "Ningún archivo seleccionado"}</div>
-
+            {/* RADIO BUTTONS */}
             <div className="modal-body">
-              <label htmlFor="parametro1">Parámetro 1</label>
-              <Input id="parametro1" placeholder="Escribe el parámetro 1" value={parametro1} onChange={e => setParametro1(e.target.value)} />
+              <span className="sidebar-subtitle">Tipo de simulación</span>
 
-              <label htmlFor="parametro2">Parámetro 2</label>
-              <Input id="parametro2" placeholder="Escribe el parámetro 2" value={parametro2} onChange={e => setParametro2(e.target.value)} />
-
-              <label htmlFor="parametro3">Parámetro 3</label>
-              <Dropdown
-                placeholder="Seleccionar..."
-                options={[
-                  { label: "Ejemplo 1", value: "ejemplo1" },
-                  { label: "Ejemplo 2", value: "ejemplo2" }
-                ]}
-                onSelect={val => setParametro3(val)}
+              <Radio
+                name="tipoSim"
+                label="Seleccionar fechas"
+                value="seleccionar"
+                checked={tipoSimulacion === "seleccionar"}
+                onChange={(e) => setTipoSimulacion(e.target.value)}
               />
+
+              <Radio
+                name="tipoSim"
+                label="Semanal"
+                value="semanal"
+                checked={tipoSimulacion === "semanal"}
+                onChange={(e) => setTipoSimulacion(e.target.value)}
+              />
+
+              <Radio
+                name="tipoSim"
+                label="Colapso logístico"
+                value="colapso"
+                checked={tipoSimulacion === "colapso"}
+                onChange={(e) => setTipoSimulacion(e.target.value)}
+              />
+
+              {/* FECHAS */}
+              {(tipoSimulacion === "seleccionar" || tipoSimulacion === "semanal") && (
+                <>
+                  <label>Fecha y hora de inicio (UTC)</label>
+                  <DateTimeInline
+                    dateValue={fechaI}
+                    timeValue={horaI}
+                    disabled={tipoSimulacion === "colapso"}
+                    onDateChange={(e) => setFechaI(e.target.value)}
+                    onTimeChange={(e) => setHoraI(e.target.value)}
+                  />
+
+                  <label>Fecha y hora de fin (UTC)</label>
+                  <DateTimeInline
+                    dateValue={fechaF}
+                    timeValue={horaF}
+                    disabled={tipoSimulacion !== "seleccionar"}
+                    onDateChange={(e) => setFechaF(e.target.value)}
+                    onTimeChange={(e) => setHoraF(e.target.value)}
+                  />
+                </>
+              )}
             </div>
 
             <div className="modal-footer">
-              <button className="btn red" onClick={() => setIsModalOpen(false)}>Cancelar</button>
-              <button className="btn green" onClick={handleAdd}>Agregar</button>
+              <button className="btn red" onClick={closeModal}>Cancelar</button>
+              <button className="btn green" onClick={handlePlanear}>Planear</button>
             </div>
           </div>
         </div>

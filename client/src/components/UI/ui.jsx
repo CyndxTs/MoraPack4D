@@ -47,6 +47,29 @@ export function Input({ placeholder, value, onChange, disabled = false }) {
   );
 }
 
+// INPUT DE FECHA + HORA EN LÍNEA
+export function DateTimeInline({ dateValue, timeValue, onDateChange, onTimeChange, disabled = false }) {
+  return (
+    <div className="datetime-inline">
+      <input
+        type="date"
+        className={`custom-input ${disabled ? "disabled" : ""}`}
+        value={dateValue}
+        onChange={onDateChange}
+        disabled={disabled}
+      />
+
+      <input
+        type="time"
+        className={`custom-input ${disabled ? "disabled" : ""}`}
+        value={timeValue}
+        onChange={onTimeChange}
+        disabled={disabled}
+      />
+    </div>
+  );
+}
+
 
 export function Checkbox({ label, value, checked, onChange }) {
   return (
@@ -146,13 +169,27 @@ export function Table({ headers = [], data = [], statusColors = {} }) {
       <table className="custom-table">
         <thead>
           <tr>
-            {headers.map((h, i) => (
-              <th key={i} className={h.key === "acciones" ? "acciones" : ""}>
-                {h.label}
-              </th>
-            ))}
+            {headers.map((h, i) => {
+              // detecta si la columna es numérica basado en alguna fila
+              const someValue = data[0]?.[h.key];
+              const isNumericCol =
+                typeof someValue === "number" ||
+                (!isNaN(someValue) && someValue !== null && someValue !== "");
+
+              return (
+                <th
+                  key={i}
+                  className={`${h.key === "acciones" ? "acciones" : ""} ${
+                    isNumericCol ? "numeric" : ""
+                  }`}
+                >
+                  {h.label}
+                </th>
+              );
+            })}
           </tr>
         </thead>
+
 
         <tbody>
           {data.length ? (
@@ -182,7 +219,17 @@ export function Table({ headers = [], data = [], statusColors = {} }) {
                   }
 
                   // Celdas normales
-                  return <td key={j}>{row[h.key] ?? ""}</td>;
+                  const value = row[h.key];
+
+                  const isNumeric =
+                    typeof value === "number" ||
+                    (!isNaN(value) && value !== null && value !== "");
+
+                  return (
+                    <td key={j} className={isNumeric ? "numeric" : ""}>
+                      {value ?? ""}
+                    </td>
+                  );
                 })}
               </tr>
             ))
@@ -203,13 +250,40 @@ export function Table({ headers = [], data = [], statusColors = {} }) {
 export function Pagination({ totalItems, itemsPerPage, currentPage, onPageChange }) {
   const totalPages = Math.ceil(totalItems / itemsPerPage);
 
-  if (totalPages <= 1) return null; // no mostrar si no hace falta
+  if (totalPages <= 1) return null;
 
   const handleClick = (page) => {
     if (page >= 1 && page <= totalPages) {
       onPageChange(page);
     }
   };
+
+  // ----- GENERAR LISTA LIMITADA -----
+  const getVisiblePages = () => {
+    if (totalPages <= 5) {
+      return [...Array(totalPages)].map((_, i) => i + 1);
+    }
+
+    if (currentPage <= 3) {
+      return [1, 2, 3, 4, "dots", totalPages];
+    }
+
+    if (currentPage >= totalPages - 2) {
+      return [1, "dots", totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+    }
+
+    return [
+      1,
+      "dots",
+      currentPage - 1,
+      currentPage,
+      currentPage + 1,
+      "dots",
+      totalPages,
+    ];
+  };
+
+  const pages = getVisiblePages();
 
   return (
     <div className="pagination">
@@ -221,15 +295,19 @@ export function Pagination({ totalItems, itemsPerPage, currentPage, onPageChange
         ⟨
       </button>
 
-      {Array.from({ length: totalPages }, (_, i) => (
-        <button
-          key={i + 1}
-          className={`page-btn ${currentPage === i + 1 ? "active" : ""}`}
-          onClick={() => handleClick(i + 1)}
-        >
-          {i + 1}
-        </button>
-      ))}
+      {pages.map((p, index) =>
+        p === "dots" ? (
+          <span key={`dots-${index}`} className="page-dots">…</span>
+        ) : (
+          <button
+            key={p}
+            className={`page-btn ${currentPage === p ? "active" : ""}`}
+            onClick={() => handleClick(p)}
+          >
+            {p}
+          </button>
+        )
+      )}
 
       <button
         className="page-btn"
@@ -241,6 +319,8 @@ export function Pagination({ totalItems, itemsPerPage, currentPage, onPageChange
     </div>
   );
 }
+
+
 
 export function Legend({ items }) {
   return (

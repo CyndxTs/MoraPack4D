@@ -1,14 +1,14 @@
 import axios from "axios";
 
-const API_URL = "http://localhost:8080/api/aeropuertos";
+const API_URL = "http://localhost:8080/api/rutas";
 
 // Listar solo los aeropuertos básicos
-export const listarAeropuertos = async () => {
+export const listarRutas = async () => {
   try {
     const response = await axios.get(API_URL);
     return response.data;
   } catch (error) {
-    console.error("Error al listar aeropuertos:", error);
+    console.error("Error al listar rutas:", error);
     throw error;
   }
 };

@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
 import "./pedidos.scss";
-import { ButtonAdd, Input, Checkbox, Dropdown, Table, SidebarActions, Notification, LoadingOverlay, Pagination, RemoveFileButton  } from "../../components/UI/ui";
-import { listarPedidos, filtrarPedidos  } from "../../services/pedidoService";
+import { ButtonAdd, Input, DateTimeInline, Dropdown, Table, SidebarActions, Notification, LoadingOverlay, Pagination, RemoveFileButton  } from "../../components/UI/ui";
+import { listarPedidos  } from "../../services/pedidoService";
 import { importarPedidos } from "../../services/generalService";
+import { formatISOToDDMMYYYY, parseDDMMYYYYToDate } from "../../services/utils/utils";
 import plus from '../../assets/icons/plus.svg';
 import hideIcon from '../../assets/icons/hide-sidebar.png';
 
@@ -11,22 +12,19 @@ export default function Pedidos() {
 
   // Filtros
   const [codigoFiltro, setCodigoFiltro] = useState("");
-  const [estadoFiltro, setEstadoFiltro] = useState({
-    enCurso: false,
-    pendiente: false,
-    entregado: false,
-    cancelado: false
-  });
-  const [clienteFiltro, setClienteFiltro] = useState("");
-  const [destinoFiltro, setDestinoFiltro] = useState("");
   const [ordenFecha, setOrdenFecha] = useState("");
-  const [ordenCantidad, setOrdenCantidad] = useState("");
 
   // Modal y datos
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [archivo, setArchivo] = useState(null);
+  const [fechaArchivoFechaI, setFechaArchivoFechaI] = useState("");
+  const [fechaArchivoHoraI, setFechaArchivoHoraI] = useState("");
+  const [fechaArchivoFechaF, setFechaArchivoFechaF] = useState("");
+  const [fechaArchivoHoraF, setFechaArchivoHoraF] = useState("");
 
   const [pedidos, setPedidos] = useState([]);
+  const [pedidosOriginales, setPedidosOriginales] = useState([]);
+
   const [codigo, setCodigo] = useState("");
   const [cliente, setCliente] = useState("");
   const [destino, setDestino] = useState("");
@@ -44,7 +42,15 @@ export default function Pedidos() {
     const fetchPedidos = async () => {
       try {
         const data = await listarPedidos();
-        setPedidos(data);
+        const dataFormateada = data.map(p => ({
+          ...p,
+          fechaHoraGeneracionUTC: formatISOToDDMMYYYY(p.fechaHoraGeneracionUTC),
+          fechaHoraExpiracionUTC: formatISOToDDMMYYYY(p.fechaHoraExpiracionUTC)
+        }));
+
+        setPedidos(dataFormateada);
+        setPedidosOriginales(dataFormateada);
+
       } catch (err) {
         console.error(err);
         showNotification("danger", "Error al cargar pedidos");
@@ -58,10 +64,9 @@ export default function Pedidos() {
   // Tabla
   const headers = [
     { label: "Código", key: "codigo" },
-    { label: "Cliente", key: "nombreCliente" },
-    { label: "Destino", key: "codigoAeropuertoDestino" },
-    { label: "Cantidad solicitada", key: "cantidadSolicitada" },
     { label: "Fecha de generación (UTC)", key: "fechaHoraGeneracionUTC" },
+    { label: "Fecha de expiración (UTC)", key: "fechaHoraExpiracionUTC" },
+    { label: "Cantidad solicitada", key: "cantidadSolicitada" },
     { label: "Acciones", key: "acciones" },
   ];
 
@@ -70,126 +75,102 @@ export default function Pedidos() {
       setArchivo(e.target.files[0]);
     } else {
       setArchivo(null);
+      setFechaArchivoFechaI("");
+      setFechaArchivoHoraI("");
+      setFechaArchivoFechaF("");
+      setFechaArchivoHoraF("");
     }
   };
 
   const handleAdd = async () => {
-    if (!archivo && !codigo.trim()) {
-      showNotification(
-        "warning",
-        "Por favor selecciona un archivo o completa los campos antes de continuar."
-      );
+    if (!archivo) {
+      showNotification("warning", "Selecciona un archivo antes de continuar.");
       return;
     }
 
-    // Validar nombre exacto de archivo esperado
-    if (
-      archivo &&
-      archivo.name !== "Pedidos.txt"
-    ) {
-      showNotification(
-        "warning",
-        "El archivo debe llamarse exactamente 'Pedidos.txt'."
-      );
+    if (archivo.name !== "Pedidos.txt") {
+      showNotification("warning", "El archivo debe llamarse exactamente 'Pedidos.txt'.");
       return;
     }
+
+    // Convertir a UTC los valores seleccionados
+    const fechaInicioUTC = convertirLocalAUTCString(
+      fechaArchivoFechaI,
+      fechaArchivoHoraI
+    );
+
+    // Si no quiere rango → mandar strings vacías
+    const fechaFinUTC = convertirLocalAUTCString(
+      fechaArchivoFechaF,
+      fechaArchivoHoraF
+    );
 
     try {
       setProcessing(true);
 
-      if (archivo) {
-        // --- Importación mediante AlgorithmController ---
-        await importarPedidos(archivo);
-        showNotification("success", "Pedidos importados correctamente");
-      } else {
-        // Aquí podrías agregar lógica manual si fuera necesario
-        showNotification("success", "Pedido agregado correctamente");
-      }
+      await importarPedidos(archivo, fechaInicioUTC, fechaFinUTC);
+
+      showNotification("success", "Pedidos importados correctamente");
 
       const data = await listarPedidos();
-      setPedidos(data);
+      const dataFormateada = data.map(p => ({
+        ...p,
+        fechaHoraGeneracionUTC: formatISOToDDMMYYYY(p.fechaHoraGeneracionUTC),
+        fechaHoraExpiracionUTC: formatISOToDDMMYYYY(p.fechaHoraExpiracionUTC),
+      }));
+
+      setPedidos(dataFormateada);
+      setPedidosOriginales(dataFormateada);
+
       setIsModalOpen(false);
       setArchivo(null);
-      setCodigo("");
+
     } catch (error) {
       console.error(error);
-      showNotification("danger", "Error al agregar pedidos");
+      showNotification("danger", "Error al importar pedidos");
     } finally {
       setProcessing(false);
     }
   };
+
 
   //Filtros
-  const handleFilter = async () => {
-    setProcessing(true);
-    try {
-      const campos = [];
-      const orden = [];
+  const handleFilter = () => {
+    let lista = [...pedidosOriginales];
 
-      // Orden dinámico
-      if (ordenCantidad) {
-        campos.push("cantidadSolicitada");
-        orden.push(ordenCantidad === "ascendente" ? "asc" : "desc");
-      }
-      if (ordenFecha) {
-        campos.push("fechaHoraGeneracionUTC");
-        orden.push(ordenFecha === "ascendente" ? "asc" : "desc");
-      }
-
-      // Si no hay campos de orden, usar "codigo" por defecto
-      if (campos.length === 0) {
-        campos.push("codigo");
-        orden.push("asc");
-      }
-
-      const data = await filtrarPedidos(campos, orden);
-
-      // Filtrado adicional (por texto simple en frontend)
-      const filtrado = data.filter((p) => {
-        const matchCodigo =
-          !codigoFiltro ||
-          p.codigo.toLowerCase().includes(codigoFiltro.toLowerCase());
-        const matchCliente =
-          !clienteFiltro ||
-          p.nombreCliente.toLowerCase().includes(clienteFiltro.toLowerCase());
-        const matchDestino =
-          !destinoFiltro ||
-          p.codigoAeropuertoDestino
-            ?.toLowerCase()
-            .includes(destinoFiltro.toLowerCase());
-        return matchCodigo && matchCliente && matchDestino;
-      });
-
-      setPedidos(filtrado);
-      setCurrentPage(1);
-      showNotification("success", "Filtro aplicado correctamente");
-    } catch (err) {
-      console.error(err);
-      showNotification("danger", "Error al filtrar pedidos");
-    } finally {
-      setProcessing(false);
+    // --- FILTRO POR CÓDIGO ---
+    if (codigoFiltro.trim()) {
+      lista = lista.filter(p =>
+        p.codigo.toLowerCase().includes(codigoFiltro.toLowerCase())
+      );
     }
+
+    // --- ORDENAR POR FECHA ---
+    if (ordenFecha) {
+      lista.sort((a, b) => {
+        const f1 = parseDDMMYYYYToDate(a.fechaHoraGeneracionUTC);
+        const f2 = parseDDMMYYYYToDate(b.fechaHoraGeneracionUTC);
+
+        return ordenFecha === "ascendente" ? f1 - f2 : f2 - f1;
+      });
+    }
+
+    setPedidos(lista);
+    setCurrentPage(1);
+    showNotification("success", "Filtro aplicado correctamente");
   };
+
 
   //Limpiar filtros
-  const handleCleanFilters = async () => {
+  const handleCleanFilters = () => {
     setCodigoFiltro("");
-    setClienteFiltro("");
-    setDestinoFiltro("");
-    setOrdenCantidad("");
     setOrdenFecha("");
-    setProcessing(true);
-    try {
-      const data = await listarPedidos();
-      setPedidos(data);
-      showNotification("info", "Filtros limpiados");
-    } catch (err) {
-      console.error(err);
-      showNotification("danger", "Error al limpiar filtros");
-    } finally {
-      setProcessing(false);
-    }
+
+    setPedidos(pedidosOriginales);
+    setCurrentPage(1);
+    showNotification("info", "Filtros limpiados");
   };
+
 
   // --- Paginación ---
   const [currentPage, setCurrentPage] = useState(1);
@@ -197,6 +178,19 @@ export default function Pedidos() {
   const indexOfLast = currentPage * itemsPerPage;
   const indexOfFirst = indexOfLast - itemsPerPage;
   const curretPedidos = pedidos.slice(indexOfFirst, indexOfLast);
+
+  function convertirLocalAUTCString(fecha, hora) {
+    if (!fecha || !hora) return "";
+
+    const localDate = new Date(`${fecha}T${hora}:00`);
+    const utcYear = localDate.getUTCFullYear();
+    const utcMonth = String(localDate.getUTCMonth() + 1).padStart(2, "0");
+    const utcDay = String(localDate.getUTCDate()).padStart(2, "0");
+    const utcHour = String(localDate.getUTCHours()).padStart(2, "0");
+    const utcMin = String(localDate.getUTCMinutes()).padStart(2, "0");
+
+    return `${utcYear}-${utcMonth}-${utcDay} ${utcHour}:${utcMin}:00`;
+  }
 
   return (
     <div className="page">
@@ -234,29 +228,6 @@ export default function Pedidos() {
               <div className="filter-group">
                 <span className="sidebar-subtitle-strong">Código</span>
                 <Input placeholder="Escribir..." value={codigoFiltro} onChange={e => setCodigoFiltro(e.target.value)} />
-              </div>
-
-              <div className="filter-group">
-                <span className="sidebar-subtitle-strong">Cliente</span>
-                <Input placeholder="Escribir..." value={clienteFiltro} onChange={e => setClienteFiltro(e.target.value)} />
-              </div>
-
-              <div className="filter-group">
-                <span className="sidebar-subtitle-strong">Destino</span>
-                <Input placeholder="Escribir..." value={destinoFiltro} onChange={e => setDestinoFiltro(e.target.value)} />
-              </div>
-
-              <div className="filter-group">
-                <span className="sidebar-subtitle-strong">Orden de cantidad solicitada</span>
-                <Dropdown
-                  placeholder="Seleccionar..."
-                  value={ordenCantidad} // hace que el valor dependa del estado
-                  options={[
-                    { label: "Ascendente", value: "ascendente" },
-                    { label: "Descendente", value: "descendente" },
-                  ]}
-                  onSelect={(val) => setOrdenCantidad(val)}
-                />
               </div>
 
               <div className="filter-group">
@@ -333,6 +304,25 @@ export default function Pedidos() {
 
               <label htmlFor="destinoModal">Destino</label>
               <Input id="destinoModal" placeholder="Escribe el destino" value={destino} onChange={e => setDestino(e.target.value)} disabled={!!archivo}/>
+
+              {archivo && (
+                <>
+                  <label>Fecha y hora de inicio (UTC)</label>
+                  <DateTimeInline
+                    dateValue={fechaArchivoFechaI}
+                    timeValue={fechaArchivoHoraI}
+                    onDateChange={(e) => setFechaArchivoFechaI(e.target.value)}
+                    onTimeChange={(e) => setFechaArchivoHoraI(e.target.value)}
+                  />
+                  <label>Fecha y hora de fin (UTC)</label>
+                  <DateTimeInline
+                    dateValue={fechaArchivoFechaF}
+                    timeValue={fechaArchivoHoraF}
+                    onDateChange={(e) => setFechaArchivoFechaF(e.target.value)}
+                    onTimeChange={(e) => setFechaArchivoHoraF(e.target.value)}
+                  />
+                </>
+              )}
             </div>
 
             <div className="modal-footer">

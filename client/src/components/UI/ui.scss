@@ -59,6 +59,18 @@
   color: #555;
 }
 
+//FECHA Y HORA
+.datetime-inline {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+
+  input {
+    flex: 1;
+  }
+}
+
+
 
 /* === Boton Agregar === */
 .content-header {
@@ -396,6 +408,12 @@
   transform: scale(1.15);
 }
 
+.custom-table th.numeric,
+.custom-table td.numeric {
+  text-align: center;
+  vertical-align: middle;
+}
+
 /*          PAGINACIÓN           */
 .pagination {
   display: flex;
@@ -428,6 +446,12 @@
 .page-btn:disabled {
   opacity: 0.4;
   cursor: not-allowed;
+}
+
+.page-dots {
+  padding: 6px 10px;
+  color: #777;
+  user-select: none;
 }
 
 

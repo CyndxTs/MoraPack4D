@@ -3,16 +3,18 @@ import "./clientes.scss";
 import { ButtonAdd, Input, Radio, Table, LoadingOverlay, Pagination, Notification, SidebarActions, RemoveFileButton } from "../../components/UI/ui";
 import plus from "../../assets/icons/plus.svg";
 import hideIcon from "../../assets/icons/hide-sidebar.png";
-import { listarClientes, filtrarClientes  } from "../../services/clienteService";
+import { listarClientes  } from "../../services/clienteService";
 import { importarClientes } from "../../services/generalService";
 
 export default function Clientes() {
   const [collapsed, setCollapsed] = useState(false);
   const [nombreFiltro, setNombreFiltro] = useState("");
   const [correoFiltro, setCorreoFiltro] = useState("");
-  const [estadoFiltro, setEstadoFiltro] = useState("ONLINE");
+  const [estadoFiltro, setEstadoFiltro] = useState("");
 
   const [clientes, setClientes] = useState([]);
+  const [clientesOriginales, setClientesOriginales] = useState([]);
+
   const [nombre, setNombre] = useState("");
   const [correo, setCorreo] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -28,19 +30,22 @@ export default function Clientes() {
   };
 
   useEffect(() => {
-    setEstadoFiltro("ONLINE");
     const fetchClientes = async () => {
       try {
-        const data = await filtrarClientes(null, null, "ONLINE");
+        const data = await listarClientes();
         setClientes(data);
+        setClientesOriginales(data); 
       } catch (err) {
         console.error(err);
       } finally {
         setLoading(false);
       }
     };
+
     fetchClientes();
   }, []);
+
+
 
   const headers = [
     { label: "Código", key: "codigo" },
@@ -64,8 +69,7 @@ export default function Clientes() {
   const indexOfLast = currentPage * itemsPerPage;
   const indexOfFirst = indexOfLast - itemsPerPage;
   const currentClientes = clientes.slice(indexOfFirst, indexOfLast);
-
-
+  
   // Manejo de archivo
   const handleFileChange = (e) => {
     if (e.target.files.length > 0) {
@@ -76,66 +80,45 @@ export default function Clientes() {
   };
 
   //Filtrar
-  const handleFilter = async () => {
-    const noFilters =
-      !nombreFiltro.trim() &&
-      !correoFiltro.trim() &&
-      !estadoFiltro;
+  const handleFilter = () => {
+    let lista = [...clientesOriginales];
 
-    if (noFilters) {
-      showNotification("info", "No hay filtros para aplicar");
-      return;
-    }
-
-    try {
-      setLoading(true);
-      const data = await filtrarClientes(
-        nombreFiltro.trim() || null,
-        correoFiltro.trim() || null,
-        estadoFiltro || null
+    if (nombreFiltro.trim()) {
+      lista = lista.filter(c =>
+        c.nombre.toLowerCase().includes(nombreFiltro.toLowerCase())
       );
-      setClientes(data);
-      setCurrentPage(1);
-      showNotification("success", "Filtro aplicado correctamente");
-    } catch (error) {
-      console.error(error);
-      showNotification("danger", "Error al filtrar clientes");
-    } finally {
-      setLoading(false);
     }
-  };
 
+    if (correoFiltro.trim()) {
+      lista = lista.filter(c =>
+        c.correo.toLowerCase().includes(correoFiltro.toLowerCase())
+      );
+    }
+
+    if (estadoFiltro) {
+      lista = lista.filter(c => c.estado === estadoFiltro);
+    }
+
+    setClientes(lista);
+    setCurrentPage(1);
+    showNotification("success", "Filtros aplicados");
+  };
 
 
   //Limpiar filtros
-  const handleCleanFilters = async () => {
-    const isClean =
-      !nombreFiltro.trim() &&
-      !correoFiltro.trim() &&
-      estadoFiltro === "ONLINE";
-
-    if (isClean) {
-      showNotification("info", "No hay filtros que limpiar");
-      return;
-    }
-
+  const handleCleanFilters = () => {
     setNombreFiltro("");
     setCorreoFiltro("");
-    setEstadoFiltro("ONLINE");
+    setEstadoFiltro("");
 
-    try {
-      setLoading(true);
-      const data = await filtrarClientes(null, null, "ONLINE");
-      setClientes(data);
-      setCurrentPage(1);
-      showNotification("info", "Filtros limpiados");
-    } catch (error) {
-      console.error(error);
-      showNotification("danger", "Error al limpiar filtros");
-    } finally {
-      setLoading(false);
-    }
+    setClientes(clientesOriginales);
+    setCurrentPage(1);
+
+    showNotification("info", "Filtros limpiados");
   };
+
+
+
 
   // Manejo del modal
   const handleAdd = async () => {
@@ -157,7 +140,7 @@ export default function Clientes() {
 
       if (archivo) {
         //  Usamos AlgorithmController
-        await importarClientes(archivo, "CLIENTES");
+        await importarClientes(archivo);
         showNotification("success", "Clientes importados correctamente");
       } else {
         showNotification("success", "Cliente agregado correctamente");
@@ -177,12 +160,11 @@ export default function Clientes() {
     }
   };
 
-
   return (
     <div className="page">
       {(loading || processing) && (
         <LoadingOverlay
-          text={processing ? "Cargando clientes..." : "Cargando clientes..."}
+          text={processing ? "Procesando archivo..." : "Cargando clientes..."}
         />
       )}
 

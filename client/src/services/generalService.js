@@ -2,50 +2,82 @@ import axios from "axios";
 
 const API_URL = "http://localhost:8080/api/algorithm";
 
-export const importarClientes = async (file) => {
+export const importarArchivo = async (file, tipoArchivo) => {
   const formData = new FormData();
+
+  // archivo
   formData.append("file", file);
-  formData.append("type", "CLIENTES"); // clave: usa el tipo para AlgorithmController
+
+  // JSON requerido por backend -> @RequestPart("request")
+  formData.append(
+    "request",
+    new Blob(
+      [
+        JSON.stringify({
+          tipoArchivo: tipoArchivo,  
+          fechaHoraInicio: "",
+          fechaHoraFin: "",
+          desfaseTemporal: -1
+        })
+      ],
+      { type: "application/json" }
+    )
+  );
 
   try {
-    const response = await axios.post(`${API_URL}/importar`, formData, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
+    const response = await axios.post(
+      `${API_URL}/importarDesdeArchivo`,
+      formData,
+      { headers: { "Content-Type": "multipart/form-data" } }
+    );
+
     return response.data;
   } catch (error) {
-    console.error("Error al importar clientes:", error);
+    console.error("Error al importar:", error);
     throw error;
   }
 };
 
-export const importarAeropuertos = async (file) => {
+export const importarClientes = (file) =>
+  importarArchivo(file, "CLIENTES");
+
+export const importarAeropuertos = (file) =>
+  importarArchivo(file, "AEROPUERTOS");
+
+export const importarVuelos = (file) =>
+  importarArchivo(file, "PLANES");
+
+export const importarPedidos = async (file, fechaInicioUTC, fechaFinUTC) => {
   const formData = new FormData();
+
   formData.append("file", file);
-  formData.append("type", "AEROPUERTOS"); // Clave esperada en el backend
+
+  formData.append(
+    "request",
+    new Blob(
+      [
+        JSON.stringify({
+          tipoArchivo: "PEDIDOS",
+          fechaHoraInicio: fechaInicioUTC || "",
+          fechaHoraFin: fechaFinUTC || "",
+          desfaseTemporal: -1
+        })
+      ],
+      { type: "application/json" }
+    )
+  );
 
   try {
-    const response = await axios.post(`${API_URL}/importar`, formData, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
-    return response.data; // contiene { exito: boolean, mensaje: string }
-  } catch (error) {
-    console.error("Error al importar aeropuertos:", error);
-    throw error;
-  }
-};
+    const response = await axios.post(
+      `${API_URL}/importarDesdeArchivo`,
+      formData,
+      { headers: { "Content-Type": "multipart/form-data" } }
+    );
 
-export const importarPedidos = async (file) => {
-  const formData = new FormData();
-  formData.append("file", file);
-  formData.append("type", "PEDIDOS");
-
-  try {
-    const response = await axios.post(`${API_URL}/importar`, formData, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
     return response.data;
+
   } catch (error) {
-    console.error("Error al importar pedidos:", error);
+    console.error("Error al importar:", error);
     throw error;
   }
 };

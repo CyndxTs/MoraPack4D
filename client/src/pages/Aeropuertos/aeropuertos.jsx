@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import "./aeropuertos.scss";
-import { ButtonAdd, Input, Checkbox, Dropdown, Table, SidebarActions, Notification, LoadingOverlay, Pagination, RemoveFileButton  } from "../../components/UI/ui";
-import { listarAeropuertos, filtrarAeropuertos   } from "../../services/aeropuertoService";
+import { ButtonAdd, Input, Checkbox, Dropdown, Table, SidebarActions, Notification, LoadingOverlay, Pagination, RemoveFileButton, Radio  } from "../../components/UI/ui";
+import { listarAeropuertos  } from "../../services/aeropuertoService";
 import { importarAeropuertos } from "../../services/generalService";
 import plus from '../../assets/icons/plus.svg';
 import hideIcon from '../../assets/icons/hide-sidebar.png';
@@ -11,9 +11,11 @@ export default function Aeropuertos() {
   const [codigoFiltro, setCodigoFiltro] = useState("");
   const [ciudadFiltro, setCiudadFiltro] = useState("");
   const [orden, setOrden] = useState("");
-  const [continenteFiltro, setContinenteFiltro] = useState({ america: false, europa: false, asia: false });
+  const [continenteFiltro, setContinenteFiltro] = useState("");
 
   const [aeropuertos, setAeropuertos] = useState([]);
+  const [aeropuertosOriginales, setAeropuertosOriginales] = useState([]);
+
   const [codigo, setCodigo] = useState("");
   const [ciudad, setCiudad] = useState("");
   const [pais, setPais] = useState("");
@@ -38,6 +40,7 @@ export default function Aeropuertos() {
       try {
         const data = await listarAeropuertos();
         setAeropuertos(data);
+        setAeropuertosOriginales(data);
       } catch (err) {
         console.error(err);
         showNotification("danger", "Error al cargar aeropuertos");
@@ -118,57 +121,70 @@ export default function Aeropuertos() {
   };
 
   //Filtros
-  const handleFilter = async () => {
-    setProcessing(true);
-    try {
-      const continenteSeleccionado = Object.keys(continenteFiltro)
-        .filter((key) => continenteFiltro[key])
-        .map((c) => {
-          if (c === "america") return "América del Sur.";
-          if (c === "europa") return "Europa";
-          if (c === "asia") return "Asia";
-          return c;
-        })
-        .join(",");
+  const handleFilter = () => {
+    let lista = [...aeropuertosOriginales];
 
-      const ordenCapacidad = orden === "ascendente" ? "ascendente" : orden === "descendente" ? "descendente" : "";
-
-
-      const data = await filtrarAeropuertos({
-        codigo: codigoFiltro || null,
-        ciudad: ciudadFiltro || null,
-        continente: continenteSeleccionado || null,
-        ordenCapacidad: ordenCapacidad || null,
-      });
-
-      setAeropuertos(data);
-      setCurrentPage(1);
-      showNotification("success", "Filtro aplicado correctamente");
-    } catch (err) {
-      console.error(err);
-      showNotification("danger", "Error al filtrar aeropuertos");
-    } finally {
-      setProcessing(false);
+    if (codigoFiltro.trim()) {
+      lista = lista.filter(a =>
+        a.codigo.toLowerCase().includes(codigoFiltro.toLowerCase())
+      );
     }
+
+    if (ciudadFiltro.trim()) {
+      lista = lista.filter(a =>
+        a.ciudad.toLowerCase().includes(ciudadFiltro.toLowerCase())
+      );
+    }
+
+    if (continenteFiltro) {
+      let normalize = (t) =>
+        t
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .replace(/\./g, "")
+          .toLowerCase();
+
+      let continenteTexto = "";
+
+      if (continenteFiltro === "AMERICA") continenteTexto = "america del sur";
+      if (continenteFiltro === "EUROPA") continenteTexto = "europa";
+      if (continenteFiltro === "ASIA") continenteTexto = "asia";
+
+      lista = lista.filter(a =>
+        normalize(a.continente).includes(continenteTexto)
+      );
+    }
+
+
+    if (orden) {
+      if (orden === "ASC") {
+        lista.sort((a, b) => a.capacidad - b.capacidad);
+      } else if (orden === "DESC") {
+        lista.sort((a, b) => b.capacidad - a.capacidad);
+      }
+    }
+
+    setAeropuertos(lista);
+    setCurrentPage(1);
+    showNotification("success", "Filtros aplicados");
   };
+
+
 
   //Limpiar filtros
-  const handleCleanFilters = async () => {
+  const handleCleanFilters = () => {
     setCodigoFiltro("");
     setCiudadFiltro("");
-    setContinenteFiltro({ america: false, europa: false, asia: false });
+    setContinenteFiltro("");
     setOrden("");
-    setProcessing(true);
-    try {
-      const data = await listarAeropuertos();
-      setAeropuertos(data);
-      showNotification("info", "Filtros limpiados");
-    } catch (err) {
-      showNotification("danger", "Error al limpiar filtros");
-    } finally {
-      setProcessing(false);
-    }
+
+    setAeropuertos(aeropuertosOriginales);
+    setCurrentPage(1);
+
+    showNotification("info", "Filtros limpiados");
   };
+
+
 
   // --- Paginación ---
   const [currentPage, setCurrentPage] = useState(1);
@@ -223,21 +239,29 @@ export default function Aeropuertos() {
 
               <div className="filter-group">
                 <span className="sidebar-subtitle-strong">Continente</span>
-                <Checkbox label="América del Sur." value="america" checked={continenteFiltro.america} onChange={(e) => setContinenteFiltro({ ...continenteFiltro, america: e.target.checked })} />
-                <Checkbox label="Europa" value="europa" checked={continenteFiltro.europa} onChange={(e) => setContinenteFiltro({ ...continenteFiltro, europa: e.target.checked })} />
-                <Checkbox label="Asia" value="asia" checked={continenteFiltro.asia} onChange={(e) => setContinenteFiltro({ ...continenteFiltro, asia: e.target.checked })} />
-              </div>
 
-              <div className="filter-group">
-                <span className="sidebar-subtitle-strong">Orden de capacidad</span>
-                <Dropdown
-                  placeholder="Seleccionar..."
-                  value={orden} // hace que el valor dependa del estado
-                  options={[
-                    { label: "Ascendente", value: "ascendente" },
-                    { label: "Descendente", value: "descendente" },
-                  ]}
-                  onSelect={(val) => setOrden(val)}
+                <Radio 
+                  name="continenteFiltro" 
+                  label="América del Sur" 
+                  value="AMERICA" 
+                  checked={continenteFiltro === "AMERICA"} 
+                  onChange={(e) => setContinenteFiltro(e.target.value)} 
+                />
+
+                <Radio 
+                  name="continenteFiltro" 
+                  label="Europa" 
+                  value="EUROPA" 
+                  checked={continenteFiltro === "EUROPA"} 
+                  onChange={(e) => setContinenteFiltro(e.target.value)} 
+                />
+
+                <Radio 
+                  name="continenteFiltro" 
+                  label="Asia" 
+                  value="ASIA" 
+                  checked={continenteFiltro === "ASIA"} 
+                  onChange={(e) => setContinenteFiltro(e.target.value)} 
                 />
               </div>
 

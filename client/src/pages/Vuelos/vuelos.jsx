@@ -1,11 +1,302 @@
-import React from 'react'
+import React, { useState, useEffect } from "react";
 import './vuelos.scss'
+import { ButtonAdd, Input, Table, SidebarActions, Notification, LoadingOverlay, Pagination, RemoveFileButton, Dropdown } from "../../components/UI/ui";
+import { listarPlanes } from "../../services/vuelosService";
+import { importarVuelos } from "../../services/generalService";
+import plus from '../../assets/icons/plus.svg';
+import hideIcon from '../../assets/icons/hide-sidebar.png';
 
 export default function Vuelos() {
+  const [collapsed, setCollapsed] = useState(false);
+  const [codigoFiltro, setCodigoFiltro] = useState("");
+  const [ordenHora, setOrdenHora] = useState("");
+
+  const opcionesOrden = [
+    { label: "Ascendente", value: "asc" },
+    { label: "Descendente", value: "desc" },
+  ];
+
+  const [vuelos, setVuelos] = useState([]);
+  const [vuelosOriginales, setVuelosOriginales] = useState([]);
+
+  const [codigo, setCodigo] = useState("");
+  const [horaSalida, setHoraSalida] = useState("");
+  const [horaLlegada, setHoraLlegada] = useState("");
+  const [capacidad, setCapacidad] = useState("");
+  const [origen, setOrigen] = useState("");
+  const [destino, setDestino] = useState("");
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [archivo, setArchivo] = useState(null);
+
+  const [loading, setLoading] = useState(true);
+  const [processing, setProcessing] = useState(false);
+  const [notification, setNotification] = useState(null);
+
+  const showNotification = (type, message) => {
+    setNotification({ type, message });
+    setTimeout(() => setNotification(null), 5000);
+  };
+
+  useEffect(() => {
+    const fetchVuelos = async () => {
+      try {
+        const data = await listarPlanes();
+        setVuelos(data);
+        setVuelosOriginales(data);   // ← copia original
+      } catch (err) {
+        console.error(err);
+        showNotification("danger", "Error al cargar vuelos");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchVuelos();
+  }, []);
+
+  
+  // Columnas nuevas para vuelos
+  const headers = [
+    { label: "Código", key: "codigo" },
+    { label: "Salida UTC", key: "horaSalidaUTC" },
+    { label: "Llegada UTC", key: "horaLlegadaUTC" },
+    { label: "Capacidad", key: "capacidad" },
+    { label: "Acciones", key: "acciones" },
+  ];
+
+  const handleFileChange = (e) => {
+    if (e.target.files.length > 0) {
+      setArchivo(e.target.files[0]);
+    } else {
+      setArchivo(null);
+    }
+  };
+
+  const handleAdd = async () => {
+    if (!archivo && (!codigo.trim() || !horaSalida.trim())) {
+      showNotification(
+        "warning",
+        "Por favor selecciona un archivo o completa los campos antes de continuar."
+      );
+      return;
+    }
+
+    // Validación del nombre exacto del archivo
+    if (
+      archivo &&
+      archivo.name !== "c.1inf54.25.2.planes_vuelo.v4.20250818.txt"
+    ) {
+      showNotification(
+        "warning",
+        "El archivo debe llamarse exactamente 'c.1inf54.25.2.planes_vuelo.v4.20250818'."
+      );
+      return;
+    }
+
+    try {
+      setProcessing(true);
+
+      if (archivo) {
+        // Importar usando AlgorithmController
+        await importarVuelos(archivo);
+        showNotification("success", "Vuelos importados correctamente");
+      } else {
+        // Aquí podrías implementar agregar manualmente un vuelo si lo decides
+        showNotification("success", "Vuelo agregado correctamente");
+      }
+
+      // Recargar lista
+      const data = await listarPlanes();
+      setVuelos(data);
+
+      // Reset form & modal
+      setIsModalOpen(false);
+      setArchivo(null);
+
+      setCodigo("");
+      setHoraSalida("");
+      setHoraLlegada("");
+      setCapacidad("");
+      setOrigen("");
+      setDestino("");
+
+    } catch (error) {
+      console.error(error);
+      showNotification("danger", "Error al agregar vuelo");
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+
+  //Filtro
+  const handleFilter = () => {
+    let lista = [...vuelosOriginales];
+
+    // 1) Filtro por código
+    if (codigoFiltro.trim()) {
+      lista = lista.filter(v =>
+        v.codigo.toLowerCase().includes(codigoFiltro.toLowerCase())
+      );
+    }
+
+    // 2) Orden por hora
+    if (ordenHora) {
+      lista.sort((a, b) => {
+        const tA = new Date(`1970-01-01T${a.horaSalidaUTC}Z`).getTime();
+        const tB = new Date(`1970-01-01T${b.horaSalidaUTC}Z`).getTime();
+
+        return ordenHora === "asc" ? tA - tB : tB - tA;
+      });
+    }
+
+    setVuelos(lista);
+    setCurrentPage(1);
+  };
+
+  //Limpiar filtros
+  const handleCleanFilters = () => {
+    setCodigoFiltro("");
+    setOrdenHora("")
+    setVuelos(vuelosOriginales);
+    setCurrentPage(1);
+  };
+
+
+  // --- Paginación ---
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 20;
+  const indexOfLast = currentPage * itemsPerPage;
+  const indexOfFirst = indexOfLast - itemsPerPage;
+  const currentVuelos = vuelos.slice(indexOfFirst, indexOfLast);
+
   return (
-    <div className="vuelos-page">
-      <h1>Página de Vuelos</h1>
-      <p>Información de vuelos programados y sus rutas.</p>
+    <div className="page">
+
+      {(loading || processing) && (
+        <LoadingOverlay
+          text={processing ? "Procesando vuelos..." : "Cargando vuelos..."}
+        />
+      )}
+
+      {notification && (
+        <Notification
+          type={notification.type}
+          message={notification.message}
+          onClose={() => setNotification(null)}
+        />
+      )}
+
+      {/* Sidebar */}
+      <aside className={`sidebar ${collapsed ? "collapsed" : ""}`}>
+        <div className="sidebar-header">
+          <span className="sidebar-title">Herramientas</span>
+          <img
+            src={hideIcon}
+            alt="Ocultar"
+            className="hide-icon"
+            onClick={() => setCollapsed(!collapsed)}
+          />
+        </div>
+
+        {!collapsed && (
+          <div className="sidebar-content">
+            <span className="sidebar-subtitle">Filtros</span>
+
+            <div className="filter-group">
+              <span className="sidebar-subtitle-strong">Código</span>
+              <Input placeholder="Escribir..." value={codigoFiltro} onChange={(e) => setCodigoFiltro(e.target.value)} />
+            </div>
+
+            <div className="filter-group">
+              <span className="sidebar-subtitle-strong">Ordenar por salida</span>
+
+              <Dropdown
+                options={opcionesOrden}
+                value={ordenHora}
+                onSelect={(v) => setOrdenHora(v)}
+                placeholder="Ordenar por hora salida"
+              />
+            </div>
+
+            <SidebarActions 
+              onFilter={handleFilter}
+              onClean={handleCleanFilters}
+            />
+          </div>
+        )}
+      </aside>
+
+      {/* Contenido principal */}
+      <section className="contenido">
+        <div className="content-header">
+          <h4>Gestión de vuelos</h4>
+          <ButtonAdd icon={plus} label="Agregar vuelo" onClick={() => setIsModalOpen(true)} />
+        </div>
+
+        {loading ? (
+          <LoadingOverlay text="Cargando vuelos..." />
+        ) : (
+          <>
+            <Table
+              headers={headers}
+              data={currentVuelos}
+            />
+            <Pagination
+              totalItems={vuelos.length}
+              itemsPerPage={itemsPerPage}
+              currentPage={currentPage}
+              onPageChange={setCurrentPage}
+            />
+          </>
+        )}
+      </section>
+
+      {/* Modal */}
+      {isModalOpen && (
+        <div className="modal" onClick={() => setIsModalOpen(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3 className="modal-title">Agregar vuelo</h3>
+
+              <label htmlFor="fileInput" className="file-label">Agregar archivo</label>
+              <input type="file" id="fileInput" className="file-input" onChange={handleFileChange} />
+            </div>
+
+            <div className="file-name">
+              {archivo ? archivo.name : "Ningún archivo seleccionado"}
+              {archivo && (
+                <RemoveFileButton onClick={() => setArchivo(null)} />
+              )}
+            </div>
+
+            <div className="modal-body">
+              <label>Código</label>
+              <Input placeholder="Escribe el código" value={codigo} onChange={(e) => setCodigo(e.target.value)} disabled={!!archivo}/>
+
+              <label>Hora salida UTC</label>
+              <Input placeholder="Escribe la hora de salida UTC" value={horaSalida} onChange={(e) => setHoraSalida(e.target.value)} disabled={!!archivo}/>
+
+              <label>Hora llegada UTC</label>
+              <Input placeholder="Escribe la hora de llegada UTC" value={horaLlegada} onChange={(e) => setHoraLlegada(e.target.value)} disabled={!!archivo}/>
+
+              <label>Capacidad</label>
+              <Input placeholder="Escribe la capacidad" value={capacidad} onChange={(e) => setCapacidad(e.target.value)} disabled={!!archivo}/>
+
+              <label>Aeropuerto origen</label>
+              <Input placeholder="Escribe el aeropuerto origen" value={origen} onChange={(e) => setOrigen(e.target.value)} disabled={!!archivo}/>
+
+              <label>Aeropuerto destino</label>
+              <Input placeholder="Escribe el aeropuerto destino" value={destino} onChange={(e) => setDestino(e.target.value)} disabled={!!archivo}/>
+            </div>
+
+            <div className="modal-footer">
+              <button className="btn red" onClick={() => setIsModalOpen(false)}>Cancelar</button>
+              <button className="btn green" onClick={handleAdd}>Agregar</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
-  )
+  );
 }
