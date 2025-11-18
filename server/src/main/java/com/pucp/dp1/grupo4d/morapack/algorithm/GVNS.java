@@ -31,23 +31,19 @@ import com.pucp.dp1.grupo4d.morapack.util.G4D;
 
 
 public class GVNS {
-    public static Double D_MIN = 0.001;                 // Diferencia mínima considerable de fitness
-    public static Integer I_MAX = 1;                    // Número máximo de iteraciones de exploración inicial
-    public static Integer L_MIN = 1;                    // Nivel mínimo de búsqueda local
-    public static Integer L_MAX = 3;                    // Nivel máximo de búsqueda local
-    public static Integer K_MIN = 3;                    // Nivel mínimo de perturbación
-    public static Integer K_MAX = 5;                    // Nivel máximo de perturbación
-    public static Integer T_MAX = 60;                   // Tiempo máximo esperado de exploración global
-    public static Integer MAX_INTENTOS = 5;             // Número de máximo de intentos por nivel de perturbación
+    public static Double D_MIN;                         // Diferencia mínima considerable de fitness
+    public static Integer I_MAX;                        // Número máximo de iteraciones de exploración inicial
+    public static Integer L_MIN;                        // Nivel mínimo de búsqueda local
+    public static Integer L_MAX;                        // Nivel máximo de búsqueda local
+    public static Integer K_MIN;                        // Nivel mínimo de perturbación
+    public static Integer K_MAX;                        // Nivel máximo de perturbación
+    public static Integer T_MAX;                        // Tiempo máximo esperado de exploración global
+    public static Integer MAX_INTENTOS;                 // Número de máximo de intentos por nivel de perturbación
     private static final Random random = new Random();
-    private Solucion solucionINI;
-    private Solucion solucionVND;
-    private Solucion solucionVNS;
+    private Solucion solucion;
 
     public GVNS() {
-        this.solucionINI = null;
-        this.solucionVND = null;
-        this.solucionVNS = null;
+        this.solucion = null;
     }
 
     public void planificar(Problematica problematica) {
@@ -63,7 +59,7 @@ public class GVNS {
         G4D.Logger.logf("[+] SOLUCION INICIAL GENERADA! (FITNESS: %.3f)%n", x.getFitness());
         G4D.Logger.Stats.log_stat_local_sol();
         imprimirSolucion(x, "SolucionInicial.txt");
-        this.solucionINI = x;
+        this.solucion = x;
         // Optimización inicial (Variable Neighborhood Descent)
         G4D.Logger.Stats.set_local_start();
         G4D.Logger.log("Realizando optimización inicial.. ");
@@ -72,7 +68,7 @@ public class GVNS {
         G4D.Logger.logf("[+] OPTIMIZACION INICIAL REALIZADA! (FITNESS: %.3f)%n", x.getFitness());
         G4D.Logger.Stats.log_stat_local_sol();
         imprimirSolucion(x, "SolucionVND.txt");
-        this.solucionVND = x;
+        this.solucion = x;
         // Optimización final (Variable Neighborhood Search)
         G4D.Logger.Stats.set_local_start();
         G4D.Logger.logln("Realizando optimización final.. [VNS]");
@@ -81,7 +77,7 @@ public class GVNS {
         G4D.Logger.logf("[+] OPTIMIZACION FINAL REALIZADA! (FITNESS: %.3f)%n", x.getFitness());
         G4D.Logger.Stats.log_stat_local_sol();
         imprimirSolucion(x, "SolucionGVNS.txt");
-        this.solucionVNS = x;
+        this.solucion = x;
         G4D.Logger.Stats.set_global_duration();
         G4D.Logger.Stats.log_stat_global_sol();
     }
@@ -89,7 +85,7 @@ public class GVNS {
     private void solucionInicial(Problematica problematica, Solucion solucion) {
         G4D.Logger.logln("[NN]");
         // Declaración & inicialización de variables
-        Boolean errorDeEnrutamiento, haySolucion = false;
+        boolean errorDeEnrutamiento, haySolucion = false;
         Problematica pIni = new Problematica(problematica);
         Solucion sAux = new Solucion();
         solucion.reasignar(sAux);
@@ -100,8 +96,8 @@ public class GVNS {
             List<Aeropuerto> origenes = pAux.origenes;
             List<Plan> planes = pAux.planes;
             List<Pedido> pedidos = pAux.pedidos;
-            Set<Vuelo> vuelosEnTransito = pAux.vuelosEnTransito;
-            Set<Ruta> rutasEnOperacion = pAux.rutasEnOperacion;
+            Set<Vuelo> vuelosEnTransito = pAux.vuelos;
+            Set<Ruta> rutasEnOperacion = pAux.rutas;
             G4D.Logger.logf(">> Iteración: %d de '%d':%n", i + 1, I_MAX);
             errorDeEnrutamiento = false;
             G4D.Logger.Stats.numPed = 1;
@@ -152,7 +148,7 @@ public class GVNS {
         // Validación por inexistencia de solución
         if(!haySolucion) {
             G4D.Logger.logf_err("ERROR: No fue posible enrutar todos los pedidos en '%d' iteraciones.%n", I_MAX);
-            this.solucionINI = null;
+            this.solucion = null;
             solucion.setFitness(-9999.99);
         }
     }
@@ -183,7 +179,7 @@ public class GVNS {
                 if(ruta == null) {
                     G4D.Logger.logln_err("ERROR: No fue posible generar una ruta a partir de este origen.");
                     origenesDisponibles.remove(origen);
-                    if(origenesDisponibles.size() > 0) G4D.Logger.delete_lines(8);
+                    if(!origenesDisponibles.isEmpty()) G4D.Logger.delete_lines(8);
                     else G4D.Logger.delete_lines(6);
                     continue;
                 } else G4D.Logger.delete_upper_line();
@@ -951,11 +947,9 @@ public class GVNS {
         }
     }
 
-    public void imprimirSolucionINI(String rutaArchivo) { imprimirSolucion(this.solucionINI, rutaArchivo); }
-
-    public void imprimirSolucionVND(String rutaArchivo) { imprimirSolucion(this.solucionVND, rutaArchivo); }
-
-    public void imprimirSolucionVNS(String rutaArchivo) { imprimirSolucion(this.solucionVNS, rutaArchivo); }
+    public void imprimirSolucion(String rutaArchivo) {
+        imprimirSolucion(this.solucion, rutaArchivo);
+    }
 
     private void imprimirSolucion(Solucion solucion, String rutaArchivo) {
         G4D.Logger.logf("Cargando archivo 'Solucion' a la ruta '%s'..",rutaArchivo);
@@ -1093,15 +1087,7 @@ public class GVNS {
         }
     }
 
-    public Solucion getSolucionINI() {
-        return solucionINI;
-    }
-
-    public Solucion getSolucionVND() {
-        return solucionVND;
-    }
-
-    public Solucion getSolucionVNS() {
-        return solucionVNS;
+    public Solucion getSolucion() {
+        return solucion;
     }
 }

@@ -10,7 +10,6 @@ import com.pucp.dp1.grupo4d.morapack.mapper.ParametrosMapper;
 import com.pucp.dp1.grupo4d.morapack.model.dto.DTO;
 import com.pucp.dp1.grupo4d.morapack.model.dto.response.ListResponse;
 import com.pucp.dp1.grupo4d.morapack.model.entity.AeropuertoEntity;
-import com.pucp.dp1.grupo4d.morapack.model.entity.LoteEntity;
 import com.pucp.dp1.grupo4d.morapack.model.entity.ParametrosEntity;
 import com.pucp.dp1.grupo4d.morapack.repository.ParametrosRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,9 +22,10 @@ public class ParametrosService {
     @Autowired
     private AeropuertoService aeropuertoService;
 
-    private final ParametrosRepository parametrosRepository;
     @Autowired
     private ParametrosMapper parametrosMapper;
+
+    private final ParametrosRepository parametrosRepository;
 
     public ParametrosService(ParametrosRepository parametrosRepository) {
         this.parametrosRepository = parametrosRepository;

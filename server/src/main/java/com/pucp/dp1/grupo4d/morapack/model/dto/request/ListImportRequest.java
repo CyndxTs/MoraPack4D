@@ -13,6 +13,6 @@ import java.util.List;
 
 @Data
 public class ListImportRequest {
+    private String tipo;
     private List<DTO> dtos = new ArrayList<>();
-    private String tipoDtos;
 }

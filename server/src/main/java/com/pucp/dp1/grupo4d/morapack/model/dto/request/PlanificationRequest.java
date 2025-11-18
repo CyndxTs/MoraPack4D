@@ -11,9 +11,10 @@ import lombok.Data;
 
 @Data
 public class PlanificationRequest {
-    private Boolean replanificar;
     private Boolean guardarPlanificacion;
+    private Boolean replanificar;
+    private Boolean considerarDesfaseTemporal;
+    private Boolean guardarParametrizacion;
     private Boolean reparametrizar;
     private ParametrosDTO parameters;
-    private Boolean guardarParametrizacion;
 }

@@ -14,25 +14,22 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import com.pucp.dp1.grupo4d.morapack.model.algorithm.*;
-import com.pucp.dp1.grupo4d.morapack.util.G4D;
 
 public class Solucion {
-    private String codigo;
     private Double fitness;
-    public static Double f_UA = 1.015;
+    public static Double f_UA;                              // Factor de Umbral de Aberración para solución
     private Double ratioPromedioDeUtilizacionTemporal;
-    public static Double f_UT = 5000.0;
+    public static Double f_UT;                              // Factor de consideración de utilización de temporal de solución
     private Double ratioPromedioDeDesviacionEspacial;
-    public static Double f_DE = 2000.0;
+    public static Double f_DE;                              // Factor de consideración de desviación espacial de solución
     private Double ratioPromedioDeDisposicionOperacional;
-    public static Double f_DO = 3000.0;
+    public static Double f_DO;                              // Factor de consideración de disposición operacional de solución
     private List<Pedido> pedidosAtendidos;
     private List<Aeropuerto> aeropuertosTransitados;
     private Set<Vuelo> vuelosEnTransito;
     private Set<Ruta> rutasEnOperacion;
 
     public Solucion() {
-        this.codigo = G4D.Generator.getUniqueString("SOL");
         this.fitness = 9999.999;
         this.ratioPromedioDeUtilizacionTemporal = 1.0;
         this.ratioPromedioDeDesviacionEspacial = 1.0;
@@ -47,10 +44,6 @@ public class Solucion {
         this.reasignar(solucion);
     }
 
-    public double obtenerUmbralDeAberracion() {
-        return f_UA*this.fitness;
-    }
-
     public Solucion replicar() {
         Map<String, Cliente> poolClientes = new HashMap<>();
         Map<String, Aeropuerto> poolAeropuertos = new HashMap<>();
@@ -59,7 +52,6 @@ public class Solucion {
         Map<String, Vuelo> poolVuelos = new HashMap<>();
         Map<String, Plan> poolPlanes = new HashMap<>();
         Solucion solucion = new Solucion();
-        solucion.codigo = this.codigo;
         solucion.fitness = this.fitness;
         solucion.ratioPromedioDeUtilizacionTemporal = this.ratioPromedioDeUtilizacionTemporal;
         solucion.ratioPromedioDeDesviacionEspacial = this.ratioPromedioDeDesviacionEspacial;
@@ -72,7 +64,6 @@ public class Solucion {
     }
 
     public void reasignar(Solucion solucion) {
-        this.codigo = solucion.codigo;
         this.fitness = solucion.fitness;
         this.ratioPromedioDeUtilizacionTemporal = solucion.ratioPromedioDeUtilizacionTemporal;
         this.ratioPromedioDeDesviacionEspacial = solucion.ratioPromedioDeDesviacionEspacial;
@@ -83,25 +74,8 @@ public class Solucion {
         this.rutasEnOperacion = new HashSet<>(solucion.rutasEnOperacion);
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        Solucion that = (Solucion) o;
-        return codigo != null && codigo.equals(that.codigo);
-    }
-
-    @Override
-    public int hashCode() {
-        return codigo != null ? codigo.hashCode() : 0;
-    }
-
-    public String getCodigo() {
-        return codigo;
-    }
-
-    public void setCodigo(String codigo) {
-        this.codigo = codigo;
+    public double obtenerUmbralDeAberracion() {
+        return f_UA * this.fitness;
     }
 
     public Double getFitness() {
@@ -113,8 +87,8 @@ public class Solucion {
         setRatioPromedioDeDesviacionEspacial();
         setRatioPromedioDeDisposicionOperacional();
         this.fitness = f_UT * this.ratioPromedioDeUtilizacionTemporal +
-                f_DE * this.ratioPromedioDeDesviacionEspacial +
-                f_DO * this.ratioPromedioDeDisposicionOperacional;
+                       f_DE * this.ratioPromedioDeDesviacionEspacial +
+                       f_DO * this.ratioPromedioDeDisposicionOperacional;
     }
 
     public void setFitness(Double fitness) {
