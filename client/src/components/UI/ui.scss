@@ -83,10 +83,10 @@
 .btnAdd-icon {
   display: inline-flex;
   align-items: center;
-  gap: 8px; /* espacio entre icono y texto */
-  background-color: #007bff; /* azul */
+  gap: 30px; /* espacio entre icono y texto */
+  background-color: var(--color-dark-blue);
   color: #fff; /* texto blanco */
-  font-size: 14px;
+  font-size: 18px;
   font-weight: bold;
   border: none;
   border-radius: 6px;
@@ -103,7 +103,7 @@
 }
 
 .btnAdd-icon:hover {
-  background-color: #0056b3; /* azul más oscuro al pasar */
+  background-color: #073461; /* azul más oscuro al pasar */
 }
 
 /* === Checkbox === */
