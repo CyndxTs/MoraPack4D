@@ -231,7 +231,7 @@ export default function Vuelos() {
       {/* Contenido principal */}
       <section className="contenido">
         <div className="content-header">
-          <h4>Gestión de vuelos</h4>
+          <h4>Gestión de planes de vuelos</h4>
           <ButtonAdd icon={plus} label="Agregar vuelo" onClick={() => setIsModalOpen(true)} />
         </div>
 

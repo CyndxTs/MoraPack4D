@@ -281,7 +281,9 @@ export default function Pedidos() {
     const fechaLocal = new Date(anio, mes - 1, dia, hora, minuto);
 
     // Convertimos a UTC ISO → yyyy-MM-ddTHH:mm:ssZ
-    return fechaLocal.toISOString();
+    const fechaString = fechaDDMMYYYY + " " + horaHHmm+":00";
+    console.log(fechaString)
+    return fechaString;
   }
 
   function convertirManualAUTC(fechaAAAAMMDD, horaHH, minutoMM) {
@@ -293,7 +295,9 @@ export default function Pedidos() {
 
     const fechaLocal = new Date(anio, mes - 1, dia, horaHH, minutoMM);
 
-    return fechaLocal.toISOString();  // yyyy-MM-ddTHH:mm:ssZ
+    const fechaString = fechaAAAAMMDD + " " + horaHH+":"+minutoMM+":00";
+    console.log(fechaString)
+    return fechaString;  // yyyy-MM-ddTHH:mm:ssZ
   }
 
 
