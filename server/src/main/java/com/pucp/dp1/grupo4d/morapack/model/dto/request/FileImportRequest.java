@@ -10,7 +10,7 @@ import lombok.Data;
 
 @Data
 public class FileImportRequest {
-    private String tipoArchivo;
+    private String tipo;
     private String fechaHoraInicio;
     private String fechaHoraFin;
 }

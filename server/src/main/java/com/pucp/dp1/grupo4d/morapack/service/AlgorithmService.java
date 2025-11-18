@@ -25,7 +25,6 @@ import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -102,7 +101,7 @@ public class AlgorithmService {
 
     public GenericResponse importarDesdeArchivo(MultipartFile file, FileImportRequest request) {
         try {
-            switch (request.getTipoArchivo()) {
+            switch (request.getTipo()) {
                 case "PEDIDOS":
                     LocalDateTime fechaHoraInicio = (G4D.isAdmissible(request.getFechaHoraInicio())) ? G4D.toDateTime(request.getFechaHoraInicio()) : G4D.toDateTime("1999-12-31 23:59:59");
                     LocalDateTime fechaHoraFin = (G4D.isAdmissible(request.getFechaHoraFin())) ? G4D.toDateTime(request.getFechaHoraFin()) : LocalDateTime.now();
@@ -131,7 +130,7 @@ public class AlgorithmService {
 
     public GenericResponse importarDesdeLista(ListImportRequest request) {
         try {
-            switch (request.getTipoDtos()) {
+            switch (request.getTipo()) {
                 case "PEDIDOS":
                     pedidoService.importar(request.getDtos());
                     return new GenericResponse(true, "Pedidos importados correctamente!");
@@ -150,6 +149,11 @@ public class AlgorithmService {
             boolean replanificar = request.getReplanificar();
             if(request.getReparametrizar()) {
                 ParametrosDTO parametrosDTO = request.getParameters();
+                if(request.getConsiderarDesfaseTemporal()) {
+                    int desfaseTemporal = Math.max(parametrosDTO.getMaxDiasEntregaIntracontinental(), parametrosDTO.getMaxDiasEntregaIntercontinental());
+                    parametrosDTO.setFechaHoraInicio(G4D.toDisplayString(G4D.toDateTime(parametrosDTO.getFechaHoraInicio()).minusDays(desfaseTemporal)));
+                    parametrosDTO.setFechaHoraFin(G4D.toDisplayString(G4D.toDateTime(parametrosDTO.getFechaHoraFin()).plusDays(desfaseTemporal)));
+                }
                 parametrosMapper.toAlgorithm(parametrosDTO);
                 if(request.getGuardarParametrizacion()) {
                     ParametrosEntity parametrosEntity = parametrosMapper.toEntity(parametrosDTO);
@@ -162,66 +166,6 @@ public class AlgorithmService {
                     parametrosService.save(parametrosEntity);
                 }
             }
-
-            G4D.Logger.logln("===== REQUEST - FLAGS =====");
-            G4D.Logger.logf("guardarPlanificacion: %s%n", request.getGuardarPlanificacion());
-            G4D.Logger.logf("replanificar: %s%n", request.getReplanificar());
-            G4D.Logger.logf("reparametrizar: %s%n", request.getReparametrizar());
-            G4D.Logger.logf("guardarParametrizacion: %s%n", request.getGuardarParametrizacion());
-            G4D.Logger.logln("===============================================");
-
-            ParametrosDTO parametrosDTO = request.getParameters();
-            ParametrosEntity parametrosEntityLog = request.getReparametrizar()
-                    ? parametrosMapper.toEntity(parametrosDTO)
-                    : parametrosService.findById(1);
-
-            // LOGS DE TODOS LOS PARÁMETROS USADOS
-            G4D.Logger.logln("===== PARÁMETROS RECIBIDOS / USADOS =====");
-            G4D.Logger.logf("maxDiasEntregaIntracontinental: %s%n", parametrosEntityLog.getMaxDiasEntregaIntracontinental());
-            G4D.Logger.logf("maxDiasEntregaIntercontinental: %s%n", parametrosEntityLog.getMaxDiasEntregaIntercontinental());
-            G4D.Logger.logf("maxHorasRecojo: %s%n", parametrosEntityLog.getMaxHorasRecojo());
-            G4D.Logger.logf("minHorasEstancia: %s%n", parametrosEntityLog.getMinHorasEstancia());
-            G4D.Logger.logf("maxHorasEstancia: %s%n", parametrosEntityLog.getMaxHorasEstancia());
-            G4D.Logger.logf("fechaHoraInicio: %s%n", parametrosEntityLog.getFechaHoraInicio());
-            G4D.Logger.logf("fechaHoraFin: %s%n", parametrosEntityLog.getFechaHoraFin());
-            G4D.Logger.logf("considerarDesfaseTemporal: %s%n", parametrosEntityLog.getConsiderarDesfaseTemporal());
-            G4D.Logger.logf("dMin: %s%n", parametrosEntityLog.getDMin());
-            G4D.Logger.logf("iMax: %s%n", parametrosEntityLog.getIMax());
-            G4D.Logger.logf("eleMin: %s%n", parametrosEntityLog.getEleMin());
-            G4D.Logger.logf("eleMax: %s%n", parametrosEntityLog.getEleMax());
-            G4D.Logger.logf("kMin: %s%n", parametrosEntityLog.getKMin());
-            G4D.Logger.logf("kMax: %s%n", parametrosEntityLog.getKMax());
-            G4D.Logger.logf("tMax: %s%n", parametrosEntityLog.getTMax());
-            G4D.Logger.logf("maxIntentos: %s%n", parametrosEntityLog.getMaxIntentos());
-            G4D.Logger.logf("factorDeUmbralDeAberracion: %s%n", parametrosEntityLog.getFactorDeUmbralDeAberracion());
-            G4D.Logger.logf("factorDeUtilizacionTemporal: %s%n", parametrosEntityLog.getFactorDeUtilizacionTemporal());
-            G4D.Logger.logf("factorDeDesviacionEspacial: %s%n", parametrosEntityLog.getFactorDeDesviacionEspacial());
-            G4D.Logger.logf("factorDeDisposicionOperacional: %s%n", parametrosEntityLog.getFactorDeDisposicionOperacional());
-            // LOG DE COD_ORIGENES
-            G4D.Logger.logln("===== COD ORÍGENES =====");
-            if (request.getReparametrizar()) {
-                // Si viene desde DTO
-                List<String> cods = parametrosDTO.getCodOrigenes();
-                if (cods == null || cods.isEmpty()) {
-                    G4D.Logger.logln("codOrigenes: (vacío)");
-                } else {
-                    G4D.Logger.logln("codOrigenes:");
-                    cods.forEach(c -> G4D.Logger.logf(" - %s%n", c));
-                }
-            } else {
-                // Si NO hay reparametrización, imprimir lista vacía del entity
-                List<String> cods = parametrosEntityLog.getCodOrigenes();
-                if (cods == null || cods.isEmpty()) {
-                    G4D.Logger.logln("codOrigenes: (no enviado, por defecto vacío)");
-                } else {
-                    G4D.Logger.logln("codOrigenes:");
-                    cods.forEach(c -> G4D.Logger.logf(" - %s%n", c));
-                }
-            }
-            G4D.Logger.logln("===============================================");
-
-            G4D.Logger.logln("===============================================");
-
             Problematica problematica = new Problematica();
             problematica.cargarDatos(
                     aeropuertoService, aeropuertoAdapter,
@@ -233,10 +177,10 @@ public class AlgorithmService {
             );
             GVNS gvns = new GVNS();
             gvns.planificar(problematica);
-            if(gvns.getSolucionINI() == null) {
+            if(gvns.getSolucion() == null) {
                 return new SolutionResponse(false, "COLAPSO!");
             }
-            Solucion solucion = gvns.getSolucionVNS();
+            Solucion solucion = gvns.getSolucion();
             if(guardarPlanificacion) {
                 guardarSolucion(solucion, problematica);
             }

@@ -28,6 +28,7 @@ public class ClienteService {
     private UsuarioMapper usuarioMapper;
 
     private final ClienteRepository clienteRepository;
+    private final HashMap<String, ClienteEntity> clientes = new HashMap<>();
 
     public ClienteService(ClienteRepository clienteRepository) {
         this.clienteRepository = clienteRepository;
@@ -73,6 +74,32 @@ public class ClienteService {
         return  clienteRepository.findByDateTimeRange(fechaHoraInicio, fechaHoraFin);
     }
 
+    public ClienteEntity obtenerPorCodigo(String codigo) {
+        ClienteEntity cliente = clientes.get(codigo);
+        if (cliente == null) {
+            cliente = this.findByCodigo(codigo).orElse(null);
+            if (cliente == null) {
+                cliente = new ClienteEntity();
+                cliente.setCodigo(codigo);
+                cliente.setNombre(G4D.Generator.getUniqueName());
+                String correo = G4D.Generator.getUniqueEmail();
+                boolean existeCorreo = this.existsByCorreo(correo);
+                if(existeCorreo) {
+                    String newCorreo = "";
+                    while (existeCorreo) {
+                        newCorreo = G4D.Generator.addRandomInteger(correo, correo.indexOf('@'));
+                        existeCorreo = this.existsByCorreo(newCorreo);
+                    }
+                    cliente.setCorreo(newCorreo);
+                } else cliente.setCorreo(correo);
+                cliente.setContrasenia("12345678");
+                this.save(cliente);
+            }
+            clientes.put(codigo, cliente);
+        }
+        return cliente;
+    }
+
     public ListResponse listar() {
         try {
             List<DTO> clientesDTO = new ArrayList<>();
@@ -102,7 +129,7 @@ public class ClienteService {
     }
 
     public void importar(MultipartFile archivo) {
-        List<ClienteEntity> clientes = new ArrayList<>();
+        int posCarga = 0;
         try {
             G4D.Logger.logf("Cargando clientes desde '%s'..%n", archivo.getName());
             Scanner archivoSC = new Scanner(archivo.getInputStream(), G4D.getFileCharset(archivo));
@@ -115,18 +142,22 @@ public class ClienteService {
                 cliente.setNombre(lineaSC.next());
                 cliente.setCorreo(lineaSC.next());
                 cliente.setContrasenia(lineaSC.next());
-                clientes.add(cliente);
+                this.save(cliente);
+                posCarga++;
                 lineaSC.close();
             }
             archivoSC.close();
-            clientes.forEach(this::save);
-            G4D.Logger.logf("[<] CLIENTES CARGADOS! ('%d')%n", clientes.size());
+            G4D.Logger.logf("[<] CLIENTES CARGADOS! ('%d')%n", posCarga);
         } catch (NoSuchElementException e) {
             G4D.Logger.logf_err("[X] FORMATO DE ARCHIVO INVALIDO! ('%s')%n", archivo.getName());
-            System.exit(1);
         } catch (Exception e) {
             e.printStackTrace();
-            System.exit(1);
+        } finally {
+            limpiarPools();
         }
+    }
+
+    public void limpiarPools() {
+        clientes.clear();
     }
 }

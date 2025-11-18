@@ -22,13 +22,14 @@ public class Problematica {
     public static Double MAX_HORAS_ESTANCIA;
     public static LocalDateTime FECHA_HORA_INICIO;
     public static LocalDateTime FECHA_HORA_FIN;
+    public static List<String> CODIGOS_DE_ORIGENES;
     public List<Aeropuerto> origenes;
     public List<Aeropuerto> destinos;
     public List<Plan> planes;
     public List<Cliente> clientes;
     public List<Pedido> pedidos;
-    public Set<Vuelo> vuelosEnTransito;
-    public Set<Ruta> rutasEnOperacion;
+    public Set<Vuelo> vuelos;
+    public Set<Ruta> rutas;
 
     public Problematica() {
         this.origenes = new ArrayList<>();
@@ -36,8 +37,8 @@ public class Problematica {
         this.planes = new ArrayList<>();
         this.clientes = new ArrayList<>();
         this.pedidos = new ArrayList<>();
-        this.vuelosEnTransito = new HashSet<>();
-        this.rutasEnOperacion = new HashSet<>();
+        this.vuelos = new HashSet<>();
+        this.rutas = new HashSet<>();
     }
 
     public Problematica(Problematica problematica) {
@@ -57,8 +58,8 @@ public class Problematica {
         for(Plan plan : this.planes) problematica.planes.add(poolPlanes.computeIfAbsent(plan.getCodigo(), codigo -> plan.replicar(poolAeropuertos, poolLotes)));
         for(Cliente cli : this.clientes) problematica.clientes.add(poolClientes.computeIfAbsent(cli.getCodigo(), codigo -> cli.replicar()));
         for(Pedido ped : this.pedidos) problematica.pedidos.add(ped.replicar(poolClientes, poolAeropuertos, poolLotes, poolRutas, poolVuelos, poolPlanes));
-        for(Vuelo vue : this.vuelosEnTransito) problematica.vuelosEnTransito.add(poolVuelos.computeIfAbsent(vue.getCodigo(), codigo -> vue.replicar(poolAeropuertos, poolLotes, poolPlanes)));
-        for(Ruta rut : this.rutasEnOperacion) problematica.rutasEnOperacion.add(poolRutas.computeIfAbsent(rut.getCodigo(), codigo -> rut.replicar(poolAeropuertos, poolLotes, poolVuelos, poolPlanes)));
+        for(Vuelo vue : this.vuelos) problematica.vuelos.add(poolVuelos.computeIfAbsent(vue.getCodigo(), codigo -> vue.replicar(poolAeropuertos, poolLotes, poolPlanes)));
+        for(Ruta rut : this.rutas) problematica.rutas.add(poolRutas.computeIfAbsent(rut.getCodigo(), codigo -> rut.replicar(poolAeropuertos, poolLotes, poolVuelos, poolPlanes)));
         return problematica;
     }
 
@@ -68,8 +69,8 @@ public class Problematica {
         this.origenes = new ArrayList<>(problematica.origenes);
         this.planes = new ArrayList<>(problematica.planes);
         this.pedidos = new ArrayList<>(problematica.pedidos);
-        this.rutasEnOperacion = new HashSet<>(problematica.rutasEnOperacion);
-        this.vuelosEnTransito = new HashSet<>(problematica.vuelosEnTransito);
+        this.rutas = new HashSet<>(problematica.rutas);
+        this.vuelos = new HashSet<>(problematica.vuelos);
     }
 
     public void cargarDatos(AeropuertoService aeropuertoService, AeropuertoAdapter aeropuertoAdapter,
@@ -78,30 +79,33 @@ public class Problematica {
                             PedidoService pedidoService, PedidoAdapter pedidoAdapter,
                             RutaService rutaService, RutaAdapter rutaAdapter,
                             VueloService vueloService, VueloAdapter vueloAdapter ) {
-        G4D.Logger.logln("Cargando datos desde base de datos..");
-
+        G4D.Logger.logln(">> Cargando desde base de datos..");
+        // Aeropuertos
         List<AeropuertoEntity> aeropuertosEntity = aeropuertoService.findAll();
         aeropuertosEntity.forEach(entity -> {
             Aeropuerto aeropuerto = aeropuertoAdapter.toAlgorithm(entity);
-            if (entity.getEsSede()) {
+            if (CODIGOS_DE_ORIGENES.contains(aeropuerto.getCodigo())) {
                 origenes.add(aeropuerto);
             } else {
                 destinos.add(aeropuerto);
             }
         });
-
-        List<ClienteEntity> clientesEntity = clienteService.findByDateTimeRange(FECHA_HORA_INICIO, FECHA_HORA_FIN);
-        clientesEntity.forEach(entity -> {
-            Cliente cliente = usuarioAdapter.toAlgorithm(entity);
-            clientes.add(cliente);
-        });
-
+        G4D.Logger.logf("[:] AEROPUERTOS CARGADOS! | '%d' origenes! & '%d' destinos!%n", origenes.size(), destinos.size());
+        // Planes
         List<PlanEntity> planesEntity = planService.findAll();
         planesEntity.forEach(entity -> {
             Plan plan = planAdapter.toAlgorithm(entity);
             planes.add(plan);
         });
-
+        G4D.Logger.logf("[:] PLANES DE VUELO CARGADOS! | '%d' planes!%n", planes.size());
+        // Clientes
+        List<ClienteEntity> clientesEntity = clienteService.findByDateTimeRange(FECHA_HORA_INICIO, FECHA_HORA_FIN);
+        clientesEntity.forEach(entity -> {
+            Cliente cliente = usuarioAdapter.toAlgorithm(entity);
+            clientes.add(cliente);
+        });
+        G4D.Logger.logf("[:] CLIENTES CARGADOS! | '%d' clientes!%n", clientes.size());
+        // Pedidos
         G4D.IntegerWrapper cantAtendidos = new G4D.IntegerWrapper();
         List<PedidoEntity> pedidosEntity = pedidoService.findByDateTimeRange(FECHA_HORA_INICIO, FECHA_HORA_FIN);
         pedidosEntity.forEach(entity -> {
@@ -109,25 +113,21 @@ public class Problematica {
             Pedido pedido = pedidoAdapter.toAlgorithm(entity);
             pedidos.add(pedido);
         });
-
+        G4D.Logger.logf("[:] PEDIDOS CARGADOS! | '%d' por atender! & '%d' ya atendidos!%n", pedidos.size() - cantAtendidos.value, cantAtendidos.value);
+        // Vuelos
         List<VueloEntity> vuelosEntity = vueloService.findByDateTimeRange(FECHA_HORA_INICIO, FECHA_HORA_FIN);
         vuelosEntity.forEach(entity -> {
             Vuelo vuelo = vueloAdapter.toAlgorithm(entity);
-            vuelosEnTransito.add(vuelo);
+            vuelos.add(vuelo);
         });
-
+        G4D.Logger.logf("[:] VUELOS CARGADOS! | '%d' vuelos!%n", vuelos.size());
+        // Rutas
         List<RutaEntity> rutasEntity = rutaService.findByDateTimeRange(FECHA_HORA_INICIO, FECHA_HORA_FIN);
         rutasEntity.forEach(entity -> {
             Ruta ruta = rutaAdapter.toAlgorithm(entity);
-            rutasEnOperacion.add(ruta);
+            rutas.add(ruta);
         });
-
+        G4D.Logger.logf("[:] RUTAS CARGADAS! | '%d' rutas!%n", rutas.size());
         G4D.Logger.logln("[<] DATOS CARGADOS!");
-        G4D.Logger.logf("[:] Aeropuertos: '%d' origenes! & '%d' destinos!%n", origenes.size(), destinos.size());
-        G4D.Logger.logf("[:] Clientes: '%d'%n", clientes.size());
-        G4D.Logger.logf("[:] Planes: '%d'%n", planes.size());
-        G4D.Logger.logf("[:] Pedidos: '%d' por atender! | '%d' ya atendidos!%n", pedidos.size() - cantAtendidos.value, cantAtendidos.value);
-        G4D.Logger.logf("[:] Vuelos: '%d'%n", vuelosEnTransito.size());
-        G4D.Logger.logf("[:] Rutas: '%d'%n", rutasEnOperacion.size());
     }
 }

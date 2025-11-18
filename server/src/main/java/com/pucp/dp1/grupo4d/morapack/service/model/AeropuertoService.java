@@ -26,6 +26,7 @@ public class AeropuertoService {
     private AeropuertoMapper aeropuertoMapper;
 
     private final AeropuertoRepository aeropuertoRepository;
+    private final HashMap<String, AeropuertoEntity> aeropuertos = new HashMap<>();
 
     public AeropuertoService(AeropuertoRepository aeropuertoRepository) {
         this.aeropuertoRepository = aeropuertoRepository;
@@ -71,6 +72,17 @@ public class AeropuertoService {
         return aeropuertoRepository.findByEsSede(esSede);
     }
 
+    public AeropuertoEntity obtenerPorCodigo(String codigo) {
+        AeropuertoEntity aeropuerto = aeropuertos.get(codigo);
+        if (aeropuerto == null) {
+            aeropuerto = this.findByCodigo(codigo).orElse(null);
+            if (aeropuerto != null) {
+                aeropuertos.put(codigo, aeropuerto);
+            }
+        }
+        return aeropuerto;
+    }
+
     public ListResponse listar() {
         try {
             List<DTO> aeropuertosDTO = new ArrayList<>();
@@ -103,7 +115,7 @@ public class AeropuertoService {
     }
 
     public void importar(MultipartFile archivo) {
-        List<AeropuertoEntity> aeropuertos = new ArrayList<>();
+        int posCarga = 0;
         String continente = "";
         try {
             G4D.Logger.logf("Cargando aeropuertos desde '%s'..%n", archivo.getName());
@@ -133,19 +145,23 @@ public class AeropuertoService {
                     aeropuerto.setLongitudDMS(lineaSC.next() + " " + lineaSC.next() + " " + lineaSC.next() + " " + lineaSC.next());
                     aeropuerto.setLongitudDEC(G4D.toLonDEC(aeropuerto.getLongitudDMS()));
                     aeropuerto.setEsSede(false);
-                    aeropuertos.add(aeropuerto);
+                    this.save(aeropuerto);
+                    posCarga++;
                 } else continente = lineaSC.next();
                 lineaSC.close();
             }
             archivoSC.close();
-            aeropuertos.forEach(this::save);
-            G4D.Logger.logf("[<] AEROPUERTOS CARGADOS! ('%d')%n", aeropuertos.size());
+            G4D.Logger.logf("[<] AEROPUERTOS CARGADOS! ('%d')%n", posCarga);
         } catch (NoSuchElementException e) {
             G4D.Logger.logf_err("[X] FORMATO DE ARCHIVO INVALIDO! ('%s')%n", archivo.getName());
-            System.exit(1);
         } catch (Exception e) {
             e.printStackTrace();
-            System.exit(1);
+        } finally {
+            limpiarPools();
         }
+    }
+
+    public void limpiarPools() {
+        aeropuertos.clear();
     }
 }

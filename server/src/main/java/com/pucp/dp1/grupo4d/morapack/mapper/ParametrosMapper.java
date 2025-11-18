@@ -25,6 +25,7 @@ public class ParametrosMapper {
         Problematica.MIN_HORAS_ESTANCIA = entity.getMinHorasEstancia();
         Problematica.FECHA_HORA_INICIO = entity.getFechaHoraInicio();
         Problematica.FECHA_HORA_FIN = entity.getFechaHoraFin();
+        Problematica.CODIGOS_DE_ORIGENES = entity.getCodOrigenes();
         GVNS.D_MIN = entity.getDMin();
         GVNS.I_MAX = entity.getIMax();
         GVNS.L_MIN = entity.getEleMin();
@@ -45,9 +46,9 @@ public class ParametrosMapper {
         Problematica.MAX_HORAS_RECOJO = dto.getMaxHorasRecojo();
         Problematica.MAX_HORAS_ESTANCIA = dto.getMaxHorasEstancia();
         Problematica.MIN_HORAS_ESTANCIA = dto.getMinHorasEstancia();
-        int desfaseTemporal = (dto.getConsiderarDesfaseTemporal()) ? Math.max(dto.getMaxDiasEntregaIntracontinental(), dto.getMaxDiasEntregaIntercontinental()): 0;
-        Problematica.FECHA_HORA_INICIO = G4D.toDateTime(dto.getFechaHoraInicio()).minusDays(desfaseTemporal);
-        Problematica.FECHA_HORA_FIN = G4D.toDateTime(dto.getFechaHoraFin()).plusDays(desfaseTemporal);
+        Problematica.FECHA_HORA_INICIO = G4D.toDateTime(dto.getFechaHoraInicio());
+        Problematica.FECHA_HORA_FIN = G4D.toDateTime(dto.getFechaHoraFin());
+        Problematica.CODIGOS_DE_ORIGENES = dto.getCodOrigenes();
         GVNS.D_MIN = dto.getDMin();
         GVNS.I_MAX = dto.getIMax();
         GVNS.L_MIN = dto.getEleMin();
@@ -71,7 +72,6 @@ public class ParametrosMapper {
         entity.setMinHorasEstancia(dto.getMinHorasEstancia());
         entity.setFechaHoraInicio(G4D.toDateTime(dto.getFechaHoraInicio()));
         entity.setFechaHoraFin(G4D.toDateTime(dto.getFechaHoraFin()));
-        entity.setConsiderarDesfaseTemporal(dto.getConsiderarDesfaseTemporal());
         entity.setCodOrigenes(dto.getCodOrigenes());
         entity.setDMin(dto.getDMin());
         entity.setIMax(dto.getIMax());
@@ -97,7 +97,6 @@ public class ParametrosMapper {
         dto.setMinHorasEstancia(entity.getMinHorasEstancia());
         dto.setFechaHoraInicio(G4D.toDisplayString(entity.getFechaHoraInicio()));
         dto.setFechaHoraFin(G4D.toDisplayString(entity.getFechaHoraFin()));
-        dto.setConsiderarDesfaseTemporal(entity.getConsiderarDesfaseTemporal());
         dto.setCodOrigenes(entity.getCodOrigenes());
         dto.setDMin(entity.getDMin());
         dto.setIMax(entity.getIMax());

@@ -97,7 +97,7 @@ public class AdministradorService {
     }
 
     public void importar(MultipartFile archivo) {
-        List<AdministradorEntity> administradores = new ArrayList<>();
+        int posCarga = 0;
         try {
             G4D.Logger.logf("Cargando administradores desde '%s'..%n", archivo.getName());
             Scanner archivoSC = new Scanner(archivo.getInputStream(), G4D.getFileCharset(archivo));
@@ -110,18 +110,16 @@ public class AdministradorService {
                 administrador.setNombre(lineaSC.next());
                 administrador.setCorreo(lineaSC.next());
                 administrador.setContrasenia(lineaSC.next());
-                administradores.add(administrador);
+                this.save(administrador);
+                posCarga++;
                 lineaSC.close();
             }
             archivoSC.close();
-            administradores.forEach(this::save);
-            G4D.Logger.logf("[<] ADMINISTRADORES CARGADOS! ('%d')%n", administradores.size());
+            G4D.Logger.logf("[<] ADMINISTRADORES CARGADOS! ('%d')%n", posCarga);
         } catch (NoSuchElementException e) {
             G4D.Logger.logf_err("[X] FORMATO DE ARCHIVO INVALIDO! ('%s')%n", archivo.getName());
-            System.exit(1);
         } catch (Exception e) {
             e.printStackTrace();
-            System.exit(1);
         }
     }
 }
