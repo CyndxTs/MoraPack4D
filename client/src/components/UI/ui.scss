@@ -352,6 +352,12 @@
   background: var(--color-light-grey);
 }
 
+.custom-dropdown.disabled {
+  opacity: 0.6;
+  pointer-events: none; /* 👈 bloquea cualquier interacción */
+}
+
+
 /* === Tabla === */
 .table-container {
   margin-top: 16px;

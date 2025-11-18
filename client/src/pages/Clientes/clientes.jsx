@@ -52,7 +52,7 @@ export default function Clientes() {
     { label: "Nombre completo", key: "nombre" },
     { label: "Correo", key: "correo" },
     { label: "Estado", key: "estado" },
-    { label: "Acciones", key: "acciones" },
+    //{ label: "Acciones", key: "acciones" },
   ];
 
   const estadoColors = {
@@ -298,7 +298,7 @@ export default function Clientes() {
               )}
             </div>
 
-            <div className="modal-body">
+            {/*<div className="modal-body">
               <label htmlFor="nombreModal">Nombre</label>
               <Input
                 id="nombreModal"
@@ -316,7 +316,7 @@ export default function Clientes() {
                 onChange={(e) => setCorreo(e.target.value)}
                 disabled={!!archivo}
               />
-            </div>
+            </div>*/}
 
             <div className="modal-footer">
               <button

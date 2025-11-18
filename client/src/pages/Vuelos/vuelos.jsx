@@ -61,7 +61,7 @@ export default function Vuelos() {
     { label: "Salida", key: "horaSalida" },
     { label: "Llegada", key: "horaLlegada" },
     { label: "Capacidad", key: "capacidad" },
-    { label: "Acciones", key: "acciones" },
+    //{ label: "Acciones", key: "acciones" },
   ];
 
   const handleFileChange = (e) => {
@@ -271,7 +271,7 @@ export default function Vuelos() {
               )}
             </div>
 
-            <div className="modal-body">
+            {/*<div className="modal-body">
               <label>Código</label>
               <Input placeholder="Escribe el código" value={codigo} onChange={(e) => setCodigo(e.target.value)} disabled={!!archivo}/>
 
@@ -289,7 +289,7 @@ export default function Vuelos() {
 
               <label>Aeropuerto destino</label>
               <Input placeholder="Escribe el aeropuerto destino" value={destino} onChange={(e) => setDestino(e.target.value)} disabled={!!archivo}/>
-            </div>
+            </div>*/}
 
             <div className="modal-footer">
               <button className="btn red" onClick={() => setIsModalOpen(false)}>Cancelar</button>

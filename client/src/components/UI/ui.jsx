@@ -220,6 +220,71 @@ export function Dropdown2({ options = [], value = [], onChange, placeholder = "S
   );
 }
 
+export function Dropdown3({
+  options = [],
+  onSelect,
+  placeholder = "Seleccionar...",
+  value,
+  disabled = false   // agregamos disabled
+}) {
+  const [open, setOpen] = useState(false);
+  const [selected, setSelected] = useState("");
+
+  // Sync value externo
+  useEffect(() => {
+    if (!value) {
+      setSelected("");
+    } else {
+      const opt = options.find((o) => o.value === value);
+      setSelected(opt ? opt.label : "");
+    }
+  }, [value, options]);
+
+  const finalOptions = [{ label: placeholder, value: "" }, ...options];
+
+  const handleSelect = (opt) => {
+    if (disabled) return;  // evita seleccionar si está deshabilitado
+    setSelected(opt.value === "" ? "" : opt.label);
+    onSelect && onSelect(opt.value);
+    setOpen(false);
+  };
+
+  return (
+    <div
+      className={`custom-dropdown ${open ? "open" : ""} ${disabled ? "disabled" : ""}`}
+    >
+      <div
+        className="selected"
+        style={{
+          color: disabled
+            ? "gray"                       //  color gris si está disabled
+            : selected
+            ? "var(--color-negro)"
+            : "var(--color-light-grey)"
+        }}
+        onClick={() => !disabled && setOpen(!open)}   //  bloquea clic
+      >
+        {selected || placeholder}
+      </div>
+
+      {open && !disabled && (                       //  bloquea menú
+        <ul className="options">
+          {finalOptions.map((opt, i) => (
+            <li
+              key={i}
+              className={opt.value === "" ? "placeholder-option" : ""}
+              onClick={() => handleSelect(opt)}
+            >
+              {opt.label}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+
 
 export function Table({ headers = [], data = [], statusColors = {} }) {
   return (

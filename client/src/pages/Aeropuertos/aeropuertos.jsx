@@ -58,7 +58,7 @@ export default function Aeropuertos() {
     { label: "Continente", key: "continente" },
     { label: "Capacidad", key: "capacidad" },
     { label: "Huso horario", key: "husoHorario" },
-    { label: "Acciones", key: "acciones" },
+    //{ label: "Acciones", key: "acciones" },
   ];
 
   const handleFileChange = (e) => {
@@ -317,7 +317,7 @@ export default function Aeropuertos() {
             </div>
 
 
-            <div className="modal-body">
+            {/*<div className="modal-body">
               <label htmlFor="codigoModal">Código</label>
               <Input id="codigoModal" placeholder="Escribe el código" value={codigo} onChange={(e) => setCodigo(e.target.value)} disabled={!!archivo}/>
 
@@ -337,7 +337,7 @@ export default function Aeropuertos() {
               <label htmlFor="husoHorarioModal">Huso horario</label>
               <Input id="husoHorarioModal" placeholder="Escribe el huso horario" value={husoHorario} onChange={(e) => setHusoHorario(e.target.value)} disabled={!!archivo}/>
 
-            </div>
+            </div>*/}
 
             <div className="modal-footer">
               <button className="btn red" onClick={() => setIsModalOpen(false)}>Cancelar</button>

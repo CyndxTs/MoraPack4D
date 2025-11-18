@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from "react";
 import "./pedidos.scss";
-import { ButtonAdd, Input, DateTimeInline, Dropdown, Table, SidebarActions, Notification, LoadingOverlay, Pagination, RemoveFileButton  } from "../../components/UI/ui";
+import { ButtonAdd, Input, DateTimeInline, Dropdown, Table, SidebarActions, Notification, LoadingOverlay, Pagination, RemoveFileButton, Dropdown3  } from "../../components/UI/ui";
 import { listarPedidos  } from "../../services/pedidoService";
-import { importarPedidos } from "../../services/generalService";
+import { importarPedidos, importarPedidosLista } from "../../services/generalService";
+import { listarClientes } from "../../services/clienteService";
+import { listarAeropuertos } from "../../services/aeropuertoService";
 import { formatISOToDDMMYYYY, parseDDMMYYYYToDate } from "../../services/utils/utils";
 import plus from '../../assets/icons/plus.svg';
 import hideIcon from '../../assets/icons/hide-sidebar.png';
@@ -16,6 +18,18 @@ export default function Pedidos() {
 
   // Modal y datos
   const [isModalOpen, setIsModalOpen] = useState(false);
+  // Nuevos estados del modal manual
+  const [clientes, setClientes] = useState([]);
+  const [aeropuertos, setAeropuertos] = useState([]);
+
+  const [fecha, setFecha] = useState("");  // aaaammdd
+  const [hora, setHora] = useState("");   // hh
+  const [minuto, setMinuto] = useState(""); // mm
+  const [cantidad, setCantidad] = useState(""); // ###
+
+  const [selectedCliente, setSelectedCliente] = useState(null);
+  const [selectedDestino, setSelectedDestino] = useState(null);
+  
   const [archivo, setArchivo] = useState(null);
   const [fechaArchivoFechaI, setFechaArchivoFechaI] = useState("");
   const [fechaArchivoHoraI, setFechaArchivoHoraI] = useState("");
@@ -39,22 +53,29 @@ export default function Pedidos() {
   };
 
   useEffect(() => {
-    const fetchPedidos = async () => {
+    const fetchData = async () => {
       try {
-        const data = await listarPedidos();
+        const pedidosData = await listarPedidos();
+        setPedidos(pedidosData.dtos || []);
+        setPedidosOriginales(pedidosData.dtos || []);
 
-        setPedidos(data.dtos || []);
-        setPedidosOriginales(data.dtos || []);
+        const clientesData = await listarClientes();
+        setClientes(clientesData.dtos || []);
+
+        const aeropuertosData = await listarAeropuertos();
+        setAeropuertos(aeropuertosData.dtos || []);
 
       } catch (err) {
         console.error(err);
-        showNotification("danger", "Error al cargar pedidos");
+        showNotification("danger", "Error al cargar datos");
       } finally {
         setLoading(false);
       }
     };
-    fetchPedidos();
+
+    fetchData();
   }, []);
+
 
   // Tabla
   const headers = [
@@ -64,7 +85,7 @@ export default function Pedidos() {
     { label: "Fecha de expiración", key: "fechaHoraExpiracion" },
     { label: "Destino", key: "codDestino" },
     { label: "Cantidad solicitada", key: "cantidadSolicitada" },
-    { label: "Acciones", key: "acciones" },
+    //{ label: "Acciones", key: "acciones" },
   ];
 
   const handleFileChange = (e) => {
@@ -76,54 +97,122 @@ export default function Pedidos() {
       setFechaArchivoHoraI("");
       setFechaArchivoFechaF("");
       setFechaArchivoHoraF("");
+      setSelectedCliente(null);
+      setSelectedDestino(null);
+      setFecha("");
+      setHora("");
+      setMinuto("");
+      setCantidad("");
     }
   };
 
   const handleAdd = async () => {
-    if (!archivo) {
-      showNotification("warning", "Selecciona un archivo antes de continuar.");
-      return;
-    }
-
-    if (archivo.name !== "Pedidos.txt") {
-      showNotification("warning", "El archivo debe llamarse exactamente 'Pedidos.txt'.");
-      return;
-    }
-
-    // Convertir a UTC los valores seleccionados
-    const fechaInicioUTC = convertirLocalAUTCString(
-      fechaArchivoFechaI,
-      fechaArchivoHoraI
-    );
-
-    // Si no quiere rango → mandar strings vacías
-    const fechaFinUTC = convertirLocalAUTCString(
-      fechaArchivoFechaF,
-      fechaArchivoHoraF
-    );
-
     try {
       setProcessing(true);
 
-      await importarPedidos(archivo, fechaInicioUTC, fechaFinUTC);
+      // 1. SI HAY ARCHIVO → usar importarPedidos()
+      if (archivo) {
+        if (archivo.name !== "Pedidos.txt") {
+          showNotification("warning", "El archivo debe llamarse exactamente 'Pedidos.txt'.");
+          return;
+        }
 
-      showNotification("success", "Pedidos importados correctamente");
+        const fechaInicioUTC = convertirLocalAUTCString(fechaArchivoFechaI, fechaArchivoHoraI);
+        const fechaFinUTC = convertirLocalAUTCString(fechaArchivoFechaF, fechaArchivoHoraF);
 
+        await importarPedidos(archivo, fechaInicioUTC, fechaFinUTC);
+
+        showNotification("success", "Pedidos importados desde archivo correctamente");
+      
+      } else {
+        // 2. NO HAY ARCHIVO → pedido manual → usar importarPedidosLista()
+
+        // Verificar campos obligatorios
+        if (!selectedCliente || !selectedDestino || !fecha || !hora || !minuto || !cantidad) {
+          showNotification("warning", "Completa todos los campos para generar un pedido manual.");
+          return;
+        }
+
+        const fechaGeneracionUTC = convertirManualAUTC(
+          fecha,
+          hora,
+          minuto
+        );
+
+        const dto = {
+          codigo: obtenerSiguienteIdPedido(),
+          codCliente: selectedCliente.codigo,
+          codDestino: selectedDestino.codigo,
+          fechaHoraGeneracion: fechaGeneracionUTC,
+          cantidadSolicitada: Number(cantidad)
+        };
+
+        console.log(dto);
+        await importarPedidosLista([dto]);
+
+        showNotification("success", "Pedido manual registrado correctamente");
+      }
+
+      // Recargar tabla
       const data = await listarPedidos();
-
       setPedidos(data.dtos || []);
       setPedidosOriginales(data.dtos || []);
 
+      // Cerrar modal
       setIsModalOpen(false);
+
+      // Resetear
       setArchivo(null);
 
     } catch (error) {
       console.error(error);
-      showNotification("danger", "Error al importar pedidos");
+      showNotification("danger", "Error al agregar pedido");
     } finally {
       setProcessing(false);
     }
   };
+
+
+  function obtenerSiguienteIdPedido() {
+    if (pedidosOriginales.length < 1) return "00000001";
+
+    const idsNumericos = pedidosOriginales.map(p => {
+      if (!p.codigo) return 0;
+
+      // Últimos 8 caracteres del código
+      const ultimos8 = p.codigo.slice(-8);
+
+      const num = parseInt(ultimos8, 10);
+      return isNaN(num) ? 0 : num;
+    });
+
+    const maxId = Math.max(...idsNumericos);
+    return String(maxId + 1).padStart(8, "0"); // → siempre 8 dígitos
+  }
+
+
+
+  function generarCodigoPedido() {
+    if (!selectedCliente || !selectedDestino || !fecha || !hora || !minuto || !cantidad) {
+      return "";
+    }
+
+    return (
+      obtenerSiguienteIdPedido() +
+      "-" +
+      fecha +
+      "-" +
+      hora +
+      "-" +
+      minuto +
+      "-" +
+      selectedDestino.codigo +
+      "-" +
+      cantidad.padStart(3, "0") +
+      "-" +
+      selectedCliente.codigo.padStart(7, "0")
+    );
+  }
 
 
   //Filtros
@@ -194,6 +283,19 @@ export default function Pedidos() {
     // Convertimos a UTC ISO → yyyy-MM-ddTHH:mm:ssZ
     return fechaLocal.toISOString();
   }
+
+  function convertirManualAUTC(fechaAAAAMMDD, horaHH, minutoMM) {
+    if (!fechaAAAAMMDD || !horaHH || !minutoMM) return "";
+
+    const anio = fechaAAAAMMDD.substring(0, 4);
+    const mes = fechaAAAAMMDD.substring(4, 6);
+    const dia = fechaAAAAMMDD.substring(6, 8);
+
+    const fechaLocal = new Date(anio, mes - 1, dia, horaHH, minutoMM);
+
+    return fechaLocal.toISOString();  // yyyy-MM-ddTHH:mm:ssZ
+  }
+
 
 
 
@@ -289,7 +391,7 @@ export default function Pedidos() {
             <div className="modal-header">
               <h3 className="modal-title">Agregar pedido</h3>
               <label htmlFor="fileInput" className="file-label">Agregar archivo</label>
-              <input type="file" id="fileInput" className="file-input" onChange={handleFileChange} />
+              <input type="file" id="fileInput" className="file-input" onChange={handleFileChange} disabled={generarCodigoPedido() !== ""}/>
             </div>
 
             <div className="file-name">
@@ -301,14 +403,74 @@ export default function Pedidos() {
 
 
             <div className="modal-body">
-              <label htmlFor="codigoModal">Código</label>
-              <Input id="codigoModal" placeholder="Escribe el código" value={codigo} onChange={e => setCodigo(e.target.value)} disabled={!!archivo}/>
+              {/* FECHA */}
+              <label>Fecha (AAAAMMDD)</label>
+              <Input
+                placeholder="20250102"
+                value={fecha}
+                onChange={(e) => setFecha(e.target.value)}
+                disabled={!!archivo}
+              />
 
-              <label htmlFor="clienteModal">Cliente</label>
-              <Input id="clienteModal" placeholder="Escribe el cliente" value={cliente} onChange={e => setCliente(e.target.value)} disabled={!!archivo}/>
+              {/* HORA */}
+              <label>Hora (HH)</label>
+              <Input
+                placeholder="01"
+                value={hora}
+                onChange={(e) => setHora(e.target.value)}
+                disabled={!!archivo}
+              />
 
-              <label htmlFor="destinoModal">Destino</label>
-              <Input id="destinoModal" placeholder="Escribe el destino" value={destino} onChange={e => setDestino(e.target.value)} disabled={!!archivo}/>
+              {/* MINUTO */}
+              <label>Minuto (MM)</label>
+              <Input
+                placeholder="38"
+                value={minuto}
+                onChange={(e) => setMinuto(e.target.value)}
+                disabled={!!archivo}
+              />
+
+              {/* CANTIDAD */}
+              <label>Cantidad (###)</label>
+              <Input
+                placeholder="006"
+                value={cantidad}
+                onChange={(e) => setCantidad(e.target.value)}
+                disabled={!!archivo}
+              />
+
+              {/* DESTINO */}
+              <label>Destino</label>
+              <Dropdown3
+                placeholder="Seleccionar aeropuerto..."
+                options={aeropuertos.map(a => ({
+                  label: `${a.codigo} - ${a.ciudad} - ${a.pais}`,
+                  value: a
+                }))}
+                value={selectedDestino}
+                onSelect={(item) => setSelectedDestino(item)}
+                disabled={!!archivo}
+              />
+
+              {/* CLIENTE */}
+              <label>Cliente</label>
+              <Dropdown3
+                placeholder="Seleccionar cliente..."
+                options={clientes.map(c => ({
+                  label: `${c.codigo} - ${c.nombre}`,
+                  value: c
+                }))}
+                value={selectedCliente}
+                onSelect={(item) => setSelectedCliente(item)}
+                disabled={!!archivo}
+              />
+
+              {/* MOSTRAR RESULTADO */}
+              <label>Código generado</label>
+              <Input
+                value={generarCodigoPedido()}
+                disabled
+              />
 
               {archivo && (
                 <>

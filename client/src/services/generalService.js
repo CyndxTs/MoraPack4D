@@ -81,3 +81,15 @@ export const importarPedidos = async (file, fechaInicioUTC, fechaFinUTC) => {
     throw error;
   }
 };
+
+export async function importarPedidosLista(listaPedidos) {
+  return axios.post(
+    "http://localhost:8080/api/algorithm/importarDesdeLista",
+    {
+      dtos: listaPedidos,
+      tipoDtos: "PEDIDOS"
+    }
+  );
+}
+
+
