@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import "./simulacion.scss";
-import { Radio, Checkbox, Dropdown, Legend, Notification, SidebarActions, ButtonAdd, DateTimeInline, Dropdown2, Input } from "../../components/UI/ui";
+import { Radio, Checkbox, Dropdown, Legend, Notification, SidebarActions, ButtonAdd, DateTimeInline, Dropdown2, Input,LoadingOverlay } from "../../components/UI/ui";
 import hideIcon from '../../assets/icons/hide-sidebar.png';
 import plus from "../../assets/icons/plus.svg";
 import { listarParametros } from "../../services/parametrosService";
@@ -25,7 +25,8 @@ export default function Simulacion() {
   // -------- MODAL --------
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const [tipoSimulacion, setTipoSimulacion] = useState("seleccionar");
+  const [tipoSimulacion] = useState("semanal");
+
   const [fechaI, setFechaI] = useState("");
   const [horaI, setHoraI] = useState("");
   const [fechaF, setFechaF] = useState("");
@@ -42,10 +43,10 @@ export default function Simulacion() {
     if (v === "" || v === null || v === undefined) return null;
     return Number(v);
   };
-  const [replanificar, setReplanificar] = useState(false);
-  const [guardarPlanificacion, setGuardarPlanificacion] = useState(false);
+  const [replanificar] = useState(false);
+  const [guardarPlanificacion] = useState(false);
   const [reparametrizar, setReparametrizar] = useState(false);   
-  const [guardarParametrizacion, setGuardarParametrizacion] = useState(true);
+  const [guardarParametrizacion] = useState(false);
 
 
   const [maxDiasEntregaIntercontinental, setMaxDiasEntregaIntercontinental] = useState();
@@ -53,7 +54,7 @@ export default function Simulacion() {
   const [maxHorasRecojo, setMaxHorasRecojo] = useState();
   const [minHorasEstancia, setMinHorasEstancia] = useState();
   const [maxHorasEstancia, setMaxHorasEstancia] = useState();
-  const [considerarDesfaseTemporal, setConsiderarDesfaseTemporal] = useState(false);
+  const [considerarDesfaseTemporal] = useState(false);
 
   const [dMin, setDMin] = useState();
   const [iMax, setIMax] = useState();
@@ -420,7 +421,6 @@ useEffect(() => {
         setMaxHorasRecojo(p.maxHorasRecojo);
         setMinHorasEstancia(p.minHorasEstancia);
         setMaxHorasEstancia(p.maxHorasEstancia);
-        setConsiderarDesfaseTemporal(p.considerarDesfaseTemporal === true || p.considerarDesfaseTemporal === "true");
 
         setDMin(p.dMin);
         setIMax(p.iMax);
@@ -522,6 +522,7 @@ useEffect(() => {
 
       if (!fechaI || !horaI || !fechaF || !horaF) {
         showNotification("danger", "Completa las fechas antes de continuar");
+        setLoading(false);
         return;
       }
 
@@ -530,7 +531,7 @@ useEffect(() => {
         guardarPlanificacion,
         reparametrizar,
         guardarParametrizacion,
-considerarDesfaseTemporal: !!considerarDesfaseTemporal,
+        considerarDesfaseTemporal: !!considerarDesfaseTemporal,
         parameters: {
           fechaHoraInicio: `${fechaI}T${horaI}:00`,
           fechaHoraFin: `${fechaF}T${horaF}:00`,
@@ -583,7 +584,6 @@ considerarDesfaseTemporal: !!considerarDesfaseTemporal,
 
   // LIMPIAR MODAL SIEMPRE QUE SE CIERRA
   const resetModal = () => {
-    setTipoSimulacion("seleccionar");
     setFechaI("");
     setHoraI("");
     setFechaF("");
@@ -613,15 +613,14 @@ considerarDesfaseTemporal: !!considerarDesfaseTemporal,
       }
     }
 
-    if (tipoSimulacion === "colapso") {
-      return;
-    }
   }, [tipoSimulacion, fechaI, horaI]);
 
 
   return (
     <div className="page">
-
+      {/* Overlay de carga de simulación */}
+      {loading && <LoadingOverlay text="Cargando simulación..." />}
+      
       {notification && (
         <Notification
           type={notification.type}
@@ -817,8 +816,9 @@ considerarDesfaseTemporal: !!considerarDesfaseTemporal,
 
               <Radio name="tipoSim" label="Semanal"
                 value="semanal"
-                checked={tipoSimulacion === "semanal"}
-                onChange={(e) => setTipoSimulacion(e.target.value)} />
+                checked={true}
+                disabled={true}
+                onChange={() => {}} />
 
               <Radio name="tipoSim" label="Colapso logístico"
                 value="colapso"
@@ -835,15 +835,17 @@ considerarDesfaseTemporal: !!considerarDesfaseTemporal,
                 name="replanificar"
                 label="Sí"
                 value="true"
-                checked={replanificar === true}
-                onChange={(e) => setReplanificar(toBoolean(e.target.value))}
+                checked={false}
+                disabled={true}
+                onChange={() => {}}
               />
               <Radio
                 name="replanificar"
                 label="No"
                 value="false"
-                checked={replanificar === false}
-                onChange={(e) => setReplanificar(toBoolean(e.target.value))}
+                checked={true}
+                disabled={true}
+                onChange={() => {}}
               />
 
               <label>¿Guardar planificación?</label>
@@ -851,15 +853,17 @@ considerarDesfaseTemporal: !!considerarDesfaseTemporal,
                 name="guardarPlanificacion"
                 label="Sí"
                 value="true"
-                checked={guardarPlanificacion === true}
-                onChange={(e) => setGuardarPlanificacion(toBoolean(e.target.value))}
+                checked={false}
+                disabled={true}
+                onChange={() => {}}
               />
               <Radio
                 name="guardarPlanificacion"
                 label="No"
                 value="false"
-                checked={guardarPlanificacion === false}
-                onChange={(e) => setGuardarPlanificacion(toBoolean(e.target.value))}
+                checked={true}
+                disabled={true}
+                onChange={() => {}}
               />
 
               <label>¿Reparametrizar?</label>
@@ -883,15 +887,17 @@ considerarDesfaseTemporal: !!considerarDesfaseTemporal,
                 name="guardarParametrizacion"
                 label="Sí"
                 value="true"
-                checked={guardarParametrizacion === true}
-                onChange={(e) => setGuardarParametrizacion(toBoolean(e.target.value))}
+                checked={false}
+                disabled={true}
+                onChange={() => {}}
               />
               <Radio
                 name="guardarParametrizacion"
                 label="No"
                 value="false"
-                checked={guardarParametrizacion === false}
-                onChange={(e) => setGuardarParametrizacion(toBoolean(e.target.value))}
+                checked={true}
+                disabled={true}
+                onChange={() => {}}
               />
 
               <hr />
@@ -915,7 +921,7 @@ considerarDesfaseTemporal: !!considerarDesfaseTemporal,
                     timeValue={horaF}
                     onDateChange={(e) => setFechaF(e.target.value)}
                     onTimeChange={(e) => setHoraF(e.target.value)}
-                    disabled={ tipoSimulacion === "semanal"}
+                    disabled={true}
                   />
 
                   <label>Ciudades sede</label>              
@@ -953,15 +959,17 @@ considerarDesfaseTemporal: !!considerarDesfaseTemporal,
                     name="desfase"
                     label="Sí"
                     value="true"
-                    checked={considerarDesfaseTemporal === true}
-                    onChange={(e) => setConsiderarDesfaseTemporal(toBoolean(e.target.value))}
+                    checked={false}
+                    disabled={true}
+                    onChange={() => {}}
                   />
                   <Radio
                     name="desfase"
                     label="No"
                     value="false"
-                    checked={considerarDesfaseTemporal === false}
-                    onChange={(e) => setConsiderarDesfaseTemporal(toBoolean(e.target.value))}
+                    checked={true}
+                    disabled={true}
+                    onChange={() => {}}
                   />
 
                   {/* NUMÉRICOS */}
