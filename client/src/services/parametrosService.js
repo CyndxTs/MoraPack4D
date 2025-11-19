@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_URL = "http://localhost:8080/api/parametros"; 
+const API_URL = "/api/parametros"; 
 
 export const listarParametros = async () => {
   try {

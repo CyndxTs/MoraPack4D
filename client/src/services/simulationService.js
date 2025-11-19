@@ -1,7 +1,10 @@
 // simulationService.js
 import { Client } from '@stomp/stompjs';
 
-const SOCKET_URL = "ws://localhost:8080/ws";
+const SOCKET_URL =
+  (window.location.protocol === "https:" ? "wss://" : "ws://") +
+  window.location.host +
+  "/ws";
 let client = null;
 
 function ensureClient() {

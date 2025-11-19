@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_URL = "http://localhost:8080/api/planes";
+const API_URL = "/api/planes";
 
 // Listar todos los planes
 export const listarPlanes = async () => {

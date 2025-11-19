@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_URL = "http://localhost:8080/api/algorithm";
+const API_URL = "/api/algorithm";
 
 export const importarArchivo = async (file, tipoArchivo) => {
   const formData = new FormData();
