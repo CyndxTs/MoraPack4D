@@ -14,7 +14,7 @@ export const importarArchivo = async (file, tipoArchivo) => {
     new Blob(
       [
         JSON.stringify({
-          tipoArchivo: tipoArchivo,  
+          tipo: tipoArchivo,  
           fechaHoraInicio: "",
           fechaHoraFin: "",
           desfaseTemporal: -1
@@ -57,9 +57,9 @@ export const importarPedidos = async (file, fechaInicioUTC, fechaFinUTC) => {
     new Blob(
       [
         JSON.stringify({
-          tipoArchivo: "PEDIDOS",
-          fechaHoraInicio: fechaInicioUTC || "",
-          fechaHoraFin: fechaFinUTC || "",
+          tipo: "PEDIDOS",
+          fechaHoraInicio: fechaInicioUTC,
+          fechaHoraFin: fechaFinUTC,
           desfaseTemporal: -1
         })
       ],
@@ -82,14 +82,25 @@ export const importarPedidos = async (file, fechaInicioUTC, fechaFinUTC) => {
   }
 };
 
-export async function importarPedidosLista(listaPedidos) {
-  return axios.post(
-    "http://localhost:8080/api/algorithm/importarDesdeLista",
-    {
-      dtos: listaPedidos,
-      tipoDtos: "PEDIDOS"
-    }
-  );
-}
+export const importarPedidosLista = async (listaDtos) => {
+  const body = {
+    tipo: "PEDIDOS",
+    dtos: listaDtos,
+  };
+
+  try {
+    const response = await axios.post(
+      `${API_URL}/importarDesdeLista`,
+      body,
+      { headers: { "Content-Type": "application/json" } }
+    );
+
+    return response.data;
+
+  } catch (error) {
+    console.error("Error al importar:", error);
+    throw error;
+  }
+};
 
 
