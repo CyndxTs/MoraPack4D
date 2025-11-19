@@ -12,8 +12,6 @@ import 'leaflet/dist/leaflet.css';
 import L from "leaflet";
 
 import planeIconImg from "../../assets/icons/planeMora.svg";
-//import { getAeropuertosMap  } from "../../services/aeropuertoService";
-import { getAeropuertosMapWS, getVuelosWS, disconnectWS } from "../../services/simulationService";
 
 export default function Simulacion() {
   const [collapsed, setCollapsed] = useState(false);
@@ -55,7 +53,7 @@ export default function Simulacion() {
   const [maxHorasRecojo, setMaxHorasRecojo] = useState();
   const [minHorasEstancia, setMinHorasEstancia] = useState();
   const [maxHorasEstancia, setMaxHorasEstancia] = useState();
-  const [considerarDesfaseTemporal, setConsiderarDesfaseTemporal] = useState();
+  const [considerarDesfaseTemporal, setConsiderarDesfaseTemporal] = useState(false);
 
   const [dMin, setDMin] = useState();
   const [iMax, setIMax] = useState();
@@ -91,6 +89,18 @@ export default function Simulacion() {
   const toISODate = (ms) => new Date(ms).toISOString().split("T")[0];
   const toISOTime = (ms) => new Date(ms).toISOString().slice(11,16);
 
+  // El backend de planificación manda fechas tipo "03/11/2025 10:20"
+  const parseFechaHoraToMs = (fechaHora) => {
+    if (!fechaHora) return Date.now();
+    const [fecha, hora] = fechaHora.split(" ");      // "03/11/2025 10:20"
+    const [dia, mes, anio] = fecha.split("/").map(Number);
+    const [hh, mm] = hora.split(":").map(Number);
+
+    // Lo tratamos como UTC para ser consistentes con el resto de la simulación
+    return Date.UTC(anio, mes - 1, dia, hh, mm, 0);
+  };
+
+
   const parseUtcToMs = (iso) => {
     // Si viene sin zona ("2025-11-26T20:06:00") lo forzamos a UTC
     const s = /Z|[+-]\d{2}:\d{2}$/.test(iso) ? iso : iso + "Z";
@@ -110,7 +120,9 @@ export default function Simulacion() {
 
   //Notificaciones
   const [notification, setNotification] = useState(null);
-  
+
+  const [loading, setLoading] = useState(false);
+
   const showNotification = (type, message) => {
     setNotification({ type, message });
     setTimeout(() => setNotification(null), 5000);
@@ -197,17 +209,7 @@ useEffect(() => {
   }));
 }, [simNowMs, timerActive]);
 
-  // Reloj 
-  /*
-  useEffect(() => {
-    const clock = setInterval(() => {
-      const now = new Date();
-      setTime(now.toTimeString().slice(0,5));
-      if (!timerActive) setDate(now.toISOString().split("T")[0]); // solo actualiza fecha si no hay simulación activa
-    }, 1000);
-    return () => clearInterval(clock);
-  }, [timerActive]);*/
-
+  
   const handleFileChange = (e) => {
     if (e.target.files.length > 0) setArchivo(e.target.files[0].name);
     else setArchivo(null);
@@ -266,11 +268,11 @@ useEffect(() => {
     const base = fromInputsToMsUTC(inputDate, inputTime);
     setSimNowMs(base);
 
-    // Resetear vuelos al origen
+    // Resetear vuelos al origen usando la última planificación
     if (airports && rawFlights.length > 0) {
-      const reset = rawFlights.map((f) => {
-        const origin = airports[f.origenCodigo];
-        const dest = airports[f.destinoCodigo];
+      const reset = rawFlights.map((v) => {
+        const origin = airports[v.plan.codOrigen];
+        const dest = airports[v.plan.codDestino];
         if (!origin || !dest) return null;
 
         const startMs = parseUtcToMs(f.fechaSalida);
@@ -279,11 +281,15 @@ useEffect(() => {
 
         return {
           code: f.codigo,
-          origin, originName: origin.name,
-          destination: dest, destinationName: dest.name,
-          startTime: f.fechaSalida, endTime: f.fechaLlegada,
+          origin, 
+          originName: origin.name,
+          destination: dest, 
+          destinationName: dest.name,
+          startTime: v.fechaHoraSalida, 
+          endTime: v.fechaHoraLlegada,
           startMs, endMs,
-          capacity: f.capacidadOcupada,
+          capacity: v.capacidadOcupada,
+          planeCapacity: v.plan.capacidad,
           durationSec: Math.max((endMs - startMs)/1000, 60),
           progress: 0,
           arrived: false,
@@ -308,76 +314,9 @@ useEffect(() => {
   // Vuelos
   const [flights, setFlights] = useState([]);
   const [rawFlights, setRawFlights] = useState([]);
-  // 1) Cargar aeropuertos desde el back (solo una vez)
-  /*
-  useEffect(() => {
-    const ac = new AbortController();
-    getAeropuertosMap(ac.signal)
-      .then(map => setAirports(map))
-      .catch(err => console.error("Error cargando aeropuertos:", err))
-      .finally(() => setLoadingAirports(false));
-    return () => ac.abort();
-  }, []);*/
 
-  // 1) Cargar aeropuertos por WebSocket (y cerrar al desmontar)
-  useEffect(() => {
-    let mounted = true;
-    getAeropuertosMapWS()
-      .then(map => { if (mounted) setAirports(map); })
-      .catch(err => console.error("WS aeropuertos:", err))
-      .finally(() => setLoadingAirports(false));
-    return () => {
-      mounted = false;
-      disconnectWS(); // cierra la conexión WS cuando sales del componente
-    };
-  }, []);
 
-  useEffect(() => {
-    if (!airports) return;
 
-    getVuelosWS()
-      .then(data => {
-        setRawFlights(data); // guardamos crudo para poder rearmar en "Detener"
-
-        const mapped = data.map((f) => {
-          const origin = airports[f.origenCodigo];
-          const dest   = airports[f.destinoCodigo];
-          if (!origin || !dest) {
-            console.warn(` Vuelo ${f.codigo} omitido: ${f.origenCodigo} → ${f.destinoCodigo} no está en airports`);
-            return null;
-          }
-
-          const startMs = parseUtcToMs(f.fechaSalida);
-          const endMs   = parseUtcToMs(f.fechaLlegada);
-          const durationSec = Math.max((endMs - startMs) / 1000, 60);
-
-          const path = generateGeodesicPath(origin.lat, origin.lng, dest.lat, dest.lng, 120);
-
-          return {
-            code: f.codigo,
-            origin,
-            originName: origin.name,
-            destination: dest,
-            destinationName: dest.name,
-            startTime: f.fechaSalida,
-            endTime: f.fechaLlegada,
-            startMs,
-            endMs,
-            capacity: f.capacidadOcupada,
-            durationSec,
-            progress: 0,
-            arrived: false,
-            path,
-            position: path[0],
-            rotation: 0,
-          };
-        }).filter(Boolean);
-
-        setFlights(mapped);
-        console.log("Vuelos WS mapeados:", mapped.length);
-      })
-      .catch(err => console.error("WS vuelos:", err));
-  }, [airports]);
 
   const createColoredIcon = (filterCss, rotation) =>
   L.divIcon({
@@ -407,45 +346,6 @@ useEffect(() => {
   });
   //
 
-
-  // === ANIMACIÓN DE LOS VUELOS ===
-/*
-  useEffect(() => {
-    if (!timerRunning) return;
-
-    const interval = setInterval(() => {
-      setFlights((prev) =>
-        prev.map((f) => {
-          if (f.arrived) return f;
-          const newProgress = Math.min(f.progress + (0.002), 1); // más suave
-          const index = Math.floor(f.path.length * newProgress);
-          const position = f.path[Math.min(index, f.path.length - 1)];
-
-          const nextIndex = Math.min(index + 1, f.path.length - 1);
-          const next = f.path[nextIndex];
-          // Conversión a radianes
-          const lat1 = position.lat * Math.PI / 180;
-          const lon1 = position.lng * Math.PI / 180;
-          const lat2 = next.lat * Math.PI / 180;
-          const lon2 = next.lng * Math.PI / 180;
-
-          // Rumbo geodésico (bearing)
-          let bearing = Math.atan2(
-            Math.sin(lon2 - lon1) * Math.cos(lat2),
-            Math.cos(lat1) * Math.sin(lat2) -
-            Math.sin(lat1) * Math.cos(lat2) * Math.cos(lon2 - lon1)
-          );
-          bearing = (bearing * 180 / Math.PI + 360) % 360; // convertir a grados 0–360
-
-          // Compensamos la orientación del SVG (punta arriba-derecha)
-          const rotation = bearing - 45;
-
-          return { ...f, progress: newProgress, position, rotation, arrived: newProgress >= 1 };
-        })
-      );
-    }, 100); // cada 100 ms, animación fluida
-    return () => clearInterval(interval);
-  }, [timerRunning]);*/
 
   // Detener cronómetro cuando todos los vuelos hayan llegado
   useEffect(() => {
@@ -520,7 +420,7 @@ useEffect(() => {
         setMaxHorasRecojo(p.maxHorasRecojo);
         setMinHorasEstancia(p.minHorasEstancia);
         setMaxHorasEstancia(p.maxHorasEstancia);
-        setConsiderarDesfaseTemporal(p.considerarDesfaseTemporal);
+        setConsiderarDesfaseTemporal(p.considerarDesfaseTemporal === true || p.considerarDesfaseTemporal === "true");
 
         setDMin(p.dMin);
         setIMax(p.iMax);
@@ -551,6 +451,70 @@ useEffect(() => {
       setLoadedOnOpen(true);
     }
   }, [isModalOpen, loadedOnOpen]);
+
+
+  const buildSimulationFromSolution = (solution) => {
+    if (!solution) return;
+
+    // 1) Mapear aeropuertosTransitados → airports (mapa por código)
+    const airportMap = {};
+    (solution.aeropuertosTransitados || []).forEach(a => {
+      airportMap[a.codigo] = {
+        lat: a.latitudDEC,
+        lng: a.longitudDEC,
+        name: a.alias || a.ciudad,  // cómo se mostrará en el mapa
+        code: a.codigo,
+        city: a.ciudad,
+        country: a.pais,
+      };
+    });
+    setAirports(airportMap);
+    setLoadingAirports(false);
+
+    // 2) Guardar vuelos crudos para poder reconstruirlos al hacer "Detener"
+    const vuelos = solution.vuelosEnTransito || [];
+    setRawFlights(vuelos);
+
+    // 3) Construir flights con el mismo formato que usabas con WS
+    const mappedFlights = vuelos.map((v) => {
+      const origin = airportMap[v.plan.codOrigen];
+      const dest   = airportMap[v.plan.codDestino];
+
+      if (!origin || !dest) {
+        console.warn(
+          `Vuelo ${v.codigo} omitido: no se encontró aeropuerto ${v.plan.codOrigen} o ${v.plan.codDestino}`
+        );
+        return null;
+      }
+
+      const startMs = parseFechaHoraToMs(v.fechaHoraSalida);
+      const endMs   = parseFechaHoraToMs(v.fechaHoraLlegada);
+      const durationSec = Math.max((endMs - startMs) / 1000, 60);
+      const path = generateGeodesicPath(origin.lat, origin.lng, dest.lat, dest.lng, 120);
+
+      return {
+        code: v.codigo,
+        origin,
+        originName: origin.name,
+        destination: dest,
+        destinationName: dest.name,
+        startTime: v.fechaHoraSalida,
+        endTime: v.fechaHoraLlegada,
+        startMs,
+        endMs,
+        capacity: v.capacidadOcupada,    // lo que realmente transporta
+        planeCapacity: v.plan.capacidad, // capacidad total del avión (extra, por si la quieres mostrar)
+        durationSec,
+        progress: 0,
+        arrived: false,
+        path,
+        position: path[0],
+        rotation: 0,
+      };
+    }).filter(Boolean);
+
+    setFlights(mappedFlights);
+  };
 
   const handlePlanear = async () => {
     try {
@@ -600,6 +564,10 @@ useEffect(() => {
 
       if (result.success) {
         showNotification("success", "Plan generado correctamente");
+        buildSimulationFromSolution(result);
+        //seteamos en base a la fecha y hora inicio del modal al planificar
+        setInputDate(fechaI);
+        setInputTime(horaI);
       } else {
         showNotification("danger", result.message || "Error generando el plan");
       }

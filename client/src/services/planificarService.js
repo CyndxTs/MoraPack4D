@@ -1,7 +1,16 @@
 import axios from "axios";
 
+/** 
+ * @typedef {import("../types/simulationResponse/SolutionResponse.js").SolutionResponse} SolutionResponse 
+ */
+
 const API_URL = "http://localhost:8080/api/algorithm/planificar";
 
+/**
+ * Llama al backend de planificación.
+ * @param {Object} request
+ * @returns {Promise<SolutionResponse>}
+ */
 export async function planificar(request) {
   try {
     const response = await axios.post(API_URL, request);
