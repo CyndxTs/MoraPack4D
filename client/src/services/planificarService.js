@@ -4,7 +4,7 @@ import axios from "axios";
  * @typedef {import("../types/simulationResponse/SolutionResponse.js").SolutionResponse} SolutionResponse 
  */
 
-const API_URL = "http://localhost:8080/api/algorithm/planificar";
+const API_URL = "/api/algorithm/planificar";
 
 /**
  * Llama al backend de planificación.
