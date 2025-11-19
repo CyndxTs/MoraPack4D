@@ -566,6 +566,7 @@ useEffect(() => {
         guardarPlanificacion,
         reparametrizar,
         guardarParametrizacion,
+        considerarDesfaseTemporal: true,
 
         parameters: {
           fechaHoraInicio: `${fechaI}T${horaI}:00`,
@@ -576,7 +577,6 @@ useEffect(() => {
           maxHorasRecojo: (maxHorasRecojo),
           minHorasEstancia: (minHorasEstancia),
           maxHorasEstancia: (maxHorasEstancia),
-          considerarDesfaseTemporal,
           codOrigenes,
 
           dMin: (dMin),

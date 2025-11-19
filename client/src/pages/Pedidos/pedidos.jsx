@@ -5,46 +5,45 @@ import { listarPedidos  } from "../../services/pedidoService";
 import { importarPedidos, importarPedidosLista } from "../../services/generalService";
 import { listarClientes } from "../../services/clienteService";
 import { listarAeropuertos } from "../../services/aeropuertoService";
-import { formatISOToDDMMYYYY, parseDDMMYYYYToDate } from "../../services/utils/utils";
 import plus from '../../assets/icons/plus.svg';
 import hideIcon from '../../assets/icons/hide-sidebar.png';
+
 
 export default function Pedidos() {
   const [collapsed, setCollapsed] = useState(false);
 
-  // Filtros
+  // --- Filtros ---
   const [codigoFiltro, setCodigoFiltro] = useState("");
   const [ordenFecha, setOrdenFecha] = useState("");
 
-  // Modal y datos
+  // --- Modal ---
   const [isModalOpen, setIsModalOpen] = useState(false);
-  // Nuevos estados del modal manual
+
+  // Datos base
   const [clientes, setClientes] = useState([]);
   const [aeropuertos, setAeropuertos] = useState([]);
 
-  const [fecha, setFecha] = useState("");  // aaaammdd
-  const [hora, setHora] = useState("");   // hh
-  const [minuto, setMinuto] = useState(""); // mm
-  const [cantidad, setCantidad] = useState(""); // ###
-
+  // Para pedido manual
+  const [fecha, setFecha] = useState("");   
+  const [hora, setHora] = useState("");    
+  const [cantidad, setCantidad] = useState("");
   const [selectedCliente, setSelectedCliente] = useState(null);
   const [selectedDestino, setSelectedDestino] = useState(null);
-  
+
+  // Para archivo
   const [archivo, setArchivo] = useState(null);
   const [fechaArchivoFechaI, setFechaArchivoFechaI] = useState("");
   const [fechaArchivoHoraI, setFechaArchivoHoraI] = useState("");
   const [fechaArchivoFechaF, setFechaArchivoFechaF] = useState("");
   const [fechaArchivoHoraF, setFechaArchivoHoraF] = useState("");
 
+  // Tabla
   const [pedidos, setPedidos] = useState([]);
   const [pedidosOriginales, setPedidosOriginales] = useState([]);
 
-  const [codigo, setCodigo] = useState("");
-  const [cliente, setCliente] = useState("");
-  const [destino, setDestino] = useState("");
-
+  // Filtros tabla
   const [loading, setLoading] = useState(true);
-  const [processing, setProcessing] = useState(false); 
+  const [processing, setProcessing] = useState(false);
   const [notification, setNotification] = useState(null);
 
   const showNotification = (type, message) => {
@@ -52,6 +51,9 @@ export default function Pedidos() {
     setTimeout(() => setNotification(null), 5000);
   };
 
+  // =============================
+  // CARGA INICIAL
+  // =============================
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -64,9 +66,7 @@ export default function Pedidos() {
 
         const aeropuertosData = await listarAeropuertos();
         setAeropuertos(aeropuertosData.dtos || []);
-
-      } catch (err) {
-        console.error(err);
+      } catch {
         showNotification("danger", "Error al cargar datos");
       } finally {
         setLoading(false);
@@ -76,239 +76,223 @@ export default function Pedidos() {
     fetchData();
   }, []);
 
-
-  // Tabla
+  // =============================
+  // HEADERS TABLA
+  // =============================
   const headers = [
     { label: "Código", key: "codigo" },
     { label: "Cliente", key: "codCliente" },
-    { label: "Fecha de generación", key: "fechaHoraGeneracion" },
-    { label: "Fecha de expiración", key: "fechaHoraExpiracion" },
+    { label: "Fecha de generación (UTC)", key: "fechaHoraGeneracion" },
+    { label: "Fecha de expiración (UTC)", key: "fechaHoraExpiracion" },
     { label: "Destino", key: "codDestino" },
-    { label: "Cantidad solicitada", key: "cantidadSolicitada" },
-    //{ label: "Acciones", key: "acciones" },
+    { label: "Cantidad solicitada", key: "cantidadSolicitada" }
   ];
 
-  const handleFileChange = (e) => {
-    if (e.target.files.length > 0) {
-      setArchivo(e.target.files[0]);
-    } else {
-      setArchivo(null);
-      setFechaArchivoFechaI("");
-      setFechaArchivoHoraI("");
-      setFechaArchivoFechaF("");
-      setFechaArchivoHoraF("");
-      setSelectedCliente(null);
-      setSelectedDestino(null);
-      setFecha("");
-      setHora("");
-      setMinuto("");
-      setCantidad("");
-    }
+  // =============================
+  // LIMPIAR ARCHIVO
+  // =============================
+  const resetArchivo = () => {
+    setArchivo(null);
+    setFechaArchivoFechaI("");
+    setFechaArchivoHoraI("");
+    setFechaArchivoFechaF("");
+    setFechaArchivoHoraF("");
   };
 
+  const resetDatos = () => {
+    setFecha("");
+    setHora("");
+    setCantidad("");
+    setSelectedCliente(null);
+    setSelectedDestino(null);
+  };
+
+  const handleFileChange = (e) => {
+    if (e.target.files.length > 0) setArchivo(e.target.files[0]);
+    else resetArchivo();
+  };
+
+  // =============================
+  // FORMATEO FECHAS — FORMATO FINAL
+  //   → "YYYYMMDD HH:MM:00"
+  // =============================
+
+  function unirFechaHora(fechaDateInput, horaHHmm) {
+    if (!fechaDateInput || !horaHHmm) return null;
+
+    return `${fechaDateInput} ${horaHHmm}:00`; 
+  }
+
+
+  // =============================
+  // OBTENER ID SIGUIENTE
+  // =============================
+  function obtenerSiguienteIdPedido() {
+    if (pedidosOriginales.length < 1) return "00000001";
+
+    const ids = pedidosOriginales.map(p => {
+      const ult8 = p.codigo?.slice(-8) || "0";
+      const num = parseInt(ult8);
+      return isNaN(num) ? 0 : num;
+    });
+
+    const maxId = Math.max(...ids);
+    return String(maxId + 1).padStart(8, "0");
+  }
+
+  // =============================
+  // GENERAR CÓDIGO AUTOMÁTICO
+  // =============================
+  function generarCodigoPedido() {
+    if (!selectedCliente || !selectedDestino || !fecha || !hora || !cantidad)
+      return "";
+
+    return (
+      obtenerSiguienteIdPedido() +
+      "-" + formatearFechaInput(fecha) +
+      "-" + formatearHoraeInput(hora) +
+      "-" + cantidad.padStart(3, "0") +
+      "-" + selectedDestino.codigo +
+      "-" + selectedCliente.codigo.padStart(7, "0")
+    );
+  }
+
+  function formatearFechaInput(fecha) {
+    if (!fecha) return "";
+    return fecha.replace(/-/g, ""); 
+  }
+
+  function formatearHoraeInput(hora) {
+    if (!hora) return "";
+    return hora.replace(/:/g, "-"); 
+  }
+
+  // =============================
+  // AGREGAR PEDIDO
+  // =============================
   const handleAdd = async () => {
     try {
       setProcessing(true);
 
-      // 1. SI HAY ARCHIVO → usar importarPedidos()
+      // --- CASO 1: ARCHIVO ---
       if (archivo) {
         if (archivo.name !== "Pedidos.txt") {
-          showNotification("warning", "El archivo debe llamarse exactamente 'Pedidos.txt'.");
+          showNotification("warning", "El archivo debe llamarse 'Pedidos.txt'.");
           return;
         }
 
-        const fechaInicioUTC = convertirLocalAUTCString(fechaArchivoFechaI, fechaArchivoHoraI);
-        const fechaFinUTC = convertirLocalAUTCString(fechaArchivoFechaF, fechaArchivoHoraF);
+        const fechaInicio = unirFechaHora(fechaArchivoFechaI, fechaArchivoHoraI);
+        const fechaFin = unirFechaHora(fechaArchivoFechaF, fechaArchivoHoraF);
+        
+        console.log(archivo);
+        console.log(fechaInicio);
+        console.log(fechaFin);
 
-        await importarPedidos(archivo, fechaInicioUTC, fechaFinUTC);
-
-        showNotification("success", "Pedidos importados desde archivo correctamente");
-      
-      } else {
-        // 2. NO HAY ARCHIVO → pedido manual → usar importarPedidosLista()
-
-        // Verificar campos obligatorios
-        if (!selectedCliente || !selectedDestino || !fecha || !hora || !minuto || !cantidad) {
-          showNotification("warning", "Completa todos los campos para generar un pedido manual.");
-          return;
-        }
-
-        const fechaGeneracionUTC = convertirManualAUTC(
-          fecha,
-          hora,
-          minuto
-        );
-
-        const dto = {
-          codigo: obtenerSiguienteIdPedido(),
-          codCliente: selectedCliente.codigo,
-          codDestino: selectedDestino.codigo,
-          fechaHoraGeneracion: fechaGeneracionUTC,
-          cantidadSolicitada: Number(cantidad)
-        };
-
-        console.log(dto);
-        await importarPedidosLista([dto]);
-
-        showNotification("success", "Pedido manual registrado correctamente");
+        await importarPedidos(archivo, fechaInicio, fechaFin);
+        showNotification("success", "Pedidos importados correctamente");
       }
 
-      // Recargar tabla
+      // --- CASO 2: MANUAL ---
+      else {
+        if (!selectedCliente || !selectedDestino || !fecha || !hora || !cantidad) {
+          showNotification("warning", "Completa todos los campos del pedido manual.");
+          return;
+        }
+
+        const fechaGeneracion = unirFechaHora(fecha, hora);
+
+        const dto = {
+          codigo: selectedDestino.codigo + obtenerSiguienteIdPedido().toString().padStart(9, "0"),
+          codCliente: selectedCliente.codigo,
+          codDestino: selectedDestino.codigo,
+          fechaHoraGeneracion: fechaGeneracion,
+          cantidadSolicitada: Number(cantidad),
+          fechaHoraExpiracion: null,       
+          lotesPorRuta: []
+        };
+
+        const dtos = [];
+        dtos.push(dto);
+
+        console.log("DTO generado:", dto);
+        console.log("Lista DTOS:", dtos);
+
+        await importarPedidosLista(dtos);
+
+        showNotification("success", "Pedido manual registrado correctamente");
+        resetDatos();
+      }
+
+      // --- Recargar tabla ---
       const data = await listarPedidos();
       setPedidos(data.dtos || []);
       setPedidosOriginales(data.dtos || []);
 
-      // Cerrar modal
       setIsModalOpen(false);
-
-      // Resetear
       setArchivo(null);
-
-    } catch (error) {
-      console.error(error);
+    } catch {
       showNotification("danger", "Error al agregar pedido");
     } finally {
       setProcessing(false);
     }
   };
 
-
-  function obtenerSiguienteIdPedido() {
-    if (pedidosOriginales.length < 1) return "00000001";
-
-    const idsNumericos = pedidosOriginales.map(p => {
-      if (!p.codigo) return 0;
-
-      // Últimos 8 caracteres del código
-      const ultimos8 = p.codigo.slice(-8);
-
-      const num = parseInt(ultimos8, 10);
-      return isNaN(num) ? 0 : num;
-    });
-
-    const maxId = Math.max(...idsNumericos);
-    return String(maxId + 1).padStart(8, "0"); // → siempre 8 dígitos
-  }
-
-
-
-  function generarCodigoPedido() {
-    if (!selectedCliente || !selectedDestino || !fecha || !hora || !minuto || !cantidad) {
-      return "";
-    }
-
-    return (
-      obtenerSiguienteIdPedido() +
-      "-" +
-      fecha +
-      "-" +
-      hora +
-      "-" +
-      minuto +
-      "-" +
-      selectedDestino.codigo +
-      "-" +
-      cantidad.padStart(3, "0") +
-      "-" +
-      selectedCliente.codigo.padStart(7, "0")
-    );
-  }
-
-
-  //Filtros
+  // =============================
+  // FILTROS
+  // =============================
   const handleFilter = () => {
     let lista = [...pedidosOriginales];
 
-    // --- FILTRO POR CÓDIGO ---
-    if (codigoFiltro.trim()) {
-      lista = lista.filter(p =>
-        p.codigo.toLowerCase().includes(codigoFiltro.toLowerCase())
-      );
-    }
+    if (codigoFiltro.trim())
+      lista = lista.filter(p => p.codigo.toLowerCase().includes(codigoFiltro.toLowerCase()));
 
-    // --- ORDENAR POR FECHA ---
     if (ordenFecha) {
       lista.sort((a, b) => {
-        const f1 = parseFechaHoraDDMMYYYY(a.fechaHoraGeneracion);
-        const f2 = parseFechaHoraDDMMYYYY(b.fechaHoraGeneracion);
-
-        return ordenFecha === "ascendente" ? f1 - f2 : f2 - f1;
+        const fechaA = parseFecha(a.fechaHoraGeneracion);
+        const fechaB = parseFecha(b.fechaHoraGeneracion);
+        return fechaA - fechaB;
       });
+      if (ordenFecha === "descendente") lista.reverse();
     }
-
 
     setPedidos(lista);
     setCurrentPage(1);
-    showNotification("success", "Filtro aplicado correctamente");
+    showNotification("success", "Filtro aplicado");
   };
 
-
-  //Limpiar filtros
   const handleCleanFilters = () => {
     setCodigoFiltro("");
     setOrdenFecha("");
-
     setPedidos(pedidosOriginales);
     setCurrentPage(1);
-    showNotification("info", "Filtros limpiados");
   };
 
+  function parseFecha(fechaStr) {
+    if (!fechaStr) return new Date(0); // para evitar errores
 
-  // --- Paginación ---
+    const [fecha, hora] = fechaStr.split(' ');
+    const [dd, mm, yyyy] = fecha.split('/');
+    const [HH, MM] = hora.split(':');
+
+    return new Date(yyyy, mm - 1, dd, HH, MM);
+  }
+
+
+  // =============================
+  // PAGINACIÓN
+  // =============================
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 20;
   const indexOfLast = currentPage * itemsPerPage;
   const indexOfFirst = indexOfLast - itemsPerPage;
   const curretPedidos = pedidos.slice(indexOfFirst, indexOfLast);
 
-  function parseFechaHoraDDMMYYYY(fechaHora) {
-    if (!fechaHora) return null;
-
-    const [fecha, hora] = fechaHora.split(" ");
-    const [dia, mes, anio] = fecha.split("/");
-    const [hh, mm] = hora.split(":");
-
-    return new Date(`${anio}-${mes}-${dia}T${hh}:${mm}:00`);
-  }
-
-  function convertirLocalAUTCString(fechaDDMMYYYY, horaHHmm) {
-    if (!fechaDDMMYYYY || !horaHHmm) return "";
-
-    const [dia, mes, anio] = fechaDDMMYYYY.split("-");
-    const [hora, minuto] = horaHHmm.split(":");
-
-    // Construimos una fecha local (sin timezone)
-    const fechaLocal = new Date(anio, mes - 1, dia, hora, minuto);
-
-    // Convertimos a UTC ISO → yyyy-MM-ddTHH:mm:ssZ
-    const fechaString = fechaDDMMYYYY + " " + horaHHmm+":00";
-    console.log(fechaString)
-    return fechaString;
-  }
-
-  function convertirManualAUTC(fechaAAAAMMDD, horaHH, minutoMM) {
-    if (!fechaAAAAMMDD || !horaHH || !minutoMM) return "";
-
-    const anio = fechaAAAAMMDD.substring(0, 4);
-    const mes = fechaAAAAMMDD.substring(4, 6);
-    const dia = fechaAAAAMMDD.substring(6, 8);
-
-    const fechaLocal = new Date(anio, mes - 1, dia, horaHH, minutoMM);
-
-    const fechaString = fechaAAAAMMDD + " " + horaHH+":"+minutoMM+":00";
-    console.log(fechaString)
-    return fechaString;  // yyyy-MM-ddTHH:mm:ssZ
-  }
-
-
-
-
   return (
     <div className="page">
 
       {(loading || processing) && (
         <LoadingOverlay
-          text={processing ? "Cargando pedidos..." : "Cargando pedidos..."}
+          text={processing ? "Procesando pedidos..." : "Cargando pedidos..."}
         />
       )}
 
@@ -404,38 +388,38 @@ export default function Pedidos() {
                 <RemoveFileButton onClick={() => setArchivo(null)} />
               )}
             </div>
-
-
+            
             <div className="modal-body">
-              {/* FECHA */}
-              <label>Fecha (AAAAMMDD)</label>
-              <Input
-                placeholder="20250102"
-                value={fecha}
-                onChange={(e) => setFecha(e.target.value)}
-                disabled={!!archivo}
-              />
+              {archivo && (
+              <>
+                <label>Fecha y hora de inicio (UTC)</label>
+                <DateTimeInline
+                  dateValue={fechaArchivoFechaI}
+                  timeValue={fechaArchivoHoraI}
+                  onDateChange={(e) => setFechaArchivoFechaI(e.target.value)}
+                  onTimeChange={(e) => setFechaArchivoHoraI(e.target.value)}
+                />
+                <label>Fecha y hora de fin (UTC)</label>
+                <DateTimeInline
+                  dateValue={fechaArchivoFechaF}
+                  timeValue={fechaArchivoHoraF}
+                  onDateChange={(e) => setFechaArchivoFechaF(e.target.value)}
+                  onTimeChange={(e) => setFechaArchivoHoraF(e.target.value)}
+                />
+              </>
+              )}
 
-              {/* HORA */}
-              <label>Hora (HH)</label>
-              <Input
-                placeholder="01"
-                value={hora}
-                onChange={(e) => setHora(e.target.value)}
-                disabled={!!archivo}
-              />
-
-              {/* MINUTO */}
-              <label>Minuto (MM)</label>
-              <Input
-                placeholder="38"
-                value={minuto}
-                onChange={(e) => setMinuto(e.target.value)}
+              <label>Fecha y hora de generación (UTC)</label>
+              <DateTimeInline
+                dateValue={fecha}
+                timeValue={hora}
+                onDateChange={(e) => setFecha(e.target.value)}
+                onTimeChange={(e) => setHora(e.target.value)}
                 disabled={!!archivo}
               />
 
               {/* CANTIDAD */}
-              <label>Cantidad (###)</label>
+              <label>Cantidad</label>
               <Input
                 placeholder="006"
                 value={cantidad}
@@ -475,25 +459,6 @@ export default function Pedidos() {
                 value={generarCodigoPedido()}
                 disabled
               />
-
-              {archivo && (
-                <>
-                  <label>Fecha y hora de inicio</label>
-                  <DateTimeInline
-                    dateValue={fechaArchivoFechaI}
-                    timeValue={fechaArchivoHoraI}
-                    onDateChange={(e) => setFechaArchivoFechaI(e.target.value)}
-                    onTimeChange={(e) => setFechaArchivoHoraI(e.target.value)}
-                  />
-                  <label>Fecha y hora de fin</label>
-                  <DateTimeInline
-                    dateValue={fechaArchivoFechaF}
-                    timeValue={fechaArchivoHoraF}
-                    onDateChange={(e) => setFechaArchivoFechaF(e.target.value)}
-                    onTimeChange={(e) => setFechaArchivoHoraF(e.target.value)}
-                  />
-                </>
-              )}
             </div>
 
             <div className="modal-footer">

@@ -131,7 +131,7 @@ public class PedidoService {
         }
     }
 
-    public void importar(List<DTO> dtos) {
+    public void importar(List<PedidoDTO> dtos) {
         int posCarga = 0;
         try {
             G4D.Logger.logln("Cargando pedidos desde lista..");

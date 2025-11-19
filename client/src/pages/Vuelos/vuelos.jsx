@@ -58,8 +58,10 @@ export default function Vuelos() {
   // Columnas nuevas para vuelos
   const headers = [
     { label: "Código", key: "codigo" },
-    { label: "Salida", key: "horaSalida" },
-    { label: "Llegada", key: "horaLlegada" },
+    { label: "Origen", key: "codOrigen" },
+    { label: "Salida (UTC)", key: "horaSalida" },
+    { label: "Llegada (UTC)", key: "horaLlegada" },
+    { label: "Destino", key: "codDestino" },
     { label: "Capacidad", key: "capacidad" },
     //{ label: "Acciones", key: "acciones" },
   ];
@@ -232,7 +234,7 @@ export default function Vuelos() {
       <section className="contenido">
         <div className="content-header">
           <h4>Gestión de planes de vuelos</h4>
-          <ButtonAdd icon={plus} label="Agregar vuelo" onClick={() => setIsModalOpen(true)} />
+          <ButtonAdd icon={plus} label="Agregar plan de vuelo" onClick={() => setIsModalOpen(true)} />
         </div>
 
         {loading ? (
@@ -258,7 +260,7 @@ export default function Vuelos() {
         <div className="modal" onClick={() => setIsModalOpen(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3 className="modal-title">Agregar vuelo</h3>
+              <h3 className="modal-title">Agregar plan de vuelo</h3>
 
               <label htmlFor="fileInput" className="file-label">Agregar archivo</label>
               <input type="file" id="fileInput" className="file-input" onChange={handleFileChange} />

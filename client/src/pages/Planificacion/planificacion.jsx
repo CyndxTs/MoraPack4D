@@ -1,56 +1,62 @@
 import React, { useState, useEffect, useRef } from "react";
 import "./planificacion.scss";
-import { ButtonAdd, Input, Table, SidebarActions, LoadingOverlay, Legend, Notification, Radio, DateTimeInline, Dropdown, Dropdown2} from "../../components/UI/ui";
+import { RemoveFileButton, ButtonAdd, Input, Table, SidebarActions, LoadingOverlay, Legend, Notification, Radio, DateTimeInline, Dropdown, Dropdown2, Dropdown3 } from "../../components/UI/ui";
 import plus from "../../assets/icons/plus.svg";
 import hideIcon from "../../assets/icons/hide-sidebar.png";
-import { listarRutas } from "../../services/rutaService";
+import { listarPedidos } from "../../services/pedidoService";
 import { listarParametros } from "../../services/parametrosService";
 import { listarAeropuertos } from "../../services/aeropuertoService";
+import { listarRutas } from "../../services/rutaService";
+import { listarClientes } from "../../services/clienteService";
 import { planificar } from "../../services/planificarService";
+import { importarPedidos, importarPedidosLista } from "../../services/generalService";
 
 import { MapContainer, TileLayer, Marker, Popup, Polyline, useMapEvent  } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from "leaflet";
 
 import planeIconImg from "../../assets/icons/planeMora.svg";
-//import { getAeropuertosMap  } from "../../services/aeropuertoService";
 import { getAeropuertosMapWS, getVuelosWS, disconnectWS } from "../../services/simulationService";
 
 export default function Planificacion() {
+  // ----------------------------------------
+  // UI / layout state
+  // ----------------------------------------
   const [collapsed, setCollapsed] = useState(false);
-  const [codigoVuelo, setCodigoVuelo] = useState("");
-  const [ciudadDestino, setCiudadDestino] = useState("");
-  const [continente, setContinente] = useState({ america: false, europa: false, asia: false });
-  const [estadoVuelo, setEstadoVuelo] = useState({ enCurso: false, finalizado: false, cancelado: false });
-  const [archivo, setArchivo] = useState(null);
   const [selectedItem, setSelectedItem] = useState(null);
+  const [notification, setNotification] = useState(null);
 
-  // -------- MODAL --------
+  // ----------------------------------------
+  // Modal / planificación state
+  // ----------------------------------------
   const [isModalOpen, setIsModalOpen] = useState(false);
-
+  const [isModalPedidoOpen, setIsModalPedidoOpen] = useState(false);
   const [tipoSimulacion, setTipoSimulacion] = useState("seleccionar");
   const [fechaI, setFechaI] = useState("");
   const [horaI, setHoraI] = useState("");
   const [fechaF, setFechaF] = useState("");
   const [horaF, setHoraF] = useState("");
-
   const [loadedOnOpen, setLoadedOnOpen] = useState(false);
   const [parametros, setParametros] = useState(null);
+
+  // control visual / inputs
+  const [codigoVuelo, setCodigoVuelo] = useState("");
+  
+  // ----------------------------------------
+  // Parámetros de planificación (form)
+  // ----------------------------------------
+  // flags
+  const [replanificar, setReplanificar] = useState(false);
+  const [guardarPlanificacion, setGuardarPlanificacion] = useState(false);
+  const [reparametrizar, setReparametrizar] = useState(false);
+  const [guardarParametrizacion, setGuardarParametrizacion] = useState(true);
+
+  // listas / selects
+  const [rutas, setRutas] = useState([]);
   const [aeropuertos, setAeropuertos] = useState([]);
   const [codOrigenes, setCodOrigenes] = useState([]);
 
-  // estados de todos los parámetros
-  const toBoolean = (v) => v === "true";
-  const parseNumber = (v) => {
-    if (v === "" || v === null || v === undefined) return null;
-    return Number(v);
-  };
-  const [replanificar, setReplanificar] = useState(false);
-  const [guardarPlanificacion, setGuardarPlanificacion] = useState(false);
-  const [reparametrizar, setReparametrizar] = useState(false);   
-  const [guardarParametrizacion, setGuardarParametrizacion] = useState(true);
-
-
+  // parámetros numéricos
   const [maxDiasEntregaIntercontinental, setMaxDiasEntregaIntercontinental] = useState();
   const [maxDiasEntregaIntracontinental, setMaxDiasEntregaIntracontinental] = useState();
   const [maxHorasRecojo, setMaxHorasRecojo] = useState();
@@ -72,326 +78,310 @@ export default function Planificacion() {
   const [factorDeDesviacionEspacial, setFactorDeDesviacionEspacial] = useState();
   const [factorDeDisposicionOperacional, setFactorDeDisposicionOperacional] = useState();
 
-  //Aeropuertos
+  // ----------------------------------------
+  // Aeropuertos / Vuelos (simulación)
+  // ----------------------------------------
   const [airports, setAirports] = useState(null);
   const [loadingAirports, setLoadingAirports] = useState(true);
-  
-  // Inputs de inicio de simulación (no se auto-actualizan)
+
+  const [rawFlights, setRawFlights] = useState([]);
+  const [flights, setFlights] = useState([]);
+
+  // ----------------------------------------
+  // Simulación: reloj, velocidad y timers
+  // ----------------------------------------
   const [inputDate, setInputDate] = useState(new Date().toISOString().split("T")[0]);
-  const [inputTime, setInputTime] = useState(new Date().toTimeString().slice(0,5));
+  const [inputTime, setInputTime] = useState(new Date().toTimeString().slice(0, 5));
 
-  // Reloj de simulación (ms) y velocidad: 3600 = 1s real -> 1 hora simulada
   const [simNowMs, setSimNowMs] = useState(() => Date.now());
-  const [simSpeed, setSimSpeed] = useState(3600);
+  const [simSpeed, setSimSpeed] = useState(); // se espera número ms_sim / ms_real
 
-  // Refs internas para el avance suave
-  const baseSimMsRef = useRef(null);
   const lastRealMsRef = useRef(null);
 
-  // Helpers de tiempo (trabajamos en UTC porque tu JSON está en UTC)
+  const [seconds, setSeconds] = useState(0);
+  const [timerRunning, setTimerRunning] = useState(false);
+  const [timerActive, setTimerActive] = useState(false); // start clickeado
+
+  // loading local para operaciones (handlePlanear)
+  const [loading, setLoading] = useState(false);
+  const [processing, setProcessing] = useState(false);
+  
+  // ----------------------------------------
+  // Reloj de CONTROL-BAR: hora real UTC-5 (Perú) con segundos
+  // ----------------------------------------
+  // controlNowMs se actualiza cada segundo con la hora actual en UTC (0) menos 5 horas.
+  const [controlNowMs, setControlNowMs] = useState(() => {
+    const now = new Date();
+    const utcMs = now.getTime() + now.getTimezoneOffset() * 60000;
+    const peruMs = utcMs - 5 * 60 * 60 * 1000; // UTC-5
+    return peruMs;
+  });
+
+  // actualiza controlNowMs cada segundo (reloj en vivo para control-bar)
+  useEffect(() => {
+    const tick = () => {
+      const now = new Date();
+      const utcMs = now.getTime() + now.getTimezoneOffset() * 60000;
+      const peruMs = utcMs - 5 * 60 * 60 * 1000; // UTC-5
+      setControlNowMs(peruMs);
+    };
+
+    tick(); // setear inmediatamente
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  // ----------------------------------------
+  // Helpers / utilidades (unificadas)
+  // ----------------------------------------
+  const toBoolean = (v) => v === "true";
+
+  const parseNumber = (v) => {
+    if (v === "" || v === null || v === undefined) return null;
+    return Number(v);
+  };
+
   const toISODate = (ms) => new Date(ms).toISOString().split("T")[0];
-  const toISOTime = (ms) => new Date(ms).toISOString().slice(11,16);
+
+  // ahora incluye segundos HH:MM:SS
+  const toISOTimeWithSeconds = (ms) => {
+    const d = new Date(ms);
+    // obtener componentes en UTC-0 del ms ya ajustado (controlNowMs está en UTC-5 ms)
+    const hh = d.getUTCHours().toString().padStart(2, "0");
+    const mm = d.getUTCMinutes().toString().padStart(2, "0");
+    const ss = d.getUTCSeconds().toString().padStart(2, "0");
+    return `${hh}:${mm}:${ss}`;
+  };
 
   const parseUtcToMs = (iso) => {
-    // Si viene sin zona ("2025-11-26T20:06:00") lo forzamos a UTC
     const s = /Z|[+-]\d{2}:\d{2}$/.test(iso) ? iso : iso + "Z";
     return new Date(s).getTime();
   };
 
-  const fromInputsToMsUTC = (d, t) => new Date(`${d}T${t}:00Z`).getTime();
+  function unirFechaHora(fechaDateInput, horaHHmm) {
+    if (!fechaDateInput || !horaHHmm) return null;
 
+    return `${fechaDateInput} ${horaHHmm}:00`; 
+  }
 
+  const handleFileChange = (e) => {
+    if (e.target.files.length > 0) setArchivo(e.target.files[0]);
+    else resetArchivo();
+  };
 
-
-  const [seconds, setSeconds] = useState(0);
-  const [timerRunning, setTimerRunning] = useState(false);
-  const [timerActive, setTimerActive] = useState(false); // indica si inició cronómetro (start clickeado)
-
-  // Cargar aeropuertos del back una sola vez
-
-  //Notificaciones
-  const [notification, setNotification] = useState(null);
-  
   const showNotification = (type, message) => {
     setNotification({ type, message });
     setTimeout(() => setNotification(null), 5000);
   };
 
-  //Filtros
-  const handleFilter = async () => {
-
+  const resetDatos = () => {
+    setFecha("");
+    setHora("");
+    setCantidad("");
+    setSelectedCliente(null);
+    setSelectedDestino(null);
   };
 
-  //Limpiar filtros
-  const handleCleanFilters = async () => {
+  function formatearFechaInput(fecha) {
+    if (!fecha) return "";
+    return fecha.replace(/-/g, ""); 
+  }
 
-  };
+  function formatearHoraeInput(hora) {
+    if (!hora) return "";
+    return hora.replace(/:/g, "-"); 
+  }
 
-  // Botones
-  const [btnState, setBtnState] = useState({
-    start: { disabled: false, color: "blue" },
-    pause: { disabled: true, color: "grey" },
-    stop:  { disabled: true, color: "grey" }
-  });
+  // ----------------------------------------
+  // Pedidos
+  // ----------------------------------------
+  const [pedidos, setPedidos] = useState([]);
+  const [pedidosOriginales, setPedidosOriginales] = useState([]);
+  const [pedidosCountInicial, setPedidosCountInicial] = useState(null);
+  const [pedidosAgregados, setPedidosAgregados] = useState(0);
 
-  // Cronómetro
-  useEffect(() => {
-    let timer;
-    if (timerRunning) {
-      timer = setInterval(() => setSeconds(s => s + 1), 1000);
-    } else if (!timerRunning && seconds !== 0) {
-      clearInterval(timer);
-    }
-    return () => clearInterval(timer);
-  }, [timerRunning]);
+  const [fecha, setFecha] = useState("");   
+  const [hora, setHora] = useState("");    
+  const [cantidad, setCantidad] = useState("");
+  const [selectedCliente, setSelectedCliente] = useState(null);
+  const [selectedDestino, setSelectedDestino] = useState(null);
 
-useEffect(() => {
-  if (!timerRunning) return;
-  let rafId;
+  const [archivo, setArchivo] = useState(null);
+  const [fechaArchivoFechaI, setFechaArchivoFechaI] = useState("");
+  const [fechaArchivoHoraI, setFechaArchivoHoraI] = useState("");
+  const [fechaArchivoFechaF, setFechaArchivoFechaF] = useState("");
+  const [fechaArchivoHoraF, setFechaArchivoHoraF] = useState("");
 
-  const tick = (now) => {
-    if (lastRealMsRef.current == null) lastRealMsRef.current = now;
-    const elapsedRealMs = now - lastRealMsRef.current; // ms reales desde el último frame
-    lastRealMsRef.current = now;
+  const [clientes, setClientes] = useState([]);
 
-    // Avanzar reloj simulado: simSpeed = ms_sim / ms_real (3600 => 1s real = 1h simulada)
-    setSimNowMs(prev => prev + elapsedRealMs * simSpeed);
+  const handleAdd = async () => {
+    try {
+      setProcessing(true);
 
-    rafId = requestAnimationFrame(tick);
-  };
+      // --- CASO 1: ARCHIVO ---
+      if (archivo) {
+        if (archivo.name !== "Pedidos.txt") {
+          showNotification("warning", "El archivo debe llamarse 'Pedidos.txt'.");
+          return;
+        }
 
-  lastRealMsRef.current = performance.now();
-  rafId = requestAnimationFrame(tick);
-  return () => cancelAnimationFrame(rafId);
-}, [timerRunning, simSpeed]);
+        const fechaInicio = unirFechaHora(fechaArchivoFechaI, fechaArchivoHoraI);
+        const fechaFin = unirFechaHora(fechaArchivoFechaF, fechaArchivoHoraF);
+        
+        console.log(archivo);
+        console.log(fechaInicio);
+        console.log(fechaFin);
 
-useEffect(() => {
-  if (!timerActive) return;
+        await importarPedidos(archivo, fechaInicio, fechaFin);
+        showNotification("success", "Pedidos importados correctamente");
+      }
 
-  setFlights(prev => prev.map(f => {
-    if (!f || !f.path || f.path.length === 0) return f;
+      // --- CASO 2: MANUAL ---
+      else {
+        if (!selectedCliente || !selectedDestino || !fecha || !hora || !cantidad) {
+          showNotification("warning", "Completa todos los campos del pedido manual.");
+          return;
+        }
 
-    const total = Math.max(f.endMs - f.startMs, 60 * 1000);
+        const fechaGeneracion = unirFechaHora(fecha, hora);
 
-    // Aún no despega
-    if (simNowMs <= f.startMs) {
-      return { ...f, progress: 0, position: f.path[0], arrived: false };
-    }
-
-    const frac = Math.min((simNowMs - f.startMs) / total, 1);
-    const idx  = Math.floor(frac * (f.path.length - 1));
-    const pos  = f.path[idx];
-    const next = f.path[Math.min(idx + 1, f.path.length - 1)];
-
-    // bearing → rotation
-    const toRad = d => d * Math.PI / 180, toDeg = r => r * 180 / Math.PI;
-    const lat1 = toRad(pos.lat),  lon1 = toRad(pos.lng);
-    const lat2 = toRad(next.lat), lon2 = toRad(next.lng);
-    let bearing = Math.atan2(
-      Math.sin(lon2 - lon1) * Math.cos(lat2),
-      Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(lon2 - lon1)
-    );
-    bearing = (toDeg(bearing) + 360) % 360;
-    const rotation = bearing - 45;
-
-    return { ...f, progress: frac, position: pos, rotation, arrived: frac >= 1 };
-  }));
-}, [simNowMs, timerActive]);
-
-  // Reloj 
-  /*
-  useEffect(() => {
-    const clock = setInterval(() => {
-      const now = new Date();
-      setTime(now.toTimeString().slice(0,5));
-      if (!timerActive) setDate(now.toISOString().split("T")[0]); // solo actualiza fecha si no hay simulación activa
-    }, 1000);
-    return () => clearInterval(clock);
-  }, [timerActive]);*/
-
-  const handleFileChange = (e) => {
-    if (e.target.files.length > 0) setArchivo(e.target.files[0].name);
-    else setArchivo(null);
-  };
-
-  const formatTime = (sec) => {
-    const m = Math.floor(sec / 60).toString().padStart(2,'0');
-    const s = (sec % 60).toString().padStart(2,'0');
-    return `${m}:${s}`;
-  };
-
-  // Botones
-  const handleStart = () => {
-    // Si ya hay simulación activa pero está en pausa, SOLO reanuda
-    if (timerActive && !timerRunning) {
-      lastRealMsRef.current = performance.now(); // referencia para el RAF
-      setTimerRunning(true);
-      setBtnState({
-        start: { disabled: true, color: "grey" },
-        pause: { disabled: false, color: "red" },
-        stop:  { disabled: false, color: "blue" }
-      });
-      return;
-    }
-
-    // Primer inicio: fija el tiempo de simulación al valor de los inputs
-    const base = fromInputsToMsUTC(inputDate, inputTime);
-    setSimNowMs(base);
-    lastRealMsRef.current = performance.now();
-
-    setTimerRunning(true);
-    setTimerActive(true);
-    setBtnState({
-      start: { disabled: true, color: "grey" },
-      pause: { disabled: false, color: "red" },
-      stop:  { disabled: false, color: "blue" }
-    });
-  };
-
-  const handlePause = () => {
-    setTimerRunning(false);
-    setBtnState({
-      start: { disabled: false, color: "blue" },
-      pause: { disabled: true, color: "grey" },
-      stop:  { disabled: false, color: "blue" }
-    });
-    // NOTA: inputs siguen bloqueados hasta stop
-  };
-
-  const handleStop = () => {
-    setTimerRunning(false);
-    setTimerActive(false);
-    setSeconds(0);
-
-    // Volver el reloj simulado al valor de los inputs
-    const base = fromInputsToMsUTC(inputDate, inputTime);
-    setSimNowMs(base);
-
-    // Resetear vuelos al origen
-    if (airports && rawFlights.length > 0) {
-      const reset = rawFlights.map((f) => {
-        const origin = airports[f.origenCodigo];
-        const dest = airports[f.destinoCodigo];
-        if (!origin || !dest) return null;
-
-        const startMs = parseUtcToMs(f.fechaSalida);
-        const endMs   = parseUtcToMs(f.fechaLlegada);
-        const path = generateGeodesicPath(origin.lat, origin.lng, dest.lat, dest.lng, 120);
-
-        return {
-          code: f.codigo,
-          origin, originName: origin.name,
-          destination: dest, destinationName: dest.name,
-          startTime: f.fechaSalida, endTime: f.fechaLlegada,
-          startMs, endMs,
-          capacity: f.capacidadOcupada,
-          durationSec: Math.max((endMs - startMs)/1000, 60),
-          progress: 0,
-          arrived: false,
-          path,
-          position: { lat: origin.lat, lng: origin.lng },
-          rotation: 0,
+        const dto = {
+          codigo: selectedDestino.codigo + obtenerSiguienteIdPedido().toString().padStart(9, "0"),
+          codCliente: selectedCliente.codigo,
+          codDestino: selectedDestino.codigo,
+          fechaHoraGeneracion: fechaGeneracion,
+          cantidadSolicitada: Number(cantidad),
+          fechaHoraExpiracion: null,       
+          lotesPorRuta: []
         };
-      }).filter(Boolean);
 
-      setFlights(reset);
-    } else {
-      setFlights([]);
+        const dtos = [];
+        dtos.push(dto);
+
+        console.log("DTO generado:", dto);
+        console.log("Lista DTOS:", dtos);
+
+        await importarPedidosLista(dtos);
+
+        showNotification("success", "Pedido manual registrado correctamente");
+        resetDatos();
+      }
+
+      // --- Recargar tabla ---
+      const data = await listarPedidos();
+      setPedidos(data.dtos || []);
+      setPedidosOriginales(data.dtos || []);
+
+      setIsModalPedidoOpen(false);
+      setArchivo(null);
+    } catch {
+      showNotification("danger", "Error al agregar pedido");
+    } finally {
+      setProcessing(false);
     }
-
-    setBtnState({
-      start: { disabled: false, color: "blue" },
-      pause: { disabled: true, color: "grey" },
-      stop:  { disabled: true, color: "grey" }
-    });
   };
-  
-  // Vuelos
-  const [flights, setFlights] = useState([]);
-  const [rawFlights, setRawFlights] = useState([]);
-  // 1) Cargar aeropuertos desde el back (solo una vez)
-  /*
-  useEffect(() => {
-    const ac = new AbortController();
-    getAeropuertosMap(ac.signal)
-      .then(map => setAirports(map))
-      .catch(err => console.error("Error cargando aeropuertos:", err))
-      .finally(() => setLoadingAirports(false));
-    return () => ac.abort();
-  }, []);*/
 
-  // 1) Cargar aeropuertos por WebSocket (y cerrar al desmontar)
-  useEffect(() => {
-    let mounted = true;
-    getAeropuertosMapWS()
-      .then(map => { if (mounted) setAirports(map); })
-      .catch(err => console.error("WS aeropuertos:", err))
-      .finally(() => setLoadingAirports(false));
-    return () => {
-      mounted = false;
-      disconnectWS(); // cierra la conexión WS cuando sales del componente
+  useEffect(() => { 
+    const fetchData = async () => {
+      const errores = [];
+
+      try {
+        const pedidosData = await listarPedidos();
+        setPedidos(pedidosData.dtos || []);
+        setPedidosOriginales(pedidosData.dtos || []);
+      } catch {
+        errores.push("Pedidos");
+      }
+
+      try {
+        const clientesData = await listarClientes();
+        setClientes(clientesData.dtos || []);
+      } catch {
+        errores.push("Clientes");
+      }
+
+      try {
+        const aeropuertosData = await listarAeropuertos();
+        setAeropuertos(aeropuertosData.dtos || []);
+      } catch {
+        errores.push("Aeropuertos");
+      }
+
+      try {
+        const rutasData = await listarRutas();
+        setRutas(rutasData.dtos || []);
+      } catch {
+        errores.push("Rutas");
+      }
+
+      if (errores.length > 0) {
+        showNotification("danger", `No se pudieron cargar: ${errores.join(", ")}`);
+      }
+
+      setLoading(false);
     };
+
+    fetchData();
   }, []);
 
+
   useEffect(() => {
-    if (!airports) return;
+    if (rutas.length === 0) {
+      // Guardar longitud actual
+      setPedidosCountInicial(pedidos.length);
+      setPedidosAgregados(0); // aún no se han agregado
+    } else {
+      // Cuando ya hay rutas -> calcular diferencia
+      if (pedidosCountInicial !== null) {
+        setPedidosAgregados(pedidos.length - pedidosCountInicial);
+      }
+    }
+    console.log("Se han agregado " + pedidos.length - pedidosCountInicial)
+  }, [rutas, pedidos]);
 
-    getVuelosWS()
-      .then(data => {
-        setRawFlights(data); // guardamos crudo para poder rearmar en "Detener"
 
-        const mapped = data.map((f) => {
-          const origin = airports[f.origenCodigo];
-          const dest   = airports[f.destinoCodigo];
-          if (!origin || !dest) {
-            console.warn(` Vuelo ${f.codigo} omitido: ${f.origenCodigo} → ${f.destinoCodigo} no está en airports`);
-            return null;
-          }
+  function generarCodigoPedido() {
+    if (!selectedCliente || !selectedDestino || !fecha || !hora || !cantidad)
+      return "";
 
-          const startMs = parseUtcToMs(f.fechaSalida);
-          const endMs   = parseUtcToMs(f.fechaLlegada);
-          const durationSec = Math.max((endMs - startMs) / 1000, 60);
+    return (
+      obtenerSiguienteIdPedido() +
+      "-" + formatearFechaInput(fecha) +
+      "-" + formatearHoraeInput(hora) +
+      "-" + cantidad.padStart(3, "0") +
+      "-" + selectedDestino.codigo +
+      "-" + selectedCliente.codigo.padStart(7, "0")
+    );
+  }
 
-          const path = generateGeodesicPath(origin.lat, origin.lng, dest.lat, dest.lng, 120);
+  function obtenerSiguienteIdPedido() {
+    if (pedidosOriginales.length < 1) return "00000001";
 
-          return {
-            code: f.codigo,
-            origin,
-            originName: origin.name,
-            destination: dest,
-            destinationName: dest.name,
-            startTime: f.fechaSalida,
-            endTime: f.fechaLlegada,
-            startMs,
-            endMs,
-            capacity: f.capacidadOcupada,
-            durationSec,
-            progress: 0,
-            arrived: false,
-            path,
-            position: path[0],
-            rotation: 0,
-          };
-        }).filter(Boolean);
+    const ids = pedidosOriginales.map(p => {
+      const ult8 = p.codigo?.slice(-8) || "0";
+      const num = parseInt(ult8);
+      return isNaN(num) ? 0 : num;
+    });
 
-        setFlights(mapped);
-        console.log("Vuelos WS mapeados:", mapped.length);
-      })
-      .catch(err => console.error("WS vuelos:", err));
-  }, [airports]);
+    const maxId = Math.max(...ids);
+    return String(maxId + 1).padStart(8, "0");
+  }
 
+  // ----------------------------------------
+  // Icons (leaflet divIcons)
+  // ----------------------------------------
   const createColoredIcon = (filterCss, rotation) =>
-  L.divIcon({
-    html: `<img src="${planeIconImg}" 
+    L.divIcon({
+      html: `<img src="${planeIconImg}" 
                 style="width:18px;
                        transform: rotate(${rotation}deg);
                        transform-origin: center center;
                        filter:${filterCss};
                        transition: transform 0.3s linear;">`,
-    className: "",
-    iconSize: [18, 18],
-    iconAnchor: [11, 8],
-  });
+      className: "",
+      iconSize: [18, 18],
+      iconAnchor: [11, 8]
+    });
 
   const airportIcon = L.divIcon({
     html: `<div style="
@@ -404,83 +394,170 @@ useEffect(() => {
       "></div>`,
     className: "",
     iconSize: [10, 10],
-    iconAnchor: [5, 5],
+    iconAnchor: [5, 5]
   });
-  //
 
+  // ----------------------------------------
+  // Cronómetro (contador de segundos UI)
+  // ----------------------------------------
+  useEffect(() => {
+    let timer;
+    if (timerRunning) {
+      timer = setInterval(() => setSeconds((s) => s + 1), 1000);
+    } else if (!timerRunning && seconds !== 0) {
+      clearInterval(timer);
+    }
+    return () => clearInterval(timer);
+  }, [timerRunning]);
 
-  // === ANIMACIÓN DE LOS VUELOS ===
-/*
+  // RAF que avanza el reloj simulado según simSpeed
   useEffect(() => {
     if (!timerRunning) return;
+    let rafId;
 
-    const interval = setInterval(() => {
-      setFlights((prev) =>
-        prev.map((f) => {
-          if (f.arrived) return f;
-          const newProgress = Math.min(f.progress + (0.002), 1); // más suave
-          const index = Math.floor(f.path.length * newProgress);
-          const position = f.path[Math.min(index, f.path.length - 1)];
+    const tick = (now) => {
+      if (lastRealMsRef.current == null) lastRealMsRef.current = now;
+      const elapsedRealMs = now - lastRealMsRef.current;
+      lastRealMsRef.current = now;
 
-          const nextIndex = Math.min(index + 1, f.path.length - 1);
-          const next = f.path[nextIndex];
-          // Conversión a radianes
-          const lat1 = position.lat * Math.PI / 180;
-          const lon1 = position.lng * Math.PI / 180;
-          const lat2 = next.lat * Math.PI / 180;
-          const lon2 = next.lng * Math.PI / 180;
+      // avanzar reloj simulado
+      setSimNowMs((prev) => prev + elapsedRealMs * (simSpeed || 1));
+      rafId = requestAnimationFrame(tick);
+    };
 
-          // Rumbo geodésico (bearing)
-          let bearing = Math.atan2(
-            Math.sin(lon2 - lon1) * Math.cos(lat2),
-            Math.cos(lat1) * Math.sin(lat2) -
-            Math.sin(lat1) * Math.cos(lat2) * Math.cos(lon2 - lon1)
-          );
-          bearing = (bearing * 180 / Math.PI + 360) % 360; // convertir a grados 0–360
+    lastRealMsRef.current = performance.now();
+    rafId = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(rafId);
+  }, [timerRunning, simSpeed]);
 
-          // Compensamos la orientación del SVG (punta arriba-derecha)
-          const rotation = bearing - 45;
-
-          return { ...f, progress: newProgress, position, rotation, arrived: newProgress >= 1 };
-        })
-      );
-    }, 100); // cada 100 ms, animación fluida
-    return () => clearInterval(interval);
-  }, [timerRunning]);*/
-
-  // Detener cronómetro cuando todos los vuelos hayan llegado
+  // Actualizar posiciones de vuelos basadas en simNowMs
   useEffect(() => {
-    if (!timerActive || flights.length === 0) return;
-    const allArrivedByTime = flights.every(f => simNowMs >= f.endMs);
-    if (allArrivedByTime) {
-      showNotification("info", "Todos los vuelos han llegado a su destino.");
-      setTimerRunning(false);
-      setTimerActive(false);
-      setBtnState({
-        start: { disabled: true, color: "grey" },
-        pause: { disabled: true, color: "grey" },
-        stop:  { disabled: false, color: "blue" }
-      });
-    }
-  }, [simNowMs, flights, timerActive]);
+    if (!timerActive) return;
 
+    setFlights((prev) =>
+      prev.map((f) => {
+        if (!f || !f.path || f.path.length === 0) return f;
 
-  // Calcula puntos de una ruta geodésica (gran círculo)
+        const total = Math.max(f.endMs - f.startMs, 60 * 1000);
+
+        if (simNowMs <= f.startMs) {
+          return { ...f, progress: 0, position: f.path[0], arrived: false };
+        }
+
+        const frac = Math.min((simNowMs - f.startMs) / total, 1);
+        const idx = Math.floor(frac * (f.path.length - 1));
+        const pos = f.path[idx];
+        const next = f.path[Math.min(idx + 1, f.path.length - 1)];
+
+        // calcular bearing -> rotation
+        const toRad = (d) => (d * Math.PI) / 180;
+        const toDeg = (r) => (r * 180) / Math.PI;
+        const lat1 = toRad(pos.lat),
+          lon1 = toRad(pos.lng);
+        const lat2 = toRad(next.lat),
+          lon2 = toRad(next.lng);
+
+        let bearing = Math.atan2(
+          Math.sin(lon2 - lon1) * Math.cos(lat2),
+          Math.cos(lat1) * Math.sin(lat2) -
+            Math.sin(lat1) * Math.cos(lat2) * Math.cos(lon2 - lon1)
+        );
+        bearing = (toDeg(bearing) + 360) % 360;
+        const rotation = bearing - 45;
+
+        return { ...f, progress: frac, position: pos, rotation, arrived: frac >= 1 };
+      })
+    );
+  }, [simNowMs, timerActive]);
+
+  // ----------------------------------------
+  // WS: aeropuertos (open/close) y vuelos (map)
+  // ----------------------------------------
+  useEffect(() => {
+    let mounted = true;
+    getAeropuertosMapWS()
+      .then((map) => {
+        if (mounted) setAirports(map);
+      })
+      .catch((err) => console.error("WS aeropuertos:", err))
+      .finally(() => setLoadingAirports(false));
+
+    return () => {
+      mounted = false;
+      disconnectWS();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!airports) return;
+    getVuelosWS()
+      .then((data) => {
+        setRawFlights(data); // para poder rearmar en stop
+
+        const mapped = data
+          .map((f) => {
+            const origin = airports[f.origenCodigo];
+            const dest = airports[f.destinoCodigo];
+            if (!origin || !dest) {
+              console.warn(
+                `Vuelo ${f.codigo} omitido: ${f.origenCodigo} → ${f.destinoCodigo} no está en airports`
+              );
+              return null;
+            }
+
+            const startMs = parseUtcToMs(f.fechaSalida);
+            const endMs = parseUtcToMs(f.fechaLlegada);
+            const durationSec = Math.max((endMs - startMs) / 1000, 60);
+
+            const path = generateGeodesicPath(origin.lat, origin.lng, dest.lat, dest.lng, 120);
+
+            return {
+              code: f.codigo,
+              origin,
+              originName: origin.name,
+              destination: dest,
+              destinationName: dest.name,
+              startTime: f.fechaSalida,
+              endTime: f.fechaLlegada,
+              startMs,
+              endMs,
+              capacity: f.capacidadOcupada,
+              durationSec,
+              progress: 0,
+              arrived: false,
+              path,
+              position: path[0],
+              rotation: 0
+            };
+          })
+          .filter(Boolean);
+
+        setFlights(mapped);
+        console.log("Vuelos WS mapeados:", mapped.length);
+      })
+      .catch((err) => console.error("WS vuelos:", err));
+  }, [airports]);
+
+  // ----------------------------------------
+  // Generación de path geodésico (utilidad)
+  // ----------------------------------------
   function generateGeodesicPath(lat1, lon1, lat2, lon2, numPoints = 100) {
-    const toRad = deg => (deg * Math.PI) / 180;
-    const toDeg = rad => (rad * 180) / Math.PI;
+    const toRad = (deg) => (deg * Math.PI) / 180;
+    const toDeg = (rad) => (rad * 180) / Math.PI;
 
     lat1 = toRad(lat1);
     lon1 = toRad(lon1);
     lat2 = toRad(lat2);
     lon2 = toRad(lon2);
 
-    const d = 2 * Math.asin(
-      Math.sqrt(
-        Math.sin((lat2 - lat1) / 2) ** 2 +
-        Math.cos(lat1) * Math.cos(lat2) * Math.sin((lon2 - lon1) / 2) ** 2
-      )
-    );
+    const d =
+      2 *
+      Math.asin(
+        Math.sqrt(
+          Math.sin((lat2 - lat1) / 2) ** 2 +
+            Math.cos(lat1) * Math.cos(lat2) * Math.sin((lon2 - lon1) / 2) ** 2
+        )
+      );
 
     if (d === 0) return [{ lat: toDeg(lat1), lng: toDeg(lon1) }];
 
@@ -498,14 +575,28 @@ useEffect(() => {
     }
     return points;
   }
-  //
 
-  function ClickHandler({ onMapClick }) {
-    useMapEvent("click", () => onMapClick());
-    return null; // no renderiza nada visible
-  }
+  // ----------------------------------------
+  // Efecto: detectar cuando todos los vuelos han llegado
+  // ----------------------------------------
+  useEffect(() => {
+    if (!timerActive || flights.length === 0) return;
+    const allArrivedByTime = flights.every((f) => simNowMs >= f.endMs);
+    if (allArrivedByTime) {
+      showNotification("info", "Todos los vuelos han llegado a su destino.");
+      setTimerRunning(false);
+      setTimerActive(false);
+      setBtnState({
+        start: { disabled: true, color: "grey" },
+        pause: { disabled: true, color: "grey" },
+        stop: { disabled: false, color: "blue" }
+      });
+    }
+  }, [simNowMs, flights, timerActive]);
 
-  //MODAL
+  // ----------------------------------------
+  // Modal: cargar parámetros y aeropuertos al abrir
+  // ----------------------------------------
   useEffect(() => {
     const fetchParametrosYAeropuertos = async () => {
       try {
@@ -537,11 +628,7 @@ useEffect(() => {
         setFactorDeDesviacionEspacial(p.factorDeDesviacionEspacial);
         setFactorDeDisposicionOperacional(p.factorDeDisposicionOperacional);
 
-        setCodOrigenes(prev =>
-          prev.length === 0 ? (p.codOrigenes || []) : prev
-        );
-
-
+        setCodOrigenes((prev) => (prev.length === 0 ? p.codOrigenes || [] : prev));
       } catch (err) {
         showNotification("danger", "Error cargando parámetros");
       }
@@ -553,6 +640,23 @@ useEffect(() => {
     }
   }, [isModalOpen, loadedOnOpen]);
 
+  // ----------------------------------------
+  // Manejo fechas según tipoSimulacion
+  // ----------------------------------------
+  useEffect(() => {
+    if (tipoSimulacion === "semanal") {
+      if (fechaI && horaI) {
+        const start = new Date(`${fechaI}T${horaI}:00Z`);
+        const end = new Date(start.getTime() + 7 * 24 * 60 * 60 * 1000);
+        setFechaF(end.toISOString().slice(0, 10));
+        setHoraF(end.toISOString().slice(11, 16));
+      }
+    }
+  }, [tipoSimulacion, fechaI, horaI]);
+
+  // ----------------------------------------
+  // Planear -> llama al servicio planificar
+  // ----------------------------------------
   const handlePlanear = async () => {
     try {
       setLoading(true);
@@ -567,36 +671,32 @@ useEffect(() => {
         guardarPlanificacion,
         reparametrizar,
         guardarParametrizacion,
-
+        considerarDesfaseTemporal: true,
         parameters: {
           fechaHoraInicio: `${fechaI}T${horaI}:00`,
           fechaHoraFin: `${fechaF}T${horaF}:00`,
-
-          maxDiasEntregaIntercontinental: (maxDiasEntregaIntercontinental),
-          maxDiasEntregaIntracontinental: (maxDiasEntregaIntracontinental),
-          maxHorasRecojo: (maxHorasRecojo),
-          minHorasEstancia: (minHorasEstancia),
-          maxHorasEstancia: (maxHorasEstancia),
-          considerarDesfaseTemporal,
+          maxDiasEntregaIntercontinental: maxDiasEntregaIntercontinental,
+          maxDiasEntregaIntracontinental: maxDiasEntregaIntracontinental,
+          maxHorasRecojo: maxHorasRecojo,
+          minHorasEstancia: minHorasEstancia,
+          maxHorasEstancia: maxHorasEstancia,
           codOrigenes,
-
-          dMin: (dMin),
-          iMax: (iMax),
-          eleMin: (eleMin),
-          eleMax: (eleMax),
-          kMin: (kMin),
-          kMax: (kMax),
-          tMax: (tMax),
-          maxIntentos: (maxIntentos),
-
-          factorDeUmbralDeAberracion: (factorDeUmbralDeAberracion),
-          factorDeUtilizacionTemporal: (factorDeUtilizacionTemporal),
-          factorDeDesviacionEspacial: (factorDeDesviacionEspacial),
-          factorDeDisposicionOperacional: (factorDeDisposicionOperacional)
+          dMin,
+          iMax,
+          eleMin,
+          eleMax,
+          kMin,
+          kMax,
+          tMax,
+          maxIntentos,
+          factorDeUmbralDeAberracion,
+          factorDeUtilizacionTemporal,
+          factorDeDesviacionEspacial,
+          factorDeDisposicionOperacional
         }
       };
 
-      console.log(body)
+      console.log(body);
       const result = await planificar(body);
 
       if (result.success) {
@@ -606,7 +706,6 @@ useEffect(() => {
       }
 
       closeModal();
-
     } catch (err) {
       showNotification("danger", err.message);
     } finally {
@@ -614,7 +713,9 @@ useEffect(() => {
     }
   };
 
-  // LIMPIAR MODAL SIEMPRE QUE SE CIERRA
+  // ----------------------------------------
+  // Modal helpers
+  // ----------------------------------------
   const resetModal = () => {
     setTipoSimulacion("seleccionar");
     setFechaI("");
@@ -631,137 +732,127 @@ useEffect(() => {
   const closeModal = () => {
     resetModal();
     setIsModalOpen(false);
-    setLoadedOnOpen(false);  
+    setLoadedOnOpen(false);
   };
 
-  // Manejo de fechas según tipo de simulación
-  useEffect(() => {
-    if (tipoSimulacion === "semanal") {
-      if (fechaI && horaI) {
-        const start = new Date(`${fechaI}T${horaI}:00Z`);
-        const end = new Date(start.getTime() + 7 * 24 * 60 * 60 * 1000);
+  // ----------------------------------------
+  // Filtros (placeholders, se dejan vacíos)
+  // ----------------------------------------
+  const handleFilter = async () => {
+    // implementar según necesidad
+  };
 
-        setFechaF(end.toISOString().slice(0, 10));
-        setHoraF(end.toISOString().slice(11, 16));
-      }
-    }
+  const handleCleanFilters = async () => {
+    // implementar según necesidad
+  };
 
-    if (tipoSimulacion === "colapso") {
-      return;
-    }
-  }, [tipoSimulacion, fechaI, horaI]);
-
+  // ----------------------------------------
+  // Small ClickHandler for map (leaflet)
+  // ----------------------------------------
+  function ClickHandler({ onMapClick }) {
+    useMapEvent("click", () => onMapClick());
+    return null;
+  }
 
   return (
     <div className="page">
-
       {notification && (
         <Notification
           type={notification.type}
           message={notification.message}
           onClose={() => setNotification(null)}
         />
-      )}    
+      )}
 
       <aside className={`sidebar ${collapsed ? "collapsed" : ""}`}>
         <div className="sidebar-header">
           <span className="sidebar-title">Herramientas</span>
-          <img
-            src={hideIcon}
-            alt="Ocultar"
-            className="hide-icon"
-            onClick={() => setCollapsed(!collapsed)}
-          />
+          <img src={hideIcon} alt="Ocultar" className="hide-icon" onClick={() => setCollapsed(!collapsed)} />
         </div>
 
         {!collapsed && (
-          <>
-            <div className="sidebar-content">
-              <span className="sidebar-subtitle">Planeación</span>
-              <div className="filter-group">
-                <ButtonAdd icon={plus} label="Generar plan" onClick={openModal} />
-              </div>
-
-              <span className="sidebar-subtitle">Filtros</span>
-                <div className="filter-group">
-                  <span className="sidebar-subtitle-strong">Proximamente...</span>
-                  <Dropdown
-                    placeholder="Seleccionar..."
-                    options={[
-                      { label: "Ejemplo 1", value: "ejemplo1" },
-                      { label: "Ejemplo 2", value: "ejemplo2" },          
-                    ]}
-                    onSelect={(val) => setCodigoVuelo(val)}
-                  />
-                </div>
-
-              <span className="sidebar-subtitle">Leyenda</span>
-              <Legend
-                items={[
-                  { label: "50% Capacidad", status: "en-curso" },
-                  { label: "75% Capacidad", status: "finalizado" },
-                  { label: "100% Capacidad", status: "cancelado" }
-                ]}
+          <div className="sidebar-content">
+            <span className="sidebar-subtitle">Planeación</span>
+            <div className="filter-group">
+              <ButtonAdd
+                icon={plus}
+                label={rutas.length === 0 ? "Generar plan" : "Replanificar"}
+                onClick={() => {
+                  if (rutas.length === 0) {
+                    openModal(); 
+                  } else {
+                    console.log("Acción REPLANIFICAR");
+                  }
+                }}
               />
+              <ButtonAdd icon={plus} label="Agreg. pedido" onClick={() => setIsModalPedidoOpen(true)} />
+            </div>
 
-              <SidebarActions 
-                  onFilter={handleFilter}
-                  onClean={handleCleanFilters}
+            <span className="sidebar-subtitle">Filtros</span>
+            <div className="filter-group">
+              <span className="sidebar-subtitle-strong">Proximamente...</span>
+              <Dropdown
+                placeholder="Seleccionar..."
+                options={[
+                  { label: "Ejemplo 1", value: "ejemplo1" },
+                  { label: "Ejemplo 2", value: "ejemplo2" }
+                ]}
+                onSelect={(val) => setCodigoVuelo(val)}
               />
             </div>
-          </>
+
+            <span className="sidebar-subtitle">Leyenda</span>
+            <Legend
+              items={[
+                { label: "50% Capacidad", status: "en-curso" },
+                { label: "75% Capacidad", status: "finalizado" },
+                { label: "100% Capacidad", status: "cancelado" }
+              ]}
+            />
+
+            <SidebarActions onFilter={handleFilter} onClean={handleCleanFilters} />
+          </div>
         )}
       </aside>
 
       <section className="contenido">
         <div className="control-bar">
-          <span className="control-label">Controles:</span>
-
-          <button className={`btn ${btnState.start.color}`} onClick={handleStart} disabled={btnState.start.disabled} title={timerActive && !timerRunning ? "Reanudar simulación" : "Iniciar simulación"} > {timerActive && !timerRunning ? "Reanudar" : "Iniciar"} </button>
-          <button className={`btn ${btnState.pause.color}`} onClick={handlePause} disabled={btnState.pause.disabled}>Pausar</button>
-          <button className={`btn ${btnState.stop.color}`} onClick={handleStop} disabled={btnState.stop.disabled}>Detener</button>
-
           <span className="info-label">Fecha:</span>
-          <span className="value">{toISODate(simNowMs)}</span>
+          <span className="value">{toISODate(controlNowMs)}</span>
           <span className="info-label">Hora:</span>
-          <span className="value">{toISOTime(simNowMs)}</span>
-          <span className="info-label">Tiempo:</span>
-          <span className="value">{formatTime(seconds)}</span>
+          <span className="value">{toISOTimeWithSeconds(controlNowMs)}</span>
         </div>
-     
+
         <div className="map-and-info">
           <MapContainer id="map" center={[-12.0464, -77.0428]} zoom={3}>
-            <TileLayer
-              url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png"
-              attribution='&copy; <a href="https://carto.com/">Carto</a>'
-            />
+            <TileLayer url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png" attribution='&copy; <a href="https://carto.com/">Carto</a>' />
 
             {/* Marcadores de aeropuertos */}
-            {airports && Object.values(airports).map((ap, i) => (
-              <Marker
-                key={i}
-                position={[ap.lat, ap.lng]}
-                icon={airportIcon}
-                eventHandlers={{
-                  click: () =>
-                    setSelectedItem(`Aeropuerto ${ap.name} (${ap.code}) - ${ap.city}, ${ap.country}`)
-                }}
-              >
-                <Popup>
-                  <b>{ap.name}</b><br />
-                  Código: {ap.code}<br />
-                  Ciudad: {ap.city}<br />
-                  País: {ap.country}
-                </Popup>
-              </Marker>
-            ))}
+            {airports &&
+              Object.values(airports).map((ap, i) => (
+                <Marker
+                  key={i}
+                  position={[ap.lat, ap.lng]}
+                  icon={airportIcon}
+                  eventHandlers={{
+                    click: () => setSelectedItem(`Aeropuerto ${ap.name} (${ap.code}) - ${ap.city}, ${ap.country}`)
+                  }}
+                >
+                  <Popup>
+                    <b>{ap.name}</b>
+                    <br />
+                    Código: {ap.code}
+                    <br />
+                    Ciudad: {ap.city}
+                    <br />
+                    País: {ap.country}
+                  </Popup>
+                </Marker>
+              ))}
 
-
-            {flights.map((flight, i) => {
-              // Si el vuelo o su path aún no existen, no renderizamos nada
-              if (!flight || !flight.path || !Array.isArray(flight.path) || flight.path.length === 0) {
-                return null;
-              }
+            {/* Vuelos */}
+            {flights.map((flight) => {
+              if (!flight || !flight.path || !Array.isArray(flight.path) || flight.path.length === 0) return null;
 
               const filterCss = flight.arrived
                 ? "invert(35%) sepia(82%) saturate(1595%) hue-rotate(185deg) brightness(94%) contrast(92%)"
@@ -769,21 +860,16 @@ useEffect(() => {
 
               return (
                 <React.Fragment key={flight.code}>
-                  {/* Línea del vuelo: solo mostrar cuando el vuelo ya ha despegado */}
                   {timerActive && simNowMs >= flight.startMs && simNowMs < flight.endMs && (
                     <Polyline
-                      positions={flight.path.slice(
-                        Math.floor(flight.path.length * flight.progress)
-                      )}
+                      positions={flight.path.slice(Math.floor(flight.path.length * flight.progress))}
                       color="#DC3545"
                       weight={3}
                       opacity={0.5}
-                      dashArray="6, 10" // punteado
+                      dashArray="6, 10"
                     />
                   )}
 
-
-                  {/* Mostramos el avión solo si no ha llegado */}
                   {!flight.arrived && (
                     <Marker
                       position={flight.position}
@@ -791,8 +877,7 @@ useEffect(() => {
                       eventHandlers={{
                         click: () =>
                           setSelectedItem(
-                            `Vuelo ${flight.code}: ${flight.originName} → ${flight.destinationName}
-                            | Salida: ${flight.startTime} | Llegada: ${flight.endTime}`
+                            `Vuelo ${flight.code}: ${flight.originName} → ${flight.destinationName} | Salida: ${flight.startTime} | Llegada: ${flight.endTime}`
                           )
                       }}
                     >
@@ -809,7 +894,6 @@ useEffect(() => {
                       </Popup>
                     </Marker>
                   )}
-
                 </React.Fragment>
               );
             })}
@@ -817,23 +901,22 @@ useEffect(() => {
             <ClickHandler onMapClick={() => setSelectedItem(null)} />
           </MapContainer>
 
-          {/* PANEL INFORMATIVO DEBAJO DEL MAPA */}
+          {/* PANEL INFORMATIVO */}
           <div className={`info-panel ${selectedItem ? "expanded" : ""}`}>
             <div className="info-content">
               {selectedItem ? (
                 <>
                   <h3>Información seleccionada</h3>
-                  <body>{selectedItem}</body>
+                  <div>{selectedItem}</div>
                 </>
               ) : (
-                <body className="placeholder">Haz clic en un avión o aeropuerto para ver detalles.</body>
+                <div className="placeholder">Haz clic en un avión o aeropuerto para ver detalles.</div>
               )}
             </div>
-            <div className="info-triangle"></div>
+            <div className="info-triangle" />
           </div>
         </div>
       </section>
-
 
       {/* MODAL */}
       {isModalOpen && (
@@ -844,88 +927,30 @@ useEffect(() => {
             </div>
 
             <div className="modal-body">
-
-              {/* TIPO DE SIMULACIÓN */}
               <span className="sidebar-subtitle">Tipo de simulación</span>
 
-              <Radio name="tipoSim" label="Semanal"
-                value="semanal"
-                checked={tipoSimulacion === "semanal"}
-                onChange={(e) => setTipoSimulacion(e.target.value)} />
-
-              <Radio name="tipoSim" label="Colapso logístico"
-                value="colapso"
-                checked={tipoSimulacion === "colapso"}
-                onChange={(e) => setTipoSimulacion(e.target.value)} />
+              <Radio name="tipoSim" label="Semanal" value="semanal" checked={tipoSimulacion === "semanal"} onChange={(e) => setTipoSimulacion(e.target.value)} />
+              <Radio name="tipoSim" label="Colapso logístico" value="colapso" checked={tipoSimulacion === "colapso"} onChange={(e) => setTipoSimulacion(e.target.value)} />
 
               <hr />
 
               <span className="sidebar-subtitle">Planificación</span>
-              {/* === PLANIFICACIÓN === */}
 
               <label>¿Replanificar?</label>
-              <Radio
-                name="replanificar"
-                label="Sí"
-                value="true"
-                checked={replanificar === true}
-                onChange={(e) => setReplanificar(toBoolean(e.target.value))}
-              />
-              <Radio
-                name="replanificar"
-                label="No"
-                value="false"
-                checked={replanificar === false}
-                onChange={(e) => setReplanificar(toBoolean(e.target.value))}
-              />
+              <Radio name="replanificar" label="Sí" value="true" checked={replanificar === true} onChange={(e) => setReplanificar(toBoolean(e.target.value))} />
+              <Radio name="replanificar" label="No" value="false" checked={replanificar === false} onChange={(e) => setReplanificar(toBoolean(e.target.value))} />
 
               <label>¿Guardar planificación?</label>
-              <Radio
-                name="guardarPlanificacion"
-                label="Sí"
-                value="true"
-                checked={guardarPlanificacion === true}
-                onChange={(e) => setGuardarPlanificacion(toBoolean(e.target.value))}
-              />
-              <Radio
-                name="guardarPlanificacion"
-                label="No"
-                value="false"
-                checked={guardarPlanificacion === false}
-                onChange={(e) => setGuardarPlanificacion(toBoolean(e.target.value))}
-              />
+              <Radio name="guardarPlanificacion" label="Sí" value="true" checked={guardarPlanificacion === true} onChange={(e) => setGuardarPlanificacion(toBoolean(e.target.value))} />
+              <Radio name="guardarPlanificacion" label="No" value="false" checked={guardarPlanificacion === false} onChange={(e) => setGuardarPlanificacion(toBoolean(e.target.value))} />
 
               <label>¿Reparametrizar?</label>
-              <Radio
-                name="reparametrizar"
-                label="Sí"
-                value="true"
-                checked={reparametrizar === true}
-                onChange={(e) => setReparametrizar(toBoolean(e.target.value))}
-              />
-              <Radio
-                name="reparametrizar"
-                label="No"
-                value="false"
-                checked={reparametrizar === false}
-                onChange={(e) => setReparametrizar(toBoolean(e.target.value))}
-              />
+              <Radio name="reparametrizar" label="Sí" value="true" checked={reparametrizar === true} onChange={(e) => setReparametrizar(toBoolean(e.target.value))} />
+              <Radio name="reparametrizar" label="No" value="false" checked={reparametrizar === false} onChange={(e) => setReparametrizar(toBoolean(e.target.value))} />
 
               <label>¿Guardar parametrización?</label>
-              <Radio
-                name="guardarParametrizacion"
-                label="Sí"
-                value="true"
-                checked={guardarParametrizacion === true}
-                onChange={(e) => setGuardarParametrizacion(toBoolean(e.target.value))}
-              />
-              <Radio
-                name="guardarParametrizacion"
-                label="No"
-                value="false"
-                checked={guardarParametrizacion === false}
-                onChange={(e) => setGuardarParametrizacion(toBoolean(e.target.value))}
-              />
+              <Radio name="guardarParametrizacion" label="Sí" value="true" checked={guardarParametrizacion === true} onChange={(e) => setGuardarParametrizacion(toBoolean(e.target.value))} />
+              <Radio name="guardarParametrizacion" label="No" value="false" checked={guardarParametrizacion === false} onChange={(e) => setGuardarParametrizacion(toBoolean(e.target.value))} />
 
               <hr />
 
@@ -933,140 +958,196 @@ useEffect(() => {
                 <div className={`parametros-container ${reparametrizar ? "open" : "closed"}`}>
                   <span className="sidebar-subtitle">Parámetros</span>
 
-                  {/* FECHAS SIEMPRE VISIBLES, SOLO SE DESHABILITAN */}
                   <label>Fecha y hora de inicio (UTC)</label>
-                  <DateTimeInline
-                    dateValue={fechaI}
-                    timeValue={horaI}
-                    onDateChange={(e) => setFechaI(e.target.value)}
-                    onTimeChange={(e) => setHoraI(e.target.value)}
-                  />
+                  <DateTimeInline dateValue={fechaI} timeValue={horaI} onDateChange={(e) => setFechaI(e.target.value)} onTimeChange={(e) => setHoraI(e.target.value)} />
 
                   <label>Fecha y hora de fin (UTC)</label>
-                  <DateTimeInline
-                    dateValue={fechaF}
-                    timeValue={horaF}
-                    onDateChange={(e) => setFechaF(e.target.value)}
-                    onTimeChange={(e) => setHoraF(e.target.value)}
-                    disabled={ tipoSimulacion === "semanal"}
-                  />
+                  <DateTimeInline dateValue={fechaF} timeValue={horaF} onDateChange={(e) => setFechaF(e.target.value)} onTimeChange={(e) => setHoraF(e.target.value)} disabled={tipoSimulacion === "semanal"} />
 
-                  <label>Ciudades sede</label>              
-                  {/* LISTA DE SELECCIONADOS TIPO CHIP */}
+                  <label>Ciudades sede</label>
                   <div className="selected-codes">
                     {codOrigenes.map((cod) => (
                       <div key={cod} className="chip">
                         <span>{cod}</span>
-                        <button
-                          className="chip-remove"
-                          onClick={() => {
-                            setCodOrigenes(codOrigenes.filter(c => c !== cod));
-                          }}
-                        >
+                        <button className="chip-remove" onClick={() => setCodOrigenes(codOrigenes.filter((c) => c !== cod))}>
                           ×
                         </button>
                       </div>
                     ))}
                   </div>
-                  {/* ORÍGENES */}
+
                   <Dropdown2
                     label="Códigos Origen"
                     multiple={true}
                     value={codOrigenes}
                     onChange={setCodOrigenes}
-                    options={aeropuertos.map(a => ({
-                      label: `${a.codigo} - ${a.ciudad} - ${a.pais}`,
-                      value: a.codigo
-                    }))}
+                    options={aeropuertos.map((a) => ({ label: `${a.codigo} - ${a.ciudad} - ${a.pais}`, value: a.codigo }))}
                   />
 
-                  {/* BOOLEANO */}
                   <label>¿Considerar desfase temporal?</label>
-                  <Radio
-                    name="desfase"
-                    label="Sí"
-                    value="true"
-                    checked={considerarDesfaseTemporal === true}
-                    onChange={(e) => setConsiderarDesfaseTemporal(toBoolean(e.target.value))}
-                  />
-                  <Radio
-                    name="desfase"
-                    label="No"
-                    value="false"
-                    checked={considerarDesfaseTemporal === false}
-                    onChange={(e) => setConsiderarDesfaseTemporal(toBoolean(e.target.value))}
-                  />
+                  <Radio name="desfase" label="Sí" value="true" checked={considerarDesfaseTemporal === true} onChange={(e) => setConsiderarDesfaseTemporal(toBoolean(e.target.value))} />
+                  <Radio name="desfase" label="No" value="false" checked={considerarDesfaseTemporal === false} onChange={(e) => setConsiderarDesfaseTemporal(toBoolean(e.target.value))} />
 
-                  {/* NUMÉRICOS */}
                   <label>Max días entrega intercontinental</label>
-                  <Input label="Max días entrega intercontinental" type="number"
-                    value={maxDiasEntregaIntercontinental} onChange={(e) => setMaxDiasEntregaIntercontinental(parseNumber(e.target.value))}/>
+                  <Input label="Max días entrega intercontinental" type="number" value={maxDiasEntregaIntercontinental} onChange={(e) => setMaxDiasEntregaIntercontinental(parseNumber(e.target.value))} />
 
                   <label>Max días entrega intracontinental</label>
-                  <Input label="Max días entrega intracontinental" type="number"
-                    value={maxDiasEntregaIntracontinental} onChange={(e) => setMaxDiasEntregaIntracontinental(parseNumber(e.target.value))}/>
+                  <Input label="Max días entrega intracontinental" type="number" value={maxDiasEntregaIntracontinental} onChange={(e) => setMaxDiasEntregaIntracontinental(parseNumber(e.target.value))} />
 
                   <label>Max horas recojo</label>
-                  <Input label="Max horas recojo" type="number"
-                    value={maxHorasRecojo} onChange={(e) => setMaxHorasRecojo(parseNumber(e.target.value))}/>
+                  <Input label="Max horas recojo" type="number" value={maxHorasRecojo} onChange={(e) => setMaxHorasRecojo(parseNumber(e.target.value))} />
 
                   <label>Min horas estancia</label>
-                  <Input label="Min horas estancia" type="number"
-                    value={minHorasEstancia} onChange={(e) => setMinHorasEstancia(parseNumber(e.target.value))}/>
+                  <Input label="Min horas estancia" type="number" value={minHorasEstancia} onChange={(e) => setMinHorasEstancia(parseNumber(e.target.value))} />
 
                   <label>Max horas estancia</label>
-                  <Input label="Max horas estancia" type="number"
-                    value={maxHorasEstancia} onChange={(e) => setMaxHorasEstancia(parseNumber(e.target.value))}/>
+                  <Input label="Max horas estancia" type="number" value={maxHorasEstancia} onChange={(e) => setMaxHorasEstancia(parseNumber(e.target.value))} />
 
-                  {/* OPTIMIZACIÓN */}
                   <label>dMin</label>
-                  <Input label="dMin" type="number" value={dMin} onChange={(e) => setDMin(parseNumber(e.target.value))}/>
+                  <Input label="dMin" type="number" value={dMin} onChange={(e) => setDMin(parseNumber(e.target.value))} />
 
                   <label>iMax</label>
-                  <Input label="iMax" type="number" value={iMax} onChange={(e) => setIMax(parseNumber(e.target.value))}/>
+                  <Input label="iMax" type="number" value={iMax} onChange={(e) => setIMax(parseNumber(e.target.value))} />
 
                   <label>eleMin</label>
-                  <Input label="eleMin" type="number" value={eleMin} onChange={(e) => setEleMin(parseNumber(e.target.value))}/>
+                  <Input label="eleMin" type="number" value={eleMin} onChange={(e) => setEleMin(parseNumber(e.target.value))} />
 
                   <label>eleMax</label>
-                  <Input label="eleMax" type="number" value={eleMax} onChange={(e) => setEleMax(parseNumber(e.target.value))}/>
+                  <Input label="eleMax" type="number" value={eleMax} onChange={(e) => setEleMax(parseNumber(e.target.value))} />
 
                   <label>kMin</label>
-                  <Input label="kMin" type="number" value={kMin} onChange={(e) => setKMin(parseNumber(e.target.value))}/>
+                  <Input label="kMin" type="number" value={kMin} onChange={(e) => setKMin(parseNumber(e.target.value))} />
 
                   <label>kMax</label>
-                  <Input label="kMax" type="number" value={kMax} onChange={(e) => setKMax(parseNumber(e.target.value))}/>
+                  <Input label="kMax" type="number" value={kMax} onChange={(e) => setKMax(parseNumber(e.target.value))} />
 
                   <label>tMax</label>
-                  <Input label="tMax" type="number" value={tMax} onChange={(e) => setTMax(parseNumber(e.target.value))}/>
+                  <Input label="tMax" type="number" value={tMax} onChange={(e) => setTMax(parseNumber(e.target.value))} />
 
                   <label>Max intentos</label>
-                  <Input label="Max intentos" type="number" value={maxIntentos} onChange={(e) => setMaxIntentos(parseNumber(e.target.value))}/>
+                  <Input label="Max intentos" type="number" value={maxIntentos} onChange={(e) => setMaxIntentos(parseNumber(e.target.value))} />
 
-                  {/* FACTORES */}
                   <label>Factor de Umbral de Aberración</label>
-                  <Input label="Factor de Umbral de Aberración" type="number"
-                    value={factorDeUmbralDeAberracion} onChange={(e) => setFactorDeUmbralDeAberracion(parseNumber(e.target.value))}/>
+                  <Input label="Factor de Umbral de Aberración" type="number" value={factorDeUmbralDeAberracion} onChange={(e) => setFactorDeUmbralDeAberracion(parseNumber(e.target.value))} />
 
                   <label>Factor de Utilización Temporal</label>
-                  <Input label="Factor de Utilización Temporal" type="number"
-                    value={factorDeUtilizacionTemporal} onChange={(e) => setFactorDeUtilizacionTemporal(parseNumber(e.target.value))}/>
+                  <Input label="Factor de Utilización Temporal" type="number" value={factorDeUtilizacionTemporal} onChange={(e) => setFactorDeUtilizacionTemporal(parseNumber(e.target.value))} />
 
                   <label>Factor de Desviación Espacial</label>
-                  <Input label="Factor de Desviación Espacial" type="number"
-                    value={factorDeDesviacionEspacial} onChange={(e) => setFactorDeDesviacionEspacial(parseNumber(e.target.value))}/>
+                  <Input label="Factor de Desviación Espacial" type="number" value={factorDeDesviacionEspacial} onChange={(e) => setFactorDeDesviacionEspacial(parseNumber(e.target.value))} />
 
                   <label>Factor de Disposición Operacional</label>
-                  <Input label="Factor de Disposición Operacional" type="number"
-                    value={factorDeDisposicionOperacional} onChange={(e) => setFactorDeDisposicionOperacional(parseNumber(e.target.value))}/>
+                  <Input label="Factor de Disposición Operacional" type="number" value={factorDeDisposicionOperacional} onChange={(e) => setFactorDeDisposicionOperacional(parseNumber(e.target.value))} />
                 </div>
               )}
-            
             </div>
 
             <div className="modal-footer">
-              <button className="btn red" onClick={closeModal}>Cancelar</button>
-              <button className="btn green" onClick={handlePlanear}>Planear</button>
+              <button className="btn red" onClick={closeModal}>
+                Cancelar
+              </button>
+              <button className="btn green" onClick={handlePlanear}>
+                Planear
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+
+
+      {/* Modal pedido */}
+      {isModalPedidoOpen && (
+        <div className="modal" onClick={() => setIsModalOpen(false)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3 className="modal-title">Agregar pedido</h3>
+              <label htmlFor="fileInput" className="file-label">Agregar archivo</label>
+              <input type="file" id="fileInput" className="file-input" onChange={handleFileChange} disabled={generarCodigoPedido() !== ""}/>
+            </div>
+
+            <div className="file-name">
+              {archivo ? archivo.name : "Ningún archivo seleccionado"}
+              {archivo && (
+                <RemoveFileButton onClick={() => setArchivo(null)} />
+              )}
+            </div>
+            
+            <div className="modal-body">
+              {archivo && (
+              <>
+                <label>Fecha y hora de inicio (UTC)</label>
+                <DateTimeInline
+                  dateValue={fechaArchivoFechaI}
+                  timeValue={fechaArchivoHoraI}
+                  onDateChange={(e) => setFechaArchivoFechaI(e.target.value)}
+                  onTimeChange={(e) => setFechaArchivoHoraI(e.target.value)}
+                />
+                <label>Fecha y hora de fin (UTC)</label>
+                <DateTimeInline
+                  dateValue={fechaArchivoFechaF}
+                  timeValue={fechaArchivoHoraF}
+                  onDateChange={(e) => setFechaArchivoFechaF(e.target.value)}
+                  onTimeChange={(e) => setFechaArchivoHoraF(e.target.value)}
+                />
+              </>
+              )}
+
+              <label>Fecha y hora de generación (UTC)</label>
+              <DateTimeInline
+                dateValue={fecha}
+                timeValue={hora}
+                onDateChange={(e) => setFecha(e.target.value)}
+                onTimeChange={(e) => setHora(e.target.value)}
+                disabled={!!archivo}
+              />
+
+              {/* CANTIDAD */}
+              <label>Cantidad</label>
+              <Input
+                placeholder="006"
+                value={cantidad}
+                onChange={(e) => setCantidad(e.target.value)}
+                disabled={!!archivo}
+              />
+
+              {/* DESTINO */}
+              <label>Destino</label>
+              <Dropdown3
+                placeholder="Seleccionar aeropuerto..."
+                options={aeropuertos.map(a => ({
+                  label: `${a.codigo} - ${a.ciudad} - ${a.pais}`,
+                  value: a
+                }))}
+                value={selectedDestino}
+                onSelect={(item) => setSelectedDestino(item)}
+                disabled={!!archivo}
+              />
+
+              {/* CLIENTE */}
+              <label>Cliente</label>
+              <Dropdown3
+                placeholder="Seleccionar cliente..."
+                options={clientes.map(c => ({
+                  label: `${c.codigo} - ${c.nombre}`,
+                  value: c
+                }))}
+                value={selectedCliente}
+                onSelect={(item) => setSelectedCliente(item)}
+                disabled={!!archivo}
+              />
+
+              {/* MOSTRAR RESULTADO */}
+              <label>Código generado</label>
+              <Input
+                value={generarCodigoPedido()}
+                disabled
+              />
+            </div>
+
+            <div className="modal-footer">
+              <button className="btn red" onClick={() => setIsModalPedidoOpen(false)}>Cancelar</button>
+              <button className="btn green" onClick={handleAdd}>Agregar</button>
             </div>
           </div>
         </div>
