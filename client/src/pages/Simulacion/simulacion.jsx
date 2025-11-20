@@ -332,19 +332,12 @@ useEffect(() => {
     iconAnchor: [11, 8],
   });
 
-  const airportIcon = L.divIcon({
-    html: `<div style="
-        width: 10px;
-        height: 10px;
-        background-color: #2a93d5;
-        border: 2px solid white;
-        border-radius: 50%;
-        box-shadow: 0 0 2px rgba(0,0,0,0.5);
-      "></div>`,
-    className: "",
-    iconSize: [10, 10],
-    iconAnchor: [5, 5],
-  });
+const airportIcon = L.divIcon({
+  html: `<div class="airport-marker"></div>`,
+  className: "airport-icon",   // 👈 agregamos una clase propia
+  iconSize: [18, 18],
+  iconAnchor: [9, 9],
+});
   //
 
 
@@ -466,8 +459,10 @@ useEffect(() => {
         code: a.codigo,
         city: a.ciudad,
         country: a.pais,
+        capacidad: a.capacidad,
       };
     });
+    console.log("airportMap construido:", airportMap);
     setAirports(airportMap);
     setLoadingAirports(false);
 
@@ -710,14 +705,14 @@ useEffect(() => {
                 icon={airportIcon}
                 eventHandlers={{
                   click: () =>
-                    setSelectedItem(`Aeropuerto ${ap.name} (${ap.code}) - ${ap.city}, ${ap.country}`)
+                    setSelectedItem(`Aeropuerto ${ap.name} (${ap.code}) - ${ap.city}, ${ap.country} | Capacidad: ${ap.capacidad}`)
                 }}
               >
                 <Popup>
-                  <b>{ap.name}</b><br />
+                  <b>{ap.country}</b><br />
                   Código: {ap.code}<br />
                   Ciudad: {ap.city}<br />
-                  País: {ap.country}
+                  Capacidad: {ap.capacidad} unidades<br />
                 </Popup>
               </Marker>
             ))}
@@ -757,22 +752,22 @@ useEffect(() => {
                       eventHandlers={{
                         click: () =>
                           setSelectedItem(
-                            `Vuelo ${flight.code}: ${flight.originName} → ${flight.destinationName}
-                            | Salida: ${flight.startTime} | Llegada: ${flight.endTime}`
-                          )
+      `Vuelo ${flight.code}: ${flight.origin.country} → ${flight.destination.country}
+      | Salida: ${flight.startTime} | Llegada: ${flight.endTime}`
+    )
                       }}
                     >
-                      <Popup>
-                        <b>{flight.code}</b>
-                        <br />
-                        {flight.originName} → {flight.destinationName}
-                        <br />
-                        Salida: {flight.startTime} | Llegada: {flight.endTime}
-                        <br />
-                        Capacidad: {flight.capacity} pax
-                        <br />
-                        Estado: {flight.arrived ? "Finalizado" : "En curso"}
-                      </Popup>
+                    <Popup>
+                      <b>{flight.code}</b>
+                      <br />
+                      {flight.origin.country} → {flight.destination.country}
+                      <br />
+                      Salida: {flight.startTime} | Llegada: {flight.endTime}
+                      <br />
+                      Capacidad: {flight.capacity} pax
+                      <br />
+                      Estado: {flight.arrived ? "Finalizado" : "En curso"}
+                    </Popup>
                     </Marker>
                   )}
 

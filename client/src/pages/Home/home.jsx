@@ -68,7 +68,7 @@ export default function Home() {
         <div className="container">
           <div className="row">
             <div className="col centrado-vertical">
-              <h2>Nuestra empresa</h2>
+              <h2>Nuestra Empresa</h2>
               <p>
                 MoraPack es una empresa con presencia internacional, con sedes en Lima (Perú), Bruselas (Bélgica) y Bakú (Azerbaiyán). 
                 Nuestra red global nos permite gestionar envíos hacia las principales ciudades de América, Asia y Europa. 
