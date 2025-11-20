@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import './vuelos.scss'
 import { ButtonAdd, Input, Table, SidebarActions, Notification, LoadingOverlay, Pagination, RemoveFileButton, Dropdown } from "../../components/UI/ui";
-import { listarPlanes } from "../../services/vuelosService";
+import { listarPlanes } from "../../services/planesService";
 import { importarVuelos } from "../../services/generalService";
 import plus from '../../assets/icons/plus.svg';
 import hideIcon from '../../assets/icons/hide-sidebar.png';
