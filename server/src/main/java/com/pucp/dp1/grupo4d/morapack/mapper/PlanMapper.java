@@ -18,6 +18,7 @@ import java.util.Map;
 
 @Component
 public class PlanMapper {
+
     private final Map<String, PlanDTO> poolDTO = new HashMap<>();
 
     public PlanDTO toDTO(Plan algorithm) {

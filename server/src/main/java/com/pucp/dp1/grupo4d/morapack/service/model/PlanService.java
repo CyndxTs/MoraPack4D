@@ -8,12 +8,18 @@ package com.pucp.dp1.grupo4d.morapack.service.model;
 
 import com.pucp.dp1.grupo4d.morapack.mapper.PlanMapper;
 import com.pucp.dp1.grupo4d.morapack.model.dto.DTO;
+import com.pucp.dp1.grupo4d.morapack.model.dto.PlanDTO;
+import com.pucp.dp1.grupo4d.morapack.model.dto.request.ImportRequest;
+import com.pucp.dp1.grupo4d.morapack.model.dto.request.ListRequest;
+import com.pucp.dp1.grupo4d.morapack.model.dto.response.GenericResponse;
 import com.pucp.dp1.grupo4d.morapack.model.dto.response.ListResponse;
 import com.pucp.dp1.grupo4d.morapack.model.entity.AeropuertoEntity;
 import com.pucp.dp1.grupo4d.morapack.model.entity.PlanEntity;
 import com.pucp.dp1.grupo4d.morapack.repository.PlanRepository;
 import com.pucp.dp1.grupo4d.morapack.util.G4D;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import java.util.*;
@@ -21,20 +27,23 @@ import java.util.*;
 @Service
 public class PlanService {
 
-    @Autowired
-    private AeropuertoService aeropuertoService;
-
-    @Autowired
-    private PlanMapper planMapper;
-
     private final PlanRepository planRepository;
+    private final AeropuertoService aeropuertoService;
+    private final PlanMapper planMapper;
+    private final HashMap<String, PlanEntity> planes = new HashMap<>();
 
-    public PlanService(PlanRepository planRepository) {
+    public PlanService(PlanRepository planRepository, AeropuertoService aeropuertoService, PlanMapper planMapper) {
         this.planRepository = planRepository;
+        this.aeropuertoService = aeropuertoService;
+        this.planMapper = planMapper;
     }
 
     public List<PlanEntity> findAll() {
         return planRepository.findAll();
+    }
+
+    public List<PlanEntity> findAll(Pageable pageable) {
+        return planRepository.findAll(pageable).getContent();
     }
 
     public Optional<PlanEntity> findById(Integer id) {
@@ -61,36 +70,74 @@ public class PlanService {
         return planRepository.findByCodigo(codigo).isPresent();
     }
 
-    public ListResponse listar() {
+    public ListResponse listar(ListRequest request) {
         try {
+            int page = (G4D.isAdmissible(request.getPage())) ? request.getPage() : 0;
+            int size = (G4D.isAdmissible(request.getSize())) ? request.getSize() : 10;
+            Pageable pageable = PageRequest.of(page, size,  Sort.by(Sort.Order.asc("horaSalidaUTC"), Sort.Order.asc("horaLlegadaUTC")));
             List<DTO> planesDTO = new ArrayList<>();
-            List<PlanEntity> planesEntity = this.findAll();
+            List<PlanEntity> planesEntity = this.findAll(pageable);
             planesEntity.forEach(p -> planesDTO.add(planMapper.toDTO(p)));
             return new ListResponse(true, "Planes listados correctamente!", planesDTO);
         } catch (Exception e) {
-            e.printStackTrace();
             return new ListResponse(false, "ERROR - LISTADO: " + e.getMessage());
         }
     }
 
-    public void importar(MultipartFile archivo) {
-        int posCarga = 0;
+    public GenericResponse importar(ImportRequest<PlanDTO> request) {
+        try {
+            PlanDTO dto = request.getDto();
+            PlanEntity plan =  new PlanEntity();
+            plan.setCodigo(dto.getCodigo());
+            plan.setDistancia(dto.getDistancia());
+            plan.setDuracion(dto.getDuracion());
+            String codOrigen = dto.getCodOrigen();
+            AeropuertoEntity origen = aeropuertoService.obtenerPorCodigo(codOrigen);
+            if(origen != null) {
+                String codDestino = dto.getCodDestino();
+                AeropuertoEntity destino = aeropuertoService.obtenerPorCodigo(codDestino);
+                if(destino != null) {
+                    plan.setOrigen(origen);
+                    plan.setDestino(destino);
+                    plan.setHoraSalidaUTC(G4D.toTime(dto.getHoraSalida()));
+                    plan.setHoraSalidaLocal(G4D.toLocal(plan.getHoraSalidaUTC(), origen.getHusoHorario()));
+                    plan.setHoraLlegadaUTC(G4D.toTime(dto.getHoraLlegada()));
+                    plan.setHoraLlegadaLocal(G4D.toLocal(plan.getHoraLlegadaUTC(), destino.getHusoHorario()));
+                    this.save(plan);
+                } else throw new Exception(String.format("El destino del plan es inválido. ('%s')", codDestino));
+            } else throw new Exception(String.format("El origen del plan es inválido. ('%s')", codOrigen));
+            G4D.Logger.logln("[<] PLAN DE VUELO CARGADO!");
+            return new GenericResponse(true, "Plan importado correctamente!");
+        } catch (Exception e) {
+            return new  GenericResponse(false, "ERROR - IMPORTACIÓN: " + e.getMessage());
+        } finally {
+            clearPools();
+        }
+    }
+
+    public GenericResponse importar(MultipartFile archivo) {
         try {
             G4D.Logger.logf("Cargando planes de vuelo desde '%s'..%n",archivo.getName());
             Scanner archivoSC = new Scanner(archivo.getInputStream(), G4D.getFileCharset(archivo));
+            int numLinea = 1;
             while (archivoSC.hasNextLine()) {
                 String linea = archivoSC.nextLine().trim();
-                if (linea.isEmpty()) continue;
+                if (linea.isEmpty()) {
+                    numLinea++;
+                    continue;
+                }
                 Scanner lineaSC = new Scanner(linea);
                 lineaSC.useDelimiter("-");
                 PlanEntity plan = new PlanEntity();
-                AeropuertoEntity aOrig = aeropuertoService.obtenerPorCodigo(lineaSC.next());
-                if(aOrig != null) {
-                    AeropuertoEntity aDest = aeropuertoService.obtenerPorCodigo(lineaSC.next());
-                    if(aDest != null) {
-                        plan.setOrigen(aOrig);
-                        plan.setDestino(aDest);
-                        plan.setDistancia(G4D.getGeodesicDistance(aOrig.getLatitudDEC(), aOrig.getLongitudDEC(), aDest.getLatitudDEC(), aDest.getLongitudDEC()));
+                String codOrigen = lineaSC.next();
+                AeropuertoEntity origen = aeropuertoService.obtenerPorCodigo(codOrigen);
+                if(origen != null) {
+                    String codDestino = lineaSC.next();
+                    AeropuertoEntity destino = aeropuertoService.obtenerPorCodigo(codDestino);
+                    if(destino != null) {
+                        plan.setOrigen(origen);
+                        plan.setDestino(destino);
+                        plan.setDistancia(G4D.getGeodesicDistance(origen.getLatitudDEC(), origen.getLongitudDEC(), destino.getLatitudDEC(), destino.getLongitudDEC()));
                         plan.setHoraSalidaLocal(G4D.toTime(lineaSC.next()));
                         plan.setHoraSalidaUTC(G4D.toUTC(plan.getHoraSalidaLocal(), plan.getOrigen().getHusoHorario()));
                         plan.setHoraLlegadaLocal(G4D.toTime(lineaSC.next()));
@@ -98,24 +145,28 @@ public class PlanService {
                         plan.setDuracion(G4D.getElapsedHours(plan.getHoraSalidaUTC(), plan.getHoraLlegadaUTC()));
                         plan.setCapacidad(lineaSC.nextInt());
                         plan.setCodigo(G4D.Generator.getUniqueString("PLA"));
-                        this.save(plan);
-                        posCarga++;
-                    }
-                }
+                        planes.put(plan.getCodigo(), plan);
+                    } else throw new Exception(String.format("El destino del plan de la linea #%d es inválido. ('%s')", numLinea, codDestino));
+                } else throw new Exception(String.format("El origen del plan de la linea #%d es inválido. ('%s')", numLinea, codOrigen));
                 lineaSC.close();
+                numLinea++;
             }
             archivoSC.close();
-            G4D.Logger.logf("[<] PLANES DE VUELO CARGADOS! ('%d')%n", posCarga);
+            planes.values().forEach(this::save);
+            G4D.Logger.logf("[<] PLANES DE VUELO CARGADOS! ('%d')%n", planes.size());
+            return new GenericResponse(true, "Planes importados correctamente!");
         } catch (NoSuchElementException e) {
             G4D.Logger.logf_err("[X] FORMATO DE ARCHIVO INVALIDO! (RUTA: '%s')%n", archivo.getName());
+            return new  GenericResponse(false, "ERROR - IMPORTACIÓN: " + e.getMessage());
         } catch (Exception e) {
-            e.printStackTrace();
+            return new  GenericResponse(false, "ERROR - IMPORTACIÓN: " + e.getMessage());
         } finally {
-            limpiarPools();
+            clearPools();
         }
     }
 
-    public void limpiarPools() {
-        aeropuertoService.limpiarPools();
+    public void clearPools() {
+        aeropuertoService.clearPools();
+        planMapper.clearPools();
     }
 }

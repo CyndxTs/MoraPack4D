@@ -8,10 +8,16 @@ package com.pucp.dp1.grupo4d.morapack.service.model;
 
 import com.pucp.dp1.grupo4d.morapack.mapper.RutaMapper;
 import com.pucp.dp1.grupo4d.morapack.model.dto.DTO;
+import com.pucp.dp1.grupo4d.morapack.model.dto.request.ListRequest;
 import com.pucp.dp1.grupo4d.morapack.model.dto.response.ListResponse;
+import com.pucp.dp1.grupo4d.morapack.model.entity.AdministradorEntity;
 import com.pucp.dp1.grupo4d.morapack.model.entity.RegistroEntity;
 import com.pucp.dp1.grupo4d.morapack.model.entity.RutaEntity;
 import com.pucp.dp1.grupo4d.morapack.repository.RutaRepository;
+import com.pucp.dp1.grupo4d.morapack.util.G4D;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -31,6 +37,10 @@ public class RutaService {
 
     public List<RutaEntity> findAll() {
         return rutaRepository.findAll();
+    }
+
+    public List<RutaEntity> findAll(Pageable pageable) {
+        return rutaRepository.findAll(pageable).getContent();
     }
 
     public Optional<RutaEntity> findById(Integer id) {
@@ -57,19 +67,22 @@ public class RutaService {
         return rutaRepository.findByCodigo(codigo).isPresent();
     }
 
-    public ListResponse listar() {
+    public List<RutaEntity> findAllByDateTimeRange(LocalDateTime fechaHoraInicio, LocalDateTime fechaHoraFin) {
+        return  rutaRepository.findAllByDateTimeRange(fechaHoraInicio, fechaHoraFin);
+    }
+    
+    public ListResponse listar(ListRequest request) {
         try {
+            int page = (G4D.isAdmissible(request.getPage())) ? request.getPage() : 0;
+            int size = (G4D.isAdmissible(request.getSize())) ? request.getSize() : 10;
+            Pageable pageable = PageRequest.of(page, size,  Sort.by(Sort.Order.asc("fechaHoraSalidaUTC"), Sort.Order.asc("fechaHoraLlegadaUTC")));
             List<DTO> rutasDTO = new ArrayList<>();
-            List<RutaEntity> rutasEntity = this.findAll();
+            List<RutaEntity> rutasEntity = this.findAll(pageable);
             rutasEntity.forEach(r -> rutasDTO.add(rutaMapper.toDTO(r)));
             return new ListResponse(true, "Rutas listadas correctamente!", rutasDTO);
         } catch (Exception e) {
             e.printStackTrace();
             return new ListResponse(false, "ERROR - LISTADO: " + e.getMessage());
         }
-    }
-
-    public List<RutaEntity> findByDateTimeRange(LocalDateTime fechaHoraInicio, LocalDateTime fechaHoraFin) {
-        return  rutaRepository.findByDateTimeRange(fechaHoraInicio, fechaHoraFin);
     }
 }

@@ -19,7 +19,7 @@ import java.util.Optional;
 public interface VueloRepository extends JpaRepository<VueloEntity, Integer> {
     Optional<VueloEntity> findByCodigo(String codigo);
 
-    // Vuelos pertenecientes a rutas pertenecientes a pedidos a partir de rango temporal
+    // Listar todos los vuelos pertenecientes a rutas pertenecientes a pedidos dentro de rango temporal
     @Query("""
         SELECT DISTINCT v
         FROM VueloEntity v

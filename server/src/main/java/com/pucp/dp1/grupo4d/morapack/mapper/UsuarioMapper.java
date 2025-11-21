@@ -36,8 +36,7 @@ public class UsuarioMapper {
     }
 
     public UsuarioDTO toDTO(UsuarioEntity entity) {
-        if(entity instanceof ClienteEntity) {
-            ClienteEntity clienteEntity = (ClienteEntity) entity;
+        if(entity instanceof ClienteEntity clienteEntity) {
             if(poolDTO.containsKey(clienteEntity.getCodigo())) {
                 return poolDTO.get(clienteEntity.getCodigo());
             }
@@ -49,8 +48,7 @@ public class UsuarioMapper {
             dto.setTipoUsuario("CLIENTE");
             poolDTO.put(dto.getCodigo(), dto);
             return dto;
-        } else if(entity instanceof AdministradorEntity) {
-            AdministradorEntity administradorEntity = (AdministradorEntity) entity;
+        } else if(entity instanceof AdministradorEntity administradorEntity) {
             if(poolDTO.containsKey(administradorEntity.getCodigo())) {
                 return poolDTO.get(administradorEntity.getCodigo());
             }

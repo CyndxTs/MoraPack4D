@@ -8,10 +8,16 @@ package com.pucp.dp1.grupo4d.morapack.service.model;
 
 import com.pucp.dp1.grupo4d.morapack.mapper.RegistroMapper;
 import com.pucp.dp1.grupo4d.morapack.model.dto.DTO;
+import com.pucp.dp1.grupo4d.morapack.model.dto.request.ListRequest;
 import com.pucp.dp1.grupo4d.morapack.model.dto.response.ListResponse;
+import com.pucp.dp1.grupo4d.morapack.model.entity.AdministradorEntity;
 import com.pucp.dp1.grupo4d.morapack.model.entity.PlanEntity;
 import com.pucp.dp1.grupo4d.morapack.model.entity.RegistroEntity;
 import com.pucp.dp1.grupo4d.morapack.repository.RegistroRepository;
+import com.pucp.dp1.grupo4d.morapack.util.G4D;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -31,6 +37,10 @@ public class RegistroService {
 
     public List<RegistroEntity> findAll() {
         return registroRepository.findAll();
+    }
+
+    public List<RegistroEntity> findAll(Pageable pageable) {
+        return registroRepository.findAll(pageable).getContent();
     }
 
     public Optional<RegistroEntity> findById(Integer id) {
@@ -57,10 +67,13 @@ public class RegistroService {
         return registroRepository.findByCodigo(codigo).isPresent();
     }
 
-    public ListResponse listar() {
+    public ListResponse listar(ListRequest request) {
         try {
+            int page = (G4D.isAdmissible(request.getPage())) ? request.getPage() : 0;
+            int size = (G4D.isAdmissible(request.getSize())) ? request.getSize() : 10;
+            Pageable pageable = PageRequest.of(page, size,  Sort.by(Sort.Order.asc("fechaHoraIngresoUTC"), Sort.Order.asc("fechaHoraEgresoUTC")));
             List<DTO> registrosDTO = new ArrayList<>();
-            List<RegistroEntity> registrosEntity = this.findAll();
+            List<RegistroEntity> registrosEntity = this.findAll(pageable);
             registrosEntity.forEach(r -> registrosDTO.add(registroMapper.toDTO(r)));
             return new ListResponse(true, "Registros listados correctamente!", registrosDTO);
         } catch (Exception e) {

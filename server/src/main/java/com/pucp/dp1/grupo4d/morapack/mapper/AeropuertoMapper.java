@@ -12,7 +12,6 @@ import com.pucp.dp1.grupo4d.morapack.model.dto.AeropuertoDTO;
 import com.pucp.dp1.grupo4d.morapack.model.dto.RegistroDTO;
 import com.pucp.dp1.grupo4d.morapack.model.entity.AeropuertoEntity;
 import com.pucp.dp1.grupo4d.morapack.model.entity.RegistroEntity;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -22,10 +21,12 @@ import java.util.Map;
 @Component
 public class AeropuertoMapper {
 
-    @Autowired
-    private RegistroMapper registroMapper;
-
+    private final RegistroMapper registroMapper;
     private final Map<String, AeropuertoDTO> poolDTO = new HashMap<>();
+
+    public AeropuertoMapper(RegistroMapper registroMapper) {
+        this.registroMapper = registroMapper;
+    }
 
     public AeropuertoDTO toDTO(Aeropuerto algorithm) {
         if(poolDTO.containsKey(algorithm.getCodigo())) {
@@ -82,5 +83,6 @@ public class AeropuertoMapper {
 
     public void clearPools() {
         poolDTO.clear();
+        registroMapper.clearPools();
     }
 }

@@ -11,7 +11,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
-
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import java.util.List;
 import java.util.Optional;
 
@@ -21,7 +22,7 @@ public interface AeropuertoRepository extends JpaRepository<AeropuertoEntity, In
     Optional<AeropuertoEntity> findByAlias(String alias);
     List<AeropuertoEntity> findByEsSede(Boolean esSede);
 
-    // Filtrado
+    // Filtrar pagina de aeropuertos por sus atributos
     @Query("SELECT a FROM AeropuertoEntity a " +
             "WHERE (:codigo IS NULL OR LOWER(a.codigo) LIKE LOWER(CONCAT('%', :codigo, '%'))) " +
             "AND (:alias IS NULL OR LOWER(a.alias) LIKE LOWER(CONCAT('%', :alias, '%'))) " +
@@ -29,12 +30,13 @@ public interface AeropuertoRepository extends JpaRepository<AeropuertoEntity, In
             "AND (:pais IS NULL OR LOWER(a.pais) LIKE LOWER(CONCAT('%', :pais, '%'))) " +
             "AND (:ciudad IS NULL OR LOWER(a.ciudad) LIKE LOWER(CONCAT('%', :ciudad, '%'))) " +
             "AND (:esSede IS NULL OR a.esSede = :esSede)")
-    List<AeropuertoEntity> filterBy(
+    Page<AeropuertoEntity> filterBy(
             @Param("codigo") String codigo,
             @Param("alias") String alias,
             @Param("continente") String continente,
             @Param("pais") String pais,
             @Param("ciudad") String ciudad,
-            @Param("esSede") Boolean esSede
+            @Param("esSede") Boolean esSede,
+            Pageable pageable
     );
 }

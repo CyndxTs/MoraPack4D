@@ -8,27 +8,27 @@ package com.pucp.dp1.grupo4d.morapack.service.model;
 
 import com.pucp.dp1.grupo4d.morapack.mapper.ParametrosMapper;
 import com.pucp.dp1.grupo4d.morapack.model.dto.DTO;
+import com.pucp.dp1.grupo4d.morapack.model.dto.ParametrosDTO;
+import com.pucp.dp1.grupo4d.morapack.model.dto.request.ImportRequest;
+import com.pucp.dp1.grupo4d.morapack.model.dto.response.GenericResponse;
 import com.pucp.dp1.grupo4d.morapack.model.dto.response.ListResponse;
 import com.pucp.dp1.grupo4d.morapack.model.entity.AeropuertoEntity;
 import com.pucp.dp1.grupo4d.morapack.model.entity.ParametrosEntity;
 import com.pucp.dp1.grupo4d.morapack.repository.ParametrosRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.util.*;
 
 @Service
 public class ParametrosService {
 
-    @Autowired
-    private AeropuertoService aeropuertoService;
-
-    @Autowired
-    private ParametrosMapper parametrosMapper;
-
     private final ParametrosRepository parametrosRepository;
+    private final AeropuertoService aeropuertoService;
+    private final ParametrosMapper parametrosMapper;
 
-    public ParametrosService(ParametrosRepository parametrosRepository) {
+    public ParametrosService(ParametrosRepository parametrosRepository, AeropuertoService aeropuertoService, ParametrosMapper parametrosMapper) {
         this.parametrosRepository = parametrosRepository;
+        this.aeropuertoService = aeropuertoService;
+        this.parametrosMapper = parametrosMapper;
     }
 
     public List<ParametrosEntity> findAll() {
@@ -41,28 +41,28 @@ public class ParametrosService {
     }
 
     public ParametrosEntity findById(Integer id) {
-        List<String> codOrigenes =  new ArrayList<>();
-        List<AeropuertoEntity> sedes = aeropuertoService.findByEsSede(true);
-        sedes.forEach(a -> codOrigenes.add(a.getCodigo()));
         ParametrosEntity result = parametrosRepository.findById(id).orElse(null);
         if (result != null) {
+            List<String> codOrigenes =  new ArrayList<>();
+            List<AeropuertoEntity> origenes = aeropuertoService.findByEsSede(true);
+            origenes.forEach(a -> codOrigenes.add(a.getCodigo()));
             result.setCodOrigenes(codOrigenes);
         }
         return result;
     }
 
     public ParametrosEntity save(ParametrosEntity parametros) {
-        List<AeropuertoEntity> sedes = aeropuertoService.findByEsSede(true);
-        sedes.forEach(a -> {
+        List<AeropuertoEntity> origenesAntiguos = aeropuertoService.findByEsSede(true);
+        origenesAntiguos.forEach(a -> {
             a.setEsSede(false);
             aeropuertoService.save(a);
         });
         List<String> codOrigenes = parametros.getCodOrigenes();
         codOrigenes.forEach(cod -> {
-            AeropuertoEntity aeropuerto = aeropuertoService.findByCodigo(cod).orElse(null);
-            if (aeropuerto != null) {
-                aeropuerto.setEsSede(true);
-                aeropuertoService.save(aeropuerto);
+            AeropuertoEntity nuevoOrigen = aeropuertoService.findByCodigo(cod).orElse(null);
+            if (nuevoOrigen != null) {
+                nuevoOrigen.setEsSede(true);
+                aeropuertoService.save(nuevoOrigen);
             }
         });
         if(this.existsById(1)) {
@@ -86,8 +86,26 @@ public class ParametrosService {
             parametrosEntity.forEach(p -> parametrosDTO.add(parametrosMapper.toDTO(p)));
             return new ListResponse(true, "Parametros listados correctamente!", parametrosDTO);
         } catch (Exception e) {
-            e.printStackTrace();
             return new ListResponse(false, "ERROR - LISTADO: " + e.getMessage());
+        } finally {
+            clearPools();
         }
+    }
+
+    public GenericResponse importar(ImportRequest<ParametrosDTO> request) {
+        try {
+            ParametrosDTO dto = request.getDto();
+            ParametrosEntity parametros = parametrosMapper.toEntity(dto);
+            this.save(parametros);
+            return new GenericResponse(true, "Parametros importados correctamente!");
+        } catch (Exception e) {
+            return new GenericResponse(false, "ERROR - IMPORTACIÓN: " + e.getMessage());
+        } finally {
+            clearPools();
+        }
+    }
+
+    public void clearPools() {
+        aeropuertoService.clearPools();
     }
 }

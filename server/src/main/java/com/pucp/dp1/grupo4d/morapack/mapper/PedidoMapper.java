@@ -12,7 +12,6 @@ import com.pucp.dp1.grupo4d.morapack.model.dto.LotePorRutaDTO;
 import com.pucp.dp1.grupo4d.morapack.model.dto.PedidoDTO;
 import com.pucp.dp1.grupo4d.morapack.model.entity.*;
 import com.pucp.dp1.grupo4d.morapack.util.G4D;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -22,10 +21,12 @@ import java.util.Map;
 @Component
 public class PedidoMapper {
 
-    @Autowired
-    private LoteMapper loteMapper;
-
+    private final LoteMapper loteMapper;
     private final Map<String, PedidoDTO> poolDTO = new HashMap<>();
+
+    public PedidoMapper(LoteMapper loteMapper) {
+        this.loteMapper = loteMapper;
+    }
 
     public PedidoDTO toDTO(Pedido algorithm) {
         if(poolDTO.containsKey(algorithm.getCodigo())) {

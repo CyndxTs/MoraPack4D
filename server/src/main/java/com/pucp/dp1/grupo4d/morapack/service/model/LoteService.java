@@ -8,11 +8,15 @@ package com.pucp.dp1.grupo4d.morapack.service.model;
 
 import com.pucp.dp1.grupo4d.morapack.mapper.LoteMapper;
 import com.pucp.dp1.grupo4d.morapack.model.dto.DTO;
+import com.pucp.dp1.grupo4d.morapack.model.dto.request.ListRequest;
 import com.pucp.dp1.grupo4d.morapack.model.dto.response.ListResponse;
 import com.pucp.dp1.grupo4d.morapack.model.entity.LoteEntity;
 import com.pucp.dp1.grupo4d.morapack.repository.LoteRepository;
+import com.pucp.dp1.grupo4d.morapack.util.G4D;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -30,6 +34,10 @@ public class LoteService {
 
     public List<LoteEntity> findAll() {
         return loteRepository.findAll();
+    }
+
+    public List<LoteEntity> findAll(Pageable pageable) {
+        return loteRepository.findAll(pageable).getContent();
     }
 
     public Optional<LoteEntity> findById(Integer id) {
@@ -56,15 +64,23 @@ public class LoteService {
         return loteRepository.findByCodigo(codigo).isPresent();
     }
 
-    public ListResponse listar() {
+    public ListResponse listar(ListRequest request) {
         try {
+            int page = (G4D.isAdmissible(request.getPage())) ? request.getPage() : 0;
+            int size = (G4D.isAdmissible(request.getSize())) ? request.getSize() : 10;
+            Pageable pageable = PageRequest.of(page, size, Sort.by("codigo").ascending());
             List<DTO> lotesDTO = new ArrayList<>();
-            List<LoteEntity> lotesEntity = loteRepository.findAll();
+            List<LoteEntity> lotesEntity = this.findAll(pageable);
             lotesEntity.forEach(l -> lotesDTO.add(loteMapper.toDTO(l)));
             return new ListResponse(true, "Lotes listados correctamente!", lotesDTO);
         } catch (Exception e) {
-            e.printStackTrace();
             return new ListResponse(false, "ERROR - LISTADO: " + e.getMessage());
+        } finally {
+            clearPools();
         }
+    }
+
+    public void clearPools() {
+        loteMapper.clearPools();
     }
 }

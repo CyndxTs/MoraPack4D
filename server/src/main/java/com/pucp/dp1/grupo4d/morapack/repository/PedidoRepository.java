@@ -19,13 +19,13 @@ import java.util.Optional;
 public interface PedidoRepository extends JpaRepository<PedidoEntity, Integer> {
     Optional<PedidoEntity> findByCodigo(String codigo);
 
-    // Pedidos a partir de rango temporal
+    // Listar todos los pedidos dentro de rango temporal
     @Query("""
         SELECT p
         FROM PedidoEntity p
         WHERE p.fechaHoraGeneracionUTC BETWEEN :fechaHoraInicio AND :fechaHoraFin
     """)
-    List<PedidoEntity> findByDateTimeRange(
+    List<PedidoEntity> findAllByDateTimeRange(
             @Param("fechaHoraInicio") LocalDateTime fechaHoraInicio,
             @Param("fechaHoraFin") LocalDateTime fechaHoraFin
     );

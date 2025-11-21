@@ -10,6 +10,8 @@ import com.pucp.dp1.grupo4d.morapack.model.dto.DTO;
 import lombok.Data;
 
 @Data
-public class FilterRequest {
-    private DTO dto;
+public class FilterRequest<T extends DTO> {
+    private Integer page;
+    private Integer size;
+    private T dto;
 }

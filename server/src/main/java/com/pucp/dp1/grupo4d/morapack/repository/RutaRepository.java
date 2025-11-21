@@ -19,7 +19,7 @@ import java.util.Optional;
 public interface RutaRepository extends JpaRepository<RutaEntity, Integer> {
     Optional<RutaEntity> findByCodigo(String codigo);
 
-    // Rutas pertenecientes a pedidos a partir de rango temporal
+    // Listar todas las rutas pertenecientes a pedidos dentro de de rango temporal
     @Query("""
         SELECT DISTINCT r
         FROM RutaEntity r
