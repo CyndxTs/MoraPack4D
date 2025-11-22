@@ -13,6 +13,7 @@ import com.pucp.dp1.grupo4d.morapack.model.dto.response.ListResponse;
 import com.pucp.dp1.grupo4d.morapack.model.entity.AdministradorEntity;
 import com.pucp.dp1.grupo4d.morapack.model.entity.RegistroEntity;
 import com.pucp.dp1.grupo4d.morapack.model.entity.RutaEntity;
+import com.pucp.dp1.grupo4d.morapack.model.enums.TipoPedido;
 import com.pucp.dp1.grupo4d.morapack.repository.RutaRepository;
 import com.pucp.dp1.grupo4d.morapack.util.G4D;
 import org.springframework.data.domain.PageRequest;
@@ -67,8 +68,8 @@ public class RutaService {
         return rutaRepository.findByCodigo(codigo).isPresent();
     }
 
-    public List<RutaEntity> findAllByDateTimeRange(LocalDateTime fechaHoraInicio, LocalDateTime fechaHoraFin) {
-        return  rutaRepository.findAllByDateTimeRange(fechaHoraInicio, fechaHoraFin);
+    public List<RutaEntity> findAllByDateTimeRange(LocalDateTime fechaHoraInicio, LocalDateTime fechaHoraFin, String tipoDePedidos) {
+        return  rutaRepository.findAllByDateTimeRange(fechaHoraInicio, fechaHoraFin, tipoDePedidos);
     }
     
     public ListResponse listar(ListRequest request) {

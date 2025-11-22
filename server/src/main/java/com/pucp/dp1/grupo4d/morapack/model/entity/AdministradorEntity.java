@@ -1,40 +1,38 @@
-/**]
+/**
  >> Project:    MoraPack
  >> Author:     Grupo 4D
  >> File:       AdministradorEntity.java
- [**/
+ **/
 
 package com.pucp.dp1.grupo4d.morapack.model.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.pucp.dp1.grupo4d.morapack.model.enums.EstadoUsuario;
 import jakarta.persistence.*;
-import java.util.*;
+import java.util.Objects;
 
 @Entity
 @Table(name = "ADMINISTRADOR", schema = "morapack4d")
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class AdministradorEntity extends UsuarioEntity{
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id", nullable = false)
     private Integer id;
 
-    @Column(name = "codigo", length = 7, nullable = false, unique = true)
+    @Column(nullable = false, unique = true, length = 7)
     private String codigo;
 
-    @Column(name = "nombre", length = 60, nullable = false)
+    @Column(nullable = false, length = 60)
     private String nombre;
 
-    @Column(name = "correo", length = 60, nullable = false, unique = true)
+    @Column(nullable = false, unique = true, length = 60)
     private String correo;
 
-    @Column(name = "contrasenia", length = 255, nullable = false)
+    @Column(nullable = false, length = 255)
     private String contrasenia;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "estado", nullable = false)
+    @Column(nullable = false)
     private EstadoUsuario estado = EstadoUsuario.OFFLINE;
 
     public AdministradorEntity() {}
@@ -42,7 +40,7 @@ public class AdministradorEntity extends UsuarioEntity{
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof AdministradorEntity)) return false;
+        if (o == null || getClass() != o.getClass()) return false;
         AdministradorEntity that = (AdministradorEntity) o;
         return Objects.equals(codigo, that.codigo);
     }

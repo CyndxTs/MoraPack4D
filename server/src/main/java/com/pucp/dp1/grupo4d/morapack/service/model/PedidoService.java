@@ -17,6 +17,8 @@ import com.pucp.dp1.grupo4d.morapack.model.dto.response.ListResponse;
 import com.pucp.dp1.grupo4d.morapack.model.entity.AeropuertoEntity;
 import com.pucp.dp1.grupo4d.morapack.model.entity.PedidoEntity;
 import com.pucp.dp1.grupo4d.morapack.model.entity.ClienteEntity;
+import com.pucp.dp1.grupo4d.morapack.model.enums.EstadoPedido;
+import com.pucp.dp1.grupo4d.morapack.model.enums.TipoPedido;
 import com.pucp.dp1.grupo4d.morapack.repository.PedidoRepository;
 import com.pucp.dp1.grupo4d.morapack.util.G4D;
 import org.springframework.data.domain.PageRequest;
@@ -76,8 +78,8 @@ public class PedidoService {
         return pedidoRepository.findByCodigo(codigo).isPresent();
     }
 
-    public List<PedidoEntity> findAllByDateTimeRange(LocalDateTime fechaHoraInicio, LocalDateTime fechaHoraFin) {
-        return  pedidoRepository.findAllByDateTimeRange(fechaHoraInicio, fechaHoraFin);
+    public List<PedidoEntity> findAllByDateTimeRange(LocalDateTime fechaHoraInicio, LocalDateTime fechaHoraFin, String tipoDePedidos) {
+        return  pedidoRepository.findAllByDateTimeRange(fechaHoraInicio, fechaHoraFin, tipoDePedidos);
     }
 
     public ListResponse listar(ListRequest request) {
@@ -115,7 +117,7 @@ public class PedidoService {
                 pedido.setFechaHoraGeneracionLocal(G4D.toLocal(pedido.getFechaHoraGeneracionUTC(), destino.getHusoHorario()));
                 pedido.setFechaHoraExpiracionUTC(null);
                 pedido.setFechaHoraExpiracionLocal(null);
-                pedido.setFueAtendido(false);
+                pedido.setEstado(EstadoPedido.NO_ATENDIDO);
                 this.save(pedido);
                 G4D.Logger.logln("[<] PEDIDO CARGADO!");
                 return new GenericResponse(true, "Pedido importado correctamente!");

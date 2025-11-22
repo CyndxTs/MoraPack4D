@@ -99,25 +99,18 @@ public class MonitorService {
     public SolutionResponse ejecutarAlgoritmo(PlanificationRequest request) {
         try {
             boolean guardarPlanificacion = request.getGuardarPlanificacion();
-            boolean replanificar = request.getReplanificar();
-            if(request.getReparametrizar()) {
-                ParametrosDTO parametrosDTO = request.getParameters();
-                if(request.getConsiderarDesfaseTemporal()) {
-                    int desfaseTemporal = Math.max(parametrosDTO.getMaxDiasEntregaIntracontinental(), parametrosDTO.getMaxDiasEntregaIntercontinental());
-                    parametrosDTO.setFechaHoraInicio(G4D.toDisplayString(G4D.toDateTime(parametrosDTO.getFechaHoraInicio()).minusDays(desfaseTemporal)));
-                    parametrosDTO.setFechaHoraFin(G4D.toDisplayString(G4D.toDateTime(parametrosDTO.getFechaHoraFin()).plusDays(desfaseTemporal)));
-                }
-                parametrosMapper.toAlgorithm(parametrosDTO);
-                if(request.getGuardarParametrizacion()) {
-                    ParametrosEntity parametrosEntity = parametrosMapper.toEntity(parametrosDTO);
-                    parametrosService.save(parametrosEntity);
-                }
-            } else {
-                ParametrosEntity parametrosEntity = parametrosService.findById(1);
-                parametrosMapper.toAlgorithm(parametrosEntity);
-                if(request.getGuardarParametrizacion()) {
-                    parametrosService.save(parametrosEntity);
-                }
+            ParametrosDTO parametrosDTO = request.getParameters();
+            if(request.getConsiderarDesfaseTemporal()) {
+                int desfaseTemporal = Math.max(parametrosDTO.getMaxDiasEntregaIntracontinental(), parametrosDTO.getMaxDiasEntregaIntercontinental());
+                parametrosDTO.setFechaHoraInicioPlanificacion(G4D.toDisplayString(G4D.toDateTime(parametrosDTO.getFechaHoraInicioPlanificacion()).minusDays(desfaseTemporal)));
+                parametrosDTO.setFechaHoraFinPlanificacion(G4D.toDisplayString(G4D.toDateTime(parametrosDTO.getFechaHoraFinPlanificacion()).plusDays(desfaseTemporal)));
+            }
+            Problematica.LIMITE_REPLANIFICACION = G4D.toDateTime(request.getUmbralDeReplanificacion());
+            Problematica.TIPO_DE_PEDIDOS = request.getTipoDePedidos().toUpperCase();
+            parametrosMapper.toAlgorithm(parametrosDTO);
+            if(request.getGuardarParametrizacion()) {
+                ParametrosEntity parametrosEntity = parametrosMapper.toEntity(parametrosDTO);
+                parametrosService.save(parametrosEntity);
             }
             Problematica problematica = new Problematica();
             problematica.cargarDatos(
@@ -145,7 +138,7 @@ public class MonitorService {
             limpiarPools();
         }
     }
-
+    // Falta editar el almacenar Solucion debido al nuevo model....
     @Transactional
     public void guardarSolucion(Solucion solucion, Problematica problematica) {
         if (solucion == null || solucion.getPedidosAtendidos() == null) {
@@ -177,6 +170,7 @@ public class MonitorService {
                 }
             }
         }
+        /*
         // Pedidos & Lotes
         for (Pedido pedidoAlg : solucion.getPedidosAtendidos()) {
             PedidoEntity pedidoEntity = pedidoService.findByCodigo(pedidoAlg.getCodigo()).orElse(null);
@@ -239,6 +233,7 @@ public class MonitorService {
                 System.out.println("[*] AEROPUERTO: " + aeropuertoEntity.getCodigo() + " ('" + aeropuertoEntity.getRegistros().size() + "' registros)");
             }
         }
+         */
         System.out.println("\nSOLUCIÓN ALMACENADA!");
     }
 
@@ -261,9 +256,6 @@ public class MonitorService {
             if(fechaHoraFin.isBefore(fechaHoraInicio)) {
                 return new SolutionResponse(false, "Rango invalido.");
             }
-            Integer desfaseTemporal = G4D.isAdmissible(request.getDesfaseTemporal()) ? request.getDesfaseTemporal() : Integer.valueOf(0);
-            fechaHoraInicio = fechaHoraInicio.minusDays(desfaseTemporal);
-            fechaHoraFin = fechaHoraFin.plusDays(desfaseTemporal);
             return devolverSolucion(fechaHoraInicio, fechaHoraFin);
         } catch (Exception e) {
             e.printStackTrace();
@@ -272,17 +264,18 @@ public class MonitorService {
     }
 
     private SolutionResponse devolverSolucion(LocalDateTime fechaHoraInicio, LocalDateTime fechaHoraFin) {
+        String tipoDePedidos = "OPERACION";
         List<PedidoDTO> pedidosDTO = new ArrayList<>();
-        List<PedidoEntity> pedidosEntity = pedidoService.findAllByDateTimeRange(fechaHoraInicio, fechaHoraFin);
+        List<PedidoEntity> pedidosEntity = pedidoService.findAllByDateTimeRange(fechaHoraInicio, fechaHoraFin, tipoDePedidos);
         pedidosEntity.forEach(p -> pedidosDTO.add(pedidoMapper.toDTO(p)));
         List<AeropuertoDTO> aeropuertosDTO = new ArrayList<>();
         List<AeropuertoEntity> aeropuertosEntity = aeropuertoService.findAll();
         aeropuertosEntity.forEach(a ->  aeropuertosDTO.add(aeropuertoMapper.toDTO(a)));
         List<VueloDTO> vuelosDTO = new ArrayList<>();
-        List<VueloEntity> vuelosEntity = vueloService.findAllByDateTimeRange(fechaHoraInicio, fechaHoraFin);
+        List<VueloEntity> vuelosEntity = vueloService.findAllByDateTimeRange(fechaHoraInicio, fechaHoraFin, tipoDePedidos);
         vuelosEntity.forEach(v -> vuelosDTO.add(vueloMapper.toDTO(v)));
         List<RutaDTO> rutasDTO = new ArrayList<>();
-        List<RutaEntity> rutasEntity = rutaService.findAllByDateTimeRange(fechaHoraInicio, fechaHoraFin);
+        List<RutaEntity> rutasEntity = rutaService.findAllByDateTimeRange(fechaHoraInicio, fechaHoraFin, tipoDePedidos);
         rutasEntity.forEach(r -> rutasDTO.add(rutaMapper.toDTO(r)));
         limpiarPools();
         return new SolutionResponse(true, "Simulación correctamente enviada!", pedidosDTO, aeropuertosDTO, vuelosDTO, rutasDTO);

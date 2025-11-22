@@ -23,8 +23,8 @@ public class ParametrosMapper {
         Problematica.MAX_HORAS_RECOJO = entity.getMaxHorasRecojo();
         Problematica.MAX_HORAS_ESTANCIA = entity.getMaxHorasEstancia();
         Problematica.MIN_HORAS_ESTANCIA = entity.getMinHorasEstancia();
-        Problematica.FECHA_HORA_INICIO = entity.getFechaHoraInicio();
-        Problematica.FECHA_HORA_FIN = entity.getFechaHoraFin();
+        Problematica.INICIO_PLANIFICACION = entity.getFechaHoraInicioPlanificacion();
+        Problematica.FIN_PLANIFICACION = entity.getFechaHoraFinPlanificacion();
         Problematica.CODIGOS_DE_ORIGENES = entity.getCodOrigenes();
         GVNS.D_MIN = entity.getDMin();
         GVNS.I_MAX = entity.getIMax();
@@ -46,8 +46,8 @@ public class ParametrosMapper {
         Problematica.MAX_HORAS_RECOJO = dto.getMaxHorasRecojo();
         Problematica.MAX_HORAS_ESTANCIA = dto.getMaxHorasEstancia();
         Problematica.MIN_HORAS_ESTANCIA = dto.getMinHorasEstancia();
-        Problematica.FECHA_HORA_INICIO = G4D.toDateTime(dto.getFechaHoraInicio());
-        Problematica.FECHA_HORA_FIN = G4D.toDateTime(dto.getFechaHoraFin());
+        Problematica.INICIO_PLANIFICACION = G4D.toDateTime(dto.getFechaHoraInicioPlanificacion());
+        Problematica.FIN_PLANIFICACION = G4D.toDateTime(dto.getFechaHoraFinPlanificacion());
         Problematica.CODIGOS_DE_ORIGENES = dto.getCodOrigenes();
         GVNS.D_MIN = dto.getDMin();
         GVNS.I_MAX = dto.getIMax();
@@ -70,8 +70,8 @@ public class ParametrosMapper {
         entity.setMaxHorasRecojo(dto.getMaxHorasRecojo());
         entity.setMaxHorasEstancia(dto.getMaxHorasEstancia());
         entity.setMinHorasEstancia(dto.getMinHorasEstancia());
-        entity.setFechaHoraInicio(G4D.toDateTime(dto.getFechaHoraInicio()));
-        entity.setFechaHoraFin(G4D.toDateTime(dto.getFechaHoraFin()));
+        entity.setFechaHoraInicioPlanificacion(G4D.toDateTime(dto.getFechaHoraInicioPlanificacion()));
+        entity.setFechaHoraFinPlanificacion(G4D.toDateTime(dto.getFechaHoraFinPlanificacion()));
         entity.setCodOrigenes(dto.getCodOrigenes());
         entity.setDMin(dto.getDMin());
         entity.setIMax(dto.getIMax());
@@ -95,8 +95,8 @@ public class ParametrosMapper {
         dto.setMaxHorasRecojo(entity.getMaxHorasRecojo());
         dto.setMaxHorasEstancia(entity.getMaxHorasEstancia());
         dto.setMinHorasEstancia(entity.getMinHorasEstancia());
-        dto.setFechaHoraInicio(G4D.toDisplayString(entity.getFechaHoraInicio()));
-        dto.setFechaHoraFin(G4D.toDisplayString(entity.getFechaHoraFin()));
+        dto.setFechaHoraInicioPlanificacion(G4D.toDisplayString(entity.getFechaHoraInicioPlanificacion()));
+        dto.setFechaHoraFinPlanificacion(G4D.toDisplayString(entity.getFechaHoraFinPlanificacion()));
         dto.setCodOrigenes(entity.getCodOrigenes());
         dto.setDMin(entity.getDMin());
         dto.setIMax(entity.getIMax());

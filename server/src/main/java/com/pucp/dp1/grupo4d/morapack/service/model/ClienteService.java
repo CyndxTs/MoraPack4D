@@ -15,6 +15,7 @@ import com.pucp.dp1.grupo4d.morapack.model.dto.response.GenericResponse;
 import com.pucp.dp1.grupo4d.morapack.model.dto.response.ListResponse;
 import com.pucp.dp1.grupo4d.morapack.model.entity.ClienteEntity;
 import com.pucp.dp1.grupo4d.morapack.model.enums.EstadoUsuario;
+import com.pucp.dp1.grupo4d.morapack.model.enums.TipoPedido;
 import com.pucp.dp1.grupo4d.morapack.repository.ClienteRepository;
 import com.pucp.dp1.grupo4d.morapack.util.G4D;
 import org.springframework.data.domain.PageRequest;
@@ -77,8 +78,8 @@ public class ClienteService {
         return clienteRepository.findByCorreo(correo).isPresent();
     }
 
-    public List<ClienteEntity> findAllByDateTimeRange(LocalDateTime fechaHoraInicio, LocalDateTime fechaHoraFin) {
-        return  clienteRepository.findAllByDateTimeRange(fechaHoraInicio, fechaHoraFin);
+    public List<ClienteEntity> findAllByDateTimeRange(LocalDateTime fechaHoraInicio, LocalDateTime fechaHoraFin, String tipoDePedidos) {
+        return  clienteRepository.findAllByDateTimeRange(fechaHoraInicio, fechaHoraFin, tipoDePedidos);
     }
 
     public ClienteEntity obtenerPorCodigo(String codigo) {

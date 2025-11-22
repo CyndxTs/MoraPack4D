@@ -8,7 +8,8 @@
 package pucp.dp1.grupo4d.algorithm.version.aether.model;
 
 import java.time.LocalDateTime;
-import java.util.HashMap;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import pucp.dp1.grupo4d.algorithm.version.aether.enums.EstadoPedido;
@@ -25,18 +26,13 @@ public class Pedido {
     private Cliente cliente;
     private Aeropuerto destino;
     private EstadoPedido estado;
-    private Map<Ruta, Lote> lotesPorRuta;
+    private List<Enrutamiento> enrutamientos;
 
     public Pedido() {
         this.codigo = G4D.Generator.getUniqueString("PED");
         this.cantidadSolicitada = 0;
         this.estado = EstadoPedido.NO_ATENDIDO;
-        this.lotesPorRuta = new HashMap<>();
-    }
-
-    public Integer obtenerCantidadDeProductosEnRuta(Ruta ruta) {
-        Lote lote = lotesPorRuta.get(ruta);
-        return (lote != null) ? lote.getTamanio() : 0;
+        this.enrutamientos = new ArrayList<>();
     }
 
     public Pedido replicar(Map<String, Cliente> poolClientes, Map<String,Aeropuerto> poolAeropuertos, Map<String, Lote> poolLotes, Map<String, Ruta> poolRutas, Map<String,Vuelo> poolVuelos, Map<String, Plan> poolPlanes) {
@@ -50,12 +46,17 @@ public class Pedido {
         pedido.fechaHoraExpiracionUTC = this.fechaHoraExpiracionUTC;
         pedido.destino = (this.destino != null) ? poolAeropuertos.computeIfAbsent(this.destino.getCodigo(), codigo -> this.destino.replicar(poolLotes)) : null;
         pedido.estado = this.estado;
-        for(Map.Entry<Ruta, Lote> entry : this.lotesPorRuta.entrySet()) {
-            Ruta ruta = poolRutas.computeIfAbsent(entry.getKey().getCodigo(), codigo -> entry.getKey().replicar(poolAeropuertos, poolLotes, poolVuelos, poolPlanes));
-            Lote lote = poolLotes.computeIfAbsent(entry.getValue().getCodigo(), codigo -> entry.getValue().replicar());
-            pedido.lotesPorRuta.put(ruta, lote);
-        }
+        this.enrutamientos.forEach(e -> pedido.enrutamientos.add(e.replicar(poolAeropuertos, poolLotes, poolRutas, poolVuelos, poolPlanes)));
         return pedido;
+    }
+
+    public Enrutamiento obtenerEnrutamientoVigente() {
+        return this.enrutamientos.stream().filter(e -> e.getFechaHoraFinVigenciaUTC() == null).findFirst().orElse(null);
+    }
+
+    public Integer obtenerCantidadDeProductosEnRuta(Ruta ruta) {
+        Lote lote = obtenerEnrutamientoVigente().getLotesPorRuta().get(ruta);
+        return (lote != null) ? lote.getTamanio() : 0;
     }
 
     @Override
@@ -120,7 +121,7 @@ public class Pedido {
     }
 
     public void setFechaHoraExpiracion() {
-        boolean tieneIntercontinental = this.lotesPorRuta.keySet().stream().anyMatch(r -> r.getTipo().equals(TipoRuta.INTERCONTINENTAL));
+        boolean tieneIntercontinental = this.obtenerEnrutamientoVigente().getLotesPorRuta().keySet().stream().anyMatch(r -> r.getTipo().equals(TipoRuta.INTERCONTINENTAL));
         TipoRuta tipo = tieneIntercontinental ? TipoRuta.INTERCONTINENTAL : TipoRuta.INTRACONTINENTAL;
         this.fechaHoraExpiracionUTC = this.fechaHoraGeneracionUTC.plusMinutes(tipo.getMaxMinutosParaEntrega());
         this.setFechaHoraExpiracionLocal();
@@ -164,13 +165,5 @@ public class Pedido {
 
     public void setEstado(EstadoPedido estado) {
         this.estado = estado;
-    }
-
-    public Map<Ruta, Lote> getLotesPorRuta() {
-        return lotesPorRuta;
-    }
-
-    public void setLotesPorRuta(Map<Ruta, Lote> lotesPorRuta) {
-        this.lotesPorRuta = lotesPorRuta;
     }
 }

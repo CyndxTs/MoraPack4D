@@ -14,6 +14,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import pucp.dp1.grupo4d.algorithm.version.aether.Problematica;
+import pucp.dp1.grupo4d.algorithm.version.aether.enums.TipoEvento;
 import pucp.dp1.grupo4d.util.G4D;
 
 public class Plan {
@@ -27,12 +28,29 @@ public class Plan {
     private LocalTime horaLlegadaUTC;
     private Aeropuerto origen;
     private Aeropuerto destino;
+    private List<Evento> eventos;
 
     public Plan() {
         this.codigo = G4D.Generator.getUniqueString("PLA");
         this.capacidad = 0;
         this.duracion = 0.0;
         this.distancia = 0.0;
+    }
+
+    public Plan replicar(Map<String,Aeropuerto> poolAeropuertos, Map<String, Lote> poolLotes) {
+        Plan plan = new Plan();
+        plan.codigo = this.codigo;
+        plan.capacidad = this.capacidad;
+        plan.duracion = this.duracion;
+        plan.distancia = this.distancia;
+        plan.horaSalidaLocal = this.horaSalidaLocal;
+        plan.horaSalidaUTC = this.horaSalidaUTC;
+        plan.horaLlegadaLocal = this.horaLlegadaLocal;
+        plan.horaLlegadaUTC = this.horaLlegadaUTC;
+        plan.origen = (this.origen != null) ? poolAeropuertos.computeIfAbsent(this.origen.getCodigo(), codigo -> this.origen.replicar(poolLotes)) : null;
+        plan.destino = (this.destino != null) ? poolAeropuertos.computeIfAbsent(this.destino.getCodigo(), codigo -> this.destino.replicar(poolLotes)) : null;
+        this.eventos.forEach(e -> plan.eventos.add(e.replicar()));
+        return plan;
     }
 
     public Double obtenerLejania(LocalDateTime fechaHoraActual, Aeropuerto aDest) {
@@ -59,7 +77,21 @@ public class Plan {
         if(fechaHoraLimite == null) fechaHoraLimite = fechaHoraActual.plusMinutes((long)(60*Problematica.MAX_HORAS_RECOJO));
         LocalDateTime origFechaHoraMinEgreso = fechaHoraActual.plusMinutes((long)(60*Problematica.MIN_HORAS_ESTANCIA));
         LocalDateTime origFechaHoraMaxEgreso = fechaHoraActual.plusMinutes((long)(60*Problematica.MAX_HORAS_ESTANCIA));
-        LocalDateTime[] rango = G4D.getDateTimeRange(this.horaSalidaUTC,this.horaLlegadaUTC,fechaHoraActual);
+        LocalTime horaSalida = this.horaSalidaUTC, horaLlegada = this.horaLlegadaUTC;
+        for(Evento evento : this.eventos) {
+            if(!fechaHoraActual.isBefore(evento.getFechaHoraInicioUTC()) && !fechaHoraActual.isAfter(evento.getFechaHoraFinUTC())) {
+                TipoEvento tipo = evento.getTipo();
+                if(tipo.equals(TipoEvento.CANCELACION)) {
+                    return false;
+                }
+                if(tipo.equals(TipoEvento.REPROGRAMACION)) {
+                    horaSalida = evento.getHoraSalidaReprogramadaUTC();
+                    horaLlegada = evento.getHoraLlegadaReprogramadaUTC();
+                    break;
+                }
+            }
+        }
+        LocalDateTime[] rango = G4D.getDateTimeRange(horaSalida, horaLlegada, fechaHoraActual);
         LocalDateTime vFechaHoraSalida = rango[0], vFechaHoraLlegada = rango[1];
         if(vFechaHoraSalida.isBefore(origFechaHoraMinEgreso) || vFechaHoraSalida.isAfter(origFechaHoraMaxEgreso) || vFechaHoraLlegada.isAfter(fechaHoraLimite)) return false;
         LocalDateTime destFechaHoraMaxEgreso = vFechaHoraLlegada.plusMinutes((long)(60*((!this.destino.equals(aDest)) ? Problematica.MAX_HORAS_ESTANCIA : Problematica.MAX_HORAS_RECOJO)));
@@ -75,21 +107,6 @@ public class Plan {
                Objects.equals(destino, plan.destino) &&
                Objects.equals(horaSalidaUTC, plan.horaSalidaUTC) &&
                Objects.equals(horaLlegadaUTC, plan.horaLlegadaUTC);
-    }
-
-    public Plan replicar(Map<String,Aeropuerto> poolAeropuertos, Map<String, Lote> poolLotes) {
-        Plan plan = new Plan();
-        plan.codigo = this.codigo;
-        plan.capacidad = this.capacidad;
-        plan.duracion = this.duracion;
-        plan.distancia = this.distancia;
-        plan.horaSalidaLocal = this.horaSalidaLocal;
-        plan.horaSalidaUTC = this.horaSalidaUTC;
-        plan.horaLlegadaLocal = this.horaLlegadaLocal;
-        plan.horaLlegadaUTC = this.horaLlegadaUTC;
-        plan.origen = (this.origen != null) ? poolAeropuertos.computeIfAbsent(this.origen.getCodigo(), codigo -> this.origen.replicar(poolLotes)) : null;
-        plan.destino = (this.destino != null) ? poolAeropuertos.computeIfAbsent(this.destino.getCodigo(), codigo -> this.destino.replicar(poolLotes)) : null;
-        return plan;
     }
 
     @Override
@@ -208,5 +225,13 @@ public class Plan {
 
     public void setDestino(Aeropuerto destino) {
         this.destino = destino;
+    }
+
+    public List<Evento> getEventos() {
+        return eventos;
+    }
+
+    public void setEventos(List<Evento> eventos) {
+        this.eventos = eventos;
     }
 }

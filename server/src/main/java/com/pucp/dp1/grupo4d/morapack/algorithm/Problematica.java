@@ -9,6 +9,8 @@ package com.pucp.dp1.grupo4d.morapack.algorithm;
 import com.pucp.dp1.grupo4d.morapack.adapter.*;
 import com.pucp.dp1.grupo4d.morapack.model.algorithm.*;
 import com.pucp.dp1.grupo4d.morapack.model.entity.*;
+import com.pucp.dp1.grupo4d.morapack.model.enums.EstadoPedido;
+import com.pucp.dp1.grupo4d.morapack.model.enums.TipoPedido;
 import com.pucp.dp1.grupo4d.morapack.service.model.*;
 import com.pucp.dp1.grupo4d.morapack.util.G4D;
 import java.time.LocalDateTime;
@@ -20,8 +22,10 @@ public class Problematica {
     public static Double MAX_HORAS_RECOJO;
     public static Double MIN_HORAS_ESTANCIA;
     public static Double MAX_HORAS_ESTANCIA;
-    public static LocalDateTime FECHA_HORA_INICIO;
-    public static LocalDateTime FECHA_HORA_FIN;
+    public static LocalDateTime INICIO_PLANIFICACION;
+    public static LocalDateTime FIN_PLANIFICACION;
+    public static LocalDateTime LIMITE_REPLANIFICACION;
+    public static String TIPO_DE_PEDIDOS;
     public static List<String> CODIGOS_DE_ORIGENES;
     public List<Aeropuerto> origenes;
     public List<Aeropuerto> destinos;
@@ -99,7 +103,7 @@ public class Problematica {
         });
         G4D.Logger.logf("[:] PLANES DE VUELO CARGADOS! | '%d' planes!%n", planes.size());
         // Clientes
-        List<ClienteEntity> clientesEntity = clienteService.findByDateTimeRange(FECHA_HORA_INICIO, FECHA_HORA_FIN);
+        List<ClienteEntity> clientesEntity = clienteService.findAllByDateTimeRange(INICIO_PLANIFICACION, FIN_PLANIFICACION, TIPO_DE_PEDIDOS);
         clientesEntity.forEach(entity -> {
             Cliente cliente = usuarioAdapter.toAlgorithm(entity);
             clientes.add(cliente);
@@ -107,22 +111,22 @@ public class Problematica {
         G4D.Logger.logf("[:] CLIENTES CARGADOS! | '%d' clientes!%n", clientes.size());
         // Pedidos
         G4D.IntegerWrapper cantAtendidos = new G4D.IntegerWrapper();
-        List<PedidoEntity> pedidosEntity = pedidoService.findByDateTimeRange(FECHA_HORA_INICIO, FECHA_HORA_FIN);
+        List<PedidoEntity> pedidosEntity = pedidoService.findAllByDateTimeRange(INICIO_PLANIFICACION, FIN_PLANIFICACION, TIPO_DE_PEDIDOS);
         pedidosEntity.forEach(entity -> {
-            if(entity.getFueAtendido()) cantAtendidos.increment();
+            if(!entity.getEstado().equals(EstadoPedido.NO_ATENDIDO)) cantAtendidos.increment();
             Pedido pedido = pedidoAdapter.toAlgorithm(entity);
             pedidos.add(pedido);
         });
         G4D.Logger.logf("[:] PEDIDOS CARGADOS! | '%d' por atender! & '%d' ya atendidos!%n", pedidos.size() - cantAtendidos.value, cantAtendidos.value);
         // Vuelos
-        List<VueloEntity> vuelosEntity = vueloService.findByDateTimeRange(FECHA_HORA_INICIO, FECHA_HORA_FIN);
+        List<VueloEntity> vuelosEntity = vueloService.findAllByDateTimeRange(INICIO_PLANIFICACION, FIN_PLANIFICACION, TIPO_DE_PEDIDOS);
         vuelosEntity.forEach(entity -> {
             Vuelo vuelo = vueloAdapter.toAlgorithm(entity);
             vuelos.add(vuelo);
         });
         G4D.Logger.logf("[:] VUELOS CARGADOS! | '%d' vuelos!%n", vuelos.size());
         // Rutas
-        List<RutaEntity> rutasEntity = rutaService.findByDateTimeRange(FECHA_HORA_INICIO, FECHA_HORA_FIN);
+        List<RutaEntity> rutasEntity = rutaService.findAllByDateTimeRange(INICIO_PLANIFICACION, FIN_PLANIFICACION, TIPO_DE_PEDIDOS);
         rutasEntity.forEach(entity -> {
             Ruta ruta = rutaAdapter.toAlgorithm(entity);
             rutas.add(ruta);

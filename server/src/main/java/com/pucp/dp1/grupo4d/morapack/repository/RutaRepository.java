@@ -23,11 +23,14 @@ public interface RutaRepository extends JpaRepository<RutaEntity, Integer> {
     @Query("""
         SELECT DISTINCT r
         FROM RutaEntity r
-        JOIN r.pedidos p
-        WHERE p.fechaHoraGeneracionUTC BETWEEN :fechaHoraInicio AND :fechaHoraFin
+        JOIN r.lotes l
+        JOIN l.segmentacion s
+        JOIN s.pedido p
+        WHERE (p.fechaHoraGeneracionUTC BETWEEN :fechaHoraInicio AND :fechaHoraFin) AND p.tipo = :tipoDePedidos
     """)
-    List<RutaEntity> findByDateTimeRange(
+    List<RutaEntity> findAllByDateTimeRange(
             @Param("fechaHoraInicio") LocalDateTime fechaHoraInicio,
-            @Param("fechaHoraFin") LocalDateTime fechaHoraFin
+            @Param("fechaHoraFin") LocalDateTime fechaHoraFin,
+            @Param("TipoDePedidos") String tipoDePedidos
     );
 }

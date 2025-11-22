@@ -56,6 +56,7 @@ public class PedidoAdapter {
         algorithm.setCliente(cliente);
         Aeropuerto destino = aeropuertoAdapter.toAlgorithm(entity.getDestino());
         algorithm.setDestino(destino);
+        /*
         Map<Ruta, Lote> lotesPorRuta = new HashMap<>();
         List<RutaEntity> rutasEntity = entity.getRutas();
         for (RutaEntity rutaEntity : rutasEntity) {
@@ -67,6 +68,8 @@ public class PedidoAdapter {
             }
         }
         algorithm.setLotesPorRuta(lotesPorRuta);
+
+         */
         poolAlgorithm.put(algorithm.getCodigo(), algorithm);
         return algorithm;
     }
@@ -81,7 +84,7 @@ public class PedidoAdapter {
         }
         entity.setFechaHoraExpiracionLocal(algorithm.getFechaHoraExpiracionLocal());
         entity.setFechaHoraExpiracionUTC(algorithm.getFechaHoraExpiracionUTC());
-        entity.setFueAtendido(algorithm.getFueAtendido());
+        // entity.setFueAtendido(algorithm.getFueAtendido());
         poolEntity.put(entity.getCodigo(), entity);
         return entity;
     }

@@ -14,7 +14,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
 import pucp.dp1.grupo4d.algorithm.version.aether.model.Aeropuerto;
 import pucp.dp1.grupo4d.algorithm.version.aether.model.Cliente;
 import pucp.dp1.grupo4d.algorithm.version.aether.model.Lote;
@@ -133,7 +132,7 @@ public class Solucion {
         double sumaRatios = 0.0, totalProd = 0;
         for(Pedido pedido : this.pedidosAtendidos) {
             LocalDateTime fechaHoraGeneracion = pedido.getFechaHoraGeneracionUTC();
-            Map<Ruta, Lote> lotesPorRuta = pedido.getLotesPorRuta();
+            Map<Ruta, Lote> lotesPorRuta = pedido.obtenerEnrutamientoVigente().getLotesPorRuta();
             List<Ruta> rutas = new ArrayList<>(lotesPorRuta.keySet());
             for(Ruta ruta : rutas) {
                 int cantProd = lotesPorRuta.get(ruta).getTamanio();
@@ -159,7 +158,7 @@ public class Solucion {
     public void setRatioPromedioDeDesviacionEspacial() {
         double sumaRatios = 0.0, totalProd = 0;
         for(Pedido pedido : this.pedidosAtendidos) {
-            Map<Ruta, Lote> lotesPorRuta = pedido.getLotesPorRuta();
+            Map<Ruta, Lote> lotesPorRuta = pedido.obtenerEnrutamientoVigente().getLotesPorRuta();
             List<Ruta> rutas = new ArrayList<>(lotesPorRuta.keySet());
             for(Ruta ruta : rutas) {
                 Aeropuerto aOrig = ruta.getOrigen();

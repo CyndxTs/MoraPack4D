@@ -31,6 +31,20 @@ public class Aeropuerto {
         this.registros = new ArrayList<>();
     }
 
+    public Aeropuerto replicar(Map<String, Lote> poolLotes) {
+        Aeropuerto aeropuerto = new Aeropuerto();
+        aeropuerto.codigo = this.codigo;
+        aeropuerto.ciudad = this.ciudad;
+        aeropuerto.pais = this.pais;
+        aeropuerto.continente = this.continente;
+        aeropuerto.husoHorario = this.husoHorario;
+        aeropuerto.capacidad = this.capacidad;
+        aeropuerto.latitud = this.latitud;
+        aeropuerto.longitud = this.longitud;
+        for(Registro r : this.registros) aeropuerto.registros.add(r.replicar(poolLotes));
+        return aeropuerto;
+    }
+
     public Lote generarLoteDeProductos(int cantProd) {
         Lote lote = new Lote();
         lote.setTamanio(cantProd);
@@ -77,20 +91,6 @@ public class Aeropuerto {
 
     public Double obtenerDistanciaHasta(Aeropuerto aDest) {
         return G4D.getGeodesicDistance(this.latitud, this.longitud, aDest.latitud, aDest.longitud);
-    }
-
-    public Aeropuerto replicar(Map<String, Lote> poolLotes) {
-        Aeropuerto aeropuerto = new Aeropuerto();
-        aeropuerto.codigo = this.codigo;
-        aeropuerto.ciudad = this.ciudad;
-        aeropuerto.pais = this.pais;
-        aeropuerto.continente = this.continente;
-        aeropuerto.husoHorario = this.husoHorario;
-        aeropuerto.capacidad = this.capacidad;
-        aeropuerto.latitud = this.latitud;
-        aeropuerto.longitud = this.longitud;
-        for(Registro r : this.registros) aeropuerto.registros.add(r.replicar(poolLotes));
-        return aeropuerto;
     }
 
     @Override

@@ -1,7 +1,7 @@
 /**]
  >> Project:    MoraPack
  >> Author:     Grupo 4D
- >> File:       LoteDTO.java
+ >> File:       SegmentacionDTO.java
  [**/
 
 package com.pucp.dp1.grupo4d.morapack.model.dto;
@@ -9,11 +9,15 @@ package com.pucp.dp1.grupo4d.morapack.model.dto;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
+import java.util.List;
+
 @Data
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
-public class LoteDTO implements DTO {
+public class SegmentacionDTO implements DTO {
     @EqualsAndHashCode.Include
     private String codigo;
 
-    private Integer tamanio;
+    private String fechaHoraInicioVigencia;
+    private String fechaHoraFinVigencia;
+    private List<LotePorRutaDTO> lotesPorRuta;
 }

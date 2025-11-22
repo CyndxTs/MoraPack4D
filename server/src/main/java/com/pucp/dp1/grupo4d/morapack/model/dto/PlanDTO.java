@@ -9,6 +9,8 @@ package com.pucp.dp1.grupo4d.morapack.model.dto;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
+import java.util.List;
+
 @Data
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class PlanDTO implements DTO {
@@ -23,4 +25,5 @@ public class PlanDTO implements DTO {
     private Integer capacidad;
     private Double duracion;
     private Double distancia;
+    private List<EventoDTO> eventos;
 }

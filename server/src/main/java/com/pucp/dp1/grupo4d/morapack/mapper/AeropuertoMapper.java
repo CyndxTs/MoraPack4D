@@ -41,8 +41,8 @@ public class AeropuertoMapper {
         dto.setHusoHorario(algorithm.getHusoHorario());
         dto.setCapacidad(algorithm.getCapacidad());
         dto.setEsSede(algorithm.getEsSede());
-        dto.setLatitudDEC(algorithm.getLatitudDEC());
-        dto.setLongitudDEC(algorithm.getLongitudDEC());
+        dto.setLatitud(algorithm.getLatitudDEC());
+        dto.setLongitud(algorithm.getLongitudDEC());
         List<RegistroDTO> registrosDTO = new ArrayList<>();
         List<Registro> registros = algorithm.getRegistros();
         for (Registro registro : registros) {
@@ -68,8 +68,8 @@ public class AeropuertoMapper {
         dto.setHusoHorario(entity.getHusoHorario());
         dto.setCapacidad(entity.getCapacidad());
         dto.setEsSede(entity.getEsSede());
-        dto.setLatitudDEC(entity.getLatitudDEC());
-        dto.setLongitudDEC(entity.getLongitudDEC());
+        dto.setLatitud(entity.getLatitudDEC());
+        dto.setLongitud(entity.getLongitudDEC());
         List<RegistroDTO> registrosDTO = new ArrayList<>();
         List<RegistroEntity> registrosEntity = entity.getRegistros();
         for (RegistroEntity registroEntity : registrosEntity) {

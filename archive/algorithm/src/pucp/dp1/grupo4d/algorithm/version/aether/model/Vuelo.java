@@ -25,14 +25,6 @@ public class Vuelo {
         this.capacidadDisponible = 0;
     }
 
-    public void instanciarHorarios(LocalDateTime fechaHoraReferencia) {
-        LocalDateTime[] rangoUTC = G4D.getDateTimeRange(this.plan.getHoraSalidaUTC(), this.plan.getHoraLlegadaUTC(), fechaHoraReferencia);
-        this.fechaHoraSalidaUTC = rangoUTC[0];
-        this.setFechaHoraSalidaLocal();
-        this.fechaHoraLlegadaUTC = rangoUTC[1];
-        this.setFechaHoraLlegadaLocal();
-    }
-
     public Vuelo replicar(Map<String,Aeropuerto> poolAeropuertos, Map<String, Lote> poolLotes, Map<String, Plan> poolPlanes) {
         Vuelo vuelo = new Vuelo();
         vuelo.codigo = this.codigo;
@@ -43,6 +35,14 @@ public class Vuelo {
         vuelo.fechaHoraLlegadaUTC = this.fechaHoraLlegadaUTC;
         vuelo.plan = (this.plan != null) ? poolPlanes.computeIfAbsent(this.plan.getCodigo(), codigo -> this.plan.replicar(poolAeropuertos, poolLotes)) : null;
         return vuelo;
+    }
+
+    public void instanciarHorarios(LocalDateTime fechaHoraReferencia) {
+        LocalDateTime[] rangoUTC = G4D.getDateTimeRange(this.plan.getHoraSalidaUTC(), this.plan.getHoraLlegadaUTC(), fechaHoraReferencia);
+        this.fechaHoraSalidaUTC = rangoUTC[0];
+        this.setFechaHoraSalidaLocal();
+        this.fechaHoraLlegadaUTC = rangoUTC[1];
+        this.setFechaHoraLlegadaLocal();
     }
 
     @Override

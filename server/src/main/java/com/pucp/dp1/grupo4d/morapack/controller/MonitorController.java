@@ -68,19 +68,4 @@ public class MonitorController {
             return ResponseEntity.internalServerError().body(new SolutionResponse(false, "ERROR INTERNO: " + e.getMessage()));
         }
     }
-
-    @MessageMapping("/simularColapso")
-    @SendTo("/topic/simulator")
-    public ResponseEntity<SolutionResponse> simularColapso(@RequestBody PlanificationRequest request) {
-        try {
-            SolutionResponse response = monitorService.ejecutarAlgoritmo(request);
-            if (response.getSuccess()) {
-                return ResponseEntity.ok(response);
-            } else {
-                return ResponseEntity.badRequest().body(response);
-            }
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().body(new SolutionResponse(false, "ERROR INTERNO: " + e.getMessage()));
-        }
-    }
 }

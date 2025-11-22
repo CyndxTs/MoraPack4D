@@ -36,6 +36,7 @@ public class Problematica {
     public static List<String> CODIGOS_DE_ORIGENES = List.of("SPIM", "EBCI", "UBBB");
     public static LocalDateTime FECHA_HORA_INICIO = LocalDateTime.now().withYear(1999);
     public static LocalDateTime FECHA_HORA_FIN = LocalDateTime.now();
+    public static LocalDateTime FECHA_HORA_LIMITE_REPLANIFICACION = LocalDateTime.now().withYear(1999);
     public List<Aeropuerto> origenes;
     public List<Aeropuerto> destinos;
     public List<Plan> planes;

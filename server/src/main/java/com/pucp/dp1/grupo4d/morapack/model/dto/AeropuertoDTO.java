@@ -14,7 +14,6 @@ import java.util.List;
 @Data
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class AeropuertoDTO implements DTO {
-
     @EqualsAndHashCode.Include
     private String codigo;
 

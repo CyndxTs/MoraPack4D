@@ -1,45 +1,43 @@
-/**]
+/**
  >> Project:    MoraPack
  >> Author:     Grupo 4D
  >> File:       ClienteEntity.java
- [**/
+ **/
 
 package com.pucp.dp1.grupo4d.morapack.model.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.pucp.dp1.grupo4d.morapack.model.enums.EstadoUsuario;
 import jakarta.persistence.*;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 
 @Entity
 @Table(name = "CLIENTE", schema = "morapack4d")
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
-public class ClienteEntity extends UsuarioEntity {
-
+public class ClienteEntity extends UsuarioEntity{
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id", nullable = false)
     private Integer id;
 
-    @Column(name = "codigo", length = 7, nullable = false, unique = true)
+    @Column(nullable = false, unique = true, length = 7)
     private String codigo;
 
-    @Column(name = "nombre", length = 60, nullable = false)
+    @Column(nullable = false, length = 60)
     private String nombre;
 
-    @Column(name = "correo", length = 60, nullable = false, unique = true)
+    @Column(nullable = false, unique = true, length = 60)
     private String correo;
 
-    @Column(name = "contrasenia", length = 255, nullable = false)
+    @Column(nullable = false, length = 255)
     private String contrasenia;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "estado", nullable = false)
+    @Column(nullable = false)
     private EstadoUsuario estado = EstadoUsuario.OFFLINE;
 
-    @OneToMany(mappedBy = "cliente", fetch = FetchType.LAZY)
-    @JsonManagedReference
+    @OneToMany(mappedBy = "cliente")
     private List<PedidoEntity> pedidos = new ArrayList<>();
 
     public ClienteEntity() {}
@@ -47,7 +45,7 @@ public class ClienteEntity extends UsuarioEntity {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof ClienteEntity)) return false;
+        if (o == null || getClass() != o.getClass()) return false;
         ClienteEntity that = (ClienteEntity) o;
         return Objects.equals(codigo, that.codigo);
     }
@@ -57,11 +55,18 @@ public class ClienteEntity extends UsuarioEntity {
         return Objects.hash(codigo);
     }
 
-    public Integer getId() { return id; } public void setId(Integer id) { this.id = id; }
-    public String getCodigo() { return codigo; } public void setCodigo(String codigo) { this.codigo = codigo; }
-    public String getNombre() { return nombre; } public void setNombre(String nombre) { this.nombre = nombre; }
-    public String getCorreo() { return correo; } public void setCorreo(String correo) { this.correo = correo; }
-    public String getContrasenia() { return contrasenia; } public void setContrasenia(String contrasenia) { this.contrasenia = contrasenia; }
-    public EstadoUsuario getEstado() { return estado; } public void setEstado(EstadoUsuario estado) { this.estado = estado; }
-    public List<PedidoEntity> getPedidos() { return pedidos; } public void setPedidos(List<PedidoEntity> pedidos) { this.pedidos = pedidos; }
+    public Integer getId() { return id; }
+    public void setId(Integer id) { this.id = id; }
+    public String getCodigo() { return codigo; }
+    public void setCodigo(String codigo) { this.codigo = codigo; }
+    public String getNombre() { return nombre; }
+    public void setNombre(String nombre) { this.nombre = nombre; }
+    public String getCorreo() { return correo; }
+    public void setCorreo(String correo) { this.correo = correo; }
+    public String getContrasenia() { return contrasenia; }
+    public void setContrasenia(String contrasenia) { this.contrasenia = contrasenia; }
+    public EstadoUsuario getEstado() { return estado; }
+    public void setEstado(EstadoUsuario estado) { this.estado = estado; }
+    public List<PedidoEntity> getPedidos() { return pedidos; }
+    public void setPedidos(List<PedidoEntity> pedidos) { this.pedidos = pedidos; }
 }

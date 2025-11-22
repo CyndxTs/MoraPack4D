@@ -62,13 +62,14 @@ DROP TABLE IF EXISTS `morapack4d`.`PEDIDO` ;
 
 CREATE TABLE IF NOT EXISTS `morapack4d`.`PEDIDO` (
   `id` INT NOT NULL AUTO_INCREMENT,
-  `codigo` VARCHAR(30) NOT NULL,
+  `codigo` VARCHAR(15) NOT NULL,
   `cantidad_solicitada` INT NOT NULL,
-  `fecha_hora_generacion_local` TIMESTAMP NOT NULL,
-  `fecha_hora_generacion_utc` TIMESTAMP NOT NULL,
-  `fecha_hora_expiracion_local` TIMESTAMP NULL DEFAULT NULL,
-  `fecha_hora_expiracion_utc` TIMESTAMP NULL DEFAULT NULL,
-  `fue_atendido` TINYINT NOT NULL DEFAULT 0,
+  `fh_generacion_local` DATETIME NOT NULL,
+  `fh_generacion_utc` DATETIME NOT NULL,
+  `fh_expiracion_local` DATETIME NULL DEFAULT NULL,
+  `fh_expiracion_utc` DATETIME NULL DEFAULT NULL,
+  `estado` ENUM('NO_ATENDIDO', 'PLANIFICADO', 'REPLANIFICADO') NOT NULL DEFAULT 'NO_ATENDIDO',
+  `tipo` ENUM('OPERACION', 'SIMULACION') NOT NULL DEFAULT 'SIMULACION',
   `id_cliente` INT NOT NULL,
   `id_aeropuerto_destino` INT NOT NULL,
   PRIMARY KEY (`id`),
@@ -88,6 +89,28 @@ CREATE TABLE IF NOT EXISTS `morapack4d`.`PEDIDO` (
 
 
 -- -----------------------------------------------------
+-- Table `morapack4d`.`SEGMENTACION`
+-- -----------------------------------------------------
+DROP TABLE IF EXISTS `morapack4d`.`SEGMENTACION` ;
+
+CREATE TABLE IF NOT EXISTS `morapack4d`.`SEGMENTACION` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `codigo` VARCHAR(30) NOT NULL,
+  `fh_inicio_vigencia_local` DATETIME NOT NULL,
+  `fh_inicio_vigencia_utc` DATETIME NOT NULL,
+  `fh_fin_vigencia_local` DATETIME NULL DEFAULT NULL,
+  `fh_fin_vigencia_utc` DATETIME NULL DEFAULT NULL,
+  `id_pedido` INT NOT NULL,
+  PRIMARY KEY (`id`),
+  INDEX `fk_ENRUTAMIENTO_PEDIDO1_idx` (`id_pedido` ASC) VISIBLE,
+  CONSTRAINT `fk_ENRUTAMIENTO_PEDIDO1`
+    FOREIGN KEY (`id_pedido`)
+    REFERENCES `morapack4d`.`PEDIDO` (`id`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION);
+
+
+-- -----------------------------------------------------
 -- Table `morapack4d`.`RUTA`
 -- -----------------------------------------------------
 DROP TABLE IF EXISTS `morapack4d`.`RUTA` ;
@@ -97,10 +120,10 @@ CREATE TABLE IF NOT EXISTS `morapack4d`.`RUTA` (
   `codigo` VARCHAR(30) NOT NULL,
   `duracion` DOUBLE NOT NULL,
   `distancia` DOUBLE NOT NULL,
-  `fecha_hora_salida_local` TIMESTAMP NOT NULL,
-  `fecha_hora_salida_utc` TIMESTAMP NOT NULL,
-  `fecha_hora_llegada_local` TIMESTAMP NOT NULL,
-  `fecha_hora_llegada_utc` TIMESTAMP NOT NULL,
+  `fh_salida_local` DATETIME NOT NULL,
+  `fh_salida_utc` DATETIME NOT NULL,
+  `fh_llegada_local` DATETIME NOT NULL,
+  `fh_llegada_utc` DATETIME NOT NULL,
   `tipo` ENUM('INTRACONTINENTAL', 'INTERCONTINENTAL') NOT NULL,
   `id_aeropuerto_origen` INT NOT NULL,
   `id_aeropuerto_destino` INT NOT NULL,
@@ -129,15 +152,15 @@ CREATE TABLE IF NOT EXISTS `morapack4d`.`LOTE` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `codigo` VARCHAR(30) NOT NULL,
   `tamanio` INT NOT NULL,
-  `id_pedido` INT NOT NULL,
+  `id_segmentacion` INT NOT NULL,
   `id_ruta` INT NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE INDEX `codigo_UNIQUE` (`codigo` ASC) VISIBLE,
-  INDEX `fk_LOTE_PEDIDO1_idx` (`id_pedido` ASC) VISIBLE,
+  INDEX `fk_LOTE_ENRUTAMIENTO1_idx` (`id_segmentacion` ASC) VISIBLE,
   INDEX `fk_LOTE_RUTA1_idx` (`id_ruta` ASC) VISIBLE,
-  CONSTRAINT `fk_LOTE_PEDIDO1`
-    FOREIGN KEY (`id_pedido`)
-    REFERENCES `morapack4d`.`PEDIDO` (`id`)
+  CONSTRAINT `fk_LOTE_ENRUTAMIENTO1`
+    FOREIGN KEY (`id_segmentacion`)
+    REFERENCES `morapack4d`.`SEGMENTACION` (`id`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
   CONSTRAINT `fk_LOTE_RUTA1`
@@ -155,10 +178,10 @@ DROP TABLE IF EXISTS `morapack4d`.`REGISTRO` ;
 CREATE TABLE IF NOT EXISTS `morapack4d`.`REGISTRO` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `codigo` VARCHAR(30) NOT NULL,
-  `fecha_hora_ingreso_local` TIMESTAMP NOT NULL,
-  `fecha_hora_ingreso_utc` TIMESTAMP NOT NULL,
-  `fecha_hora_egreso_local` TIMESTAMP NOT NULL,
-  `fecha_hora_egreso_utc` TIMESTAMP NOT NULL,
+  `fh_ingreso_local` DATETIME NOT NULL,
+  `fh_ingreso_utc` DATETIME NOT NULL,
+  `fh_egreso_local` DATETIME NOT NULL,
+  `fh_egreso_utc` DATETIME NOT NULL,
   `id_aeropuerto` INT NOT NULL,
   `id_lote` INT NOT NULL,
   PRIMARY KEY (`id`),
@@ -188,10 +211,10 @@ CREATE TABLE IF NOT EXISTS `morapack4d`.`PLAN` (
   `capacidad` INT NOT NULL,
   `duracion` DOUBLE NOT NULL,
   `distancia` DOUBLE NOT NULL,
-  `hora_salida_local` TIME NOT NULL,
-  `hora_salida_utc` TIME NOT NULL,
-  `hora_llegada_local` TIME NOT NULL,
-  `hora_llegada_utc` TIME NOT NULL,
+  `h_salida_local` TIME NOT NULL,
+  `h_salida_utc` TIME NOT NULL,
+  `h_llegada_local` TIME NOT NULL,
+  `h_llegada_utc` TIME NOT NULL,
   `id_aeropuerto_origen` INT NOT NULL,
   `id_aeropuerto_destino` INT NOT NULL,
   PRIMARY KEY (`id`),
@@ -219,10 +242,10 @@ CREATE TABLE IF NOT EXISTS `morapack4d`.`VUELO` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `codigo` VARCHAR(30) NOT NULL,
   `capacidad_disponible` INT NOT NULL,
-  `fecha_hora_salida_local` TIMESTAMP NOT NULL,
-  `fecha_hora_salida_utc` TIMESTAMP NOT NULL,
-  `fecha_hora_llegada_local` TIMESTAMP NOT NULL,
-  `fecha_hora_llegada_utc` TIMESTAMP NOT NULL,
+  `fh_salida_local` DATETIME NOT NULL,
+  `fh_salida_utc` DATETIME NOT NULL,
+  `fh_llegada_local` DATETIME NOT NULL,
+  `fh_llegada_utc` DATETIME NOT NULL,
   `id_plan` INT NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE INDEX `codigo_UNIQUE` (`codigo` ASC) VISIBLE,
@@ -258,29 +281,6 @@ CREATE TABLE IF NOT EXISTS `morapack4d`.`RUTA_POR_VUELO` (
 
 
 -- -----------------------------------------------------
--- Table `morapack4d`.`PEDIDO_POR_RUTA`
--- -----------------------------------------------------
-DROP TABLE IF EXISTS `morapack4d`.`PEDIDO_POR_RUTA` ;
-
-CREATE TABLE IF NOT EXISTS `morapack4d`.`PEDIDO_POR_RUTA` (
-  `id_pedido` INT NOT NULL,
-  `id_ruta` INT NOT NULL,
-  PRIMARY KEY (`id_pedido`, `id_ruta`),
-  INDEX `fk_PEDIDO_has_RUTA_RUTA1_idx` (`id_ruta` ASC) VISIBLE,
-  INDEX `fk_PEDIDO_has_RUTA_PEDIDO1_idx` (`id_pedido` ASC) VISIBLE,
-  CONSTRAINT `fk_PEDIDO_has_RUTA_PEDIDO1`
-    FOREIGN KEY (`id_pedido`)
-    REFERENCES `morapack4d`.`PEDIDO` (`id`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION,
-  CONSTRAINT `fk_PEDIDO_has_RUTA_RUTA1`
-    FOREIGN KEY (`id_ruta`)
-    REFERENCES `morapack4d`.`RUTA` (`id`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION);
-
-
--- -----------------------------------------------------
 -- Table `morapack4d`.`ADMINISTRADOR`
 -- -----------------------------------------------------
 DROP TABLE IF EXISTS `morapack4d`.`ADMINISTRADOR` ;
@@ -307,10 +307,10 @@ CREATE TABLE IF NOT EXISTS `morapack4d`.`PARAMETROS` (
   `max_dias_entrega_intercontinental` INT NOT NULL DEFAULT 3,
   `max_dias_entrega_intracontinental` INT NOT NULL DEFAULT 2,
   `max_horas_recojo` DOUBLE NOT NULL DEFAULT 2.0,
-  `min_horas_estancia` DOUBLE NOT NULL DEFAULT 1.0,
   `max_horas_estancia` DOUBLE NOT NULL DEFAULT 12.0,
-  `fecha_hora_inicio` TIMESTAMP NOT NULL DEFAULT '1999-12-31 23:59:59',
-  `fecha_hora_fin` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `min_horas_estancia` DOUBLE NOT NULL DEFAULT 1.0,
+  `fh_inicio_planificacion` DATETIME NOT NULL DEFAULT '1999-12-31 23:59:59',
+  `fh_fin_planificacion` DATETIME NOT NULL DEFAULT '2999-12-31 23:59:59',
   `d_min` DOUBLE NOT NULL DEFAULT 0.001,
   `i_max` INT NOT NULL DEFAULT 3,
   `ele_min` INT NOT NULL DEFAULT 1,
@@ -324,6 +324,32 @@ CREATE TABLE IF NOT EXISTS `morapack4d`.`PARAMETROS` (
   `f_de` DOUBLE NOT NULL DEFAULT 2000.0,
   `f_do` DOUBLE NOT NULL DEFAULT 3000.0,
   PRIMARY KEY (`id`));
+
+
+-- -----------------------------------------------------
+-- Table `morapack4d`.`EVENTO`
+-- -----------------------------------------------------
+DROP TABLE IF EXISTS `morapack4d`.`EVENTO` ;
+
+CREATE TABLE IF NOT EXISTS `morapack4d`.`EVENTO` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `codigo` VARCHAR(30) NOT NULL,
+  `tipo` ENUM('REPROGRAMACION', 'CANCELACION') NOT NULL DEFAULT 'CANCELACION',
+  `fh_inicio_evento` DATETIME NOT NULL,
+  `fh_fin_evento` DATETIME NOT NULL,
+  `h_salida_reprogramada_local` TIME NULL DEFAULT NULL,
+  `h_salida_reprogramada_utc` TIME NULL DEFAULT NULL,
+  `h_llegada_reprogramada_local` TIME NULL DEFAULT NULL,
+  `h_llegada_reprogramada_utc` TIME NULL DEFAULT NULL,
+  `id_plan` INT NOT NULL,
+  PRIMARY KEY (`id`),
+  INDEX `fk_EVENTO_PLAN1_idx` (`id_plan` ASC) VISIBLE,
+  UNIQUE INDEX `codigo_UNIQUE` (`codigo` ASC) VISIBLE,
+  CONSTRAINT `fk_EVENTO_PLAN1`
+    FOREIGN KEY (`id_plan`)
+    REFERENCES `morapack4d`.`PLAN` (`id`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION);
 
 
 SET SQL_MODE=@OLD_SQL_MODE;

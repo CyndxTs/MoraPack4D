@@ -52,7 +52,7 @@ public class PedidoMapper {
             lotePorRutaDTO.setLote(loteDTO);
             lotesPorRutaDTO.add(lotePorRutaDTO);
         }
-        dto.setLotesPorRuta(lotesPorRutaDTO);
+        // dto.setLotesPorRuta(lotesPorRutaDTO);
         poolDTO.put(algorithm.getCodigo(), dto);
         return dto;
     }
@@ -70,6 +70,7 @@ public class PedidoMapper {
         dto.setCodCliente(clienteEntity.getCodigo());
         AeropuertoEntity destinoEntity = entity.getDestino();
         dto.setCodDestino(destinoEntity.getCodigo());
+        /*
         List<LotePorRutaDTO> lotesPorRutaDTO = new ArrayList<>();
         List<LoteEntity> lotesEntity = entity.getLotes();
         for (LoteEntity loteEntity : lotesEntity) {
@@ -82,6 +83,7 @@ public class PedidoMapper {
         }
         dto.setLotesPorRuta(lotesPorRutaDTO);
         poolDTO.put(entity.getCodigo(), dto);
+        */
         return dto;
     }
 

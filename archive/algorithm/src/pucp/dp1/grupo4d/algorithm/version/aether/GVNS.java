@@ -20,7 +20,6 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.stream.Collectors;
-
 import pucp.dp1.grupo4d.algorithm.version.aether.enums.EstadoPedido;
 import pucp.dp1.grupo4d.algorithm.version.aether.enums.TipoRuta;
 import pucp.dp1.grupo4d.algorithm.version.aether.model.Aeropuerto;
