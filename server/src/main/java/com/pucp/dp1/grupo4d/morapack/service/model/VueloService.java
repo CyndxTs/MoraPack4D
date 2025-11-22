@@ -65,8 +65,8 @@ public class VueloService {
         return vueloRepository.findByCodigo(codigo).isPresent();
     }
 
-    public List<VueloEntity> findAllByDateTimeRange(LocalDateTime fechaHoraInicio, LocalDateTime fechaHoraFin, String tipoDePedidos) {
-        return  vueloRepository.findAllByDateTimeRange(fechaHoraInicio, fechaHoraFin, tipoDePedidos);
+    public List<VueloEntity> findAllByDateTimeRange(LocalDateTime fechaHoraInicio, LocalDateTime fechaHoraFin, String tipoEscenario) {
+        return  vueloRepository.findAllByDateTimeRange(fechaHoraInicio, fechaHoraFin, tipoEscenario);
     }
 
     public ListResponse listar(ListRequest request) {

@@ -77,8 +77,8 @@ public class PedidoService {
         return pedidoRepository.findByCodigo(codigo).isPresent();
     }
 
-    public List<PedidoEntity> findAllByDateTimeRange(LocalDateTime fechaHoraInicio, LocalDateTime fechaHoraFin, String tipoDePedidos) {
-        return  pedidoRepository.findAllByDateTimeRange(fechaHoraInicio, fechaHoraFin, tipoDePedidos);
+    public List<PedidoEntity> findAllByDateTimeRange(LocalDateTime fechaHoraInicio, LocalDateTime fechaHoraFin, String tipoEscenario) {
+        return  pedidoRepository.findAllByDateTimeRange(fechaHoraInicio, fechaHoraFin, tipoEscenario);
     }
 
     public List<PedidoEntity> findAllByDestino(AeropuertoEntity destino) {

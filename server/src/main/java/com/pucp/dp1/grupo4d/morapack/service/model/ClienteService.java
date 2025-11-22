@@ -77,8 +77,8 @@ public class ClienteService {
         return clienteRepository.findByCorreo(correo).isPresent();
     }
 
-    public List<ClienteEntity> findAllByDateTimeRange(LocalDateTime fechaHoraInicio, LocalDateTime fechaHoraFin, String tipoDePedidos) {
-        return  clienteRepository.findAllByDateTimeRange(fechaHoraInicio, fechaHoraFin, tipoDePedidos);
+    public List<ClienteEntity> findAllByDateTimeRange(LocalDateTime fechaHoraInicio, LocalDateTime fechaHoraFin, String tipoEscenario) {
+        return  clienteRepository.findAllByDateTimeRange(fechaHoraInicio, fechaHoraFin, tipoEscenario);
     }
 
     public ClienteEntity obtenerPorCodigo(String codigo) {

@@ -24,47 +24,32 @@ public class MonitorController {
     @Autowired
     private MonitorService monitorService;
 
-    @MessageMapping("/simularSemana")
+    @MessageMapping("/obtenerSimulacion")
     @SendTo("/topic/simulator")
-    public ResponseEntity<SolutionResponse> simularSemana(@RequestBody PlanificationRequest request) {
+    public SolutionResponse obtenerSimulacion(@RequestBody PlanificationRequest request) {
         try {
-            SolutionResponse response = monitorService.ejecutarAlgoritmo(request);
-            if (response.getSuccess()) {
-                return ResponseEntity.ok(response);
-            } else {
-                return ResponseEntity.badRequest().body(response);
-            }
+            return monitorService.ejecutarAlgoritmo(request);
         } catch (Exception e) {
-            return ResponseEntity.internalServerError().body(new SolutionResponse(false, "ERROR INTERNO: " + e.getMessage()));
+            return new SolutionResponse(false, "ERROR INTERNO: " + e.getMessage());
         }
     }
 
     @MessageMapping("/obtenerOperacion")
     @SendTo("/topic/operator")
-    public ResponseEntity<SolutionResponse> obtenerOperacion(OperationRequest request) {
+    public SolutionResponse obtenerOperacion(OperationRequest request) {
         try {
-            SolutionResponse response = monitorService.obtenerOperacion(request);
-            if (response.getSuccess()) {
-                return ResponseEntity.ok(response);
-            } else {
-                return ResponseEntity.badRequest().body(response);
-            }
+            return  monitorService.obtenerOperacion(request);
         } catch (Exception e) {
-            return ResponseEntity.internalServerError().body(new SolutionResponse(false, "ERROR EN EL ENVÍO."));
+            return new SolutionResponse(false, "ERROR EN EL ENVÍO.");
         }
     }
 
     @MessageMapping("/replanificarOperacion")
-    public ResponseEntity<GenericResponse> replanificarOperacion(@RequestBody PlanificationRequest request) {
+    public GenericResponse replanificarOperacion(@RequestBody PlanificationRequest request) {
         try {
-            SolutionResponse response = monitorService.ejecutarAlgoritmo(request);
-            if (response.getSuccess()) {
-                return ResponseEntity.ok(response);
-            } else {
-                return ResponseEntity.badRequest().body(response);
-            }
+            return monitorService.ejecutarAlgoritmo(request);
         } catch (Exception e) {
-            return ResponseEntity.internalServerError().body(new SolutionResponse(false, "ERROR INTERNO: " + e.getMessage()));
+            return new SolutionResponse(false, "ERROR INTERNO: " + e.getMessage());
         }
     }
 }

@@ -262,18 +262,18 @@ public class MonitorService {
     }
 
     private SolutionResponse devolverSolucion(LocalDateTime fechaHoraInicio, LocalDateTime fechaHoraFin) {
-        String tipoDePedidos = "OPERACION";
+        String tipoEscenario = "OPERACION";
         List<PedidoDTO> pedidosDTO = new ArrayList<>();
-        List<PedidoEntity> pedidosEntity = pedidoService.findAllByDateTimeRange(fechaHoraInicio, fechaHoraFin, tipoDePedidos);
+        List<PedidoEntity> pedidosEntity = pedidoService.findAllByDateTimeRange(fechaHoraInicio, fechaHoraFin, tipoEscenario);
         pedidosEntity.forEach(p -> pedidosDTO.add(pedidoMapper.toDTO(p)));
         List<AeropuertoDTO> aeropuertosDTO = new ArrayList<>();
         List<AeropuertoEntity> aeropuertosEntity = aeropuertoService.findAll();
         aeropuertosEntity.forEach(a ->  aeropuertosDTO.add(aeropuertoMapper.toDTO(a)));
         List<VueloDTO> vuelosDTO = new ArrayList<>();
-        List<VueloEntity> vuelosEntity = vueloService.findAllByDateTimeRange(fechaHoraInicio, fechaHoraFin, tipoDePedidos);
+        List<VueloEntity> vuelosEntity = vueloService.findAllByDateTimeRange(fechaHoraInicio, fechaHoraFin, tipoEscenario);
         vuelosEntity.forEach(v -> vuelosDTO.add(vueloMapper.toDTO(v)));
         List<RutaDTO> rutasDTO = new ArrayList<>();
-        List<RutaEntity> rutasEntity = rutaService.findAllByDateTimeRange(fechaHoraInicio, fechaHoraFin, tipoDePedidos);
+        List<RutaEntity> rutasEntity = rutaService.findAllByDateTimeRange(fechaHoraInicio, fechaHoraFin, tipoEscenario);
         rutasEntity.forEach(r -> rutasDTO.add(rutaMapper.toDTO(r)));
         limpiarPools();
         return new SolutionResponse(true, "Simulación correctamente enviada!", pedidosDTO, aeropuertosDTO, vuelosDTO, rutasDTO);

@@ -45,11 +45,11 @@ public interface ClienteRepository extends JpaRepository<ClienteEntity, Integer>
         SELECT DISTINCT c
         FROM ClienteEntity c
         JOIN c.pedidos p
-        WHERE (p.fechaHoraGeneracionUTC BETWEEN :fechaHoraInicio AND :fechaHoraFin) AND p.tipo = :tipoDePedidos
+        WHERE (p.fechaHoraGeneracionUTC BETWEEN :fechaHoraInicio AND :fechaHoraFin) AND p.tipoEscenario = :tipoEscenario
     """)
     List<ClienteEntity> findAllByDateTimeRange(
             @Param("fechaHoraInicio") LocalDateTime fechaHoraInicio,
             @Param("fechaHoraFin") LocalDateTime fechaHoraFin,
-            @Param("tipoDePedidos") String tipoDePedidos
+            @Param("tipoDePedidos") String tipoEscenario
     );
 }

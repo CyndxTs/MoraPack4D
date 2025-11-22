@@ -28,10 +28,10 @@ public class EventoEntity {
     @Column(nullable = false)
     private TipoEvento tipo = TipoEvento.CANCELACION;
 
-    @Column(name = "fh_inicio_evento", nullable = false)
+    @Column(name = "fh_inicio", nullable = false)
     private LocalDateTime fechaHoraInicio;
 
-    @Column(name = "fh_fin_evento", nullable = false)
+    @Column(name = "fh_fin", nullable = false)
     private LocalDateTime fechaHoraFin;
 
     @Column(name = "h_salida_reprogramada_local")

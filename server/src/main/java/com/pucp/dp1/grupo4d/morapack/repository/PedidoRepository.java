@@ -25,11 +25,11 @@ public interface PedidoRepository extends JpaRepository<PedidoEntity, Integer> {
     @Query("""
         SELECT p
         FROM PedidoEntity p
-        WHERE (p.fechaHoraGeneracionUTC BETWEEN :fechaHoraInicio AND :fechaHoraFin) AND p.tipo = :tipoDePedidos
+        WHERE (p.fechaHoraGeneracionUTC BETWEEN :fechaHoraInicio AND :fechaHoraFin) AND p.tipoEscenario = :tipoEscenario
     """)
     List<PedidoEntity> findAllByDateTimeRange(
             @Param("fechaHoraInicio") LocalDateTime fechaHoraInicio,
             @Param("fechaHoraFin") LocalDateTime fechaHoraFin,
-            @Param("tipoDePedidos")  String tipoDePedidos
+            @Param("tipoDePedidos")  String tipoEscenario
     );
 }

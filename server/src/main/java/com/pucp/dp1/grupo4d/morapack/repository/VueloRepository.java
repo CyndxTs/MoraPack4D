@@ -27,11 +27,11 @@ public interface VueloRepository extends JpaRepository<VueloEntity, Integer> {
         JOIN r.lotes l
         JOIN l.segmentacion s
         JOIN s.pedido p
-        WHERE (p.fechaHoraGeneracionUTC BETWEEN :fechaHoraInicio AND :fechaHoraFin) AND p.tipo = :tipoDePedidos
+        WHERE (p.fechaHoraGeneracionUTC BETWEEN :fechaHoraInicio AND :fechaHoraFin) AND p.tipoEscenario = :tipoEscenario
     """)
     List<VueloEntity> findAllByDateTimeRange(
             @Param("fechaHoraInicio") LocalDateTime fechaHoraInicio,
             @Param("fechaHoraFin") LocalDateTime fechaHoraFin,
-            @Param("TipoDePedidos") String tipoDePedidos
+            @Param("TipoDePedidos") String tipoEscenario
     );
 }
