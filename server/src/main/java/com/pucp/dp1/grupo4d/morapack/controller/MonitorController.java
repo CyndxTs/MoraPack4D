@@ -50,7 +50,6 @@ public class MonitorController {
                 return ResponseEntity.badRequest().body(response);
             }
         } catch (Exception e) {
-            e.printStackTrace();
             return ResponseEntity.internalServerError().body(new SolutionResponse(false, "ERROR EN EL ENVÍO."));
         }
     }

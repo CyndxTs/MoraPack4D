@@ -17,6 +17,7 @@ import com.pucp.dp1.grupo4d.morapack.model.dto.request.OperationRequest;
 import com.pucp.dp1.grupo4d.morapack.model.dto.request.PlanificationRequest;
 import com.pucp.dp1.grupo4d.morapack.model.dto.response.SolutionResponse;
 import com.pucp.dp1.grupo4d.morapack.model.entity.*;
+import com.pucp.dp1.grupo4d.morapack.model.enums.TipoEscenario;
 import com.pucp.dp1.grupo4d.morapack.service.model.*;
 import com.pucp.dp1.grupo4d.morapack.util.G4D;
 import jakarta.transaction.Transactional;
@@ -25,7 +26,6 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 @Service
 public class MonitorService {
@@ -98,20 +98,19 @@ public class MonitorService {
 
     public SolutionResponse ejecutarAlgoritmo(PlanificationRequest request) {
         try {
-            boolean guardarPlanificacion = request.getGuardarPlanificacion();
+            TipoEscenario escenario = G4D.toAdmissibleValue(request.getEscenario(), TipoEscenario.class);
+            boolean guardarPlanificacion = switch (escenario) {
+                case OPERACION -> true;
+                case SIMULACION -> false;
+            };
             ParametrosDTO parametrosDTO = request.getParameters();
             if(request.getConsiderarDesfaseTemporal()) {
                 int desfaseTemporal = Math.max(parametrosDTO.getMaxDiasEntregaIntracontinental(), parametrosDTO.getMaxDiasEntregaIntercontinental());
-                parametrosDTO.setFechaHoraInicioPlanificacion(G4D.toDisplayString(G4D.toDateTime(parametrosDTO.getFechaHoraInicioPlanificacion()).minusDays(desfaseTemporal)));
-                parametrosDTO.setFechaHoraFinPlanificacion(G4D.toDisplayString(G4D.toDateTime(parametrosDTO.getFechaHoraFinPlanificacion()).plusDays(desfaseTemporal)));
+                parametrosDTO.setFechaHoraInicio(G4D.toDisplayString(G4D.toDateTime(parametrosDTO.getFechaHoraInicio()).minusDays(desfaseTemporal)));
             }
-            Problematica.LIMITE_REPLANIFICACION = G4D.toDateTime(request.getUmbralDeReplanificacion());
-            Problematica.TIPO_DE_PEDIDOS = request.getTipoDePedidos().toUpperCase();
+            Problematica.INICIO_REPLANIFICACION = Problematica.INICIO_PLANIFICACION.plusMinutes(request.getUmbralFijo());
+            Problematica.ESCENARIO = request.getEscenario().toUpperCase();
             parametrosMapper.toAlgorithm(parametrosDTO);
-            if(request.getGuardarParametrizacion()) {
-                ParametrosEntity parametrosEntity = parametrosMapper.toEntity(parametrosDTO);
-                parametrosService.save(parametrosEntity);
-            }
             Problematica problematica = new Problematica();
             problematica.cargarDatos(
                     aeropuertoService, aeropuertoAdapter,
@@ -132,7 +131,6 @@ public class MonitorService {
             }
             return devolverSolucion(solucion);
         } catch(Exception e) {
-            e.printStackTrace();
             return new SolutionResponse(false, "ERROR - PLANIFICACIÓN: " + e.getMessage());
         } finally {
             limpiarPools();

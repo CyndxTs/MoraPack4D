@@ -8,7 +8,7 @@ package com.pucp.dp1.grupo4d.morapack.model.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.pucp.dp1.grupo4d.morapack.model.enums.EstadoPedido;
-import com.pucp.dp1.grupo4d.morapack.model.enums.TipoPedido;
+import com.pucp.dp1.grupo4d.morapack.model.enums.TipoEscenario;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -47,7 +47,7 @@ public class PedidoEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private TipoPedido tipo = TipoPedido.SIMULACION;
+    private TipoEscenario tipoEscenario = TipoEscenario.SIMULACION;
 
     @ManyToOne
     @JoinColumn(name = "id_cliente", nullable = false)
@@ -91,8 +91,8 @@ public class PedidoEntity {
     public void setFechaHoraExpiracionUTC(LocalDateTime fechaHoraExpiracionUTC) { this.fechaHoraExpiracionUTC = fechaHoraExpiracionUTC; }
     public EstadoPedido getEstado() { return estado; }
     public void setEstado(EstadoPedido estado) { this.estado = estado; }
-    public TipoPedido getTipo() { return tipo; }
-    public void setTipo(TipoPedido tipo) { this.tipo = tipo; }
+    public TipoEscenario getTipoEscenario() { return tipoEscenario; }
+    public void setTipo(TipoEscenario tipoEscenario) { this.tipoEscenario = tipoEscenario; }
     public ClienteEntity getCliente() { return cliente; }
     public void setCliente(ClienteEntity cliente) { this.cliente = cliente; }
     public AeropuertoEntity getDestino() { return destino; }

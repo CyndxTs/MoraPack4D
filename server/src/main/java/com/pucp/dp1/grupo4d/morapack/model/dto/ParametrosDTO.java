@@ -18,8 +18,8 @@ public class ParametrosDTO implements DTO {
     private Double maxHorasRecojo;
     private Double minHorasEstancia;
     private Double maxHorasEstancia;
-    private String fechaHoraInicioPlanificacion;
-    private String fechaHoraFinPlanificacion;
+    private String fechaHoraInicio;
+    private String fechaHoraFin;
     private List<String> codOrigenes = new ArrayList<>();
 
     @JsonProperty("dMin")

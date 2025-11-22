@@ -6,6 +6,7 @@
 
 package com.pucp.dp1.grupo4d.morapack.repository;
 
+import com.pucp.dp1.grupo4d.morapack.model.entity.AeropuertoEntity;
 import com.pucp.dp1.grupo4d.morapack.model.entity.PedidoEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -18,6 +19,7 @@ import java.util.Optional;
 @Repository
 public interface PedidoRepository extends JpaRepository<PedidoEntity, Integer> {
     Optional<PedidoEntity> findByCodigo(String codigo);
+    List<PedidoEntity> findAllByDestino(AeropuertoEntity destino);
 
     // Listar todos los pedidos dentro de rango temporal
     @Query("""

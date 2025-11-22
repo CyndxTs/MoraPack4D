@@ -79,7 +79,6 @@ public class EventoService {
         }
     }
 
-
     public void clearPools() {
         eventos.clear();
         eventoMapper.clearPools();

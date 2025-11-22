@@ -11,10 +11,8 @@ import lombok.Data;
 
 @Data
 public class PlanificationRequest {
-    private String tipoDePedidos;
-    private String umbralDeReplanificacion;
-    private Boolean guardarPlanificacion;
+    private String escenario;
+    private Long umbralFijo;
     private Boolean considerarDesfaseTemporal;
-    private Boolean guardarParametrizacion;
     private ParametrosDTO parameters;
 }
