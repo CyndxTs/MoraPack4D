@@ -8,39 +8,30 @@
 package pucp.dp1.grupo4d.algorithm.version.aether.model;
 
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import pucp.dp1.grupo4d.algorithm.version.aether.enums.TipoEvento;
 import pucp.dp1.grupo4d.util.G4D;
 
 public class Evento {
     private String codigo;
     private TipoEvento tipo;
-    private LocalDateTime fechaHoraInicioLocal;
-    private LocalDateTime fechaHoraInicioUTC;
-    private LocalDateTime fechaHoraFinLocal;
-    private LocalDateTime fechaHoraFinUTC;
-    private LocalTime horaSalidaReprogramadaLocal;
-    private LocalTime horaSalidaReprogramadaUTC;
-    private LocalTime horaLlegadaReprogramadaLocal;
-    private LocalTime horaLlegadaReprogramadaUTC;
+    private LocalDateTime fechaHoraInicio;
+    private LocalDateTime fechaHoraFin;
+    private LocalDateTime fechaHoraSalida;
+    private LocalDateTime fechaHoraLlegada;
 
     public Evento() {
         this.codigo = G4D.Generator.getUniqueString("EVE");
-        this.tipo = TipoEvento.REPROGRAMACION;
+        this.tipo = TipoEvento.CANCELACION;
     }
 
     public Evento replicar() {
         Evento evento = new Evento();
         evento.codigo = this.codigo;
         evento.tipo = this.tipo;
-        evento.fechaHoraInicioLocal = this.fechaHoraInicioLocal;
-        evento.fechaHoraInicioUTC = this.fechaHoraInicioUTC;
-        evento.fechaHoraFinLocal = this.fechaHoraFinLocal;
-        evento.fechaHoraFinUTC = this.fechaHoraFinUTC;
-        evento.horaSalidaReprogramadaLocal = this.horaSalidaReprogramadaLocal;
-        evento.horaSalidaReprogramadaUTC = this.horaSalidaReprogramadaUTC;
-        evento.horaLlegadaReprogramadaLocal = this.horaLlegadaReprogramadaLocal;
-        evento.horaLlegadaReprogramadaUTC = this.horaLlegadaReprogramadaUTC;
+        evento.fechaHoraInicio = this.fechaHoraInicio;
+        evento.fechaHoraFin = this.fechaHoraFin;
+        evento.fechaHoraSalida = this.fechaHoraSalida;
+        evento.fechaHoraLlegada = this.fechaHoraLlegada;
         return evento;
     }
 
@@ -48,7 +39,6 @@ public class Evento {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-
         Evento that = (Evento) o;
         return codigo != null && codigo.equals(that.codigo);
     }
@@ -74,67 +64,35 @@ public class Evento {
         this.tipo = tipo;
     }
 
-    public LocalDateTime getFechaHoraInicioLocal() {
-        return fechaHoraInicioLocal;
+    public LocalDateTime getFechaHoraInicio() {
+        return fechaHoraInicio;
     }
 
-    public void setFechaHoraInicioLocal(LocalDateTime fechaHInicioLocal) {
-        this.fechaHoraInicioLocal = fechaHInicioLocal;
+    public void setFechaHoraInicio(LocalDateTime fechaHoraInicio) {
+        this.fechaHoraInicio = fechaHoraInicio;
     }
 
-    public LocalDateTime getFechaHoraInicioUTC() {
-        return fechaHoraInicioUTC;
+    public LocalDateTime getFechaHoraFin() {
+        return fechaHoraFin;
     }
 
-    public void setFechaHoraInicioUTC(LocalDateTime fechaHoraInicioUTC) {
-        this.fechaHoraInicioUTC = fechaHoraInicioUTC;
+    public void setFechaHoraFin(LocalDateTime fechaHoraFin) {
+        this.fechaHoraFin = fechaHoraFin;
     }
 
-    public LocalDateTime getFechaHoraFinLocal() {
-        return fechaHoraFinLocal;
+    public LocalDateTime getFechaHoraSalida() {
+        return fechaHoraSalida;
     }
 
-    public void setFechaHoraFinLocal(LocalDateTime fechaHoraFinLocal) {
-        this.fechaHoraFinLocal = fechaHoraFinLocal;
+    public void setFechaHoraSalida(LocalDateTime fechaHoraSalida) {
+        this.fechaHoraSalida = fechaHoraSalida;
     }
 
-    public LocalDateTime getFechaHoraFinUTC() {
-        return fechaHoraFinUTC;
+    public LocalDateTime getFechaHoraLlegada() {
+        return fechaHoraLlegada;
     }
 
-    public void setFechaHoraFinUTC(LocalDateTime fechaHoraFinUTC) {
-        this.fechaHoraFinUTC = fechaHoraFinUTC;
-    }
-
-    public LocalTime getHoraSalidaReprogramadaLocal() {
-        return horaSalidaReprogramadaLocal;
-    }
-
-    public void setHoraSalidaReprogramadaLocal(LocalTime horaSalidaReprogramadaLocal) {
-        this.horaSalidaReprogramadaLocal = horaSalidaReprogramadaLocal;
-    }
-
-    public LocalTime getHoraSalidaReprogramadaUTC() {
-        return horaSalidaReprogramadaUTC;
-    }
-
-    public void setHoraSalidaReprogramadaUTC(LocalTime horaSalidaReprogramadaUTC) {
-        this.horaSalidaReprogramadaUTC = horaSalidaReprogramadaUTC;
-    }
-
-    public LocalTime getHoraLlegadaReprogramadaLocal() {
-        return horaLlegadaReprogramadaLocal;
-    }
-
-    public void setHoraLlegadaReprogramadaLocal(LocalTime horaLlegadaReprogramadaLocal) {
-        this.horaLlegadaReprogramadaLocal = horaLlegadaReprogramadaLocal;
-    }
-
-    public LocalTime getHoraLlegadaReprogramadaUTC() {
-        return horaLlegadaReprogramadaUTC;
-    }
-
-    public void setHoraLlegadaReprogramadaUTC(LocalTime horaLlegadaReprogramadaUTC) {
-        this.horaLlegadaReprogramadaUTC = horaLlegadaReprogramadaUTC;
+    public void setFechaHoraLlegada(LocalDateTime fechaHoraLlegada) {
+        this.fechaHoraLlegada = fechaHoraLlegada;
     }
 }

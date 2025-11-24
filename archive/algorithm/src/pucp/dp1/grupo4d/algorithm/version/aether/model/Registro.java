@@ -13,10 +13,8 @@ import pucp.dp1.grupo4d.util.G4D;
 
 public class Registro {
     private String codigo;
-    private LocalDateTime fechaHoraIngresoLocal;
-    private LocalDateTime fechaHoraIngresoUTC;
-    private LocalDateTime fechaHoraEgresoLocal;
-    private LocalDateTime fechaHoraEgresoUTC;
+    private LocalDateTime fechaHoraIngreso;
+    private LocalDateTime fechaHoraEgreso;
     private Lote lote;
 
     public Registro() {
@@ -26,10 +24,8 @@ public class Registro {
     public Registro replicar(Map<String, Lote> poolLotes) {
         Registro registro = new Registro();
         registro.codigo = this.codigo;
-        registro.fechaHoraIngresoLocal = this.fechaHoraIngresoLocal;
-        registro.fechaHoraIngresoUTC = this.fechaHoraIngresoUTC;
-        registro.fechaHoraEgresoLocal = this.fechaHoraEgresoLocal;
-        registro.fechaHoraEgresoUTC = this.fechaHoraEgresoUTC;
+        registro.fechaHoraIngreso = this.fechaHoraIngreso;
+        registro.fechaHoraEgreso = this.fechaHoraEgreso;
         registro.lote = (this.lote != null) ? poolLotes.computeIfAbsent(this.lote.getCodigo(), codigo -> this.lote.replicar()) : null;
         return registro;
     }
@@ -55,36 +51,20 @@ public class Registro {
         this.codigo = codigo;
     }
 
-    public LocalDateTime getFechaHoraIngresoLocal() {
-        return fechaHoraIngresoLocal;
+    public LocalDateTime getFechaHoraIngreso() {
+        return fechaHoraIngreso;
     }
 
-    public void setFechaHoraIngresoLocal(LocalDateTime fechaHoraIngresoLocal) {
-        this.fechaHoraIngresoLocal = fechaHoraIngresoLocal;
+    public void setFechaHoraIngreso(LocalDateTime fechaHoraIngreso) {
+        this.fechaHoraIngreso = fechaHoraIngreso;
     }
 
-    public LocalDateTime getFechaHoraIngresoUTC() {
-        return fechaHoraIngresoUTC;
+    public LocalDateTime getFechaHoraEgreso() {
+        return fechaHoraEgreso;
     }
 
-    public void setFechaHoraIngresoUTC(LocalDateTime fechaHoraIngresoUTC) {
-        this.fechaHoraIngresoUTC = fechaHoraIngresoUTC;
-    }
-
-    public LocalDateTime getFechaHoraEgresoLocal() {
-        return fechaHoraEgresoLocal;
-    }
-
-    public void setFechaHoraEgresoLocal(LocalDateTime fechaHoraEgresoLocal) {
-        this.fechaHoraEgresoLocal = fechaHoraEgresoLocal;
-    }
-
-    public LocalDateTime getFechaHoraEgresoUTC() {
-        return fechaHoraEgresoUTC;
-    }
-
-    public void setFechaHoraEgresoUTC(LocalDateTime fechaHoraEgresoUTC) {
-        this.fechaHoraEgresoUTC = fechaHoraEgresoUTC;
+    public void setFechaHoraEgreso(LocalDateTime fechaHoraEgreso) {
+        this.fechaHoraEgreso = fechaHoraEgreso;
     }
 
     public Lote getLote() {

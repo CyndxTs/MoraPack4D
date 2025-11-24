@@ -19,43 +19,39 @@ import pucp.dp1.grupo4d.util.G4D;
 public class Pedido {
     private String codigo;
     private Integer cantidadSolicitada;
-    private LocalDateTime fechaHoraGeneracionLocal;
-    private LocalDateTime fechaHoraGeneracionUTC;
-    private LocalDateTime fechaHoraExpiracionLocal;
-    private LocalDateTime fechaHoraExpiracionUTC;
+    private LocalDateTime fechaHoraGeneracion;
+    private LocalDateTime fechaHoraExpiracion;
+    private EstadoPedido estado;
     private Cliente cliente;
     private Aeropuerto destino;
-    private EstadoPedido estado;
-    private List<Enrutamiento> enrutamientos;
+    private List<Segmentacion> segmentaciones;
 
     public Pedido() {
         this.codigo = G4D.Generator.getUniqueString("PED");
         this.cantidadSolicitada = 0;
         this.estado = EstadoPedido.NO_ATENDIDO;
-        this.enrutamientos = new ArrayList<>();
+        this.segmentaciones = new ArrayList<>();
     }
 
     public Pedido replicar(Map<String, Cliente> poolClientes, Map<String,Aeropuerto> poolAeropuertos, Map<String, Lote> poolLotes, Map<String, Ruta> poolRutas, Map<String,Vuelo> poolVuelos, Map<String, Plan> poolPlanes) {
         Pedido pedido = new Pedido();
         pedido.codigo = this.codigo;
-        pedido.cliente = (this.cliente != null) ? poolClientes.computeIfAbsent(this.cliente.getCodigo(), codigo -> this.cliente.replicar()) : null;
         pedido.cantidadSolicitada = this.cantidadSolicitada;
-        pedido.fechaHoraGeneracionLocal = this.fechaHoraGeneracionLocal;
-        pedido.fechaHoraGeneracionUTC = this.fechaHoraGeneracionUTC;
-        pedido.fechaHoraExpiracionLocal = this.fechaHoraExpiracionLocal;
-        pedido.fechaHoraExpiracionUTC = this.fechaHoraExpiracionUTC;
-        pedido.destino = (this.destino != null) ? poolAeropuertos.computeIfAbsent(this.destino.getCodigo(), codigo -> this.destino.replicar(poolLotes)) : null;
+        pedido.fechaHoraGeneracion = this.fechaHoraGeneracion;
+        pedido.fechaHoraExpiracion = this.fechaHoraExpiracion;
         pedido.estado = this.estado;
-        this.enrutamientos.forEach(e -> pedido.enrutamientos.add(e.replicar(poolAeropuertos, poolLotes, poolRutas, poolVuelos, poolPlanes)));
+        pedido.cliente = (this.cliente != null) ? poolClientes.computeIfAbsent(this.cliente.getCodigo(), codigo -> this.cliente.replicar()) : null;
+        pedido.destino = (this.destino != null) ? poolAeropuertos.computeIfAbsent(this.destino.getCodigo(), codigo -> this.destino.replicar(poolLotes)) : null;
+        this.segmentaciones.forEach(s -> pedido.segmentaciones.add(s.replicar(poolAeropuertos, poolLotes, poolRutas, poolVuelos, poolPlanes)));
         return pedido;
     }
 
-    public Enrutamiento obtenerEnrutamientoVigente() {
-        return this.enrutamientos.stream().filter(e -> e.getFechaHoraFinVigenciaUTC() == null).findFirst().orElse(null);
+    public Segmentacion obtenerSegementacionVigente() {
+        return (!this.segmentaciones.isEmpty()) ? this.segmentaciones.getLast() : null;
     }
 
     public Integer obtenerCantidadDeProductosEnRuta(Ruta ruta) {
-        Lote lote = obtenerEnrutamientoVigente().getLotesPorRuta().get(ruta);
+        Lote lote = obtenerSegementacionVigente().getLotesPorRuta().get(ruta);
         return (lote != null) ? lote.getTamanio() : 0;
     }
 
@@ -96,59 +92,26 @@ public class Pedido {
         this.cantidadSolicitada = cantidadSolicitada;
     }
 
-    public LocalDateTime getFechaHoraGeneracionLocal() {
-        return fechaHoraGeneracionLocal;
+    public LocalDateTime getFechaHoraGeneracion() {
+        return fechaHoraGeneracion;
     }
 
-    public void setFechaHoraGeneracionLocal() {
-        this.fechaHoraGeneracionLocal = G4D.toLocal(this.fechaHoraGeneracionUTC, this.destino.getHusoHorario());
+    public void setFechaHoraGeneracion(LocalDateTime fechaHoraGeneracion) {
+        this.fechaHoraGeneracion = fechaHoraGeneracion;
     }
 
-    public void setFechaHoraGeneracionLocal(LocalDateTime fechaHoraGeneracionLocal) {
-        this.fechaHoraGeneracionLocal = fechaHoraGeneracionLocal;
-    }
-
-    public LocalDateTime getFechaHoraGeneracionUTC() {
-        return fechaHoraGeneracionUTC;
-    }
-
-    public void setFechaHoraGeneracionUTC() {
-        this.fechaHoraGeneracionUTC = G4D.toUTC(this.fechaHoraGeneracionLocal, this.destino.getHusoHorario());
-    }
-
-    public void setFechaHoraGeneracionUTC(LocalDateTime fechaHoraGeneracionUTC) {
-        this.fechaHoraGeneracionUTC = fechaHoraGeneracionUTC;
+    public LocalDateTime getFechaHoraExpiracion() {
+        return fechaHoraExpiracion;
     }
 
     public void setFechaHoraExpiracion() {
-        boolean tieneIntercontinental = this.obtenerEnrutamientoVigente().getLotesPorRuta().keySet().stream().anyMatch(r -> r.getTipo().equals(TipoRuta.INTERCONTINENTAL));
+        boolean tieneIntercontinental = this.obtenerSegementacionVigente().getLotesPorRuta().keySet().stream().anyMatch(r -> r.getTipo().equals(TipoRuta.INTERCONTINENTAL));
         TipoRuta tipo = tieneIntercontinental ? TipoRuta.INTERCONTINENTAL : TipoRuta.INTRACONTINENTAL;
-        this.fechaHoraExpiracionUTC = this.fechaHoraGeneracionUTC.plusMinutes(tipo.getMaxMinutosParaEntrega());
-        this.setFechaHoraExpiracionLocal();
+        this.fechaHoraExpiracion = this.fechaHoraGeneracion.plusMinutes(tipo.getMaxMinutosParaEntrega());
     }
 
-    public LocalDateTime getFechaHoraExpiracionLocal() {
-        return fechaHoraExpiracionLocal;
-    }
-
-    public void setFechaHoraExpiracionLocal() {
-        this.fechaHoraExpiracionLocal = G4D.toLocal(this.fechaHoraExpiracionUTC, this.destino.getHusoHorario());
-    }
-
-    public void setFechaHoraExpiracionLocal(LocalDateTime fechaHoraExpiracionLocal) {
-        this.fechaHoraExpiracionLocal = fechaHoraExpiracionLocal;
-    }
-
-    public LocalDateTime getFechaHoraExpiracionUTC() {
-        return fechaHoraExpiracionUTC;
-    }
-
-    public void setFechaHoraExpiracionUTC() {
-        this.fechaHoraExpiracionUTC = G4D.toUTC(this.fechaHoraExpiracionLocal, this.destino.getHusoHorario());
-    }
-
-    public void setFechaHoraExpiracionUTC(LocalDateTime fechaHoraExpiracionUTC) {
-        this.fechaHoraExpiracionUTC = fechaHoraExpiracionUTC;
+    public void setFechaHoraExpiracion(LocalDateTime fechaHoraExpiracion) {
+        this.fechaHoraExpiracion = fechaHoraExpiracion;
     }
 
     public Aeropuerto getDestino() {
@@ -165,5 +128,13 @@ public class Pedido {
 
     public void setEstado(EstadoPedido estado) {
         this.estado = estado;
+    }
+
+    public List<Segmentacion> getSegmentaciones() {
+        return segmentaciones;
+    }
+
+    public void setSegmentaciones(List<Segmentacion> segmentaciones) {
+        this.segmentaciones = segmentaciones;
     }
 }

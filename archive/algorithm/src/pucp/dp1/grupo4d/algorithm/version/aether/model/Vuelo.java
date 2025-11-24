@@ -14,10 +14,8 @@ import pucp.dp1.grupo4d.util.G4D;
 public class Vuelo {
     private String codigo;
     private Integer capacidadDisponible;
-    private LocalDateTime fechaHoraSalidaLocal;
-    private LocalDateTime fechaHoraSalidaUTC;
-    private LocalDateTime fechaHoraLlegadaLocal;
-    private LocalDateTime fechaHoraLlegadaUTC;
+    private LocalDateTime fechaHoraSalida;
+    private LocalDateTime fechaHoraLlegada;
     private Plan plan;
 
     public Vuelo() {
@@ -29,20 +27,16 @@ public class Vuelo {
         Vuelo vuelo = new Vuelo();
         vuelo.codigo = this.codigo;
         vuelo.capacidadDisponible = this.capacidadDisponible;
-        vuelo.fechaHoraSalidaLocal = this.fechaHoraSalidaLocal;
-        vuelo.fechaHoraSalidaUTC = this.fechaHoraSalidaUTC;
-        vuelo.fechaHoraLlegadaLocal = this.fechaHoraLlegadaLocal;
-        vuelo.fechaHoraLlegadaUTC = this.fechaHoraLlegadaUTC;
+        vuelo.fechaHoraSalida = this.fechaHoraSalida;
+        vuelo.fechaHoraLlegada = this.fechaHoraLlegada;
         vuelo.plan = (this.plan != null) ? poolPlanes.computeIfAbsent(this.plan.getCodigo(), codigo -> this.plan.replicar(poolAeropuertos, poolLotes)) : null;
         return vuelo;
     }
 
     public void instanciarHorarios(LocalDateTime fechaHoraReferencia) {
-        LocalDateTime[] rangoUTC = G4D.getDateTimeRange(this.plan.getHoraSalidaUTC(), this.plan.getHoraLlegadaUTC(), fechaHoraReferencia);
-        this.fechaHoraSalidaUTC = rangoUTC[0];
-        this.setFechaHoraSalidaLocal();
-        this.fechaHoraLlegadaUTC = rangoUTC[1];
-        this.setFechaHoraLlegadaLocal();
+        LocalDateTime[] rangoUTC = G4D.getDateTimeRange(this.plan.getHoraSalida(), this.plan.getHoraLlegada(), fechaHoraReferencia);
+        this.fechaHoraSalida = rangoUTC[0];
+        this.fechaHoraLlegada = rangoUTC[1];
     }
 
     @Override
@@ -74,52 +68,20 @@ public class Vuelo {
         this.capacidadDisponible = capacidadDisponible;
     }
 
-    public LocalDateTime getFechaHoraSalidaLocal() {
-        return fechaHoraSalidaLocal;
+    public LocalDateTime getFechaHoraSalida() {
+        return fechaHoraSalida;
     }
 
-    public void setFechaHoraSalidaLocal() {
-        this.fechaHoraSalidaLocal = G4D.toLocal(this.fechaHoraSalidaUTC, this.plan.getOrigen().getHusoHorario());
+    public void setFechaHoraSalida(LocalDateTime fechaHoraSalida) {
+        this.fechaHoraSalida = fechaHoraSalida;
     }
 
-    public void setFechaHoraSalidaLocal(LocalDateTime fechaHoraSalidaLocal) {
-        this.fechaHoraSalidaLocal = fechaHoraSalidaLocal;
+    public LocalDateTime getFechaHoraLlegada() {
+        return fechaHoraLlegada;
     }
 
-    public LocalDateTime getFechaHoraSalidaUTC() {
-        return fechaHoraSalidaUTC;
-    }
-
-    public void setFechaHoraSalidaUTC() {
-        this.fechaHoraSalidaUTC = G4D.toUTC(this.fechaHoraSalidaLocal, this.plan.getOrigen().getHusoHorario());
-    }
-
-    public void setFechaHoraSalidaUTC(LocalDateTime fechaHoraSalidaUTC) {
-        this.fechaHoraSalidaUTC = fechaHoraSalidaUTC;
-    }
-
-    public LocalDateTime getFechaHoraLlegadaLocal() {
-        return fechaHoraLlegadaLocal;
-    }
-
-    public void setFechaHoraLlegadaLocal() {
-        this.fechaHoraLlegadaLocal = G4D.toLocal(this.fechaHoraLlegadaUTC, this.plan.getDestino().getHusoHorario());
-    }
-
-    public void setFechaHoraLlegadaLocal(LocalDateTime fechaHoraLlegadaLocal) {
-        this.fechaHoraLlegadaLocal = fechaHoraLlegadaLocal;
-    }
-
-    public LocalDateTime getFechaHoraLlegadaUTC() {
-        return fechaHoraLlegadaUTC;
-    }
-
-    public void setFechaHoraLlegadaUTC() {
-        this.fechaHoraLlegadaUTC = G4D.toUTC(this.fechaHoraLlegadaLocal, this.plan.getDestino().getHusoHorario());
-    }
-
-    public void setFechaHoraLlegadaUTC(LocalDateTime fechaHoraLlegadaUTC) {
-        this.fechaHoraLlegadaUTC = fechaHoraLlegadaUTC;
+    public void setFechaHoraLlegada(LocalDateTime fechaHoraLlegada) {
+        this.fechaHoraLlegada = fechaHoraLlegada;
     }
 
     public Plan getPlan() {

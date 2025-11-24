@@ -21,8 +21,10 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
 import java.util.UUID;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Level;
@@ -214,23 +216,83 @@ public class G4D {
         }
         return StandardCharsets.UTF_8; // default UTF-8
     }
-    // Obtener combinaciones de elementos en cierto tamaño de grupo
+    //
+    public static Boolean areProximatelyEqual(double v1, double v2, double epsilon) {
+        return Math.abs(v1 - v2) > epsilon;
+    }
+    //
+    public static Boolean isProximatelyFewer(double v1, double v2, double epsilon) {
+        return v1 < v2 - epsilon;
+    }
+    //
     public static <T> List<List<T>> getPossibleCombinations(List<T> elements, int groupSize) {
         List<List<T>> result = new ArrayList<>();
-        if (groupSize > elements.size() || groupSize <= 0) return result;
         generateCombinations(elements, groupSize, 0, new ArrayList<>(), result);
         return result;
     }
-    // Generar combinaciones por tamaño de grupo
+    //
     private static <T> void generateCombinations(List<T> elements, int groupSize, int inicio, List<T> actual, List<List<T>> result) {
         if (actual.size() == groupSize) {
             result.add(new ArrayList<>(actual));
             return;
         }
+        Set<T> used = new HashSet<>();
         for (int i = inicio; i < elements.size(); i++) {
-            actual.add(elements.get(i));
+            T elemento = elements.get(i);
+            if (used.contains(elemento)) {
+                continue;
+            }
+            used.add(elemento);
+            actual.add(elemento);
             generateCombinations(elements, groupSize, i + 1, actual, result);
             actual.remove(actual.size() - 1);
+        }
+    }
+    //
+    public static <T> List<List<T>> getCrossedCombinations(List<T> listaA, List<T> listaB, int groupSizeA, int groupSizeB) {
+        List<List<T>> resultado = new ArrayList<>();
+        generateCrossedCombinations(listaA,listaB,groupSizeA,groupSizeB,0,0,new ArrayList<>(),new HashSet<>(),resultado);
+        return resultado;
+    }
+    //
+    private static <T> void generateCrossedCombinations(List<T> listaA, List<T> listaB, int groupSizeA, int groupSizeB, int inicioA, int inicioB, List<T> actual, Set<T> usados, List<List<T>> resultado) {
+        int tamanioActual = actual.size();
+        int tamanioTotal = groupSizeA + groupSizeB;
+        if (tamanioActual == tamanioTotal) {
+            resultado.add(new ArrayList<>(actual));
+            return;
+        }
+        if (tamanioActual < groupSizeA) {
+            Set<T> usadosEnNivel = new HashSet<>();
+            for (int i = inicioA; i < listaA.size(); i++) {
+                T elemento = listaA.get(i);
+                if (usadosEnNivel.contains(elemento)) {
+                    continue;
+                }
+                usadosEnNivel.add(elemento);
+                usados.add(elemento);
+                actual.add(elemento);
+                generateCrossedCombinations(listaA, listaB, groupSizeA, groupSizeB, i + 1, 0, actual, usados, resultado);
+                actual.remove(actual.size() - 1);
+                usados.remove(elemento);
+            }
+        } else {
+            Set<T> usadosEnNivel = new HashSet<>();
+            for (int i = inicioB; i < listaB.size(); i++) {
+                T elemento = listaB.get(i);
+                if (usados.contains(elemento)) {
+                    continue;
+                }
+                if (usadosEnNivel.contains(elemento)) {
+                    continue;
+                }
+                usadosEnNivel.add(elemento);
+                usados.add(elemento);
+                actual.add(elemento);
+                generateCrossedCombinations(listaA, listaB, groupSizeA, groupSizeB, inicioA, i + 1, actual, usados, resultado);
+                actual.remove(actual.size() - 1);
+                usados.remove(elemento);
+            }
         }
     }
     // Clase 'Wrapper' para enteros

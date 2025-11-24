@@ -34,9 +34,9 @@ public class Problematica {
     public static Double MIN_HORAS_ESTANCIA = 1.0;
     public static Double MAX_HORAS_ESTANCIA = 12.0;
     public static List<String> CODIGOS_DE_ORIGENES = List.of("SPIM", "EBCI", "UBBB");
-    public static LocalDateTime FECHA_HORA_INICIO = LocalDateTime.now().withYear(1999);
-    public static LocalDateTime FECHA_HORA_FIN = LocalDateTime.now();
-    public static LocalDateTime FECHA_HORA_LIMITE_REPLANIFICACION = LocalDateTime.now().withYear(1999);
+    public static LocalDateTime INICIO_PLANIFICACION = LocalDateTime.now().withYear(1999);
+    public static LocalDateTime FIN_PLANIFICACION = LocalDateTime.now();
+    public static LocalDateTime INICIO_REPLANIFICACION = LocalDateTime.now().withYear(1999);
     public List<Aeropuerto> origenes;
     public List<Aeropuerto> destinos;
     public List<Plan> planes;
@@ -58,6 +58,16 @@ public class Problematica {
     public Problematica(Problematica problematica) {
         this.reasignar(problematica);
     }
+
+    public void reasignar(Problematica problematica) {
+        this.clientes = new ArrayList<>(problematica.clientes);
+        this.destinos = new ArrayList<>(problematica.destinos);
+        this.origenes = new ArrayList<>(problematica.origenes);
+        this.planes = new ArrayList<>(problematica.planes);
+        this.pedidos = new ArrayList<>(problematica.pedidos);
+        this.rutasEnOperacion = new HashSet<>(problematica.rutasEnOperacion);
+        this.vuelosEnTransito = new HashSet<>(problematica.vuelosEnTransito);
+    }
     
     public Problematica replicar() {
         Problematica problematica = new Problematica();
@@ -75,16 +85,6 @@ public class Problematica {
         for(Vuelo vue : this.vuelosEnTransito) problematica.vuelosEnTransito.add(poolVuelos.computeIfAbsent(vue.getCodigo(), codigo -> vue.replicar(poolAeropuertos, poolLotes, poolPlanes)));
         for(Ruta rut : this.rutasEnOperacion) problematica.rutasEnOperacion.add(poolRutas.computeIfAbsent(rut.getCodigo(), codigo -> rut.replicar(poolAeropuertos, poolLotes, poolVuelos, poolPlanes)));
         return problematica;
-    }
-
-    public void reasignar(Problematica problematica) {
-        this.clientes = new ArrayList<>(problematica.clientes);
-        this.destinos = new ArrayList<>(problematica.destinos);
-        this.origenes = new ArrayList<>(problematica.origenes);
-        this.planes = new ArrayList<>(problematica.planes);
-        this.pedidos = new ArrayList<>(problematica.pedidos);
-        this.rutasEnOperacion = new HashSet<>(problematica.rutasEnOperacion);
-        this.vuelosEnTransito = new HashSet<>(problematica.vuelosEnTransito);
     }
 
     public void cargarDatos(String rutaArchivoAeropuertos, String rutaArchivoVuelos, String rutaArchivoClientes, String rutaArchivoPedidos) {
@@ -157,10 +157,8 @@ public class Problematica {
                         plan.setOrigen(aOrig);
                         plan.setDestino(aDest);
                         plan.setDistancia();
-                        plan.setHoraSalidaLocal(G4D.toTime(lineaSC.next()));
-                        plan.setHoraSalidaUTC();
-                        plan.setHoraLlegadaLocal(G4D.toTime(lineaSC.next()));
-                        plan.setHoraLlegadaUTC();
+                        plan.setHoraSalida(G4D.toUTC(G4D.toTime(lineaSC.next()), aOrig.getHusoHorario()));
+                        plan.setHoraLlegada(G4D.toUTC(G4D.toTime(lineaSC.next()), aDest.getHusoHorario()));
                         plan.setDuracion();
                         plan.setCapacidad(lineaSC.nextInt());
                         this.planes.add(plan);
@@ -210,8 +208,6 @@ public class Problematica {
         try {
             File archivo = new File(rutaArchivo);
             Scanner archivoSC = new Scanner(archivo, G4D.getFileCharset(archivo));
-            LocalDateTime fechaHoraGeneracionMinima = FECHA_HORA_INICIO.minusDays(MAX_DIAS_ENTREGA_INTERCONTINENTAL);
-            LocalDateTime fechaHoraGeneracionMaxima = FECHA_HORA_FIN.plusDays(MAX_DIAS_ENTREGA_INTERCONTINENTAL);
             while (archivoSC.hasNextLine()) {
                 String linea = archivoSC.nextLine().trim();
                 Scanner lineaSC = new Scanner(linea);
@@ -221,13 +217,15 @@ public class Problematica {
                 LocalDateTime fechaHoraGeneracionLocal = LocalDateTime.of(
                     G4D.toDate(lineaSC.nextInt()),
                     LocalTime.of(
-                        lineaSC.nextInt(), lineaSC.nextInt(), 0
+                        lineaSC.nextInt(),
+                        lineaSC.nextInt(),
+                        0
                     )
                 );
                 Aeropuerto aDest = obtenerAeropuertoPorCodigo(lineaSC.next());
                 if(aDest != null) {
                     LocalDateTime fechaHoraGeneracionUTC = G4D.toUTC(fechaHoraGeneracionLocal, aDest.getHusoHorario());
-                    if(!fechaHoraGeneracionUTC.isBefore(fechaHoraGeneracionMinima) && !fechaHoraGeneracionUTC.isAfter(fechaHoraGeneracionMaxima)) {
+                    if(!fechaHoraGeneracionUTC.isBefore(INICIO_PLANIFICACION) && !fechaHoraGeneracionUTC.isAfter(FIN_PLANIFICACION)) {
                         pedido.setCodigo(aDest.getCodigo() + numPed);
                         pedido.setDestino(aDest);
                         pedido.setCantidadSolicitada(lineaSC.nextInt());
@@ -240,8 +238,7 @@ public class Problematica {
                             this.clientes.add(cliente);
                         }
                         pedido.setCliente(cliente);
-                        pedido.setFechaHoraGeneracionLocal(fechaHoraGeneracionLocal);
-                        pedido.setFechaHoraGeneracionUTC(fechaHoraGeneracionUTC);
+                        pedido.setFechaHoraGeneracion(fechaHoraGeneracionUTC);
                         this.pedidos.add(pedido);
                     }
                 }

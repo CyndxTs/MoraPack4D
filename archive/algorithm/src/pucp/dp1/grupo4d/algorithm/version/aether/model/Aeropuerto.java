@@ -41,7 +41,7 @@ public class Aeropuerto {
         aeropuerto.capacidad = this.capacidad;
         aeropuerto.latitud = this.latitud;
         aeropuerto.longitud = this.longitud;
-        for(Registro r : this.registros) aeropuerto.registros.add(r.replicar(poolLotes));
+        this.registros.forEach(r -> aeropuerto.registros.add(r.replicar(poolLotes)));
         return aeropuerto;
     }
 
@@ -51,12 +51,10 @@ public class Aeropuerto {
         return lote;
     }
 
-    public void registrarLoteDeProductos(Lote lote, LocalDateTime fechaHoraIngresoUTC, LocalDateTime fechaHoraEgresoUTC) {
+    public void registrarLoteDeProductos(Lote lote, LocalDateTime fechaHoraIngreso, LocalDateTime fechaHoraEgreso) {
         Registro registro = new Registro();
-        registro.setFechaHoraIngresoUTC(fechaHoraIngresoUTC);
-        registro.setFechaHoraIngresoLocal(G4D.toLocal(fechaHoraIngresoUTC, this.husoHorario));
-        registro.setFechaHoraEgresoUTC(fechaHoraEgresoUTC);
-        registro.setFechaHoraEgresoLocal(G4D.toLocal(fechaHoraEgresoUTC, this.husoHorario));
+        registro.setFechaHoraIngreso(fechaHoraIngreso);
+        registro.setFechaHoraEgreso(fechaHoraEgreso);
         registro.setLote(lote);
         this.registros.add(registro);
     }
@@ -75,7 +73,7 @@ public class Aeropuerto {
         int disp = this.capacidad, minDisp = this.capacidad;
         Map<LocalDateTime, Integer> eventos = new TreeMap<>();
         for(Registro registro : this.registros) {
-            LocalDateTime rFechaHoraIngreso = registro.getFechaHoraIngresoUTC(), rFechaHoraEgreso = registro.getFechaHoraEgresoUTC();
+            LocalDateTime rFechaHoraIngreso = registro.getFechaHoraIngreso(), rFechaHoraEgreso = registro.getFechaHoraEgreso();
             if(rFechaHoraIngreso.isBefore(fechaHoraFin) && rFechaHoraEgreso.isAfter(fechaHoraInicio)) {
                 int tamanio = registro.getLote().getTamanio();
                 eventos.merge(rFechaHoraIngreso, -tamanio, Integer::sum);

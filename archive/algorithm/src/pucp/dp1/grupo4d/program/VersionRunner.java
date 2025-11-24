@@ -23,11 +23,11 @@ public class VersionRunner {
     }
 
     public void runAether() {
-        pucp.dp1.grupo4d.algorithm.version.aether.Problematica.FECHA_HORA_INICIO = LocalDateTime.of(1925, 11, 1, 0, 0);
-        pucp.dp1.grupo4d.algorithm.version.aether.Problematica.FECHA_HORA_FIN = LocalDateTime.of(2026, 12, 1, 0, 0);
+        pucp.dp1.grupo4d.algorithm.version.aether.Problematica.INICIO_PLANIFICACION = LocalDateTime.of(2025, 11, 1, 0, 0);
+        pucp.dp1.grupo4d.algorithm.version.aether.Problematica.FIN_PLANIFICACION = LocalDateTime.of(2025, 11, 7, 0, 0);
         var p = new pucp.dp1.grupo4d.algorithm.version.aether.Problematica();
         p.cargarDatos(this.rutaArchivoAeropuertos, this.rutaArchivoPlanesDeVuelo, this.rutaArchivoClientes, this.rutaArchivoPedidos);
-        pucp.dp1.grupo4d.algorithm.version.aether.GVNS.I_MAX = 2;
+        pucp.dp1.grupo4d.algorithm.version.aether.GVNS.I_MAX = 1;
         var gvns = new pucp.dp1.grupo4d.algorithm.version.aether.GVNS();
         gvns.planificar(p);
     }
