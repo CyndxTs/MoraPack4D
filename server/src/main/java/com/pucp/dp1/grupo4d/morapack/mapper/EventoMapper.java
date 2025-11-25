@@ -6,6 +6,7 @@
 
 package com.pucp.dp1.grupo4d.morapack.mapper;
 
+import com.pucp.dp1.grupo4d.morapack.model.algorithm.Evento;
 import com.pucp.dp1.grupo4d.morapack.model.dto.EventoDTO;
 import com.pucp.dp1.grupo4d.morapack.model.entity.EventoEntity;
 import com.pucp.dp1.grupo4d.morapack.model.enums.TipoEvento;
@@ -25,11 +26,24 @@ public class EventoMapper {
         entity.setTipo(TipoEvento.valueOf(dto.getTipo()));
         entity.setFechaHoraInicio(G4D.toDateTime(dto.getFechaHoraInicio()));
         entity.setFechaHoraFin(G4D.toDateTime(dto.getFechaHoraFin()));
-        entity.setHoraSalidaReprogramadaUTC(G4D.toTime(dto.getHoraSalidaReprogramada()));
-        entity.setHoraSalidaReprogramadaLocal(G4D.toLocal(entity.getHoraSalidaReprogramadaUTC(), entity.getPlan().getOrigen().getHusoHorario()));
-        entity.setHoraLlegadaReprogramadaUTC(G4D.toTime(dto.getHoraLlegadaReprogramada()));
-        entity.setHoraLlegadaReprogramadaLocal(G4D.toLocal(entity.getHoraLlegadaReprogramadaLocal(), entity.getPlan().getDestino().getHusoHorario()));
+        entity.setFechaHoraSalidaUTC(G4D.toDateTime(dto.getFechaHoraSalida()));
+        entity.setFechaHoraSalidaLocal(G4D.toLocal(entity.getFechaHoraSalidaUTC(), entity.getPlan().getOrigen().getHusoHorario()));
+        entity.setFechaHoraLlegadaUTC(G4D.toDateTime(dto.getFechaHoraLlegada()));
+        entity.setFechaHoraLlegadaLocal(G4D.toLocal(entity.getFechaHoraLlegadaUTC(), entity.getPlan().getDestino().getHusoHorario()));
         return entity;
+    }
+
+    public EventoDTO toDTO(Evento algorithm) {
+        if (poolDTO.containsKey(algorithm.getCodigo())) {
+            return poolDTO.get(algorithm.getCodigo());
+        }
+        EventoDTO dto = new EventoDTO();
+        dto.setCodigo(algorithm.getCodigo());
+        dto.setTipo(algorithm.getTipo().toString());
+        dto.setFechaHoraInicio(G4D.toDisplayString(algorithm.getFechaHoraInicio()));
+        dto.setFechaHoraFin(G4D.toDisplayString(algorithm.getFechaHoraFin()));
+        poolDTO.put(algorithm.getCodigo(), dto);
+        return dto;
     }
 
     public EventoDTO toDTO(EventoEntity entity) {
@@ -41,8 +55,8 @@ public class EventoMapper {
         dto.setTipo(entity.getTipo().toString());
         dto.setFechaHoraInicio(G4D.toDisplayString(entity.getFechaHoraInicio()));
         dto.setFechaHoraFin(G4D.toDisplayString(entity.getFechaHoraFin()));
-        dto.setHoraSalidaReprogramada(G4D.toDisplayString(entity.getHoraSalidaReprogramadaUTC()));
-        dto.setHoraLlegadaReprogramada(G4D.toDisplayString(entity.getHoraLlegadaReprogramadaUTC()));
+        dto.setFechaHoraSalida(G4D.toDisplayString(entity.getFechaHoraSalidaUTC()));
+        dto.setFechaHoraLlegada(G4D.toDisplayString(entity.getFechaHoraLlegadaUTC()));
         poolDTO.put(entity.getCodigo(), dto);
         return dto;
     }

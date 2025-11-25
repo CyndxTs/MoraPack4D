@@ -10,7 +10,6 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.pucp.dp1.grupo4d.morapack.model.enums.TipoEvento;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.util.Objects;
 
 @Entity
@@ -34,17 +33,17 @@ public class EventoEntity {
     @Column(name = "fh_fin", nullable = false)
     private LocalDateTime fechaHoraFin;
 
-    @Column(name = "h_salida_reprogramada_local")
-    private LocalTime horaSalidaReprogramadaLocal;
+    @Column(name = "fh_salida_local")
+    private LocalDateTime fechaHoraSalidaLocal;
 
-    @Column(name = "h_salida_reprogramada_utc")
-    private LocalTime horaSalidaReprogramadaUTC;
+    @Column(name = "fh_salida_utc")
+    private LocalDateTime fechaHoraSalidaUTC;
 
-    @Column(name = "h_llegada_reprogramada_local")
-    private LocalTime horaLlegadaReprogramadaLocal;
+    @Column(name = "fh_llegada_local")
+    private LocalDateTime fechaHoraLlegadaLocal;
 
-    @Column(name = "h_llegada_reprogramada_utc")
-    private LocalTime horaLlegadaReprogramadaUTC;
+    @Column(name = "fh_llegada_utc")
+    private LocalDateTime fechaHoraLlegadaUTC;
 
     @ManyToOne
     @JoinColumn(name = "id_plan", nullable = false)
@@ -75,14 +74,14 @@ public class EventoEntity {
     public void setFechaHoraInicio(LocalDateTime fechaHoraInicio) { this.fechaHoraInicio = fechaHoraInicio; }
     public LocalDateTime getFechaHoraFin() { return fechaHoraFin; }
     public void setFechaHoraFin(LocalDateTime fechaHoraFin) { this.fechaHoraFin = fechaHoraFin; }
-    public LocalTime getHoraSalidaReprogramadaLocal() { return horaSalidaReprogramadaLocal; }
-    public void setHoraSalidaReprogramadaLocal(LocalTime horaSalidaReprogramadaLocal) { this.horaSalidaReprogramadaLocal = horaSalidaReprogramadaLocal; }
-    public LocalTime getHoraSalidaReprogramadaUTC() { return horaSalidaReprogramadaUTC; }
-    public void setHoraSalidaReprogramadaUTC(LocalTime horaSalidaReprogramadaUTC) { this.horaSalidaReprogramadaUTC = horaSalidaReprogramadaUTC; }
-    public LocalTime getHoraLlegadaReprogramadaLocal() { return horaLlegadaReprogramadaLocal; }
-    public void setHoraLlegadaReprogramadaLocal(LocalTime horaLlegadaReprogramadaLocal) { this.horaLlegadaReprogramadaLocal = horaLlegadaReprogramadaLocal; }
-    public LocalTime getHoraLlegadaReprogramadaUTC() { return horaLlegadaReprogramadaUTC; }
-    public void setHoraLlegadaReprogramadaUTC(LocalTime horaLlegadaReprogramadaUTC) { this.horaLlegadaReprogramadaUTC = horaLlegadaReprogramadaUTC; }
+    public LocalDateTime getFechaHoraSalidaLocal() { return fechaHoraSalidaLocal; }
+    public void setFechaHoraSalidaLocal(LocalDateTime fechaHoraSalidaLocal) { this.fechaHoraSalidaLocal = fechaHoraSalidaLocal; }
+    public LocalDateTime getFechaHoraSalidaUTC() { return fechaHoraSalidaUTC; }
+    public void setFechaHoraSalidaUTC(LocalDateTime fechaHoraSalidaUTC) { this.fechaHoraSalidaUTC = fechaHoraSalidaUTC; }
+    public LocalDateTime getFechaHoraLlegadaLocal() { return fechaHoraLlegadaLocal; }
+    public void setFechaHoraLlegadaLocal(LocalDateTime fechaHoraLlegadaLocal) { this.fechaHoraLlegadaLocal = fechaHoraLlegadaLocal; }
+    public LocalDateTime getFechaHoraLlegadaUTC() { return fechaHoraLlegadaUTC; }
+    public void setFechaHoraLlegadaUTC(LocalDateTime fechaHoraLlegadaUTC) { this.fechaHoraLlegadaUTC = fechaHoraLlegadaUTC; }
     public PlanEntity getPlan() { return plan; }
     public void setPlan(PlanEntity plan) { this.plan = plan; }
 }

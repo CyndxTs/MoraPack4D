@@ -17,7 +17,6 @@ public class Lote {
     private String codigoLotePadre;
     private EstadoLote estado;
 
-
     public Lote() {
         this.codigo = G4D.Generator.getUniqueString("LOT");
         this.tamanio = 0;

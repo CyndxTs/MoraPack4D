@@ -22,18 +22,16 @@ import java.util.Map;
 @Component
 public class RegistroAdapter {
 
-    @Autowired
-    private RegistroService registroService;
-
-    @Autowired
-    private LoteService loteService;
-
+    private final RegistroService registroService;
+    private final LoteService loteService;
     private final LoteAdapter loteAdapter;
     private final Map<String, Registro> poolAlgorithm = new HashMap<>();
     private final Map<String, RegistroEntity> poolEntity = new HashMap<>();
 
-    public RegistroAdapter(LoteAdapter loteAdapter) {
+    public RegistroAdapter(LoteAdapter loteAdapter, LoteService loteService, RegistroService registroService) {
         this.loteAdapter = loteAdapter;
+        this.loteService = loteService;
+        this.registroService = registroService;
     }
 
     public Registro toAlgorithm(RegistroEntity entity) {
@@ -42,10 +40,9 @@ public class RegistroAdapter {
         }
         Registro algorithm = new Registro();
         algorithm.setCodigo(entity.getCodigo());
-        algorithm.setFechaHoraIngresoLocal(entity.getFechaHoraIngresoLocal());
-        algorithm.setFechaHoraIngresoUTC(entity.getFechaHoraIngresoUTC());
-        algorithm.setFechaHoraEgresoLocal(entity.getFechaHoraEgresoLocal());
-        algorithm.setFechaHoraEgresoUTC(entity.getFechaHoraEgresoUTC());
+        algorithm.setSigueVigente(entity.getSigueVigente());
+        algorithm.setFechaHoraIngreso(entity.getFechaHoraIngresoUTC());
+        algorithm.setFechaHoraEgreso(entity.getFechaHoraEgresoUTC());
         Lote lote = loteAdapter.toAlgorithm(entity.getLote());
         algorithm.setLote(lote);
         poolAlgorithm.put(algorithm.getCodigo(), algorithm);
@@ -61,10 +58,11 @@ public class RegistroAdapter {
             entity = new RegistroEntity();
             entity.setCodigo(algorithm.getCodigo());
         }
-        entity.setFechaHoraIngresoLocal(algorithm.getFechaHoraIngresoLocal());
-        entity.setFechaHoraIngresoUTC(algorithm.getFechaHoraIngresoUTC());
-        entity.setFechaHoraEgresoLocal(algorithm.getFechaHoraEgresoLocal());
-        entity.setFechaHoraEgresoUTC(algorithm.getFechaHoraEgresoUTC());
+        entity.setSigueVigente(algorithm.getSigueVigente());
+        entity.setFechaHoraIngresoUTC(algorithm.getFechaHoraIngreso());
+        entity.setFechaHoraIngresoLocal(G4D.toLocal(algorithm.getFechaHoraIngreso(), entity.getAeropuerto().getHusoHorario()));
+        entity.setFechaHoraEgresoUTC(algorithm.getFechaHoraEgreso());
+        entity.setFechaHoraEgresoLocal(G4D.toLocal(algorithm.getFechaHoraEgreso(), entity.getAeropuerto().getHusoHorario()));
         String codLote = algorithm.getLote().getCodigo();
         LoteEntity loteEntity = loteService.findByCodigo(codLote).orElse(null);
         entity.setLote(loteEntity);
@@ -75,6 +73,7 @@ public class RegistroAdapter {
     public void clearPools() {
         poolAlgorithm.clear();
         poolEntity.clear();
+        loteService.clearPools();
         loteAdapter.clearPools();
     }
 }

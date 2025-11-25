@@ -6,22 +6,34 @@
 
 package com.pucp.dp1.grupo4d.morapack.model.algorithm;
 
+import com.pucp.dp1.grupo4d.morapack.algorithm.Problematica;
+import com.pucp.dp1.grupo4d.morapack.model.enums.EstadoLote;
 import com.pucp.dp1.grupo4d.morapack.util.G4D;
 
 public class Lote {
     private String codigo;
     private Integer tamanio;
+    private String codigoLotePadre;
+    private EstadoLote estado;
 
     public Lote() {
         this.codigo = G4D.Generator.getUniqueString("LOT");
         this.tamanio = 0;
+        this.estado = EstadoLote.PLANIFICADO;
     }
 
     public Lote replicar() {
         Lote lote = new Lote();
         lote.codigo = this.codigo;
         lote.tamanio = this.tamanio;
+        lote.estado = this.estado;
         return lote;
+    }
+
+    public Boolean esModificable(Ruta rutaAsignada) {
+        boolean loteReplanificado = this.getEstado() == EstadoLote.REPLANIFICADO;
+        boolean rutaPosterior = rutaAsignada.getFechaHoraSalida().isAfter(Problematica.INICIO_REPLANIFICACION);
+        return loteReplanificado || rutaPosterior;
     }
 
     @Override
@@ -51,5 +63,21 @@ public class Lote {
 
     public void setTamanio(int tamanio) {
         this.tamanio = tamanio;
+    }
+
+    public String getCodigoLotePadre() {
+        return codigoLotePadre;
+    }
+
+    public void setCodigoLotePadre(String codigoLotePadre) {
+        this.codigoLotePadre = codigoLotePadre;
+    }
+
+    public EstadoLote getEstado() {
+        return estado;
+    }
+
+    public void setEstado(EstadoLote estado) {
+        this.estado = estado;
     }
 }

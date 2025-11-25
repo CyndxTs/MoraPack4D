@@ -21,15 +21,14 @@ import java.util.Map;
 @Component
 public class AeropuertoAdapter {
 
-    @Autowired
-    private AeropuertoService aeropuertoService;
-
+    private final AeropuertoService aeropuertoService;
     private final RegistroAdapter registroAdapter;
     private final Map<String, Aeropuerto> poolAlgorithm = new HashMap<>();
     private final Map<String, AeropuertoEntity> poolEntity = new HashMap<>();
 
-    public AeropuertoAdapter(RegistroAdapter registroAdapter) {
+    public AeropuertoAdapter(RegistroAdapter registroAdapter, AeropuertoService aeropuertoService) {
         this.registroAdapter = registroAdapter;
+        this.aeropuertoService = aeropuertoService;
     }
 
     public Aeropuerto toAlgorithm(AeropuertoEntity entity) {
@@ -44,10 +43,8 @@ public class AeropuertoAdapter {
         algorithm.setAlias(entity.getAlias());
         algorithm.setHusoHorario(entity.getHusoHorario());
         algorithm.setCapacidad(entity.getCapacidad());
-        algorithm.setLatitudDMS(entity.getLatitudDMS());
-        algorithm.setLatitudDEC(entity.getLatitudDEC());
-        algorithm.setLongitudDMS(entity.getLongitudDMS());
-        algorithm.setLongitudDEC(entity.getLongitudDEC());
+        algorithm.setLatitud(entity.getLatitudDEC());
+        algorithm.setLongitud(entity.getLongitudDEC());
         algorithm.setEsSede(entity.getEsSede());
         List<Registro> registros = new ArrayList<>();
         List<RegistroEntity> registrosEntity = entity.getRegistros();
@@ -75,6 +72,7 @@ public class AeropuertoAdapter {
     public void clearPools() {
         poolAlgorithm.clear();
         poolEntity.clear();
+        aeropuertoService.clearPools();
         registroAdapter.clearPools();
     }
 }

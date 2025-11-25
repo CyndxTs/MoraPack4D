@@ -27,8 +27,9 @@ public class RegistroMapper {
         }
         RegistroDTO dto = new RegistroDTO();
         dto.setCodigo(algorithm.getCodigo());
-        dto.setFechaHoraIngreso(G4D.toDisplayString(algorithm.getFechaHoraIngresoUTC()));
-        dto.setFechaHoraEgreso(G4D.toDisplayString(algorithm.getFechaHoraEgresoUTC()));
+        dto.setSigueVigente(algorithm.getSigueVigente());
+        dto.setFechaHoraIngreso(G4D.toDisplayString(algorithm.getFechaHoraIngreso()));
+        dto.setFechaHoraEgreso(G4D.toDisplayString(algorithm.getFechaHoraEgreso()));
         Lote lote = algorithm.getLote();
         dto.setCodLote(lote.getCodigo());
         poolDTO.put(algorithm.getCodigo(), dto);
@@ -41,6 +42,7 @@ public class RegistroMapper {
         }
         RegistroDTO dto = new RegistroDTO();
         dto.setCodigo(entity.getCodigo());
+        dto.setSigueVigente(entity.getSigueVigente());
         dto.setFechaHoraIngreso(G4D.toDisplayString(entity.getFechaHoraIngresoUTC()));
         dto.setFechaHoraEgreso(G4D.toDisplayString(entity.getFechaHoraEgresoUTC()));
         LoteEntity loteEntity = entity.getLote();

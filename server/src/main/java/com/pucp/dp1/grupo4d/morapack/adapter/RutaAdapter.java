@@ -9,7 +9,6 @@ package com.pucp.dp1.grupo4d.morapack.adapter;
 import com.pucp.dp1.grupo4d.morapack.model.algorithm.Ruta;
 import com.pucp.dp1.grupo4d.morapack.model.algorithm.Aeropuerto;
 import com.pucp.dp1.grupo4d.morapack.model.algorithm.Vuelo;
-import com.pucp.dp1.grupo4d.morapack.model.dto.RutaDTO;
 import com.pucp.dp1.grupo4d.morapack.model.entity.RutaEntity;
 import com.pucp.dp1.grupo4d.morapack.model.entity.AeropuertoEntity;
 import com.pucp.dp1.grupo4d.morapack.model.entity.VueloEntity;
@@ -22,17 +21,16 @@ import java.util.*;
 @Component
 public class RutaAdapter {
 
-    @Autowired
-    RutaService rutaService;
-
+    private final RutaService rutaService;
     private final AeropuertoAdapter aeropuertoAdapter;
     private final VueloAdapter vueloAdapter;
     private final Map<String, Ruta> poolAlgorithm = new HashMap<>();
     private final Map<String, RutaEntity> poolEntity = new HashMap<>();
 
-    public RutaAdapter(AeropuertoAdapter aeropuertoAdapter, VueloAdapter vueloAdapter) {
+    public RutaAdapter(AeropuertoAdapter aeropuertoAdapter, VueloAdapter vueloAdapter, RutaService rutaService) {
         this.aeropuertoAdapter = aeropuertoAdapter;
         this.vueloAdapter = vueloAdapter;
+        this.rutaService = rutaService;
     }
 
     public Ruta toAlgorithm(RutaEntity entity) {
@@ -43,10 +41,8 @@ public class RutaAdapter {
         algorithm.setCodigo(entity.getCodigo());
         algorithm.setDuracion(entity.getDuracion());
         algorithm.setDistancia(entity.getDistancia());
-        algorithm.setFechaHoraSalidaLocal(entity.getFechaHoraSalidaLocal());
-        algorithm.setFechaHoraSalidaUTC(entity.getFechaHoraSalidaUTC());
-        algorithm.setFechaHoraLlegadaLocal(entity.getFechaHoraLlegadaLocal());
-        algorithm.setFechaHoraLlegadaUTC(entity.getFechaHoraLlegadaUTC());
+        algorithm.setFechaHoraSalida(entity.getFechaHoraSalidaUTC());
+        algorithm.setFechaHoraLlegada(entity.getFechaHoraLlegadaUTC());
         algorithm.setTipo(entity.getTipo());
         Aeropuerto origen = aeropuertoAdapter.toAlgorithm(entity.getOrigen());
         algorithm.setOrigen(origen);
@@ -74,10 +70,10 @@ public class RutaAdapter {
         }
         entity.setDuracion(algorithm.getDuracion());
         entity.setDistancia(algorithm.getDistancia());
-        entity.setFechaHoraSalidaLocal(algorithm.getFechaHoraSalidaLocal());
-        entity.setFechaHoraSalidaUTC(algorithm.getFechaHoraSalidaUTC());
-        entity.setFechaHoraLlegadaLocal(algorithm.getFechaHoraLlegadaLocal());
-        entity.setFechaHoraLlegadaUTC(algorithm.getFechaHoraLlegadaUTC());
+        entity.setFechaHoraSalidaUTC(algorithm.getFechaHoraSalida());
+        entity.setFechaHoraSalidaLocal(G4D.toLocal(algorithm.getFechaHoraSalida(), algorithm.getOrigen().getHusoHorario()));
+        entity.setFechaHoraLlegadaUTC(algorithm.getFechaHoraLlegada());
+        entity.setFechaHoraLlegadaLocal(G4D.toLocal(algorithm.getFechaHoraLlegada(), algorithm.getDestino().getHusoHorario()));
         entity.setTipo(algorithm.getTipo());
         AeropuertoEntity origenEntity = aeropuertoAdapter.toEntity(algorithm.getOrigen());
         entity.setOrigen(origenEntity);

@@ -17,7 +17,7 @@ public class SegmentacionDTO implements DTO {
     @EqualsAndHashCode.Include
     private String codigo;
 
-    private String fechaHoraInicioVigencia;
-    private String fechaHoraFinVigencia;
+    private String fechaHoraAplicacion;
+    private String fechaHoraSustitucion;
     private List<LotePorRutaDTO> lotesPorRuta;
 }

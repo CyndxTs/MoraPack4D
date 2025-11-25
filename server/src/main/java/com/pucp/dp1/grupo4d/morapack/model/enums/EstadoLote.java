@@ -1,13 +1,12 @@
 /**]
  >> Project:    MoraPack
  >> Author:     Grupo 4D
- >> File:       TipoEscenario.java
+ >> File:       EstadoLote.java
  [**/
 
 package com.pucp.dp1.grupo4d.morapack.model.enums;
 
-public enum EstadoPedido {
-    NO_ATENDIDO,
+public enum EstadoLote {
     PLANIFICADO,
     POR_REPLANIFICAR,
     REPLANIFICADO

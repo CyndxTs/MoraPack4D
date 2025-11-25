@@ -7,6 +7,7 @@
 package com.pucp.dp1.grupo4d.morapack.model.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.pucp.dp1.grupo4d.morapack.model.enums.EstadoLote;
 import jakarta.persistence.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -25,6 +26,13 @@ public class LoteEntity {
 
     @Column(nullable = false)
     private Integer tamanio;
+
+    @Column(name = "codigo_lote_padre", length = 30)
+    private String codigoLotePadre;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private EstadoLote estado = EstadoLote.PLANIFICADO;
 
     @ManyToOne
     @JoinColumn(name = "id_segmentacion", nullable = false)
@@ -58,6 +66,10 @@ public class LoteEntity {
     public void setCodigo(String codigo) { this.codigo = codigo; }
     public Integer getTamanio() { return tamanio; }
     public void setTamanio(Integer tamanio) { this.tamanio = tamanio; }
+    public String getCodigoLotePadre() { return codigoLotePadre; }
+    public void setCodigoLotePadre(String codigoLotePadre) { this.codigoLotePadre = codigoLotePadre; }
+    public EstadoLote getEstado() { return estado; }
+    public void setEstado(EstadoLote estado) { this.estado = estado; }
     public SegmentacionEntity getSegmentacion() { return segmentacion; }
     public void setSegmentacion(SegmentacionEntity segmentacion) { this.segmentacion = segmentacion; }
     public RutaEntity getRuta() { return ruta; }

@@ -9,6 +9,7 @@ package com.pucp.dp1.grupo4d.morapack.mapper;
 import com.pucp.dp1.grupo4d.morapack.model.algorithm.Lote;
 import com.pucp.dp1.grupo4d.morapack.model.dto.LoteDTO;
 import com.pucp.dp1.grupo4d.morapack.model.entity.LoteEntity;
+import com.pucp.dp1.grupo4d.morapack.model.enums.EstadoLote;
 import org.springframework.stereotype.Component;
 import java.util.HashMap;
 import java.util.Map;
@@ -25,6 +26,8 @@ public class LoteMapper {
         LoteDTO dto = new LoteDTO();
         dto.setCodigo(algorithm.getCodigo());
         dto.setTamanio(algorithm.getTamanio());
+        dto.setCodigoLotePadre(algorithm.getCodigoLotePadre());
+        dto.setEstado(algorithm.getEstado().toString());
         poolDTO.put(algorithm.getCodigo(), dto);
         return dto;
     }
@@ -36,6 +39,8 @@ public class LoteMapper {
         LoteDTO dto = new LoteDTO();
         dto.setCodigo(entity.getCodigo());
         dto.setTamanio(entity.getTamanio());
+        dto.setCodigoLotePadre(entity.getCodigoLotePadre());
+        dto.setEstado(entity.getEstado().toString());
         poolDTO.put(entity.getCodigo(), dto);
         return dto;
     }

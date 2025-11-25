@@ -24,17 +24,17 @@ public class SegmentacionEntity {
     @Column(nullable = false, length = 30)
     private String codigo;
 
-    @Column(name = "fh_inicio_vigencia_local", nullable = false)
-    private LocalDateTime fechaHoraInicioVigenciaLocal;
+    @Column(name = "fh_aplicacion_local", nullable = false)
+    private LocalDateTime fechaHoraAplicacionLocal;
 
-    @Column(name = "fh_inicio_vigencia_utc", nullable = false)
-    private LocalDateTime fechaHoraInicioVigenciaUTC;
+    @Column(name = "fh_aplicacion_utc", nullable = false)
+    private LocalDateTime fechaHoraAplicacionUTC;
 
-    @Column(name = "fh_fin_vigencia_local")
-    private LocalDateTime fechaHoraFinVigenciaLocal;
+    @Column(name = "fh_sustitucion_local")
+    private LocalDateTime fechaHoraSustitucionLocal;
 
-    @Column(name = "fh_fin_vigencia_utc")
-    private LocalDateTime fechaHoraFinVigenciaUTC;
+    @Column(name = "fh_sustitucion_utc")
+    private LocalDateTime fechaHoraSustitucionUTC;
 
     @ManyToOne
     @JoinColumn(name = "id_pedido", nullable = false)
@@ -62,14 +62,14 @@ public class SegmentacionEntity {
     public void setId(Integer id) { this.id = id; }
     public String getCodigo() { return codigo; }
     public void setCodigo(String codigo) { this.codigo = codigo; }
-    public LocalDateTime getFechaHoraInicioVigenciaLocal() { return fechaHoraInicioVigenciaLocal; }
-    public void setFechaHoraInicioVigenciaLocal(LocalDateTime fechaHoraInicioVigenciaLocal) { this.fechaHoraInicioVigenciaLocal = fechaHoraInicioVigenciaLocal; }
-    public LocalDateTime getFechaHoraInicioVigenciaUTC() { return fechaHoraInicioVigenciaUTC; }
-    public void setFechaHoraInicioVigenciaUTC(LocalDateTime fechaHoraInicioVigenciaUTC) { this.fechaHoraInicioVigenciaUTC = fechaHoraInicioVigenciaUTC; }
-    public LocalDateTime getFechaHoraFinVigenciaLocal() { return fechaHoraFinVigenciaLocal; }
-    public void setFechaHoraFinVigenciaLocal(LocalDateTime fechaHoraFinVigenciaLocal) { this.fechaHoraFinVigenciaLocal = fechaHoraFinVigenciaLocal; }
-    public LocalDateTime getFechaHoraFinVigenciaUTC() { return fechaHoraFinVigenciaUTC; }
-    public void setFechaHoraFinVigenciaUTC(LocalDateTime fechaHoraFinVigenciaUTC) { this.fechaHoraFinVigenciaUTC = fechaHoraFinVigenciaUTC; }
+    public LocalDateTime getFechaHoraAplicacionLocal() { return fechaHoraAplicacionLocal; }
+    public void setFechaHoraAplicacionLocal(LocalDateTime fechaHoraAplicacionLocal) { this.fechaHoraAplicacionLocal = fechaHoraAplicacionLocal; }
+    public LocalDateTime getFechaHoraAplicacionUTC() { return fechaHoraAplicacionUTC; }
+    public void setFechaHoraAplicacionUTC(LocalDateTime fechaHoraAplicacionUTC) { this.fechaHoraAplicacionUTC = fechaHoraAplicacionUTC; }
+    public LocalDateTime getFechaHoraSustitucionLocal() { return fechaHoraSustitucionLocal; }
+    public void setFechaHoraSustitucionLocal(LocalDateTime fechaHoraSustitucionLocal) { this.fechaHoraSustitucionLocal = fechaHoraSustitucionLocal; }
+    public LocalDateTime getFechaHoraSustitucionUTC() { return fechaHoraSustitucionUTC; }
+    public void setFechaHoraSustitucionUTC(LocalDateTime fechaHoraSustitucionUTC) { this.fechaHoraSustitucionUTC = fechaHoraSustitucionUTC; }
     public PedidoEntity getPedido() { return pedido; }
     public void setPedido(PedidoEntity pedido) { this.pedido = pedido; }
     public List<LoteEntity> getLotes() { return lotes; }

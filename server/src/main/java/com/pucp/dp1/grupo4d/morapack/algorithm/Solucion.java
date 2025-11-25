@@ -6,6 +6,7 @@
 
 package com.pucp.dp1.grupo4d.morapack.algorithm;
 
+import com.pucp.dp1.grupo4d.morapack.model.algorithm.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -13,21 +14,20 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import com.pucp.dp1.grupo4d.morapack.model.algorithm.*;
 
 public class Solucion {
     private Double fitness;
-    public static Double f_UA;                              // Factor de Umbral de Aberración para solución
+    public static Double f_UA = 1.025;
     private Double ratioPromedioDeUtilizacionTemporal;
-    public static Double f_UT;                              // Factor de consideración de utilización de temporal de solución
+    public static Double f_UT = 5000.0;
     private Double ratioPromedioDeDesviacionEspacial;
-    public static Double f_DE;                              // Factor de consideración de desviación espacial de solución
+    public static Double f_DE = 2000.0;
     private Double ratioPromedioDeDisposicionOperacional;
-    public static Double f_DO;                              // Factor de consideración de disposición operacional de solución
+    public static Double f_DO = 3000.0;
     private List<Pedido> pedidosAtendidos;
-    private List<Aeropuerto> aeropuertosTransitados;
     private Set<Vuelo> vuelosEnTransito;
     private Set<Ruta> rutasEnOperacion;
+    private Set<Aeropuerto> aeropuertosTransitados;
 
     public Solucion() {
         this.fitness = 9999.999;
@@ -35,13 +35,17 @@ public class Solucion {
         this.ratioPromedioDeDesviacionEspacial = 1.0;
         this.ratioPromedioDeDisposicionOperacional = 1.0;
         this.pedidosAtendidos = new ArrayList<>();
-        this.aeropuertosTransitados = new ArrayList<>();
         this.vuelosEnTransito = new HashSet<>();
         this.rutasEnOperacion = new HashSet<>();
+        this.aeropuertosTransitados = new HashSet<>();
     }
 
     public Solucion(Solucion solucion) {
         this.reasignar(solucion);
+    }
+
+    public double obtenerUmbralDeAberracion() {
+        return f_UA*this.fitness;
     }
 
     public Solucion replicar() {
@@ -57,9 +61,9 @@ public class Solucion {
         solucion.ratioPromedioDeDesviacionEspacial = this.ratioPromedioDeDesviacionEspacial;
         solucion.ratioPromedioDeDisposicionOperacional = this.ratioPromedioDeDisposicionOperacional;
         for (Pedido pedido : this.pedidosAtendidos) solucion.pedidosAtendidos.add(pedido.replicar(poolClientes, poolAeropuertos, poolLotes, poolRutas, poolVuelos, poolPlanes));
-        for (Aeropuerto aeropuerto : this.aeropuertosTransitados) solucion.aeropuertosTransitados.add(poolAeropuertos.computeIfAbsent(aeropuerto.getCodigo(), codigo -> aeropuerto.replicar(poolLotes)));
         for (Vuelo vuelo : this.vuelosEnTransito) solucion.vuelosEnTransito.add(poolVuelos.computeIfAbsent(vuelo.getCodigo(), codigo -> vuelo.replicar(poolAeropuertos, poolLotes, poolPlanes)));
         for (Ruta ruta : this.rutasEnOperacion) solucion.rutasEnOperacion.add(poolRutas.computeIfAbsent(ruta.getCodigo(), codigo -> ruta.replicar(poolAeropuertos, poolLotes, poolVuelos, poolPlanes)));
+        for(Aeropuerto aeropuerto : this.aeropuertosTransitados) solucion.aeropuertosTransitados.add(poolAeropuertos.computeIfAbsent(aeropuerto.getCodigo(), codigo -> aeropuerto.replicar(poolLotes)));
         return solucion;
     }
 
@@ -69,13 +73,9 @@ public class Solucion {
         this.ratioPromedioDeDesviacionEspacial = solucion.ratioPromedioDeDesviacionEspacial;
         this.ratioPromedioDeDisposicionOperacional = solucion.ratioPromedioDeDisposicionOperacional;
         this.pedidosAtendidos = new ArrayList<>(solucion.pedidosAtendidos);
-        this.aeropuertosTransitados = new ArrayList<>(solucion.aeropuertosTransitados);
         this.vuelosEnTransito = new HashSet<>(solucion.vuelosEnTransito);
         this.rutasEnOperacion = new HashSet<>(solucion.rutasEnOperacion);
-    }
-
-    public double obtenerUmbralDeAberracion() {
-        return f_UA * this.fitness;
+        this.aeropuertosTransitados = new HashSet<>(solucion.aeropuertosTransitados);
     }
 
     public Double getFitness() {
@@ -87,8 +87,8 @@ public class Solucion {
         setRatioPromedioDeDesviacionEspacial();
         setRatioPromedioDeDisposicionOperacional();
         this.fitness = f_UT * this.ratioPromedioDeUtilizacionTemporal +
-                       f_DE * this.ratioPromedioDeDesviacionEspacial +
-                       f_DO * this.ratioPromedioDeDisposicionOperacional;
+                f_DE * this.ratioPromedioDeDesviacionEspacial +
+                f_DO * this.ratioPromedioDeDisposicionOperacional;
     }
 
     public void setFitness(Double fitness) {
@@ -100,13 +100,14 @@ public class Solucion {
     }
 
     public void setRatioPromedioDeUtilizacionTemporal() {
-        double sumaRatios = 0.0, totalProd = 0;
+        int totalProd = 0;
+        double sumaRatios = 0.0;
         for(Pedido pedido : this.pedidosAtendidos) {
-            LocalDateTime fechaHoraGeneracion = pedido.getFechaHoraGeneracionUTC();
-            Map<Ruta, Lote> lotesPorRuta = pedido.getLotesPorRuta();
-            List<Ruta> rutas = new ArrayList<>(lotesPorRuta.keySet());
+            LocalDateTime fechaHoraGeneracion = pedido.getFechaHoraGeneracion();
+            Map<Ruta, Lote> segmentacion = pedido.obtenerSegementacionVigente().getLotesPorRuta();
+            List<Ruta> rutas = new ArrayList<>(segmentacion.keySet());
             for(Ruta ruta : rutas) {
-                int cantProd = lotesPorRuta.get(ruta).getTamanio();
+                int cantProd = segmentacion.get(ruta).getTamanio();
                 double duracionTotal = ruta.obtenerDuracionActivaTotal() + ruta.obtenerDuracionPasivaTotal(fechaHoraGeneracion);
                 double duracionMaxima = ruta.getTipo().getMaxHorasParaEntrega();
                 sumaRatios += cantProd*duracionTotal/duracionMaxima;
@@ -127,9 +128,10 @@ public class Solucion {
     }
 
     public void setRatioPromedioDeDesviacionEspacial() {
-        double sumaRatios = 0.0, totalProd = 0;
+        int totalProd = 0;
+        double sumaRatios = 0.0;
         for(Pedido pedido : this.pedidosAtendidos) {
-            Map<Ruta, Lote> lotesPorRuta = pedido.getLotesPorRuta();
+            Map<Ruta, Lote> lotesPorRuta = pedido.obtenerSegementacionVigente().getLotesPorRuta();
             List<Ruta> rutas = new ArrayList<>(lotesPorRuta.keySet());
             for(Ruta ruta : rutas) {
                 Aeropuerto aOrig = ruta.getOrigen();
@@ -155,15 +157,19 @@ public class Solucion {
     }
 
     public void setRatioPromedioDeDisposicionOperacional() {
+        int totalRut = 0;
         double sumaRatios = 0.0;
         for (Ruta ruta : this.rutasEnOperacion) {
+            if(!ruta.getEstaOperativa()) continue;
             int rCapDisp = ruta.obtenerCapacidadDisponible();
-            double rCap = ((double)(ruta.obtenerCapacidadMaxima()));
+            double rCap = ((double)(ruta.obtenerCapacidadMinima()));
+            if(rCapDisp == rCap) continue;
             sumaRatios +=  rCapDisp/rCap ;
+            totalRut++;
         }
         if (this.rutasEnOperacion.isEmpty()) {
             this.ratioPromedioDeDisposicionOperacional = 1.0;
-        } else this.ratioPromedioDeDisposicionOperacional = sumaRatios / this.rutasEnOperacion.size();
+        } else this.ratioPromedioDeDisposicionOperacional = sumaRatios / totalRut;
     }
 
     public void setRatioPromedioDeDisposicionOperacional(Double ratioPromedioDeDisposicionOperacional) {
@@ -176,14 +182,6 @@ public class Solucion {
 
     public void setPedidosAtendidos(List<Pedido> pedidosAtendidos) {
         this.pedidosAtendidos = pedidosAtendidos;
-    }
-
-    public List<Aeropuerto> getAeropuertosTransitados() {
-        return aeropuertosTransitados;
-    }
-
-    public void setAeropuertosTransitados(List<Aeropuerto> aeropuertosTransitados) {
-        this.aeropuertosTransitados = aeropuertosTransitados;
     }
 
     public Set<Vuelo> getVuelosEnTransito() {
@@ -200,5 +198,13 @@ public class Solucion {
 
     public void setRutasEnOperacion(Set<Ruta> rutasEnOperacion) {
         this.rutasEnOperacion = rutasEnOperacion;
+    }
+
+    public Set<Aeropuerto> getAeropuertosTransitados() {
+        return aeropuertosTransitados;
+    }
+
+    public void setAeropuertosTransitados(Set<Aeropuerto> aeropuertosTransitados) {
+        this.aeropuertosTransitados = aeropuertosTransitados;
     }
 }

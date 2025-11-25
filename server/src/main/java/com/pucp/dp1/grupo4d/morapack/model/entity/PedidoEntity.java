@@ -7,7 +7,7 @@
 package com.pucp.dp1.grupo4d.morapack.model.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.pucp.dp1.grupo4d.morapack.model.enums.EstadoPedido;
+import com.pucp.dp1.grupo4d.morapack.model.enums.EstadoLote;
 import com.pucp.dp1.grupo4d.morapack.model.enums.TipoEscenario;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
@@ -41,9 +41,8 @@ public class PedidoEntity {
     @Column(name = "fh_expiracion_utc")
     private LocalDateTime fechaHoraExpiracionUTC;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private EstadoPedido estado = EstadoPedido.NO_ATENDIDO;
+    @Column(name = "fue_atendido", nullable = false)
+    private Boolean fueAtendido = false;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -89,8 +88,8 @@ public class PedidoEntity {
     public void setFechaHoraExpiracionLocal(LocalDateTime fechaHoraExpiracionLocal) { this.fechaHoraExpiracionLocal = fechaHoraExpiracionLocal; }
     public LocalDateTime getFechaHoraExpiracionUTC() { return fechaHoraExpiracionUTC; }
     public void setFechaHoraExpiracionUTC(LocalDateTime fechaHoraExpiracionUTC) { this.fechaHoraExpiracionUTC = fechaHoraExpiracionUTC; }
-    public EstadoPedido getEstado() { return estado; }
-    public void setEstado(EstadoPedido estado) { this.estado = estado; }
+    public Boolean getFueAtendido() { return fueAtendido; }
+    public void setFueAtendido(Boolean fueAtendido) { this.fueAtendido = fueAtendido; }
     public TipoEscenario getTipoEscenario() { return tipoEscenario; }
     public void setTipo(TipoEscenario tipoEscenario) { this.tipoEscenario = tipoEscenario; }
     public ClienteEntity getCliente() { return cliente; }

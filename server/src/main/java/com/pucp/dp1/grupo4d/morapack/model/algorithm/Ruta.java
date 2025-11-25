@@ -20,24 +20,53 @@ public class Ruta {
     private String codigo;
     private Double duracion;
     private Double distancia;
-    private LocalDateTime fechaHoraSalidaLocal;
-    private LocalDateTime fechaHoraSalidaUTC;
-    private LocalDateTime fechaHoraLlegadaLocal;
-    private LocalDateTime fechaHoraLlegadaUTC;
-    private TipoRuta tipo;
+    private LocalDateTime fechaHoraSalida;
+    private LocalDateTime fechaHoraLlegada;
     private Aeropuerto origen;
     private Aeropuerto destino;
+    private Boolean estaOperativa;
+    private TipoRuta tipo;
     private List<Vuelo> vuelos;
 
     public Ruta() {
         this.codigo = G4D.Generator.getUniqueString("RUT");
         this.duracion = 0.0;
         this.distancia = 0.0;
+        this.estaOperativa = true;
         this.vuelos = new ArrayList<>();
     }
 
     public Ruta(Ruta ruta) {
         this.reasignar(ruta);
+        this.codigo = G4D.Generator.getUniqueString("RUT");
+    }
+
+    public void reasignar(Ruta ruta) {
+        this.codigo = ruta.codigo;
+        this.duracion = ruta.duracion;
+        this.distancia = ruta.distancia;
+        this.estaOperativa = ruta.estaOperativa;
+        this.fechaHoraSalida = ruta.fechaHoraSalida;
+        this.fechaHoraLlegada = ruta.fechaHoraLlegada;
+        this.tipo = ruta.tipo;
+        this.origen = ruta.origen;
+        this.destino = ruta.destino;
+        this.vuelos = new ArrayList<>(ruta.vuelos);
+    }
+
+    public Ruta replicar(Map<String,Aeropuerto> poolAeropuertos, Map<String, Lote> poolLotes, Map<String,Vuelo> poolVuelos, Map<String, Plan> poolPlanes) {
+        Ruta ruta = new Ruta();
+        ruta.codigo = this.codigo;
+        ruta.duracion = this.duracion;
+        ruta.distancia = this.distancia;
+        ruta.estaOperativa = this.estaOperativa;
+        ruta.fechaHoraSalida = this.fechaHoraSalida;
+        ruta.fechaHoraLlegada = this.fechaHoraLlegada;
+        ruta.tipo = this.tipo;
+        ruta.origen = (this.origen != null) ? poolAeropuertos.computeIfAbsent(this.origen.getCodigo(), codigo -> this.origen.replicar(poolLotes)) : null;
+        ruta.destino = (this.destino != null) ? poolAeropuertos.computeIfAbsent(this.destino.getCodigo(), codigo -> this.destino.replicar(poolLotes)) : null;
+        for (Vuelo vuelo : this.vuelos) ruta.vuelos.add(poolVuelos.computeIfAbsent(vuelo.getCodigo(), codigo -> vuelo.replicar(poolAeropuertos, poolLotes, poolPlanes)));
+        return ruta;
     }
 
     public List<Aeropuerto> obtenerSecuenciaDeAeropuertos() {
@@ -51,7 +80,7 @@ public class Ruta {
         int minCapDisp = Integer.MAX_VALUE;
         for(int i = 0; i < this.vuelos.size(); i++) {
             Vuelo vActual = this.vuelos.get(i);
-            LocalDateTime destFechaHoraIngreso = vActual.getFechaHoraLlegadaUTC(), destFechaHoraEgreso =  (i + 1 < this.vuelos.size()) ? this.vuelos.get(i+1).getFechaHoraSalidaUTC() : destFechaHoraIngreso.plusMinutes((long)(60*Problematica.MAX_HORAS_RECOJO));
+            LocalDateTime destFechaHoraIngreso = vActual.getFechaHoraLlegada(), destFechaHoraEgreso =  (i + 1 < this.vuelos.size()) ? this.vuelos.get(i+1).getFechaHoraSalida() : destFechaHoraIngreso.plusMinutes((long)(60*Problematica.MAX_HORAS_RECOJO));
             int aDestCapDisp = vActual.getPlan().getDestino().obtenerCapacidadDisponible(destFechaHoraIngreso, destFechaHoraEgreso);
             int vCapDisp = vActual.getCapacidadDisponible();
             minCapDisp = Math.min(minCapDisp, Math.min(aDestCapDisp, vCapDisp));
@@ -70,6 +99,17 @@ public class Ruta {
         return maxCap;
     }
 
+    public Integer obtenerCapacidadMinima() {
+        int minCap = Integer.MAX_VALUE;
+        for(int i = 0; i < this.vuelos.size(); i++) {
+            Plan plan = this.vuelos.get(i).getPlan();
+            int aDestCap = plan.getDestino().getCapacidad();
+            int vCap = plan.getCapacidad();
+            minCap = Math.min(minCap, Math.min(aDestCap, vCap));
+        }
+        return minCap;
+    }
+
     public Double obtenerDuracionActivaTotal() {
         double duracionActiva = 0.0;
         for(Vuelo v : this.vuelos) duracionActiva += v.getPlan().getDuracion();
@@ -77,26 +117,40 @@ public class Ruta {
     }
 
     public Double obtenerDuracionPasivaTotal(LocalDateTime fechaHoraInicial) {
-        double duracionPasiva = G4D.getElapsedHours(fechaHoraInicial, this.fechaHoraSalidaUTC);
+        double duracionPasiva = G4D.getElapsedHours(fechaHoraInicial, this.fechaHoraSalida);
         for(int i = 0; i < this.vuelos.size() - 1; i++) {
             Vuelo vA = this.vuelos.get(i), vB = this.vuelos.get(i + 1);
-            duracionPasiva += G4D.getElapsedHours(vA.getFechaHoraLlegadaUTC(), vB.getFechaHoraSalidaUTC());
+            duracionPasiva += G4D.getElapsedHours(vA.getFechaHoraLlegada(), vB.getFechaHoraSalida());
         }
         return duracionPasiva;
     }
 
     public Boolean esAlcanzable(LocalDateTime fechaHoraInicial, LocalDateTime fechaHoraLimite) {
-        if(this.fechaHoraSalidaUTC.isBefore(fechaHoraInicial)) return false;
-        if(this.fechaHoraLlegadaUTC.isAfter(fechaHoraLimite)) return false;
+        if(this.fechaHoraSalida.isBefore(fechaHoraInicial)) return false;
+        if(this.fechaHoraLlegada.isAfter(fechaHoraLimite)) return false;
         if(this.obtenerCapacidadDisponible() < 1) return false;
         return true;
     }
 
+    public boolean respetaSecuenciasInalterables(List<Ruta> rutasOrig, Map<Ruta, List<Aeropuerto>> secuenciasIntocables) {
+        List<Aeropuerto> sa = this.obtenerSecuenciaDeAeropuertos();
+        return rutasOrig.stream().allMatch(rOrig -> {
+            List<Aeropuerto> saIntocable = secuenciasIntocables.getOrDefault(rOrig, null);
+            if(saIntocable != null) {
+                if(sa.size() < saIntocable.size()) return false;
+                for (int i = 0; i < saIntocable.size(); i++) {
+                    if (!sa.get(i).equals(saIntocable.get(i))) {
+                        return false;
+                    }
+                }
+            }
+            return true;
+        });
+    }
+
     public void instanciarHorarios() {
-        this.fechaHoraSalidaUTC = this.vuelos.getFirst().getFechaHoraSalidaUTC();
-        this.fechaHoraSalidaLocal = this.vuelos.getFirst().getFechaHoraSalidaLocal();
-        this.fechaHoraLlegadaUTC = this.vuelos.getLast().getFechaHoraLlegadaUTC();
-        this.fechaHoraLlegadaLocal = this.vuelos.getLast().getFechaHoraLlegadaLocal();
+        this.fechaHoraSalida = this.vuelos.getFirst().getFechaHoraSalida();
+        this.fechaHoraLlegada = this.vuelos.getLast().getFechaHoraLlegada();
     }
 
     public void registraLoteDeProductos(Lote lote, Set<Vuelo> vuelosEnTransito, Set<Ruta> rutasEnOperacion) {
@@ -105,48 +159,34 @@ public class Ruta {
         for(int i = 0; i < this.vuelos.size(); i++) {
             Vuelo vuelo = vuelos.get(i);
             vuelo.setCapacidadDisponible(vuelo.getCapacidadDisponible() - lote.getTamanio());
-            LocalDateTime  destFechaHoraIngreso = vuelo.getFechaHoraLlegadaUTC(), destFechaHoraEgreso = (i + 1 < vuelos.size()) ? this.vuelos.get(i + 1).getFechaHoraSalidaUTC() : destFechaHoraIngreso.plusMinutes((long)(60*Problematica.MAX_HORAS_RECOJO));
+            LocalDateTime  destFechaHoraIngreso = vuelo.getFechaHoraLlegada(), destFechaHoraEgreso = (i + 1 < vuelos.size()) ? this.vuelos.get(i + 1).getFechaHoraSalida() : destFechaHoraIngreso.plusMinutes((long)(60*Problematica.MAX_HORAS_RECOJO));
             vuelo.getPlan().getDestino().registrarLoteDeProductos(lote, destFechaHoraIngreso, destFechaHoraEgreso);
         }
     }
 
-    public void eliminarRegistroDeLoteDeProductos(Lote lote, Set<Vuelo> vuelosEnTransito, Set<Ruta> rutasEnOperacion) {
+    public void eliminarRegistroDeLoteDeProductos(Lote lote) {
+        eliminarRegistroDeLoteDeProductos(lote, false);
+    }
+
+    public void eliminarRegistroDeLoteDeProductos(Lote lote, boolean softDelete) {
         for(Vuelo vuelo : this.vuelos) {
             vuelo.setCapacidadDisponible(vuelo.getCapacidadDisponible() + lote.getTamanio());
-            if(vuelo.getCapacidadDisponible() == vuelo.getPlan().getCapacidad()) vuelosEnTransito.remove(vuelo);
-            vuelo.getPlan().getDestino().eliminarRegistroDeLoteDeProductos(lote);
+            vuelo.getPlan().getDestino().eliminarRegistroDeLoteDeProductos(lote, softDelete);
         }
-        if(this.obtenerCapacidadDisponible() == this.obtenerCapacidadMaxima()) rutasEnOperacion.remove(this);
     }
 
-    public Ruta replicar(Map<String,Aeropuerto> poolAeropuertos, Map<String, Lote> poolLotes, Map<String,Vuelo> poolVuelos, Map<String, Plan> poolPlanes) {
-        Ruta ruta = new Ruta();
-        ruta.codigo = this.codigo;
-        ruta.duracion = this.duracion;
-        ruta.distancia = this.distancia;
-        ruta.fechaHoraSalidaLocal = this.fechaHoraSalidaLocal;
-        ruta.fechaHoraSalidaUTC = this.fechaHoraSalidaUTC;
-        ruta.fechaHoraLlegadaLocal = this.fechaHoraLlegadaLocal;
-        ruta.fechaHoraLlegadaUTC = this.fechaHoraLlegadaUTC;
-        ruta.tipo = this.tipo;
-        ruta.origen = (this.origen != null) ? poolAeropuertos.computeIfAbsent(this.origen.getCodigo(), codigo -> this.origen.replicar(poolLotes)) : null;
-        ruta.destino = (this.destino != null) ? poolAeropuertos.computeIfAbsent(this.destino.getCodigo(), codigo -> this.destino.replicar(poolLotes)) : null;
-        for (Vuelo vuelo : this.vuelos) ruta.vuelos.add(poolVuelos.computeIfAbsent(vuelo.getCodigo(), codigo -> vuelo.replicar(poolAeropuertos, poolLotes, poolPlanes)));
-        return ruta;
-    }
-
-    public void reasignar(Ruta ruta) {
-        this.codigo = ruta.codigo;
-        this.duracion = ruta.duracion;
-        this.distancia = ruta.distancia;
-        this.fechaHoraSalidaLocal = ruta.fechaHoraSalidaLocal;
-        this.fechaHoraSalidaUTC = ruta.fechaHoraSalidaUTC;
-        this.fechaHoraLlegadaLocal = ruta.fechaHoraLlegadaLocal;
-        this.fechaHoraLlegadaUTC = ruta.fechaHoraLlegadaUTC;
-        this.tipo = ruta.tipo;
-        this.origen = ruta.origen;
-        this.destino = ruta.destino;
-        this.vuelos = new ArrayList<>(ruta.vuelos);
+    public void eliminarRegistroDeLoteDeProductos(Lote lote, Aeropuerto aNodo, boolean softDelete) {
+        boolean eliminar = false;
+        for (Vuelo vuelo : this.vuelos) {
+            Aeropuerto origen  = vuelo.getPlan().getOrigen();
+            if (origen.equals(aNodo)) {
+                eliminar = true;
+                origen.actualizarEstanciaHaciaTiempoMaximoHabitable(lote);
+            }
+            if (!eliminar) continue;
+            vuelo.setCapacidadDisponible(vuelo.getCapacidadDisponible() + lote.getTamanio());
+            vuelo.getPlan().getDestino().eliminarRegistroDeLoteDeProductos(lote, softDelete);
+        }
     }
 
     @Override
@@ -170,36 +210,20 @@ public class Ruta {
         this.codigo = codigo;
     }
 
-    public LocalDateTime getFechaHoraSalidaLocal() {
-        return fechaHoraSalidaLocal;
+    public LocalDateTime getFechaHoraSalida() {
+        return fechaHoraSalida;
     }
 
-    public void setFechaHoraSalidaLocal(LocalDateTime fechaHoraSalidaLocal) {
-        this.fechaHoraSalidaLocal = fechaHoraSalidaLocal;
+    public void setFechaHoraSalida(LocalDateTime fechaHoraSalida) {
+        this.fechaHoraSalida = fechaHoraSalida;
     }
 
-    public LocalDateTime getFechaHoraSalidaUTC() {
-        return fechaHoraSalidaUTC;
+    public LocalDateTime getFechaHoraLlegada() {
+        return fechaHoraLlegada;
     }
 
-    public void setFechaHoraSalidaUTC(LocalDateTime fechaHoraSalidaUTC) {
-        this.fechaHoraSalidaUTC = fechaHoraSalidaUTC;
-    }
-
-    public LocalDateTime getFechaHoraLlegadaLocal() {
-        return fechaHoraLlegadaLocal;
-    }
-
-    public void setFechaHoraLlegadaLocal(LocalDateTime fechaHoraLlegadaLocal) {
-        this.fechaHoraLlegadaLocal = fechaHoraLlegadaLocal;
-    }
-
-    public LocalDateTime getFechaHoraLlegadaUTC() {
-        return fechaHoraLlegadaUTC;
-    }
-
-    public void setFechaHoraLlegadaUTC(LocalDateTime fechaHoraLlegadaUTC) {
-        this.fechaHoraLlegadaUTC = fechaHoraLlegadaUTC;
+    public void setFechaHoraLlegada(LocalDateTime fechaHoraLlegada) {
+        this.fechaHoraLlegada = fechaHoraLlegada;
     }
 
     public Double getDuracion() {
@@ -207,7 +231,7 @@ public class Ruta {
     }
 
     public void setDuracion() {
-        this.duracion = G4D.getElapsedHours(this.vuelos.getFirst().getFechaHoraSalidaUTC(), this.vuelos.getLast().getFechaHoraLlegadaUTC());
+        this.duracion = G4D.getElapsedHours(this.vuelos.getFirst().getFechaHoraSalida(), this.vuelos.getLast().getFechaHoraLlegada());
     }
 
     public void setDuracion(Double duracion) {
@@ -226,6 +250,14 @@ public class Ruta {
 
     public void setDistancia(Double distancia) {
         this.distancia = distancia;
+    }
+
+    public Boolean getEstaOperativa() {
+        return estaOperativa;
+    }
+
+    public void setEstaOperativa(boolean estaOperativa) {
+        this.estaOperativa = estaOperativa;
     }
 
     public TipoRuta getTipo() {

@@ -11,20 +11,19 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import com.pucp.dp1.grupo4d.morapack.algorithm.Problematica;
 import com.pucp.dp1.grupo4d.morapack.util.G4D;
 
 public class Aeropuerto {
     private String codigo;
-    private String ciudad;
-    private String pais;
     private String continente;
+    private String pais;
+    private String ciudad;
     private String alias;
     private Integer husoHorario;
     private Integer capacidad;
-    private String latitudDMS;
-    private Double latitudDEC;
-    private String longitudDMS;
-    private Double longitudDEC;
+    private Double latitud;
+    private Double longitud;
     private Boolean esSede;
     private List<Registro> registros;
 
@@ -34,37 +33,81 @@ public class Aeropuerto {
         this.registros = new ArrayList<>();
     }
 
+    public Aeropuerto replicar(Map<String, Lote> poolLotes) {
+        Aeropuerto aeropuerto = new Aeropuerto();
+        aeropuerto.codigo = this.codigo;
+        aeropuerto.ciudad = this.ciudad;
+        aeropuerto.pais = this.pais;
+        aeropuerto.continente = this.continente;
+        aeropuerto.husoHorario = this.husoHorario;
+        aeropuerto.capacidad = this.capacidad;
+        aeropuerto.latitud = this.latitud;
+        aeropuerto.longitud = this.longitud;
+        this.registros.forEach(r -> aeropuerto.registros.add(r.replicar(poolLotes)));
+        return aeropuerto;
+    }
+
     public Lote generarLoteDeProductos(int cantProd) {
         Lote lote = new Lote();
         lote.setTamanio(cantProd);
         return lote;
     }
 
-    public void registrarLoteDeProductos(Lote lote, LocalDateTime fechaHoraIngresoUTC, LocalDateTime fechaHoraEgresoUTC) {
+    public void registrarLoteDeProductos(Lote lote, LocalDateTime fechaHoraIngreso, LocalDateTime fechaHoraEgreso) {
         Registro registro = new Registro();
-        registro.setFechaHoraIngresoUTC(fechaHoraIngresoUTC);
-        registro.setFechaHoraIngresoLocal(G4D.toLocal(fechaHoraIngresoUTC, this.husoHorario));
-        registro.setFechaHoraEgresoUTC(fechaHoraEgresoUTC);
-        registro.setFechaHoraEgresoLocal(G4D.toLocal(fechaHoraEgresoUTC, this.husoHorario));
+        registro.setFechaHoraIngreso(fechaHoraIngreso);
+        registro.setFechaHoraEgreso(fechaHoraEgreso);
         registro.setLote(lote);
         this.registros.add(registro);
     }
 
-    public Boolean eliminarRegistroDeLoteDeProductos(Lote lote) {
+    public Boolean eliminarRegistroDeLoteDeProductos(Lote lote, boolean softDelete) {
         for(Registro registro : this.registros) {
-            if(registro.getLote().equals(lote)) {
-                this.registros.remove(registro);
+            if(registro.getLote().equals(lote) && registro.getSigueVigente()) {
+                if(softDelete) {
+                    registro.setSigueVigente(false);
+                } else this.registros.remove(registro);
                 return true;
             }
         }
         return false;
     }
 
+    public void actualizarEstanciaHaciaTiempoMaximoHabitable(Lote lote) {
+        int disp = this.capacidad;
+        Map<LocalDateTime, Integer> eventos = new TreeMap<>();
+        Registro registroDeLote = null;
+        for(Registro registro : this.registros) {
+            if(!registro.getLote().equals(lote)) {
+                LocalDateTime rFechaHoraIngreso = registro.getFechaHoraIngreso(), rFechaHoraEgreso = registro.getFechaHoraEgreso();
+                int tamanio = registro.getLote().getTamanio();
+                eventos.merge(rFechaHoraIngreso, -tamanio, Integer::sum);
+                eventos.merge(rFechaHoraEgreso, +tamanio, Integer::sum);
+            } else registroDeLote = registro;
+        }
+        if(registroDeLote != null) {
+            LocalDateTime fechaHoraIngresoDeLote = registroDeLote.getFechaHoraIngreso();
+            if(!eventos.isEmpty()) {
+                for(Map.Entry<LocalDateTime, Integer> entry : eventos.entrySet()) {
+                    if(!fechaHoraIngresoDeLote.isAfter(entry.getKey()) && disp + entry.getValue() < lote.getTamanio()) {
+                        long maxMinutos = (long)(60*Math.min(G4D.getElapsedHours(fechaHoraIngresoDeLote, entry.getKey()), Problematica.MAX_HORAS_ESTANCIA));
+                        registroDeLote.setFechaHoraEgreso(fechaHoraIngresoDeLote.plusMinutes(maxMinutos));
+                        return;
+                    }
+                    disp += entry.getValue();
+                }
+            } else {
+                long maxMinutos = (long)(60* Problematica.MAX_HORAS_ESTANCIA);
+                registroDeLote.setFechaHoraEgreso(fechaHoraIngresoDeLote.plusMinutes(maxMinutos));
+            }
+        }
+    }
+
     public Integer obtenerCapacidadDisponible(LocalDateTime fechaHoraInicio, LocalDateTime fechaHoraFin) {
         int disp = this.capacidad, minDisp = this.capacidad;
         Map<LocalDateTime, Integer> eventos = new TreeMap<>();
         for(Registro registro : this.registros) {
-            LocalDateTime rFechaHoraIngreso = registro.getFechaHoraIngresoUTC(), rFechaHoraEgreso = registro.getFechaHoraEgresoUTC();
+            LocalDateTime rFechaHoraIngreso = registro.getFechaHoraIngreso(), rFechaHoraEgreso = registro.getFechaHoraEgreso();
             if(rFechaHoraIngreso.isBefore(fechaHoraFin) && rFechaHoraEgreso.isAfter(fechaHoraInicio)) {
                 int tamanio = registro.getLote().getTamanio();
                 eventos.merge(rFechaHoraIngreso, -tamanio, Integer::sum);
@@ -79,25 +122,7 @@ public class Aeropuerto {
     }
 
     public Double obtenerDistanciaHasta(Aeropuerto aDest) {
-        return G4D.getGeodesicDistance(this.latitudDEC, this.longitudDEC, aDest.latitudDEC, aDest.longitudDEC);
-    }
-
-    public Aeropuerto replicar(Map<String, Lote> poolLotes) {
-        Aeropuerto aeropuerto = new Aeropuerto();
-        aeropuerto.codigo = this.codigo;
-        aeropuerto.ciudad = this.ciudad;
-        aeropuerto.pais = this.pais;
-        aeropuerto.continente = this.continente;
-        aeropuerto.alias = this.alias;
-        aeropuerto.husoHorario = this.husoHorario;
-        aeropuerto.capacidad = this.capacidad;
-        aeropuerto.latitudDMS = this.latitudDMS;
-        aeropuerto.latitudDEC = this.latitudDEC;
-        aeropuerto.longitudDMS = this.longitudDMS;
-        aeropuerto.longitudDEC = this.longitudDEC;
-        aeropuerto.esSede = this.esSede;
-        for(Registro r : this.registros) aeropuerto.registros.add(r.replicar(poolLotes));
-        return aeropuerto;
+        return G4D.getGeodesicDistance(this.latitud, this.longitud, aDest.latitud, aDest.longitud);
     }
 
     @Override
@@ -174,52 +199,28 @@ public class Aeropuerto {
         this.capacidad = capacidad;
     }
 
-    public String getLatitudDMS() {
-        return latitudDMS;
+    public Double getLatitud() {
+        return latitud;
     }
 
-    public void setLatitudDMS() {
-        this.latitudDMS = G4D.toLatDMS(this.latitudDEC);
+    public void setLatitud(String latDMS) {
+        this.latitud = G4D.toLatDEC(latDMS);
     }
 
-    public void setLatitudDMS(String latitudDMS) {
-        this.latitudDMS = latitudDMS;
+    public void setLatitud(double latitud) {
+        this.latitud = latitud;
     }
 
-    public Double getLatitudDEC() {
-        return latitudDEC;
+    public Double getLongitud() {
+        return longitud;
     }
 
-    public void setLatitudDEC() {
-        this.latitudDEC = G4D.toLatDEC(this.latitudDMS);
+    public void setLongitud(String lonDMS) {
+        this.longitud = G4D.toLonDEC(lonDMS);
     }
 
-    public void setLatitudDEC(double latitudDEC) {
-        this.latitudDEC = latitudDEC;
-    }
-
-    public String getLongitudDMS() {
-        return longitudDMS;
-    }
-
-    public void setLongitudDMS() {
-        this.longitudDMS = G4D.toLonDMS(this.longitudDEC);
-    }
-
-    public void setLongitudDMS(String longitudDMS) {
-        this.longitudDMS = longitudDMS;
-    }
-
-    public Double getLongitudDEC() {
-        return longitudDEC;
-    }
-
-    public void setLongitudDEC() {
-        this.longitudDEC = G4D.toLonDEC(this.longitudDMS);
-    }
-
-    public void setLongitudDEC(double longitudDEC) {
-        this.longitudDEC = longitudDEC;
+    public void setLongitud(double longitud) {
+        this.longitud = longitud;
     }
 
     public Boolean getEsSede() {

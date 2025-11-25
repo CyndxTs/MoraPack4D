@@ -29,8 +29,8 @@ public class VueloMapper {
         }
         VueloDTO dto = new VueloDTO();
         dto.setCodigo(algorithm.getCodigo());
-        dto.setFechaHoraSalida(G4D.toDisplayString(algorithm.getFechaHoraSalidaUTC()));
-        dto.setFechaHoraLlegada(G4D.toDisplayString(algorithm.getFechaHoraLlegadaUTC()));
+        dto.setFechaHoraSalida(G4D.toDisplayString(algorithm.getFechaHoraSalida()));
+        dto.setFechaHoraLlegada(G4D.toDisplayString(algorithm.getFechaHoraLlegada()));
         Plan plan = algorithm.getPlan();
         Aeropuerto origen = plan.getOrigen();
         dto.setCodOrigen(origen.getCodigo());

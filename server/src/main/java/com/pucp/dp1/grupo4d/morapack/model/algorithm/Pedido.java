@@ -7,53 +7,80 @@
 package com.pucp.dp1.grupo4d.morapack.model.algorithm;
 
 import java.time.LocalDateTime;
-import java.util.HashMap;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+
+import com.pucp.dp1.grupo4d.morapack.algorithm.Problematica;
 import com.pucp.dp1.grupo4d.morapack.model.enums.TipoRuta;
 import com.pucp.dp1.grupo4d.morapack.util.G4D;
 
 public class Pedido {
     private String codigo;
-    private Cliente cliente;
     private Integer cantidadSolicitada;
-    private LocalDateTime fechaHoraGeneracionLocal;
-    private LocalDateTime fechaHoraGeneracionUTC;
-    private LocalDateTime fechaHoraExpiracionLocal;
-    private LocalDateTime fechaHoraExpiracionUTC;
-    private Aeropuerto destino;
     private Boolean fueAtendido;
-    private Map<Ruta, Lote> lotesPorRuta;
+    private LocalDateTime fechaHoraGeneracion;
+    private LocalDateTime fechaHoraExpiracion;
+    private Cliente cliente;
+    private Aeropuerto destino;
+    private List<Segmentacion> segmentaciones;
 
     public Pedido() {
         this.codigo = G4D.Generator.getUniqueString("PED");
         this.cantidadSolicitada = 0;
         this.fueAtendido = false;
-        this.lotesPorRuta = new HashMap<>();
-    }
-
-    public Integer obtenerCantidadDeProductosEnRuta(Ruta ruta) {
-        Lote lote = lotesPorRuta.get(ruta);
-        return (lote != null) ? lote.getTamanio() : 0;
+        this.segmentaciones = new ArrayList<>();
     }
 
     public Pedido replicar(Map<String, Cliente> poolClientes, Map<String,Aeropuerto> poolAeropuertos, Map<String, Lote> poolLotes, Map<String, Ruta> poolRutas, Map<String,Vuelo> poolVuelos, Map<String, Plan> poolPlanes) {
         Pedido pedido = new Pedido();
         pedido.codigo = this.codigo;
-        pedido.cliente = (this.cliente != null) ? poolClientes.computeIfAbsent(this.cliente.getCodigo(), codigo -> this.cliente.replicar()) : null;
         pedido.cantidadSolicitada = this.cantidadSolicitada;
-        pedido.fechaHoraGeneracionLocal = this.fechaHoraGeneracionLocal;
-        pedido.fechaHoraGeneracionUTC = this.fechaHoraGeneracionUTC;
-        pedido.fechaHoraExpiracionLocal = this.fechaHoraExpiracionLocal;
-        pedido.fechaHoraExpiracionUTC = this.fechaHoraExpiracionUTC;
-        pedido.destino = (this.destino != null) ? poolAeropuertos.computeIfAbsent(this.destino.getCodigo(), codigo -> this.destino.replicar(poolLotes)) : null;
         pedido.fueAtendido = this.fueAtendido;
-        for(Map.Entry<Ruta, Lote> entry : this.lotesPorRuta.entrySet()) {
-            Ruta ruta = poolRutas.computeIfAbsent(entry.getKey().getCodigo(), codigo -> entry.getKey().replicar(poolAeropuertos, poolLotes, poolVuelos, poolPlanes));
-            Lote lote = poolLotes.computeIfAbsent(entry.getValue().getCodigo(), codigo -> entry.getValue().replicar());
-            pedido.lotesPorRuta.put(ruta, lote);
-        }
+        pedido.fechaHoraGeneracion = this.fechaHoraGeneracion;
+        pedido.fechaHoraExpiracion = this.fechaHoraExpiracion;
+        pedido.cliente = (this.cliente != null) ? poolClientes.computeIfAbsent(this.cliente.getCodigo(), codigo -> this.cliente.replicar()) : null;
+        pedido.destino = (this.destino != null) ? poolAeropuertos.computeIfAbsent(this.destino.getCodigo(), codigo -> this.destino.replicar(poolLotes)) : null;
+        this.segmentaciones.forEach(s -> pedido.segmentaciones.add(s.replicar(poolAeropuertos, poolLotes, poolRutas, poolVuelos, poolPlanes)));
         return pedido;
+    }
+
+    public void cargarRestriccionesDeReplanificacion(Map<Ruta, Lote> segmentacionModificable, Map<Ruta, List<Aeropuerto>> secuenciasIntocables) {
+        Map<Ruta, Lote> segmentacion = this.obtenerSegementacionVigente().getLotesPorRuta();
+        for (Map.Entry<Ruta, Lote> entry : segmentacion.entrySet()) {
+            Ruta ruta = entry.getKey();
+            Lote lote = entry.getValue();
+            if (!lote.esModificable(ruta)) {
+                continue;
+            }
+            List<Aeropuerto> secuenciaIntocable = this.obtenerSecuenciaInalterable(ruta);
+            if(!secuenciaIntocable.isEmpty()) {
+                secuenciasIntocables.put(ruta, secuenciaIntocable);
+            }
+            segmentacionModificable.put(ruta, lote);
+        }
+    }
+
+    public List<Aeropuerto> obtenerSecuenciaInalterable(Ruta ruta) {
+        PuntoDeReplanificacion pdr = Problematica.PUNTOS_REPLANIFICACION.stream().filter(p -> this.obtenerSegementacionVigente().getLotesPorRuta().values().stream().anyMatch(l -> p.getLotes().contains(l))).findFirst().orElse(null);
+        if (pdr == null) {
+            return new ArrayList<>();
+        }
+        Ruta rutaOriginal = pdr.getRuta();
+        Aeropuerto aeropuertoQuiebre = pdr.getAeropuerto();
+        List<Aeropuerto> secuenciaOriginal = rutaOriginal.obtenerSecuenciaDeAeropuertos();
+        int posQuiebre = secuenciaOriginal.indexOf(aeropuertoQuiebre);
+        return new ArrayList<>(secuenciaOriginal.subList(0, posQuiebre + 1));
+    }
+
+    public Segmentacion obtenerSegementacionVigente() {
+        return (!this.segmentaciones.isEmpty()) ? this.segmentaciones.getLast() : null;
+    }
+
+    public Integer obtenerCantidadDeProductosEnRuta(Ruta ruta) {
+        Lote lote = obtenerSegementacionVigente().getLotesPorRuta().get(ruta);
+        return (lote != null) ? lote.getTamanio() : 0;
     }
 
     @Override
@@ -93,59 +120,34 @@ public class Pedido {
         this.cantidadSolicitada = cantidadSolicitada;
     }
 
-    public LocalDateTime getFechaHoraGeneracionLocal() {
-        return fechaHoraGeneracionLocal;
+    public Boolean getFueAtendido() {
+        return fueAtendido;
     }
 
-    public void setFechaHoraGeneracionLocal() {
-        this.fechaHoraGeneracionLocal = G4D.toLocal(this.fechaHoraGeneracionUTC, this.destino.getHusoHorario());
+    public void setFueAtendido(boolean fueAtendido) {
+        this.fueAtendido = fueAtendido;
     }
 
-    public void setFechaHoraGeneracionLocal(LocalDateTime fechaHoraGeneracionLocal) {
-        this.fechaHoraGeneracionLocal = fechaHoraGeneracionLocal;
+    public LocalDateTime getFechaHoraGeneracion() {
+        return fechaHoraGeneracion;
     }
 
-    public LocalDateTime getFechaHoraGeneracionUTC() {
-        return fechaHoraGeneracionUTC;
+    public void setFechaHoraGeneracion(LocalDateTime fechaHoraGeneracion) {
+        this.fechaHoraGeneracion = fechaHoraGeneracion;
     }
 
-    public void setFechaHoraGeneracionUTC() {
-        this.fechaHoraGeneracionUTC = G4D.toUTC(this.fechaHoraGeneracionLocal, this.destino.getHusoHorario());
-    }
-
-    public void setFechaHoraGeneracionUTC(LocalDateTime fechaHoraGeneracionUTC) {
-        this.fechaHoraGeneracionUTC = fechaHoraGeneracionUTC;
+    public LocalDateTime getFechaHoraExpiracion() {
+        return fechaHoraExpiracion;
     }
 
     public void setFechaHoraExpiracion() {
-        boolean tieneIntercontinental = this.lotesPorRuta.keySet().stream().anyMatch(r -> r.getTipo().equals(TipoRuta.INTERCONTINENTAL));
+        boolean tieneIntercontinental = this.obtenerSegementacionVigente().getLotesPorRuta().keySet().stream().anyMatch(r -> r.getTipo().equals(TipoRuta.INTERCONTINENTAL));
         TipoRuta tipo = tieneIntercontinental ? TipoRuta.INTERCONTINENTAL : TipoRuta.INTRACONTINENTAL;
-        this.fechaHoraExpiracionUTC = this.fechaHoraGeneracionUTC.plusMinutes(tipo.getMaxMinutosParaEntrega());
-        this.setFechaHoraExpiracionLocal();
+        this.fechaHoraExpiracion = this.fechaHoraGeneracion.plusMinutes(tipo.getMaxMinutosParaEntrega());
     }
 
-    public LocalDateTime getFechaHoraExpiracionLocal() {
-        return fechaHoraExpiracionLocal;
-    }
-
-    public void setFechaHoraExpiracionLocal() {
-        this.fechaHoraExpiracionLocal = G4D.toLocal(this.fechaHoraExpiracionUTC, this.destino.getHusoHorario());
-    }
-
-    public void setFechaHoraExpiracionLocal(LocalDateTime fechaHoraExpiracionLocal) {
-        this.fechaHoraExpiracionLocal = fechaHoraExpiracionLocal;
-    }
-
-    public LocalDateTime getFechaHoraExpiracionUTC() {
-        return fechaHoraExpiracionUTC;
-    }
-
-    public void setFechaHoraExpiracionUTC() {
-        this.fechaHoraExpiracionUTC = G4D.toUTC(this.fechaHoraExpiracionLocal, this.destino.getHusoHorario());
-    }
-
-    public void setFechaHoraExpiracionUTC(LocalDateTime fechaHoraExpiracionUTC) {
-        this.fechaHoraExpiracionUTC = fechaHoraExpiracionUTC;
+    public void setFechaHoraExpiracion(LocalDateTime fechaHoraExpiracion) {
+        this.fechaHoraExpiracion = fechaHoraExpiracion;
     }
 
     public Aeropuerto getDestino() {
@@ -156,19 +158,11 @@ public class Pedido {
         this.destino = destino;
     }
 
-    public Boolean getFueAtendido() {
-        return fueAtendido;
+    public List<Segmentacion> getSegmentaciones() {
+        return segmentaciones;
     }
 
-    public void setFueAtendido(boolean fueAtendido) {
-        this.fueAtendido = fueAtendido;
-    }
-
-    public Map<Ruta, Lote> getLotesPorRuta() {
-        return lotesPorRuta;
-    }
-
-    public void setLotesPorRuta(Map<Ruta, Lote> lotesPorRuta) {
-        this.lotesPorRuta = lotesPorRuta;
+    public void setSegmentaciones(List<Segmentacion> segmentaciones) {
+        this.segmentaciones = segmentaciones;
     }
 }

@@ -9,7 +9,7 @@ package com.pucp.dp1.grupo4d.morapack.algorithm;
 import com.pucp.dp1.grupo4d.morapack.adapter.*;
 import com.pucp.dp1.grupo4d.morapack.model.algorithm.*;
 import com.pucp.dp1.grupo4d.morapack.model.entity.*;
-import com.pucp.dp1.grupo4d.morapack.model.enums.EstadoPedido;
+import com.pucp.dp1.grupo4d.morapack.model.enums.EstadoLote;
 import com.pucp.dp1.grupo4d.morapack.service.model.*;
 import com.pucp.dp1.grupo4d.morapack.util.G4D;
 import java.time.LocalDateTime;
@@ -26,6 +26,7 @@ public class Problematica {
     public static LocalDateTime INICIO_REPLANIFICACION;
     public static String ESCENARIO;
     public static List<String> CODIGOS_DE_ORIGENES;
+    public static List<PuntoDeReplanificacion> PUNTOS_REPLANIFICACION;
     public List<Aeropuerto> origenes;
     public List<Aeropuerto> destinos;
     public List<Plan> planes;
@@ -112,7 +113,7 @@ public class Problematica {
         G4D.IntegerWrapper cantAtendidos = new G4D.IntegerWrapper();
         List<PedidoEntity> pedidosEntity = pedidoService.findAllByDateTimeRange(INICIO_PLANIFICACION, FIN_PLANIFICACION, ESCENARIO);
         pedidosEntity.forEach(entity -> {
-            if(!entity.getEstado().equals(EstadoPedido.NO_ATENDIDO)) cantAtendidos.increment();
+            if(entity.getFueAtendido()) cantAtendidos.increment();
             Pedido pedido = pedidoAdapter.toAlgorithm(entity);
             pedidos.add(pedido);
         });
@@ -132,5 +133,6 @@ public class Problematica {
         });
         G4D.Logger.logf("[:] RUTAS CARGADAS! | '%d' rutas!%n", rutas.size());
         G4D.Logger.logln("[<] DATOS CARGADOS!");
+        PUNTOS_REPLANIFICACION = new ArrayList<>();
     }
 }

@@ -22,6 +22,9 @@ public class RegistroEntity {
     @Column(nullable = false, unique = true, length = 30)
     private String codigo;
 
+    @Column(name = "sigue_vigente", nullable = false)
+    private Boolean sigueVigente = true;
+
     @Column(name = "fh_ingreso_local", nullable = false)
     private LocalDateTime fechaHoraIngresoLocal;
 
@@ -61,6 +64,8 @@ public class RegistroEntity {
     public void setId(Integer id) { this.id = id; }
     public String getCodigo() { return codigo; }
     public void setCodigo(String codigo) { this.codigo = codigo; }
+    public Boolean getSigueVigente() { return sigueVigente; }
+    public void setSigueVigente(Boolean sigueVigente) { this.sigueVigente = sigueVigente; }
     public LocalDateTime getFechaHoraIngresoLocal() { return fechaHoraIngresoLocal; }
     public void setFechaHoraIngresoLocal(LocalDateTime fechaHoraIngresoLocal) { this.fechaHoraIngresoLocal = fechaHoraIngresoLocal; }
     public LocalDateTime getFechaHoraIngresoUTC() { return fechaHoraIngresoUTC; }

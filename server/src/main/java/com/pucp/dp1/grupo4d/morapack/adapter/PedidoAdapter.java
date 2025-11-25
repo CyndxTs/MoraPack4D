@@ -6,11 +6,7 @@
 
 package com.pucp.dp1.grupo4d.morapack.adapter;
 
-import com.pucp.dp1.grupo4d.morapack.model.algorithm.Pedido;
-import com.pucp.dp1.grupo4d.morapack.model.algorithm.Ruta;
-import com.pucp.dp1.grupo4d.morapack.model.algorithm.Lote;
-import com.pucp.dp1.grupo4d.morapack.model.algorithm.Cliente;
-import com.pucp.dp1.grupo4d.morapack.model.algorithm.Aeropuerto;
+import com.pucp.dp1.grupo4d.morapack.model.algorithm.*;
 import com.pucp.dp1.grupo4d.morapack.model.dto.LoteDTO;
 import com.pucp.dp1.grupo4d.morapack.model.dto.LotePorRutaDTO;
 import com.pucp.dp1.grupo4d.morapack.model.dto.PedidoDTO;
@@ -24,21 +20,22 @@ import java.util.*;
 @Component
 public class PedidoAdapter {
 
-    @Autowired
-    private PedidoService pedidoService;
-
+    private final PedidoService pedidoService;
     private final UsuarioAdapter usuarioAdapter;
     private final AeropuertoAdapter aeropuertoAdapter;
     private final RutaAdapter rutaAdapter;
     private final LoteAdapter loteAdapter;
     private final Map<String, Pedido> poolAlgorithm = new HashMap<>();
     private final Map<String, PedidoEntity> poolEntity = new HashMap<>();
+    private final SegmentacionAdapter segmentacionAdapter;
 
-    public PedidoAdapter(UsuarioAdapter usuarioAdapter, AeropuertoAdapter aeropuertoAdapter, RutaAdapter rutaAdapter, LoteAdapter loteAdapter) {
+    public PedidoAdapter(UsuarioAdapter usuarioAdapter, AeropuertoAdapter aeropuertoAdapter, RutaAdapter rutaAdapter, LoteAdapter loteAdapter, PedidoService pedidoService, SegmentacionAdapter segmentacionAdapter) {
         this.usuarioAdapter = usuarioAdapter;
         this.aeropuertoAdapter = aeropuertoAdapter;
         this.rutaAdapter = rutaAdapter;
         this.loteAdapter = loteAdapter;
+        this.pedidoService = pedidoService;
+        this.segmentacionAdapter = segmentacionAdapter;
     }
 
     public Pedido toAlgorithm(PedidoEntity entity) {
@@ -48,28 +45,20 @@ public class PedidoAdapter {
         Pedido algorithm = new Pedido();
         algorithm.setCodigo(entity.getCodigo());
         algorithm.setCantidadSolicitada(entity.getCantidadSolicitada());
-        algorithm.setFechaHoraGeneracionLocal(entity.getFechaHoraGeneracionLocal());
-        algorithm.setFechaHoraGeneracionUTC(entity.getFechaHoraGeneracionUTC());
-        algorithm.setFechaHoraExpiracionLocal(entity.getFechaHoraExpiracionLocal());
-        algorithm.setFechaHoraExpiracionUTC(entity.getFechaHoraExpiracionUTC());
+        algorithm.setFechaHoraGeneracion(entity.getFechaHoraGeneracionUTC());
+        algorithm.setFechaHoraExpiracion(entity.getFechaHoraExpiracionUTC());
+        algorithm.setFueAtendido(entity.getFueAtendido());
         Cliente cliente = usuarioAdapter.toAlgorithm(entity.getCliente());
         algorithm.setCliente(cliente);
         Aeropuerto destino = aeropuertoAdapter.toAlgorithm(entity.getDestino());
         algorithm.setDestino(destino);
-        /*
-        Map<Ruta, Lote> lotesPorRuta = new HashMap<>();
-        List<RutaEntity> rutasEntity = entity.getRutas();
-        for (RutaEntity rutaEntity : rutasEntity) {
-            Ruta ruta = rutaAdapter.toAlgorithm(rutaEntity);
-            List<LoteEntity> lotesEntity = rutaEntity.getLotes();
-            for (LoteEntity loteEntity : lotesEntity) {
-                Lote lote = loteAdapter.toAlgorithm(loteEntity);
-                lotesPorRuta.put(ruta, lote);
-            }
+        List<Segmentacion> segmentaciones = new ArrayList<>();
+        List<SegmentacionEntity> segmentacionesEntity = entity.getSegmentaciones();
+        for (SegmentacionEntity segmentacionEntity : segmentacionesEntity) {
+            Segmentacion segmentacion = segmentacionAdapter.toAlgorithm(segmentacionEntity);
+            segmentaciones.add(segmentacion);
         }
-        algorithm.setLotesPorRuta(lotesPorRuta);
-
-         */
+        algorithm.setSegmentaciones(segmentaciones);
         poolAlgorithm.put(algorithm.getCodigo(), algorithm);
         return algorithm;
     }
@@ -82,9 +71,9 @@ public class PedidoAdapter {
         if (entity == null) {
             return null;
         }
-        entity.setFechaHoraExpiracionLocal(algorithm.getFechaHoraExpiracionLocal());
-        entity.setFechaHoraExpiracionUTC(algorithm.getFechaHoraExpiracionUTC());
-        // entity.setFueAtendido(algorithm.getFueAtendido());
+        entity.setFechaHoraExpiracionUTC(algorithm.getFechaHoraExpiracion());
+        entity.setFechaHoraExpiracionLocal(G4D.toLocal(algorithm.getFechaHoraExpiracion(), entity.getDestino().getHusoHorario()));
+        entity.setFueAtendido(algorithm.getFueAtendido());
         poolEntity.put(entity.getCodigo(), entity);
         return entity;
     }
@@ -92,6 +81,7 @@ public class PedidoAdapter {
     public void clearPools() {
         poolAlgorithm.clear();
         poolEntity.clear();
+        pedidoService.clearPools();
         usuarioAdapter.clearPools();
         aeropuertoAdapter.clearPools();
         rutaAdapter.clearPools();

@@ -10,7 +10,6 @@ import com.pucp.dp1.grupo4d.morapack.model.algorithm.Cliente;
 import com.pucp.dp1.grupo4d.morapack.model.entity.ClienteEntity;
 import com.pucp.dp1.grupo4d.morapack.model.entity.UsuarioEntity;
 import com.pucp.dp1.grupo4d.morapack.service.model.ClienteService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import java.util.HashMap;
 import java.util.Map;
@@ -18,11 +17,13 @@ import java.util.Map;
 @Component
 public class UsuarioAdapter {
 
-    @Autowired
-    private ClienteService clienteService;
-
+    private final ClienteService clienteService;
     private final Map<String, Cliente> poolAlgorithm = new HashMap<>();
     private final Map<String, UsuarioEntity> poolEntity = new HashMap<>();
+
+    public UsuarioAdapter(ClienteService clienteService) {
+        this.clienteService = clienteService;
+    }
 
     public Cliente toAlgorithm(ClienteEntity entity) {
         if (poolAlgorithm.containsKey(entity.getCodigo())) {
@@ -31,7 +32,6 @@ public class UsuarioAdapter {
         Cliente algorithm = new Cliente();
         algorithm.setCodigo(entity.getCodigo());
         algorithm.setNombre(entity.getNombre());
-        algorithm.setCorreo(entity.getCorreo());
         poolAlgorithm.put(algorithm.getCodigo(), algorithm);
         return algorithm;
     }
@@ -51,5 +51,6 @@ public class UsuarioAdapter {
     public void clearPools() {
         poolAlgorithm.clear();
         poolEntity.clear();
+        clienteService.clearPools();
     }
 }

@@ -16,6 +16,7 @@ public class RegistroDTO implements DTO {
     @EqualsAndHashCode.Include
     private String codigo;
 
+    private Boolean sigueVigente;
     private String fechaHoraIngreso;
     private String fechaHoraEgreso;
     private String codLote;

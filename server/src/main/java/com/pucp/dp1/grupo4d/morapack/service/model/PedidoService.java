@@ -17,7 +17,7 @@ import com.pucp.dp1.grupo4d.morapack.model.dto.response.ListResponse;
 import com.pucp.dp1.grupo4d.morapack.model.entity.AeropuertoEntity;
 import com.pucp.dp1.grupo4d.morapack.model.entity.PedidoEntity;
 import com.pucp.dp1.grupo4d.morapack.model.entity.ClienteEntity;
-import com.pucp.dp1.grupo4d.morapack.model.enums.EstadoPedido;
+import com.pucp.dp1.grupo4d.morapack.model.enums.EstadoLote;
 import com.pucp.dp1.grupo4d.morapack.repository.PedidoRepository;
 import com.pucp.dp1.grupo4d.morapack.util.G4D;
 import org.springframework.data.domain.PageRequest;
@@ -125,7 +125,7 @@ public class PedidoService {
                 pedido.setFechaHoraGeneracionLocal(G4D.toLocal(pedido.getFechaHoraGeneracionUTC(), destino.getHusoHorario()));
                 pedido.setFechaHoraExpiracionUTC(null);
                 pedido.setFechaHoraExpiracionLocal(null);
-                pedido.setEstado(EstadoPedido.NO_ATENDIDO);
+                pedido.setFueAtendido(false);
                 this.save(pedido);
                 G4D.Logger.logln("[<] PEDIDO CARGADO!");
                 return new GenericResponse(true, "Pedido importado correctamente!");

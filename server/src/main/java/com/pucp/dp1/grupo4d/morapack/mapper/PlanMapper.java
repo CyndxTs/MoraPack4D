@@ -7,19 +7,30 @@
 package com.pucp.dp1.grupo4d.morapack.mapper;
 
 import com.pucp.dp1.grupo4d.morapack.model.algorithm.Aeropuerto;
+import com.pucp.dp1.grupo4d.morapack.model.algorithm.Evento;
 import com.pucp.dp1.grupo4d.morapack.model.algorithm.Plan;
+import com.pucp.dp1.grupo4d.morapack.model.dto.EventoDTO;
 import com.pucp.dp1.grupo4d.morapack.model.dto.PlanDTO;
 import com.pucp.dp1.grupo4d.morapack.model.entity.AeropuertoEntity;
+import com.pucp.dp1.grupo4d.morapack.model.entity.EventoEntity;
 import com.pucp.dp1.grupo4d.morapack.model.entity.PlanEntity;
 import com.pucp.dp1.grupo4d.morapack.util.G4D;
 import org.springframework.stereotype.Component;
+
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Component
 public class PlanMapper {
 
     private final Map<String, PlanDTO> poolDTO = new HashMap<>();
+    private final EventoMapper eventoMapper;
+
+    public PlanMapper(EventoMapper eventoMapper) {
+        this.eventoMapper = eventoMapper;
+    }
 
     public PlanDTO toDTO(Plan algorithm) {
         if (poolDTO.containsKey(algorithm.getCodigo())) {
@@ -31,11 +42,18 @@ public class PlanMapper {
         planDTO.setCodOrigen(origen.getCodigo());
         Aeropuerto destino = algorithm.getDestino();
         planDTO.setCodDestino(destino.getCodigo());
-        planDTO.setHoraSalida(G4D.toDisplayString(algorithm.getHoraSalidaUTC()));
-        planDTO.setHoraLlegada(G4D.toDisplayString(algorithm.getHoraLlegadaUTC()));
+        planDTO.setHoraSalida(G4D.toDisplayString(algorithm.getHoraSalida()));
+        planDTO.setHoraLlegada(G4D.toDisplayString(algorithm.getHoraLlegada()));
         planDTO.setCapacidad(algorithm.getCapacidad());
         planDTO.setDuracion(algorithm.getDuracion());
         planDTO.setDistancia(algorithm.getDistancia());
+        List<EventoDTO> eventosDTO = new ArrayList<>();
+        List<Evento> eventos = algorithm.getEventos();
+        for (Evento evento : eventos) {
+            EventoDTO eventoDTO = eventoMapper.toDTO(evento);
+            eventosDTO.add(eventoDTO);
+        }
+        planDTO.setEventos(eventosDTO);
         poolDTO.put(algorithm.getCodigo(), planDTO);
         return planDTO;
     }
@@ -55,6 +73,13 @@ public class PlanMapper {
         planDTO.setCapacidad(entity.getCapacidad());
         planDTO.setDuracion(entity.getDuracion());
         planDTO.setDistancia(entity.getDistancia());
+        List<EventoDTO> eventosDTO = new ArrayList<>();
+        List<EventoEntity> eventosEntity = entity.getEventos();
+        for (EventoEntity eventoEntity : eventosEntity) {
+            EventoDTO eventoDTO = eventoMapper.toDTO(eventoEntity);
+            eventosDTO.add(eventoDTO);
+        }
+        planDTO.setEventos(eventosDTO);
         poolDTO.put(entity.getCodigo(), planDTO);
         return planDTO;
     }

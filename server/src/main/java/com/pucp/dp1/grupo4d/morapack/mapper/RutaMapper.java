@@ -34,8 +34,8 @@ public class RutaMapper {
         dto.setDuracion(algorithm.getDuracion());
         dto.setDistancia(algorithm.getDistancia());
         dto.setTipo(algorithm.getTipo().toString());
-        dto.setFechaHoraSalida(G4D.toDisplayString(algorithm.getFechaHoraSalidaUTC()));
-        dto.setFechaHoraLlegada(G4D.toDisplayString(algorithm.getFechaHoraLlegadaUTC()));
+        dto.setFechaHoraSalida(G4D.toDisplayString(algorithm.getFechaHoraSalida()));
+        dto.setFechaHoraLlegada(G4D.toDisplayString(algorithm.getFechaHoraLlegada()));
         Aeropuerto origen = algorithm.getOrigen();
         dto.setCodOrigen(origen.getCodigo());
         Aeropuerto destino = algorithm.getDestino();

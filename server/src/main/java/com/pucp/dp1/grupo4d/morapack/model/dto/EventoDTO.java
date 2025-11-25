@@ -18,6 +18,6 @@ public class EventoDTO implements DTO {
     private String tipo;
     private String fechaHoraInicio;
     private String fechaHoraFin;
-    private String horaSalidaReprogramada;
-    private String horaLlegadaReprogramada;
+    private String fechaHoraSalida;
+    private String fechaHoraLlegada;
 }

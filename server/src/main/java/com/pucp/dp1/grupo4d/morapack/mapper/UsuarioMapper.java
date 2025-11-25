@@ -6,12 +6,10 @@
 
 package com.pucp.dp1.grupo4d.morapack.mapper;
 
-import com.pucp.dp1.grupo4d.morapack.model.algorithm.Cliente;
 import com.pucp.dp1.grupo4d.morapack.model.dto.UsuarioDTO;
 import com.pucp.dp1.grupo4d.morapack.model.entity.AdministradorEntity;
 import com.pucp.dp1.grupo4d.morapack.model.entity.ClienteEntity;
 import com.pucp.dp1.grupo4d.morapack.model.entity.UsuarioEntity;
-import com.pucp.dp1.grupo4d.morapack.model.enums.EstadoUsuario;
 import org.springframework.stereotype.Component;
 import java.util.HashMap;
 import java.util.Map;
@@ -20,20 +18,6 @@ import java.util.Map;
 public class UsuarioMapper {
 
     private final Map<String, UsuarioDTO> poolDTO = new HashMap<>();
-
-    public UsuarioDTO toDTO(Cliente algorithm) {
-        if (poolDTO.containsKey(algorithm.getCodigo())) {
-            return poolDTO.get(algorithm.getCodigo());
-        }
-        UsuarioDTO dto = new UsuarioDTO();
-        dto.setCodigo(algorithm.getCodigo());
-        dto.setNombre(algorithm.getNombre());
-        dto.setCorreo(algorithm.getCorreo());
-        dto.setEstado(EstadoUsuario.OFFLINE.toString());
-        dto.setTipoUsuario("CLIENTE");
-        poolDTO.put(algorithm.getCodigo(), dto);
-        return dto;
-    }
 
     public UsuarioDTO toDTO(UsuarioEntity entity) {
         if(entity instanceof ClienteEntity clienteEntity) {
