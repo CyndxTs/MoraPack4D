@@ -12,16 +12,16 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import pucp.dp1.grupo4d.algorithm.version.aether.enums.EstadoPedido;
+import pucp.dp1.grupo4d.algorithm.version.aether.Problematica;
 import pucp.dp1.grupo4d.algorithm.version.aether.enums.TipoRuta;
 import pucp.dp1.grupo4d.util.G4D;
 
 public class Pedido {
     private String codigo;
     private Integer cantidadSolicitada;
+    private Boolean fueAtendido;
     private LocalDateTime fechaHoraGeneracion;
     private LocalDateTime fechaHoraExpiracion;
-    private EstadoPedido estado;
     private Cliente cliente;
     private Aeropuerto destino;
     private List<Segmentacion> segmentaciones;
@@ -29,7 +29,7 @@ public class Pedido {
     public Pedido() {
         this.codigo = G4D.Generator.getUniqueString("PED");
         this.cantidadSolicitada = 0;
-        this.estado = EstadoPedido.NO_ATENDIDO;
+        this.fueAtendido = false;
         this.segmentaciones = new ArrayList<>();
     }
 
@@ -37,13 +37,41 @@ public class Pedido {
         Pedido pedido = new Pedido();
         pedido.codigo = this.codigo;
         pedido.cantidadSolicitada = this.cantidadSolicitada;
+        pedido.fueAtendido = this.fueAtendido;
         pedido.fechaHoraGeneracion = this.fechaHoraGeneracion;
         pedido.fechaHoraExpiracion = this.fechaHoraExpiracion;
-        pedido.estado = this.estado;
         pedido.cliente = (this.cliente != null) ? poolClientes.computeIfAbsent(this.cliente.getCodigo(), codigo -> this.cliente.replicar()) : null;
         pedido.destino = (this.destino != null) ? poolAeropuertos.computeIfAbsent(this.destino.getCodigo(), codigo -> this.destino.replicar(poolLotes)) : null;
         this.segmentaciones.forEach(s -> pedido.segmentaciones.add(s.replicar(poolAeropuertos, poolLotes, poolRutas, poolVuelos, poolPlanes)));
         return pedido;
+    }
+
+    public void cargarRestriccionesDeReplanificacion(Map<Ruta, Lote> segmentacionModificable, Map<Ruta, List<Aeropuerto>> secuenciasIntocables) {
+        Map<Ruta, Lote> segmentacion = this.obtenerSegementacionVigente().getLotesPorRuta();
+        for (Map.Entry<Ruta, Lote> entry : segmentacion.entrySet()) {
+            Ruta ruta = entry.getKey();
+            Lote lote = entry.getValue();
+            if (!lote.esModificable(ruta)) {
+                continue;
+            }
+            List<Aeropuerto> secuenciaIntocable = this.obtenerSecuenciaInalterable(ruta);
+            if(!secuenciaIntocable.isEmpty()) {
+                secuenciasIntocables.put(ruta, secuenciaIntocable);
+            }
+            segmentacionModificable.put(ruta, lote);
+        }
+    }
+
+    public List<Aeropuerto> obtenerSecuenciaInalterable(Ruta ruta) {
+        PuntoDeReplanificacion pdr = Problematica.PUNTOS_REPLANIFICACION.stream().filter(p -> this.obtenerSegementacionVigente().getLotesPorRuta().values().stream().anyMatch(l -> p.getLotes().contains(l))).findFirst().orElse(null);
+        if (pdr == null) {
+            return new ArrayList<>();
+        }
+        Ruta rutaOriginal = pdr.getRuta();
+        Aeropuerto aeropuertoQuiebre = pdr.getAeropuerto();
+        List<Aeropuerto> secuenciaOriginal = rutaOriginal.obtenerSecuenciaDeAeropuertos();
+        int posQuiebre = secuenciaOriginal.indexOf(aeropuertoQuiebre);
+        return new ArrayList<>(secuenciaOriginal.subList(0, posQuiebre + 1));
     }
 
     public Segmentacion obtenerSegementacionVigente() {
@@ -92,6 +120,14 @@ public class Pedido {
         this.cantidadSolicitada = cantidadSolicitada;
     }
 
+    public Boolean getFueAtendido() {
+        return fueAtendido;
+    }
+
+    public void setFueAtendido(boolean fueAtendido) {
+        this.fueAtendido = fueAtendido;
+    }
+
     public LocalDateTime getFechaHoraGeneracion() {
         return fechaHoraGeneracion;
     }
@@ -120,14 +156,6 @@ public class Pedido {
 
     public void setDestino(Aeropuerto destino) {
         this.destino = destino;
-    }
-
-    public EstadoPedido getEstado() {
-        return estado;
-    }
-
-    public void setEstado(EstadoPedido estado) {
-        this.estado = estado;
     }
 
     public List<Segmentacion> getSegmentaciones() {

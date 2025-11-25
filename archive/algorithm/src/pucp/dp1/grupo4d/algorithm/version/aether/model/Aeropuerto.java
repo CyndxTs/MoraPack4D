@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import pucp.dp1.grupo4d.algorithm.version.aether.Problematica;
 import pucp.dp1.grupo4d.util.G4D;
 
 public class Aeropuerto {
@@ -59,14 +60,46 @@ public class Aeropuerto {
         this.registros.add(registro);
     }
 
-    public Boolean eliminarRegistroDeLoteDeProductos(Lote lote) {
+    public Boolean eliminarRegistroDeLoteDeProductos(Lote lote, boolean softDelete) {
         for(Registro registro : this.registros) {
-            if(registro.getLote().equals(lote)) {
-                this.registros.remove(registro);
+            if(registro.getLote().equals(lote) && registro.getSigueVigente()) {
+                if(softDelete) {
+                    registro.setSigueVigente(false);
+                } else this.registros.remove(registro);
                 return true;
             }
         }
         return false;
+    }
+
+    public void actualizarEstanciaHaciaTiempoMaximoHabitable(Lote lote) {
+        int disp = this.capacidad;
+        Map<LocalDateTime, Integer> eventos = new TreeMap<>();
+        Registro registroDeLote = null;
+        for(Registro registro : this.registros) {
+            if(!registro.getLote().equals(lote)) {
+                LocalDateTime rFechaHoraIngreso = registro.getFechaHoraIngreso(), rFechaHoraEgreso = registro.getFechaHoraEgreso();
+                int tamanio = registro.getLote().getTamanio();
+                eventos.merge(rFechaHoraIngreso, -tamanio, Integer::sum);
+                eventos.merge(rFechaHoraEgreso, +tamanio, Integer::sum);
+            } else registroDeLote = registro;
+        }
+        if(registroDeLote != null) {
+            LocalDateTime fechaHoraIngresoDeLote = registroDeLote.getFechaHoraIngreso();
+            if(!eventos.isEmpty()) {
+                for(Map.Entry<LocalDateTime, Integer> entry : eventos.entrySet()) {
+                    if(!fechaHoraIngresoDeLote.isAfter(entry.getKey()) && disp + entry.getValue() < lote.getTamanio()) {
+                        long maxMinutos = (long)(60*Math.min(G4D.getElapsedHours(fechaHoraIngresoDeLote, entry.getKey()), Problematica.MAX_HORAS_ESTANCIA));
+                        registroDeLote.setFechaHoraEgreso(fechaHoraIngresoDeLote.plusMinutes(maxMinutos));
+                        return;
+                    }
+                    disp += entry.getValue();
+                }
+            } else {
+                long maxMinutos = (long)(60*Problematica.MAX_HORAS_ESTANCIA);
+                registroDeLote.setFechaHoraEgreso(fechaHoraIngresoDeLote.plusMinutes(maxMinutos));
+            }
+        }
     }
 
     public Integer obtenerCapacidadDisponible(LocalDateTime fechaHoraInicio, LocalDateTime fechaHoraFin) {

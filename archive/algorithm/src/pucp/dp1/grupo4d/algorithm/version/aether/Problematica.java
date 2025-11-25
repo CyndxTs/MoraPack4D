@@ -23,6 +23,7 @@ import pucp.dp1.grupo4d.algorithm.version.aether.model.Cliente;
 import pucp.dp1.grupo4d.algorithm.version.aether.model.Lote;
 import pucp.dp1.grupo4d.algorithm.version.aether.model.Pedido;
 import pucp.dp1.grupo4d.algorithm.version.aether.model.Plan;
+import pucp.dp1.grupo4d.algorithm.version.aether.model.PuntoDeReplanificacion;
 import pucp.dp1.grupo4d.algorithm.version.aether.model.Ruta;
 import pucp.dp1.grupo4d.algorithm.version.aether.model.Vuelo;
 import pucp.dp1.grupo4d.util.G4D;
@@ -37,6 +38,7 @@ public class Problematica {
     public static LocalDateTime INICIO_PLANIFICACION = LocalDateTime.now().withYear(1999);
     public static LocalDateTime FIN_PLANIFICACION = LocalDateTime.now();
     public static LocalDateTime INICIO_REPLANIFICACION = LocalDateTime.now().withYear(1999);
+    public static List<PuntoDeReplanificacion> PUNTOS_REPLANIFICACION = new ArrayList<>();
     public List<Aeropuerto> origenes;
     public List<Aeropuerto> destinos;
     public List<Plan> planes;

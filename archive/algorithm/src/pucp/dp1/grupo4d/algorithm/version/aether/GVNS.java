@@ -21,7 +21,7 @@ import java.util.Random;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import pucp.dp1.grupo4d.algorithm.version.aether.enums.EstadoPedido;
+import pucp.dp1.grupo4d.algorithm.version.aether.enums.EstadoLote;
 import pucp.dp1.grupo4d.algorithm.version.aether.enums.TipoEvento;
 import pucp.dp1.grupo4d.algorithm.version.aether.enums.TipoRuta;
 import pucp.dp1.grupo4d.algorithm.version.aether.model.Aeropuerto;
@@ -29,6 +29,7 @@ import pucp.dp1.grupo4d.algorithm.version.aether.model.Cliente;
 import pucp.dp1.grupo4d.algorithm.version.aether.model.Lote;
 import pucp.dp1.grupo4d.algorithm.version.aether.model.Pedido;
 import pucp.dp1.grupo4d.algorithm.version.aether.model.Plan;
+import pucp.dp1.grupo4d.algorithm.version.aether.model.PuntoDeReplanificacion;
 import pucp.dp1.grupo4d.algorithm.version.aether.model.Ruta;
 import pucp.dp1.grupo4d.algorithm.version.aether.model.Segmentacion;
 import pucp.dp1.grupo4d.algorithm.version.aether.model.Vuelo;
@@ -110,13 +111,14 @@ public class GVNS {
             G4D.Logger.Stats.numPed = 1;
             G4D.Logger.Stats.posPed = 0;
             G4D.Logger.Stats.posProd = 0;
-            // pedidos.stream().filter(p -> !p.getEstado().equals(EstadoPedido.NO_ATENDIDO)).forEach();
-            // Atención de pedidos
+            //
+            prepararReplanificacion(pedidos, planes);
             G4D.Logger.Stats.set_process_start();
             for (Pedido pedido : pedidos) {
                 G4D.Logger.Stats.numProd = 1;
                 G4D.Logger.Stats.log_stat_ped();
-                if(pedido.getEstado().equals(EstadoPedido.NO_ATENDIDO)) {
+
+                if(!pedido.getFueAtendido()) {
                     boolean pedidoAtendido = atenderPedido(pedido, origenes, planes, vuelosEnTransito, rutasEnOperacion);
                     if(!pedidoAtendido) {
                         G4D.Logger.Stats.log_err_stat();
@@ -124,7 +126,12 @@ public class GVNS {
                         break;
                     }
                 } else {
-
+                    boolean pedidoReatendido = reatenderPedido(pedido, origenes, planes, vuelosEnTransito, rutasEnOperacion);
+                    if(!pedidoReatendido) {
+                        G4D.Logger.Stats.log_err_stat();
+                        errorDeEnrutamiento = true;
+                        break;
+                    }
                 }
                 G4D.Logger.Stats.set_proccess_duration();
                 G4D.Logger.Stats.next_ped();
@@ -157,7 +164,64 @@ public class GVNS {
             solucion.setFitness(-9999.99);
         }
     }
-    //
+    
+    private void prepararReplanificacion(List<Pedido> pedidos, List<Plan> planes) {
+        boolean hayReplanificacion = !Problematica.INICIO_REPLANIFICACION.isBefore(Problematica.INICIO_PLANIFICACION);
+        if (!hayReplanificacion) return;
+        List<Pedido> pedidosReplanificables = pedidos.stream().filter(Pedido::getFueAtendido).toList();
+        List<Plan> planesProblematicos = planes.stream().filter(Plan::esProblematico).toList();
+        for(Pedido pedido : pedidosReplanificables) {
+            Map<Ruta, Lote> segmentacion = pedido.obtenerSegementacionVigente().getLotesPorRuta();
+            for(Map.Entry<Ruta, Lote> entry : segmentacion.entrySet()) {
+                Ruta ruta = entry.getKey();
+                Lote lote = entry.getValue();
+                if(ruta.getEstaOperativa()) {
+                    if (!ruta.getFechaHoraLlegada().isAfter(Problematica.INICIO_REPLANIFICACION)) {
+                        continue;
+                    }
+                    Vuelo vNodo = ruta.getVuelos().stream().filter(v -> planesProblematicos.contains(v.getPlan())).findFirst().orElse(null);
+                    boolean replanificarAleatoriamente = false;
+                    if(vNodo == null && random.nextBoolean()) {
+                        if (ruta.getVuelos().size() > 2) {
+                            vNodo = ruta.getVuelos().get(random.nextInt(1, ruta.getVuelos().size() - 1));
+                            replanificarAleatoriamente = true;
+                        }
+                    }
+                    if(vNodo != null) {
+                        if(!replanificarAleatoriamente) {
+                            ruta.setEstaOperativa(false);
+                        }
+                        Aeropuerto aNodo = vNodo.getPlan().getOrigen();
+                        lote.setEstado(EstadoLote.POR_REPLANIFICAR);
+                        ruta.eliminarRegistroDeLoteDeProductos(lote, aNodo, true);
+                        int posVNodo = ruta.getVuelos().indexOf(vNodo);
+                        LocalDateTime inicio = null;
+                        if(posVNodo > 0) {
+                            Vuelo vAnt = ruta.getVuelos().get(posVNodo - 1);
+                            inicio = vAnt.getFechaHoraLlegada().isBefore(Problematica.INICIO_REPLANIFICACION) ? Problematica.INICIO_REPLANIFICACION : vAnt.getFechaHoraLlegada();
+                        } else {
+                            inicio = Problematica.INICIO_REPLANIFICACION;
+                        }
+                        PuntoDeReplanificacion pdr = new PuntoDeReplanificacion();
+                        pdr.setRuta(ruta);
+                        pdr.setAeropuerto(aNodo);
+                        pdr.setFechaHoraInicio(inicio);
+                        pdr.getLotes().add(lote);
+                        Problematica.PUNTOS_REPLANIFICACION.add(pdr);
+                    }
+                } else {
+                    PuntoDeReplanificacion pdr = Problematica.PUNTOS_REPLANIFICACION.stream().filter(p -> p.getRuta().equals(ruta)).findFirst().orElse(null);
+                    if(pdr != null) {
+                        lote.setEstado(EstadoLote.POR_REPLANIFICAR);
+                        ruta.eliminarRegistroDeLoteDeProductos(lote, pdr.getAeropuerto(), true);
+                        pdr.getLotes().add(lote);
+                    }
+                }
+            }
+        }
+    }
+
+    
     private boolean atenderPedido(Pedido pedido, List<Aeropuerto> origenes, List<Plan> planes,
                                   Set<Vuelo> vuelosEnTransito, Set<Ruta> rutasEnOperacion) {
         // Declaración & inicialización de variables
@@ -211,6 +275,7 @@ public class GVNS {
             G4D.Logger.logln(" | [REALIZADO]");
             // Validación por atención completa de pedido
             if(cantPorEnrutar == 0) {
+                pedido.setFueAtendido(true);
                 G4D.Logger.delete_lines(6);
                 G4D.Logger.logf(">>> PEDIDO #%d ATENDIDO! | '%d' de '%d' productos enrutados!%n", G4D.Logger.Stats.numPed, G4D.Logger.Stats.numProd, pedido.getCantidadSolicitada());
                 pedido.setFechaHoraExpiracion();
@@ -224,9 +289,33 @@ public class GVNS {
         return false;
     }
 
-    private void reatenderPedido(Pedido pedido, List<Aeropuerto> origenes, List<Plan> planes,
-                                  Set<Vuelo> vuelosEnTransito, Set<Ruta> rutasEnOperacion) {
-
+    private Ruta buscarRutaVoraz(PuntoDeReplanificacion pdr, LocalDateTime fechaHoraLimite,
+                                 Aeropuerto destino, Set<Ruta> rutasAsignadas) {
+        Aeropuerto origen = pdr.getAeropuerto();
+        if(origen.equals(destino)) {
+            G4D.Logger.log(" [NO ENCONTRADA]");
+            G4D.Logger.logln_err(" | ERROR: ORIGEN == DESTINO");
+            return null;
+        }
+        // Búsqueda de ruta reutilizable
+        LocalDateTime fechaHoraInicial = pdr.getFechaHoraInicio();
+        List<Ruta> rutasPosibles = rutasAsignadas.stream().filter(r -> r.getDestino().equals(destino))
+                                                          .filter(Ruta::getEstaOperativa)
+                                                          .filter(r -> {
+                                                              List<Aeropuerto> secuencia = r.obtenerSecuenciaDeAeropuertos();
+                                                              int posOrigen = secuencia.indexOf(origen);
+                                                              if(posOrigen == -1) return false;
+                                                              if(posOrigen >= r.getVuelos().size()) return false;
+                                                              Vuelo vueloDesdeOrigen = r.getVuelos().get(posOrigen);
+                                                              return !vueloDesdeOrigen.getFechaHoraSalida().isBefore(fechaHoraInicial);
+                                                          }).toList();
+        for(Ruta ruta : rutasPosibles) {
+            if(!ruta.esAlcanzable(fechaHoraInicial, fechaHoraLimite)) continue;
+            G4D.Logger.logln(" [ENCONTRADA]");
+            return ruta;
+        }
+        G4D.Logger.logln(" [NO ENCONTRADA]");
+        return null;
     }
 
     private Ruta buscarRutaVoraz(LocalDateTime fechaHoraInicial, LocalDateTime fechaHoraLimite,
@@ -239,7 +328,7 @@ public class GVNS {
             return null;
         }
         // Búsqueda de ruta reutilizable
-        List<Ruta> rutasPosibles = rutasAsignadas.stream().filter(r -> r.getOrigen().equals(origen) && r.getDestino().equals(destino)).toList();
+        List<Ruta> rutasPosibles = rutasAsignadas.stream().filter(r -> r.getOrigen().equals(origen) && r.getDestino().equals(destino)).filter(Ruta::getEstaOperativa).toList();
         for(Ruta ruta : rutasPosibles) {
             if(!ruta.esAlcanzable(fechaHoraInicial, fechaHoraLimite)) continue;
             G4D.Logger.logln(" [ENCONTRADA]");
@@ -263,6 +352,66 @@ public class GVNS {
         Aeropuerto actual = origen;
         LocalDateTime fechaHoraActual = fechaHoraInicial;
         Set<Aeropuerto> aeropuertosVisitados = new HashSet<>();
+        // Construcción de nueva ruta
+        while (!actual.equals(destino)) {
+            aeropuertosVisitados.add(actual);
+            G4D.Logger.logf("- Num. vuelos asignados: %d%n", secuenciaDeVuelos.size());
+            G4D.Logger.logf("- Aeropuerto actual: %s%n", actual);
+            // Búsqueda de plan de vuelo más próximo
+            G4D.Logger.log(": Buscando mejor plan de vuelo..");
+            Plan mejorPlan = obtenerPlanMasProximo(actual, destino, fechaHoraActual, fechaHoraLimite, planes, aeropuertosVisitados, vuelosActivados);
+            if(mejorPlan == null) {
+                G4D.Logger.log(" [NO ENCONTRADO]");
+                G4D.Logger.delete_lines(4);
+                G4D.Logger.log("Construyendo nueva ruta..");
+                G4D.Logger.logln_err(" | ERROR: Deadline..");
+                return null;
+            } else G4D.Logger.logln(" [ENCONTRADO]");
+            // Búsqueda de vuelo activo con el mejor plan
+            G4D.Logger.log(": Bucando vuelo en tránsito..");
+            Vuelo vuelo = mejorPlan.obtenerVueloActivo(fechaHoraActual, vuelosActivados);
+            if(vuelo == null) {
+                G4D.Logger.logln(" [NO_ENCONTRADO] | Activando nuevo vuelo..");
+                vuelo = new Vuelo();
+                vuelo.setPlan(mejorPlan);
+                vuelo.setCapacidadDisponible(vuelo.getPlan().getCapacidad());
+                vuelo.instanciarHorarios(fechaHoraActual);
+            } else G4D.Logger.logln(" [ENCONTRADO]");
+            // Asignación de vuelo
+            secuenciaDeVuelos.add(vuelo);
+            fechaHoraActual = vuelo.getFechaHoraLlegada();
+            actual = vuelo.getPlan().getDestino();
+            G4D.Logger.logf(": Vuelo asignado: %s -> %s%n", vuelo.getPlan().getOrigen().getCodigo(), actual.getCodigo());
+            G4D.Logger.delete_lines(6);
+        }
+        G4D.Logger.delete_upper_line();
+        // Actualización de ruta construida
+        G4D.Logger.logln("DESTINO ALCANZADO! | Guardando ruta..");
+        ruta.setOrigen(origen);
+        ruta.setDestino(destino);
+        ruta.setVuelos(secuenciaDeVuelos);
+        ruta.instanciarHorarios();
+        ruta.setDuracion();
+        ruta.setDistancia();
+        return ruta;
+    }
+
+    private Ruta construirRutaVoraz(Ruta rutaAsignadaInicial, PuntoDeReplanificacion pdr, LocalDateTime fechaHoraLimite, Aeropuerto destino, List<Plan> planes, Set<Vuelo> vuelosActivados) {
+        G4D.Logger.log("Construyendo nueva ruta..");
+        Aeropuerto origen = pdr.getAeropuerto();
+        // Validación por origen factible
+        if(origen.equals(destino)) {
+            G4D.Logger.logln_err(" | ERROR: ORIGEN == DESTINO");
+            return null;
+        } else G4D.Logger.logln();
+        // Declaración & inicialización de variables
+        Ruta ruta = new Ruta();
+        Aeropuerto actual = origen;
+        LocalDateTime fechaHoraActual = pdr.getFechaHoraInicio();
+        List<Aeropuerto> saInicial = rutaAsignadaInicial.obtenerSecuenciaDeAeropuertos();
+        int posConexion = saInicial.indexOf(origen);
+        List<Vuelo> secuenciaDeVuelos = (posConexion > 0) ? new ArrayList<>(rutaAsignadaInicial.getVuelos().subList(0, posConexion)) : new ArrayList<>();
+        Set<Aeropuerto> aeropuertosVisitados = new HashSet<>(saInicial);
         // Construcción de nueva ruta
         while (!actual.equals(destino)) {
             aeropuertosVisitados.add(actual);
@@ -343,6 +492,66 @@ public class GVNS {
         return planMasProximo;
     }
 
+    private boolean reatenderPedido(Pedido pedido, List<Aeropuerto> origenes, List<Plan> planes,
+                                    Set<Vuelo> vuelosEnTransito, Set<Ruta> rutasEnOperacion) {
+        Map<Ruta, Lote> segmentacion = pedido.obtenerSegementacionVigente().getLotesPorRuta();
+        List<Lote> lotesPorReplanificar = segmentacion.values().stream().filter(l -> l.getEstado().equals(EstadoLote.POR_REPLANIFICAR)).toList();
+        if (lotesPorReplanificar.isEmpty()) {
+            return true;
+        }
+        Set<Vuelo> vuelosActivados = new HashSet<>(vuelosEnTransito);
+        Set<Ruta> rutasAsignadas = new HashSet<>(rutasEnOperacion);
+        Aeropuerto destino = pedido.getDestino();
+        LocalDateTime fechaHoraLimite = pedido.getFechaHoraExpiracion();
+        Map<Ruta, Lote> nuevaSegmentacion = new HashMap<>(segmentacion);
+        segmentacion.keySet().stream().filter(r -> segmentacion.get(r).getEstado().equals(EstadoLote.POR_REPLANIFICAR)).toList().forEach(r -> nuevaSegmentacion.remove(r));
+        while(!lotesPorReplanificar.isEmpty()) {
+            Lote lReplanificar = lotesPorReplanificar.get(random.nextInt(lotesPorReplanificar.size()));
+            int restantePorReplanificar = lReplanificar.getTamanio();
+            PuntoDeReplanificacion pdr = Problematica.PUNTOS_REPLANIFICACION.stream().filter(p -> p.getLotes().contains(lReplanificar)).findFirst().orElse(null);
+            Ruta rutaAsignadaInicial = segmentacion.keySet().stream().filter(r -> segmentacion.get(r).equals(lReplanificar)).findFirst().orElse(null);
+            while(restantePorReplanificar > 0) {
+                // Búsqueda de ruta reutilizable
+                Ruta ruta = buscarRutaVoraz(pdr, fechaHoraLimite, destino, rutasAsignadas);
+                if(ruta == null) {
+                    // Construcción de nueva ruta
+                    ruta = construirRutaVoraz(rutaAsignadaInicial, pdr, fechaHoraLimite, destino, planes, vuelosActivados);
+                    if(ruta == null) {
+                        return false;
+                    }
+                    ruta.setTipo(rutaAsignadaInicial.getTipo());
+                }
+                // Segmentación de pedido respecto a disponibilidad de ruta
+                int rCapDisp = ruta.obtenerCapacidadDisponible();
+                int cantEnrutables = Math.min(rCapDisp, restantePorReplanificar);
+                G4D.Logger.logf("Enrutando %d productos..", cantEnrutables);
+                // Producción y registro de segmento de pedido
+                Lote lote = ruta.getOrigen().generarLoteDeProductos(cantEnrutables);
+                lote.setCodigoLotePadre(lReplanificar.getCodigo());
+                ruta.registraLoteDeProductos(lote, vuelosActivados, rutasAsignadas);
+                nuevaSegmentacion.put(ruta, lote);
+                restantePorReplanificar -= cantEnrutables;
+                G4D.Logger.Stats.set_proccess_duration();
+                G4D.Logger.Stats.next_lot(cantEnrutables);
+                G4D.Logger.logln(" | [REALIZADO]");
+                // Validación por atención completa de pedido
+                if(restantePorReplanificar == 0) {
+                    vuelosEnTransito.addAll(vuelosActivados);
+                    rutasEnOperacion.addAll(rutasAsignadas);
+                    lReplanificar.setEstado(EstadoLote.REPLANIFICADO);
+                    lotesPorReplanificar.remove(lReplanificar);
+                }
+            }
+        }
+        Segmentacion nuevaSeg = new Segmentacion();
+        pedido.obtenerSegementacionVigente().setFechaHoraSustitucion(Problematica.INICIO_REPLANIFICACION);
+        nuevaSeg.setFechaHoraAplicacion(Problematica.INICIO_REPLANIFICACION);
+        nuevaSeg.setLotesPorRuta(nuevaSegmentacion);
+        pedido.getSegmentaciones().add(nuevaSeg);
+        pedido.setFechaHoraExpiracion();
+        return true;
+    }
+
     private void VND(Solucion solucion) {
         G4D.Logger.logln("[VND]");
         // Declaración & inicialización de variables
@@ -364,8 +573,7 @@ public class GVNS {
                         huboMejora = LSCompactar(solucionPropuesta, ele);
                         break; 
                     case 2:
-                        // huboMejora = LSFusionar(solucionPropuesta, ele);
-                        j--;
+                        huboMejora = LSFusionar(solucionPropuesta, ele);
                         break;
                     case 3:
                         huboMejora = LSRealocar(solucionPropuesta, ele);
@@ -384,6 +592,86 @@ public class GVNS {
         }
     }
 
+    private Boolean LSCompactar(Solucion solucion, int ele) {
+        G4D.Logger.logln("> Realizando búsqueda local por 'Compactación'..");
+        // Declaración & inicialización de variables
+        boolean huboMejora = false;
+        double fitnessInicial = solucion.getFitness(), mejorFitness = solucion.getFitness();
+        List<Pedido> pedidos = solucion.getPedidosAtendidos();
+        Set<Vuelo> vuelosEnTransito = solucion.getVuelosEnTransito();
+        Set<Ruta> rutasEnOperacion = solucion.getRutasEnOperacion();
+        // Compactación de segmentación de pedidos
+        for (int posPedido = 0; posPedido < pedidos.size(); posPedido++) {
+            Pedido pedido = pedidos.get(posPedido);
+            Map<Ruta, Lote> segmentacion = pedido.obtenerSegementacionVigente().getLotesPorRuta();
+            Map<Ruta, Lote> segmentacionAux = new HashMap<>(segmentacion);
+            Map<Ruta, Lote> segmentacionModificable = new HashMap<>();
+            Map<Ruta, List<Aeropuerto>> secuenciasIntocables = new HashMap<>();
+            // Carga de restricciones por replanificación
+            pedido.cargarRestriccionesDeReplanificacion(segmentacionModificable, secuenciasIntocables);
+            // Validación de aptitud
+            G4D.Logger.logf("- Validando aptitud del pedido #%d de '%d'..", posPedido+1, G4D.Logger.Stats.totalPed);
+            if (segmentacionModificable.size() < ele + 1) {
+                G4D.Logger.logln(" [NO APTO]");
+                G4D.Logger.delete_upper_line();
+                continue;
+            } else G4D.Logger.logln(" [APTO]");
+            List<List<Ruta>> combinaciones = G4D.getPossibleCombinations(new ArrayList<>(segmentacionModificable.keySet()), ele);
+            int posMejorComb = -1;
+            // Iteración de combinaciones
+            for (int posComb = 0; posComb < combinaciones.size(); posComb++) {
+                G4D.Logger.logf(": Validando combinación #%d de '%d'..", posComb+1, combinaciones.size());
+                List<Ruta> rutasOrig = combinaciones.get(posComb);
+                int totalCompactar = rutasOrig.stream().mapToInt(r -> segmentacionModificable.get(r).getTamanio()).sum();
+                List<Ruta> rutasDest = segmentacionModificable.keySet().stream().filter(r -> !rutasOrig.contains(r))
+                                                                                .filter(r -> r.obtenerCapacidadDisponible() > 0)
+                                                                                .filter(r -> r.respetaSecuenciasInalterables(rutasOrig, secuenciasIntocables))
+                                                                                .collect(Collectors.toList());
+                int capDispTotal = rutasDest.stream().mapToInt(Ruta::obtenerCapacidadDisponible).sum();
+                if (capDispTotal < totalCompactar) {
+                    G4D.Logger.logln(" [INVALIDA]");
+                    G4D.Logger.delete_upper_line();
+                    continue;
+                } else G4D.Logger.logln("[VALIDA]");
+                // Compactación
+                G4D.Logger.logf(": Mejor fitness actual: %.3f | >> COMPACTANDO..", mejorFitness);
+                rutasDest.sort(Comparator.comparing(Ruta::getFechaHoraLlegada));
+                compactarSegmentacion(rutasOrig, rutasDest, segmentacion, vuelosEnTransito, rutasEnOperacion);
+                solucion.setFitness();
+                double fitnessObtenido = solucion.getFitness();
+                G4D.Logger.logf(" | >> Fitness obtenido: %.3f", fitnessObtenido);
+                if (G4D.isProximatelyFewer(fitnessObtenido, mejorFitness, D_MIN)) {
+                    G4D.Logger.logln(" | ¡NUEVO MEJOR!");
+                    mejorFitness = solucion.getFitness();
+                    posMejorComb = posComb;
+                    huboMejora = true;
+                } else G4D.Logger.logln();
+                // Reversión de cambios
+                revertirCambios(segmentacion, segmentacionAux, vuelosEnTransito, rutasEnOperacion);
+                G4D.Logger.delete_lines(3);
+            }
+            // Aplicar mejor combinación
+            if (posMejorComb != -1) {
+                List<Ruta> rutasOrig = combinaciones.get(posMejorComb);
+                List<Ruta> rutasDest = segmentacionModificable.keySet().stream().filter(r -> !rutasOrig.contains(r))
+                                                                                .filter(r -> r.obtenerCapacidadDisponible() > 0)
+                                                                                .filter(r -> r.respetaSecuenciasInalterables(rutasOrig, secuenciasIntocables))
+                                                                                .collect(Collectors.toList());
+                rutasDest.sort(Comparator.comparing(Ruta::getFechaHoraLlegada));
+                compactarSegmentacion(rutasOrig, rutasDest, segmentacion, vuelosEnTransito, rutasEnOperacion);
+            }
+            G4D.Logger.delete_upper_line();
+        }
+        solucion.setFitness();
+        G4D.Logger.delete_upper_line();
+        G4D.Logger.logf("> 'Compactación' : %.3f -> %.3f", fitnessInicial, mejorFitness);
+        if (huboMejora) {
+            G4D.Logger.logln(" | FITNESS OPTIMIZADO!");
+        } else G4D.Logger.logln(" | Fitness mantenido..");
+        return huboMejora;
+    }
+
+    /*
     private Boolean LSCompactar(Solucion solucion, int ele) {
         G4D.Logger.logln("> Realizando búsqueda local por 'Compactación'..");
         // Declaración & inicialización de variables
@@ -456,6 +744,7 @@ public class GVNS {
         } else G4D.Logger.logln(" | Fitness mantenido..");
         return huboMejora;
     }
+    */
 
     private void compactarSegmentacion(List<Ruta> rutasOrig, List<Ruta> rutasDest, Map<Ruta, Lote> segmentacion, Set<Vuelo> vuelosEnTransito, Set<Ruta> rutasEnOperacion) {
         // Iteración por orígenes para compactar
@@ -511,7 +800,11 @@ public class GVNS {
             G4D.Logger.logf("- Evaluando rutas del pedido #%d de '%d'..%n", posPedido+1, G4D.Logger.Stats.totalPed);
             Pedido pedido = pedidos.get(posPedido);
             Map<Ruta, Lote> segmentacion = pedido.obtenerSegementacionVigente().getLotesPorRuta();
-            List<Ruta> rutasIni = new ArrayList<>(segmentacion.keySet());
+            Map<Ruta, Lote> segmentacionModificable = new HashMap<>();
+            Map<Ruta, List<Aeropuerto>> secuenciasIntocables = new HashMap<>();
+            // Carga de restricciones por replanificación
+            pedido.cargarRestriccionesDeReplanificacion(segmentacionModificable, secuenciasIntocables);
+            List<Ruta> rutasIni = new ArrayList<>(segmentacionModificable.keySet());
             List<Ruta> rutasFin = rutasEnOperacion.stream().filter(r -> r.getDestino().equals(pedido.getDestino()))
                                                            .filter(r -> !r.getFechaHoraSalida().isBefore(pedido.getFechaHoraGeneracion()) && !r.getFechaHoraLlegada().isAfter(pedido.getFechaHoraExpiracion()))
                                                            .sorted(Comparator.comparing(Ruta::getFechaHoraLlegada))
@@ -519,7 +812,7 @@ public class GVNS {
             List<List<Ruta>> combinaciones = G4D.getCrossedCombinations(rutasIni, rutasFin, 1, 1);
             int cantCombinaciones = Math.min(ele, combinaciones.size());
             int posMejorComb = -1, posMejorConexionIni = -1, posMejorConexionFin = -1;
-            //
+            // Combinaciones
             for(int posComb = 0; posComb < cantCombinaciones; posComb++) {
                 // Validación de aptitud de combinación
                 G4D.Logger.logf(": Validando combinación #%d de '%d'..", posComb+1, cantCombinaciones);
@@ -543,13 +836,25 @@ public class GVNS {
                         continue;
                     }
                     // Validación de aptitud de fusión por existencia de disponibilidad de ruta
-                    List<Vuelo> svIni = new ArrayList<>(rIni.getVuelos().subList(0, posConexionIni));
-                    List<Vuelo> svFin = new ArrayList<>(rFin.getVuelos().subList(posConexionFin, rFin.getVuelos().size()));
+                    List<Vuelo> svIni = new ArrayList<>(rIni.getVuelos().subList(0, posConexionIni + 1));
+                    LocalDateTime fechaHoraLlegadaAConexion = svIni.getLast().getFechaHoraLlegada();
+                    List<Vuelo> svFin = new ArrayList<>(rFin.getVuelos().subList(posConexionFin + 1, rFin.getVuelos().size()));
+                    LocalDateTime fechaHoraSalidaDesdeConexion = svIni.getFirst().getFechaHoraSalida();
+                    if(fechaHoraLlegadaAConexion.isAfter(fechaHoraSalidaDesdeConexion) || fechaHoraLlegadaAConexion.plusMinutes((long)(60*Problematica.MAX_HORAS_ESTANCIA)).isAfter(fechaHoraSalidaDesdeConexion)) {
+                        G4D.Logger.logln(" [INVALIDA]");
+                        G4D.Logger.delete_upper_line();
+                        continue;
+                    }
                     List<Vuelo> svNew = new ArrayList<>();
                     svNew.addAll(svIni);
                     svNew.addAll(svFin);
                     Ruta rNew = new Ruta(rIni);
                     rNew.setVuelos(svNew);
+                    if(!rNew.respetaSecuenciasInalterables(List.of(rIni), secuenciasIntocables)) {
+                        G4D.Logger.logln(" [INVALIDA]");
+                        G4D.Logger.delete_upper_line();
+                        continue;
+                    }
                     Lote lote = segmentacion.get(rIni);
                     rIni.eliminarRegistroDeLoteDeProductos(lote);
                     if(rNew.obtenerCapacidadDisponible() < lote.getTamanio()) {
@@ -616,6 +921,82 @@ public class GVNS {
         return huboMejora;
     }
 
+    private Boolean LSRealocar(Solucion solucion, int ele) {
+        G4D.Logger.logln("> Realizando búsqueda local por 'Realocación'..");
+        boolean huboMejora = false;
+        double fitnessInicial = solucion.getFitness();
+        double mejorFitness = fitnessInicial;
+        List<Pedido> pedidos = solucion.getPedidosAtendidos();
+        Set<Vuelo> vuelosEnTransito = solucion.getVuelosEnTransito();
+        Set<Ruta> rutasEnOperacion = solucion.getRutasEnOperacion();
+        for (int posPedido = 0; posPedido < pedidos.size(); posPedido++) {
+            Pedido pedido = pedidos.get(posPedido);
+            Map<Ruta, Lote> segmentacion = pedido.obtenerSegementacionVigente().getLotesPorRuta();
+            Map<Ruta, Lote> segmentacionAux = new HashMap<>(segmentacion);
+            Map<Ruta, Lote> segmentacionModificable = new HashMap<>();
+            Map<Ruta, List<Aeropuerto>> secuenciasIntocables = new HashMap<>();
+            pedido.cargarRestriccionesDeReplanificacion(segmentacionModificable, secuenciasIntocables);
+            // Validación de aptitud
+            G4D.Logger.logf("- Validando aptitud del pedido #%d de '%d'..", posPedido+1, G4D.Logger.Stats.totalPed);
+            if (segmentacionModificable.size() < ele) {
+                G4D.Logger.logln(" [NO APTO]");
+                G4D.Logger.delete_upper_line();
+                continue;
+            } else G4D.Logger.logln("[APTO]");
+            List<Ruta> rutas = new ArrayList<>(segmentacionModificable.keySet());
+            List<List<Ruta>> combinaciones = G4D.getPossibleCombinations(rutas, ele);
+            List<Ruta> rutasDest = rutasEnOperacion.stream().filter(r -> !rutas.contains(r))
+                                                            .filter(r -> r.getDestino().equals(pedido.getDestino()))
+                                                            .filter(r -> !r.getFechaHoraSalida().isBefore(pedido.getFechaHoraGeneracion()) && !r.getFechaHoraLlegada().isAfter(pedido.getFechaHoraExpiracion()))
+                                                            .filter(r -> r.obtenerCapacidadDisponible() > 0)
+                                                            .filter(r -> r.respetaSecuenciasInalterables(rutas, secuenciasIntocables))
+                                                            .sorted(Comparator.comparing(Ruta::getFechaHoraLlegada))
+                                                            .collect(Collectors.toList());
+            int capDispTotal = rutasDest.stream().mapToInt(Ruta::obtenerCapacidadDisponible).sum();
+            int posMejorComb = -1;
+            // Iteración de combinaciones
+            for (int posComb = 0; posComb < combinaciones.size(); posComb++) {
+                G4D.Logger.logf(": Validando combinación #%d de '%d'..", posComb+1, combinaciones.size());
+                List<Ruta> rutasOrig = combinaciones.get(posComb);
+                int totalRealocar = rutasOrig.stream().mapToInt(r -> segmentacionModificable.get(r).getTamanio()).sum();
+                if (capDispTotal < totalRealocar) {
+                    G4D.Logger.logln(" [INVALIDA]");
+                    G4D.Logger.delete_upper_line();
+                    continue;
+                } else G4D.Logger.logln(" [VALIDA]");
+                // Realocación
+                G4D.Logger.logf(": Mejor fitness actual: %.3f | >> REALOCANDO..", mejorFitness);
+                realocarSegmentacion(rutasOrig, rutasDest, segmentacion, vuelosEnTransito, rutasEnOperacion);
+                solucion.setFitness();
+                double fitnessObtenido = solucion.getFitness();
+                G4D.Logger.logf(" | >> Fitness obtenido: %.3f", fitnessObtenido);
+                if (G4D.isProximatelyFewer(fitnessObtenido, mejorFitness, D_MIN)) {
+                    G4D.Logger.logln(" | ¡NUEVO MEJOR!");
+                    mejorFitness = fitnessObtenido;
+                    posMejorComb = posComb;
+                    huboMejora = true;
+                } else G4D.Logger.logln();
+                // Reversión de cambios
+                revertirCambios(segmentacion, segmentacionAux, vuelosEnTransito, rutasEnOperacion);
+                G4D.Logger.delete_lines(3);
+            }
+            // Aplicar mejor combinación
+            if(posMejorComb != -1) {
+                List<Ruta> rutasOrig = combinaciones.get(posMejorComb);
+                realocarSegmentacion(rutasOrig, rutasDest, segmentacion, vuelosEnTransito, rutasEnOperacion);
+            }
+            G4D.Logger.delete_upper_line();
+        }
+        solucion.setFitness();
+        G4D.Logger.delete_upper_line();
+        G4D.Logger.logf("> 'Realocación'  : %.3f -> %.3f", fitnessInicial, mejorFitness);
+        if (huboMejora) {
+            G4D.Logger.logln(" | FITNESS OPTIMIZADO!");
+        } else G4D.Logger.logln(" | Fitness mantenido..");
+        return huboMejora;
+    }
+
+    /*
     private Boolean LSRealocar(Solucion solucion, int ele) {
         G4D.Logger.logln("> Realizando búsqueda local por 'Realocación'..");
         // Declaración & inicialización de variables
@@ -691,6 +1072,7 @@ public class GVNS {
         } else G4D.Logger.logln(" | Fitness mantenido..");
         return huboMejora;
     }
+    */
 
     private void realocarSegmentacion(List<Ruta> rutasOrig, List<Ruta> rutasDest, Map<Ruta, Lote> lotesPorRuta, Set<Vuelo> vuelosEnTransito, Set<Ruta> rutasEnOperacion) {
         // Eliminación de registros de origenes
@@ -794,8 +1176,7 @@ public class GVNS {
                     TCompactar(solucion, ele);
                     break;
                 case 1:
-                    // TFusionar(solucion, ele);
-                    j--;
+                    TFusionar(solucion, ele);
                     break;
                 case 2:
                     TRealocar(solucion, ele);
@@ -817,22 +1198,29 @@ public class GVNS {
         // Compactación de pedidos
         for (int posPedido = 0; posPedido < pedidos.size(); posPedido++) {
             Pedido pedido = pedidos.get(posPedido);
+            Map<Ruta, Lote> segmentacion = pedido.obtenerSegementacionVigente().getLotesPorRuta();
+            Map<Ruta, Lote> segmentacionModificable = new HashMap<>();
+            Map<Ruta, List<Aeropuerto>> secuenciasIntocables = new HashMap<>();
+            // Carga de secuencias intocables por replanificación
+            pedido.cargarRestriccionesDeReplanificacion(segmentacionModificable, secuenciasIntocables);
             // Validación por aptitud de pedido para compactar
             G4D.Logger.logf("- Validando aptitud del pedido #%d de '%d'..", posPedido+1, G4D.Logger.Stats.totalPed);
-            if (pedido.obtenerSegementacionVigente().getLotesPorRuta().size() < ele + 1) {
+            if (segmentacionModificable.size() < ele + 1) {
                 G4D.Logger.logln(" [NO APTO]");
                 G4D.Logger.delete_upper_line();
                 continue;
             } else G4D.Logger.logln(" [APTO]");
             // Validación por aptitud de combinación
             G4D.Logger.log(": Validando combinación aleatoria.. ");
-            Map<Ruta, Lote> segmentacion = pedido.obtenerSegementacionVigente().getLotesPorRuta();
             List<List<Ruta>> combinaciones = G4D.getPossibleCombinations(new ArrayList<>(segmentacion.keySet()), ele);
             List<Ruta> rutasOrig = combinaciones.get(random.nextInt(combinaciones.size()));
-            int combTotalProd = rutasOrig.stream().mapToInt(r -> segmentacion.get(r).getTamanio()).sum();
-            List<Ruta> rutasDest = segmentacion.keySet().stream().filter(r -> !rutasOrig.contains(r)).collect(Collectors.toList());
+            int totalCompactar = rutasOrig.stream().mapToInt(r -> segmentacionModificable.get(r).getTamanio()).sum();
+            List<Ruta> rutasDest = segmentacionModificable.keySet().stream().filter(r -> !rutasOrig.contains(r))
+                                                                            .filter(r -> r.obtenerCapacidadDisponible() > 0)
+                                                                            .filter(r -> r.respetaSecuenciasInalterables(rutasOrig, secuenciasIntocables))
+                                                                            .collect(Collectors.toList());
             int capDispTotal = rutasDest.stream().mapToInt(Ruta::obtenerCapacidadDisponible).sum();
-            if (capDispTotal < combTotalProd) {
+            if (capDispTotal < totalCompactar) {
                 G4D.Logger.logln("[INVALIDA]");
                 G4D.Logger.delete_lines(3);
                 continue;
@@ -860,7 +1248,11 @@ public class GVNS {
         for (int posPedido = 0; posPedido < pedidos.size(); posPedido++) {
             Pedido pedido = pedidos.get(posPedido);
             Map<Ruta, Lote> segmentacion = pedido.obtenerSegementacionVigente().getLotesPorRuta();
-            List<Ruta> rutasIni = new ArrayList<>(segmentacion.keySet());
+            Map<Ruta, Lote> segmentacionModificable = new HashMap<>();
+            Map<Ruta, List<Aeropuerto>> secuenciasIntocables = new HashMap<>();
+            // Carga de restricciones por replanificación
+            pedido.cargarRestriccionesDeReplanificacion(segmentacionModificable, secuenciasIntocables);
+            List<Ruta> rutasIni = new ArrayList<>(segmentacionModificable.keySet());
             List<Ruta> rutasFin = rutasEnOperacion.stream().filter(r -> r.getDestino().equals(pedido.getDestino()))
                                                            .filter(r -> !r.getFechaHoraSalida().isBefore(pedido.getFechaHoraGeneracion()) && !r.getFechaHoraLlegada().isAfter(pedido.getFechaHoraExpiracion()))
                                                            .collect(Collectors.toList());
@@ -895,13 +1287,25 @@ public class GVNS {
                 continue;
             }
             // Validación de fusión por existencia de disponibilidad en ruta
-            List<Vuelo> svIni = new ArrayList<>(rIni.getVuelos().subList(0, posConexionIni));
-            List<Vuelo> svFin = new ArrayList<>(rFin.getVuelos().subList(posConexionFin, rFin.getVuelos().size()));
+            List<Vuelo> svIni = new ArrayList<>(rIni.getVuelos().subList(0, posConexionIni + 1));
+            LocalDateTime fechaHoraLlegadaAConexion = svIni.getLast().getFechaHoraLlegada();
+            List<Vuelo> svFin = new ArrayList<>(rFin.getVuelos().subList(posConexionFin + 1, rFin.getVuelos().size()));
+            LocalDateTime fechaHoraSalidaDesdeConexion = svIni.getFirst().getFechaHoraSalida();
+            if(fechaHoraLlegadaAConexion.isAfter(fechaHoraSalidaDesdeConexion) || fechaHoraLlegadaAConexion.plusMinutes((long)(60*Problematica.MAX_HORAS_ESTANCIA)).isAfter(fechaHoraSalidaDesdeConexion)) {
+                G4D.Logger.logln(" [INVALIDA]");
+                G4D.Logger.delete_lines(3);
+                continue;
+            }
             List<Vuelo> svNew = new ArrayList<>();
             svNew.addAll(svIni);
             svNew.addAll(svFin);
             Ruta rNew = new Ruta(rIni);
             rNew.setVuelos(svNew);
+            if(!rNew.respetaSecuenciasInalterables(List.of(rIni), secuenciasIntocables)) {
+                G4D.Logger.logln(" [INVALIDA]");
+                G4D.Logger.delete_lines(3);
+                continue;
+            }
             Lote lote = segmentacion.get(rIni);
             rIni.eliminarRegistroDeLoteDeProductos(lote);
             segmentacion.remove(rIni);
@@ -934,9 +1338,13 @@ public class GVNS {
         // Realocación de lotes
         for (int posPedido = 0; posPedido < pedidos.size(); posPedido++) {
             Pedido pedido = pedidos.get(posPedido);
+            Map<Ruta, Lote> segmentacion = pedido.obtenerSegementacionVigente().getLotesPorRuta();
+            Map<Ruta, Lote> segmentacionModificable = new HashMap<>();
+            Map<Ruta, List<Aeropuerto>> secuenciasIntocables = new HashMap<>();
+            // Carga de restricciones por replanificacion
+            pedido.cargarRestriccionesDeReplanificacion(segmentacionModificable, secuenciasIntocables);
             // Validación por aptitud de pedido para realocar
             G4D.Logger.logf("- Validando aptitud del pedido #%d de '%d'..", posPedido+1, G4D.Logger.Stats.totalPed);
-            Map<Ruta, Lote> segmentacion = pedido.obtenerSegementacionVigente().getLotesPorRuta();
             if (segmentacion.size() < ele) {
                 G4D.Logger.logln("[NO APTO]");
                 G4D.Logger.delete_upper_line();
@@ -944,17 +1352,18 @@ public class GVNS {
             } else G4D.Logger.logln("[APTO]");
             // Validación por aptitud de combinación
             G4D.Logger.log(": Validando combinación aleatoria.. ");
-            List<Ruta> rutas = new ArrayList<>(segmentacion.keySet());
+            List<Ruta> rutas = new ArrayList<>(segmentacionModificable.keySet());
             List<List<Ruta>> combinaciones = G4D.getPossibleCombinations(rutas, ele);
             List<Ruta> rutasOrig = combinaciones.get(random.nextInt(combinaciones.size()));
-            int totalRealocar = rutasOrig.stream().mapToInt(r -> segmentacion.get(r).getTamanio()).sum();
-            List<Ruta> rutasDest = rutasEnOperacion.stream()
-                .filter(r -> !rutas.contains(r))
-                .filter(r -> r.getDestino().equals(pedido.getDestino()))
-                .filter(r -> !r.getFechaHoraSalida().isBefore(pedido.getFechaHoraGeneracion()) && !r.getFechaHoraLlegada().isAfter(pedido.getFechaHoraExpiracion()))
-                .filter(r -> r.obtenerCapacidadDisponible() > 0)
-                .collect(Collectors.toList());
+            List<Ruta> rutasDest = rutasEnOperacion.stream().filter(r -> !rutas.contains(r))
+                                                            .filter(r -> r.getDestino().equals(pedido.getDestino()))
+                                                            .filter(r -> !r.getFechaHoraSalida().isBefore(pedido.getFechaHoraGeneracion()) && !r.getFechaHoraLlegada().isAfter(pedido.getFechaHoraExpiracion()))
+                                                            .filter(r -> r.obtenerCapacidadDisponible() > 0)
+                                                            .filter(r -> r.respetaSecuenciasInalterables(rutas, secuenciasIntocables))
+                                                            .sorted(Comparator.comparing(Ruta::getFechaHoraLlegada))
+                                                            .collect(Collectors.toList());
             int capDispTotal = rutasDest.stream().mapToInt(Ruta::obtenerCapacidadDisponible).sum();
+            int totalRealocar = rutasOrig.stream().mapToInt(r -> segmentacionModificable.get(r).getTamanio()).sum();
             if (capDispTotal < totalRealocar) {
                 G4D.Logger.logln("[INVALIDA]");
                 G4D.Logger.delete_lines(3);

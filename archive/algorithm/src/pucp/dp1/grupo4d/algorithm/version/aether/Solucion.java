@@ -163,6 +163,7 @@ public class Solucion {
         int totalRut = 0;
         double sumaRatios = 0.0;
         for (Ruta ruta : this.rutasEnOperacion) {
+            if(!ruta.getEstaOperativa()) continue;
             int rCapDisp = ruta.obtenerCapacidadDisponible();
             double rCap = ((double)(ruta.obtenerCapacidadMinima()));
             if(rCapDisp == rCap) continue;

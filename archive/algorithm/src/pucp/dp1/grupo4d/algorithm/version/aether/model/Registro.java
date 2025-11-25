@@ -13,17 +13,20 @@ import pucp.dp1.grupo4d.util.G4D;
 
 public class Registro {
     private String codigo;
+    private Boolean sigueVigente;
     private LocalDateTime fechaHoraIngreso;
     private LocalDateTime fechaHoraEgreso;
     private Lote lote;
 
     public Registro() {
         this.codigo = G4D.Generator.getUniqueString("REG");
+        this.sigueVigente = true;
     }
 
     public Registro replicar(Map<String, Lote> poolLotes) {
         Registro registro = new Registro();
         registro.codigo = this.codigo;
+        registro.sigueVigente = this.sigueVigente;
         registro.fechaHoraIngreso = this.fechaHoraIngreso;
         registro.fechaHoraEgreso = this.fechaHoraEgreso;
         registro.lote = (this.lote != null) ? poolLotes.computeIfAbsent(this.lote.getCodigo(), codigo -> this.lote.replicar()) : null;
@@ -49,6 +52,14 @@ public class Registro {
 
     public void setCodigo(String codigo) {
         this.codigo = codigo;
+    }
+
+    public Boolean getSigueVigente() {
+        return sigueVigente;
+    }
+
+    public void setSigueVigente(boolean sigueVigente) {
+        this.sigueVigente = sigueVigente;
     }
 
     public LocalDateTime getFechaHoraIngreso() {

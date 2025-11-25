@@ -87,6 +87,11 @@ public class Plan {
         return null;
     }
 
+    public Boolean esProblematico() {
+        List<Evento> eventosConsiderables = this.eventos.stream().filter(e -> !e.getFechaHoraInicio().isAfter(Problematica.FIN_PLANIFICACION) && !e.getFechaHoraFin().isBefore(Problematica.INICIO_REPLANIFICACION)).toList();
+        return !eventosConsiderables.isEmpty();
+    }
+
     public Boolean esAlcanzable(LocalDateTime fechaHoraActual, LocalDateTime fechaHoraLimite, Aeropuerto aDest, Set<Vuelo> vuelosActivos) {
         LocalDateTime origFechaHoraMinEgreso = fechaHoraActual.plusMinutes((long)(60*Problematica.MIN_HORAS_ESTANCIA));
         LocalDateTime origFechaHoraMaxEgreso = fechaHoraActual.plusMinutes((long)(60*Problematica.MAX_HORAS_ESTANCIA));

@@ -25,6 +25,7 @@ public class Ruta {
     private LocalDateTime fechaHoraLlegada;
     private Aeropuerto origen;
     private Aeropuerto destino;
+    private Boolean estaOperativa;
     private TipoRuta tipo;
     private List<Vuelo> vuelos;
 
@@ -32,6 +33,7 @@ public class Ruta {
         this.codigo = G4D.Generator.getUniqueString("RUT");
         this.duracion = 0.0;
         this.distancia = 0.0;
+        this.estaOperativa = true;
         this.vuelos = new ArrayList<>();
     }
 
@@ -44,6 +46,7 @@ public class Ruta {
         this.codigo = ruta.codigo;
         this.duracion = ruta.duracion;
         this.distancia = ruta.distancia;
+        this.estaOperativa = ruta.estaOperativa;
         this.fechaHoraSalida = ruta.fechaHoraSalida;
         this.fechaHoraLlegada = ruta.fechaHoraLlegada;
         this.tipo = ruta.tipo;
@@ -57,6 +60,7 @@ public class Ruta {
         ruta.codigo = this.codigo;
         ruta.duracion = this.duracion;
         ruta.distancia = this.distancia;
+        ruta.estaOperativa = this.estaOperativa;
         ruta.fechaHoraSalida = this.fechaHoraSalida;
         ruta.fechaHoraLlegada = this.fechaHoraLlegada;
         ruta.tipo = this.tipo;
@@ -129,6 +133,22 @@ public class Ruta {
         return true;
     }
 
+    public boolean respetaSecuenciasInalterables(List<Ruta> rutasOrig, Map<Ruta, List<Aeropuerto>> secuenciasIntocables) {
+        List<Aeropuerto> sa = this.obtenerSecuenciaDeAeropuertos();
+        return rutasOrig.stream().allMatch(rOrig -> {
+            List<Aeropuerto> saIntocable = secuenciasIntocables.getOrDefault(rOrig, null);
+            if(saIntocable != null) {
+                if(sa.size() < saIntocable.size()) return false;
+                for (int i = 0; i < saIntocable.size(); i++) {
+                    if (!sa.get(i).equals(saIntocable.get(i))) {
+                        return false;
+                    }
+                }
+            }
+            return true;
+        });
+    }
+
     public void instanciarHorarios() {
         this.fechaHoraSalida = this.vuelos.getFirst().getFechaHoraSalida();
         this.fechaHoraLlegada = this.vuelos.getLast().getFechaHoraLlegada();
@@ -146,9 +166,27 @@ public class Ruta {
     }
 
     public void eliminarRegistroDeLoteDeProductos(Lote lote) {
+        eliminarRegistroDeLoteDeProductos(lote, false);
+    }
+
+    public void eliminarRegistroDeLoteDeProductos(Lote lote, boolean softDelete) {
         for(Vuelo vuelo : this.vuelos) {
             vuelo.setCapacidadDisponible(vuelo.getCapacidadDisponible() + lote.getTamanio());
-            vuelo.getPlan().getDestino().eliminarRegistroDeLoteDeProductos(lote);
+            vuelo.getPlan().getDestino().eliminarRegistroDeLoteDeProductos(lote, softDelete);
+        }
+    }
+
+    public void eliminarRegistroDeLoteDeProductos(Lote lote, Aeropuerto aNodo, boolean softDelete) {
+        boolean eliminar = false;
+        for (Vuelo vuelo : this.vuelos) {
+            Aeropuerto origen  = vuelo.getPlan().getOrigen();
+            if (origen.equals(aNodo)) {
+                eliminar = true;
+                origen.actualizarEstanciaHaciaTiempoMaximoHabitable(lote);
+            }
+            if (!eliminar) continue;
+            vuelo.setCapacidadDisponible(vuelo.getCapacidadDisponible() + lote.getTamanio());
+            vuelo.getPlan().getDestino().eliminarRegistroDeLoteDeProductos(lote, softDelete);
         }
     }
 
@@ -213,6 +251,14 @@ public class Ruta {
 
     public void setDistancia(Double distancia) {
         this.distancia = distancia;
+    }
+
+    public Boolean getEstaOperativa() {
+        return estaOperativa;
+    }
+
+    public void setEstaOperativa(boolean estaOperativa) {
+        this.estaOperativa = estaOperativa;
     }
 
     public TipoRuta getTipo() {
