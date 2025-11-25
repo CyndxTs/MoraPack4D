@@ -7,7 +7,7 @@
 package com.pucp.dp1.grupo4d.morapack.controller.model;
 
 import com.pucp.dp1.grupo4d.morapack.model.dto.PedidoDTO;
-import com.pucp.dp1.grupo4d.morapack.model.dto.PlanDTO;
+import com.pucp.dp1.grupo4d.morapack.model.dto.request.FilterRequest;
 import com.pucp.dp1.grupo4d.morapack.model.dto.request.ImportFileRequest;
 import com.pucp.dp1.grupo4d.morapack.model.dto.request.ImportRequest;
 import com.pucp.dp1.grupo4d.morapack.model.dto.request.ListRequest;
@@ -49,6 +49,20 @@ public class PedidoController {
     public ResponseEntity<ListResponse> listar(ListRequest request) {
         try {
             ListResponse response = pedidoService.listar(request);
+            if (response.getSuccess()) {
+                return ResponseEntity.ok(response);
+            } else {
+                return ResponseEntity.badRequest().body(response);
+            }
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(new ListResponse(false, "ERROR INTERNO: " + e.getMessage()));
+        }
+    }
+
+    @GetMapping("/filtrar")
+    public ResponseEntity<ListResponse> filtrar(@RequestBody FilterRequest<PedidoDTO> request) {
+        try {
+            ListResponse response = pedidoService.filtrar(request);
             if (response.getSuccess()) {
                 return ResponseEntity.ok(response);
             } else {

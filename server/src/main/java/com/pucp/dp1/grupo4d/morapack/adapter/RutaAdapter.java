@@ -14,7 +14,6 @@ import com.pucp.dp1.grupo4d.morapack.model.entity.AeropuertoEntity;
 import com.pucp.dp1.grupo4d.morapack.model.entity.VueloEntity;
 import com.pucp.dp1.grupo4d.morapack.service.model.RutaService;
 import com.pucp.dp1.grupo4d.morapack.util.G4D;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import java.util.*;
 

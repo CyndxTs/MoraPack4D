@@ -45,7 +45,7 @@ public class PedidoEntity {
     private Boolean fueAtendido = false;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(name = "tipo", nullable = false)
     private TipoEscenario tipoEscenario = TipoEscenario.SIMULACION;
 
     @ManyToOne

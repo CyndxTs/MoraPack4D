@@ -32,7 +32,6 @@ public class LoteAdapter {
         algorithm.setCodigo(entity.getCodigo());
         algorithm.setTamanio(entity.getTamanio());
         algorithm.setEstado(entity.getEstado());
-        algorithm.setCodigoLotePadre(entity.getCodigoLotePadre());
         poolAlgorithm.put(algorithm.getCodigo(), algorithm);
         return algorithm;
     }
@@ -47,7 +46,6 @@ public class LoteAdapter {
             entity.setCodigo(algorithm.getCodigo());
         };
         entity.setTamanio(algorithm.getTamanio());
-        entity.setCodigoLotePadre(algorithm.getCodigoLotePadre());
         entity.setEstado(algorithm.getEstado());
         poolEntity.put(entity.getCodigo(), entity);
         return entity;

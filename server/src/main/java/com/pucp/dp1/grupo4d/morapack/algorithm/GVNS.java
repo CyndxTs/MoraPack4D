@@ -518,7 +518,6 @@ public class GVNS {
                 G4D.Logger.logf("Enrutando %d productos..", cantEnrutables);
                 // Producción y registro de segmento de pedido
                 Lote lote = ruta.getOrigen().generarLoteDeProductos(cantEnrutables);
-                lote.setCodigoLotePadre(lReplanificar.getCodigo());
                 ruta.registraLoteDeProductos(lote, vuelosActivados, rutasAsignadas);
                 nuevaSegmentacion.put(ruta, lote);
                 restantePorReplanificar -= cantEnrutables;

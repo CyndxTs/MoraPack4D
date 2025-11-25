@@ -6,6 +6,7 @@
 
 package com.pucp.dp1.grupo4d.morapack.mapper;
 
+import com.pucp.dp1.grupo4d.morapack.algorithm.Problematica;
 import com.pucp.dp1.grupo4d.morapack.model.algorithm.*;
 import com.pucp.dp1.grupo4d.morapack.model.dto.LoteDTO;
 import com.pucp.dp1.grupo4d.morapack.model.dto.LotePorRutaDTO;
@@ -43,6 +44,7 @@ public class PedidoMapper {
         dto.setFechaHoraExpiracion(G4D.toDisplayString(algorithm.getFechaHoraExpiracion()));
         Cliente cliente = algorithm.getCliente();
         dto.setCodCliente(cliente.getCodigo());
+        dto.setTipoEscenario(Problematica.ESCENARIO);
         Aeropuerto destino = algorithm.getDestino();
         dto.setCodDestino(destino.getCodigo());
         List<SegmentacionDTO> segmentacionesDTO = new ArrayList<>();
@@ -70,6 +72,7 @@ public class PedidoMapper {
         dto.setCodCliente(clienteEntity.getCodigo());
         AeropuertoEntity destinoEntity = entity.getDestino();
         dto.setCodDestino(destinoEntity.getCodigo());
+        dto.setTipoEscenario(entity.getTipoEscenario().toString());
         List<SegmentacionDTO> segmentacionesDTO = new ArrayList<>();
         List<SegmentacionEntity> segmentacionesEntity = entity.getSegmentaciones();
         for (SegmentacionEntity segmentacionEntity : segmentacionesEntity) {

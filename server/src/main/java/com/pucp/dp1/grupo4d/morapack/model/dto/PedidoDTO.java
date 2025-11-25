@@ -24,5 +24,6 @@ public class PedidoDTO implements DTO {
     private String fechaHoraGeneracion;
     private String fechaHoraExpiracion;
     private String codDestino;
+    private String tipoEscenario;
     private List<SegmentacionDTO> segmentaciones = new ArrayList<>();
 }

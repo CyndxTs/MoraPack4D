@@ -9,7 +9,6 @@ package com.pucp.dp1.grupo4d.morapack.algorithm;
 import com.pucp.dp1.grupo4d.morapack.adapter.*;
 import com.pucp.dp1.grupo4d.morapack.model.algorithm.*;
 import com.pucp.dp1.grupo4d.morapack.model.entity.*;
-import com.pucp.dp1.grupo4d.morapack.model.enums.EstadoLote;
 import com.pucp.dp1.grupo4d.morapack.service.model.*;
 import com.pucp.dp1.grupo4d.morapack.util.G4D;
 import java.time.LocalDateTime;

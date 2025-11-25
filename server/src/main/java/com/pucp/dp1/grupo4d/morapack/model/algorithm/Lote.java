@@ -13,7 +13,6 @@ import com.pucp.dp1.grupo4d.morapack.util.G4D;
 public class Lote {
     private String codigo;
     private Integer tamanio;
-    private String codigoLotePadre;
     private EstadoLote estado;
 
     public Lote() {
@@ -63,14 +62,6 @@ public class Lote {
 
     public void setTamanio(int tamanio) {
         this.tamanio = tamanio;
-    }
-
-    public String getCodigoLotePadre() {
-        return codigoLotePadre;
-    }
-
-    public void setCodigoLotePadre(String codigoLotePadre) {
-        this.codigoLotePadre = codigoLotePadre;
     }
 
     public EstadoLote getEstado() {

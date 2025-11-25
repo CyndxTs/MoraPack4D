@@ -9,6 +9,8 @@ package com.pucp.dp1.grupo4d.morapack.service.model;
 import com.pucp.dp1.grupo4d.morapack.mapper.PedidoMapper;
 import com.pucp.dp1.grupo4d.morapack.model.dto.DTO;
 import com.pucp.dp1.grupo4d.morapack.model.dto.PedidoDTO;
+import com.pucp.dp1.grupo4d.morapack.model.dto.UsuarioDTO;
+import com.pucp.dp1.grupo4d.morapack.model.dto.request.FilterRequest;
 import com.pucp.dp1.grupo4d.morapack.model.dto.request.ImportFileRequest;
 import com.pucp.dp1.grupo4d.morapack.model.dto.request.ImportRequest;
 import com.pucp.dp1.grupo4d.morapack.model.dto.request.ListRequest;
@@ -18,6 +20,7 @@ import com.pucp.dp1.grupo4d.morapack.model.entity.AeropuertoEntity;
 import com.pucp.dp1.grupo4d.morapack.model.entity.PedidoEntity;
 import com.pucp.dp1.grupo4d.morapack.model.entity.ClienteEntity;
 import com.pucp.dp1.grupo4d.morapack.model.enums.EstadoLote;
+import com.pucp.dp1.grupo4d.morapack.model.enums.EstadoUsuario;
 import com.pucp.dp1.grupo4d.morapack.repository.PedidoRepository;
 import com.pucp.dp1.grupo4d.morapack.util.G4D;
 import org.springframework.data.domain.PageRequest;
@@ -101,6 +104,28 @@ public class PedidoService {
             return new ListResponse(true, "Pedidos listados correctamente!", pedidosDTO);
         } catch (Exception e) {
             return new ListResponse(false, "ERROR - LISTADO: " + e.getMessage());
+        } finally {
+            clearPools();
+        }
+    }
+
+    public ListResponse filtrar(FilterRequest<PedidoDTO> request) {
+        try {
+            int page = (G4D.isAdmissible(request.getPage())) ? request.getPage() : 0;
+            int size = (G4D.isAdmissible(request.getSize())) ? request.getSize() : 10;
+            Pageable pageable = PageRequest.of(page, size, Sort.by("codigo").ascending());
+            PedidoDTO dto = request.getDto();
+            String tipoEscenario = G4D.toAdmissibleValue(dto.getTipoEscenario());
+            String codCliente = G4D.toAdmissibleValue(dto.getCodCliente());
+            Boolean fueAtendido = dto.getFueAtendido();
+            LocalDateTime fechaHoraGeneracion = (G4D.isAdmissible(dto.getFechaHoraGeneracion())) ? G4D.toDateTime(dto.getFechaHoraGeneracion()) : null;
+            LocalDateTime fechaHoraExpiracion = (G4D.isAdmissible(dto.getFechaHoraExpiracion())) ? G4D.toDateTime(dto.getFechaHoraExpiracion()) : null;
+            List<DTO> pedidosDTO = new ArrayList<>();
+            List<PedidoEntity> pedidosEntity = pedidoRepository.filterBy(tipoEscenario, codCliente, fueAtendido, fechaHoraGeneracion, fechaHoraExpiracion, pageable).getContent();
+            pedidosEntity.forEach(p -> pedidosDTO.add(pedidoMapper.toDTO(p)));
+            return new ListResponse(true, "Pedidos filtrados correctamente!", pedidosDTO);
+        } catch (Exception e) {
+            return new ListResponse(false, "ERROR - FILTRADO: " + e.getMessage());
         } finally {
             clearPools();
         }

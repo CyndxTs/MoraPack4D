@@ -16,6 +16,5 @@ public class LoteDTO implements DTO {
     private String codigo;
 
     private Integer tamanio;
-    private String codigoLotePadre;
     private String estado;
 }

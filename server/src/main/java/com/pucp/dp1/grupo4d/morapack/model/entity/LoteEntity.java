@@ -27,9 +27,6 @@ public class LoteEntity {
     @Column(nullable = false)
     private Integer tamanio;
 
-    @Column(name = "codigo_lote_padre", length = 30)
-    private String codigoLotePadre;
-
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private EstadoLote estado = EstadoLote.PLANIFICADO;
@@ -66,8 +63,6 @@ public class LoteEntity {
     public void setCodigo(String codigo) { this.codigo = codigo; }
     public Integer getTamanio() { return tamanio; }
     public void setTamanio(Integer tamanio) { this.tamanio = tamanio; }
-    public String getCodigoLotePadre() { return codigoLotePadre; }
-    public void setCodigoLotePadre(String codigoLotePadre) { this.codigoLotePadre = codigoLotePadre; }
     public EstadoLote getEstado() { return estado; }
     public void setEstado(EstadoLote estado) { this.estado = estado; }
     public SegmentacionEntity getSegmentacion() { return segmentacion; }
