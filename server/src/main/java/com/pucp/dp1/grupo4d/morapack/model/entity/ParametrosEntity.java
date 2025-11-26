@@ -8,7 +8,6 @@ package com.pucp.dp1.grupo4d.morapack.model.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -33,12 +32,6 @@ public class ParametrosEntity {
 
     @Column(name = "min_horas_estancia", nullable = false)
     private Double minHorasEstancia = 1.0;
-
-    @Column(name = "fh_inicio", nullable = false)
-    private LocalDateTime fechaHoraInicio = LocalDateTime.of(1999, 12, 31, 23, 59, 59);
-
-    @Column(name = "fh_fin", nullable = false)
-    private LocalDateTime fechaHoraFin = LocalDateTime.of(2999, 12, 31, 23, 59, 59);
 
     @Column(name = "d_min", nullable = false)
     private Double dMin = 0.001;
@@ -93,10 +86,6 @@ public class ParametrosEntity {
     public void setMaxHorasEstancia(Double maxHorasEstancia) { this.maxHorasEstancia = maxHorasEstancia; }
     public Double getMinHorasEstancia() { return minHorasEstancia; }
     public void setMinHorasEstancia(Double minHorasEstancia) { this.minHorasEstancia = minHorasEstancia; }
-    public LocalDateTime getFechaHoraInicio() { return fechaHoraInicio; }
-    public void setFechaHoraInicio(LocalDateTime fechaHoraInicio) { this.fechaHoraInicio = fechaHoraInicio; }
-    public LocalDateTime getFechaHoraFin() { return fechaHoraFin; }
-    public void setFechaHoraFin(LocalDateTime fechaHoraFin) { this.fechaHoraFin = fechaHoraFin; }
     public Double getDMin() { return dMin; }
     public void setDMin(Double dMin) { this.dMin = dMin; }
     public Integer getIMax() { return iMax; }

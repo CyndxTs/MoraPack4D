@@ -11,6 +11,4 @@ import lombok.Data;
 @Data
 public class OperationRequest {
     private String fechaHoraInicio;
-    private String fechaHoraFin;
-    private Boolean considerarDesfaseTemporal;
 }

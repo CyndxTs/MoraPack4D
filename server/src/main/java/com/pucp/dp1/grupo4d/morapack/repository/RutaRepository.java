@@ -33,4 +33,17 @@ public interface RutaRepository extends JpaRepository<RutaEntity, Integer> {
             @Param("fechaHoraFin") LocalDateTime fechaHoraFin,
             @Param("TipoDePedidos") String tipoEscenario
     );
+
+    @Query("""
+        SELECT DISTINCT r
+        FROM RutaEntity r
+        JOIN r.lotes l
+        JOIN l.segmentacion s
+        JOIN s.pedido p
+        WHERE (:fechaHoraGeneracion IS NULL OR p.fechaHoraGeneracionUTC >= :fechaHoraGeneracion) AND p.tipoEscenario = :tipoEscenario
+    """)
+    List<RutaEntity> findAllSinceDateTime(
+            @Param("fechaHoraInicio") LocalDateTime fechaHoraInicio,
+            @Param("TipoDePedidos") String tipoEscenario
+    );
 }

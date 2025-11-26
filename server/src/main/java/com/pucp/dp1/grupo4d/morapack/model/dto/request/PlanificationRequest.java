@@ -12,7 +12,9 @@ import lombok.Data;
 @Data
 public class PlanificationRequest {
     private String escenario;
-    private Long umbralFijo;
-    private Boolean considerarDesfaseTemporal;
-    private ParametrosDTO parameters;
+    private String fechaHoraInicio;
+    private String fechaHoraFin;
+    private String umbralDeReplanificacion;
+    private Double desfaseTemporalPorIteracion;
+    private ParametrosDTO parametros;
 }

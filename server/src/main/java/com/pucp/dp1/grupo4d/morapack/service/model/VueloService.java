@@ -69,6 +69,10 @@ public class VueloService {
         return  vueloRepository.findAllByDateTimeRange(fechaHoraInicio, fechaHoraFin, tipoEscenario);
     }
 
+    public List<VueloEntity> findAllSinceDateTime(LocalDateTime fechaHoraInicio, String tipoEscenario) {
+        return  vueloRepository.findAllSinceDateTime(fechaHoraInicio, tipoEscenario);
+    }
+
     public ListResponse listar(ListRequest request) {
         try {
             int page = (G4D.isAdmissible(request.getPage())) ? request.getPage() : 0;

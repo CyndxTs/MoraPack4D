@@ -50,6 +50,16 @@ public interface PedidoRepository extends JpaRepository<PedidoEntity, Integer> {
     List<PedidoEntity> findAllByDateTimeRange(
             @Param("fechaHoraInicio") LocalDateTime fechaHoraInicio,
             @Param("fechaHoraFin") LocalDateTime fechaHoraFin,
-            @Param("tipoDePedidos")  String tipoEscenario
+            @Param("tipoEscenario")  String tipoEscenario
+    );
+
+    @Query("""
+        SELECT p
+        FROM PedidoEntity p
+        WHERE (:fechaHoraGeneracion IS NULL OR p.fechaHoraGeneracionUTC >= :fechaHoraGeneracion) AND p.tipoEscenario = :tipoEscenario
+    """)
+    List<PedidoEntity> findAllSinceDateTime(
+            @Param("fechaHoraInicio") LocalDateTime fechaHoraInicio,
+            @Param("tipoEscenario")  String tipoEscenario
     );
 }

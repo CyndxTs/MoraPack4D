@@ -15,6 +15,7 @@ import com.pucp.dp1.grupo4d.morapack.model.algorithm.*;
 import com.pucp.dp1.grupo4d.morapack.model.dto.*;
 import com.pucp.dp1.grupo4d.morapack.model.dto.request.OperationRequest;
 import com.pucp.dp1.grupo4d.morapack.model.dto.request.PlanificationRequest;
+import com.pucp.dp1.grupo4d.morapack.model.dto.request.SimulationRequest;
 import com.pucp.dp1.grupo4d.morapack.model.dto.response.SolutionResponse;
 import com.pucp.dp1.grupo4d.morapack.model.entity.*;
 import com.pucp.dp1.grupo4d.morapack.model.enums.TipoEscenario;
@@ -95,20 +96,17 @@ public class MonitorService {
 
     @Autowired
     private RutaMapper rutaMapper;
+    private SegmentacionAdapter segmentacionAdapter;
 
     public SolutionResponse ejecutarAlgoritmo(PlanificationRequest request) {
         try {
             TipoEscenario escenario = G4D.toAdmissibleValue(request.getEscenario(), TipoEscenario.class);
-            boolean guardarPlanificacion = switch (escenario) {
-                case OPERACION -> true;
-                case SIMULACION -> false;
-            };
-            ParametrosDTO parametrosDTO = request.getParameters();
-            if(request.getConsiderarDesfaseTemporal()) {
-                int desfaseTemporal = Math.max(parametrosDTO.getMaxDiasEntregaIntracontinental(), parametrosDTO.getMaxDiasEntregaIntercontinental());
-                parametrosDTO.setFechaHoraInicio(G4D.toDisplayString(G4D.toDateTime(parametrosDTO.getFechaHoraInicio()).minusDays(desfaseTemporal)));
-            }
-            Problematica.INICIO_REPLANIFICACION = Problematica.INICIO_PLANIFICACION.plusMinutes(request.getUmbralFijo());
+            boolean guardarPlanificacion = escenario.equals(TipoEscenario.OPERACION);
+            ParametrosDTO parametrosDTO = request.getParametros();
+            long desfaseTemporal = (long) (60*(Math.min(request.getDesfaseTemporalPorIteracion(), Math.max(parametrosDTO.getMaxDiasEntregaIntracontinental(), parametrosDTO.getMaxDiasEntregaIntercontinental()))));
+            Problematica.INICIO_PLANIFICACION = G4D.toDateTime(request.getFechaHoraInicio()).minusMinutes(desfaseTemporal);
+            Problematica.FIN_PLANIFICACION = G4D.toDateTime(request.getFechaHoraFin());
+            Problematica.INICIO_REPLANIFICACION = G4D.toDateTime(request.getUmbralDeReplanificacion());
             Problematica.ESCENARIO = request.getEscenario().toUpperCase();
             parametrosMapper.toAlgorithm(parametrosDTO);
             Problematica problematica = new Problematica();
@@ -143,95 +141,65 @@ public class MonitorService {
             return;
         }
         System.out.println("\nGuardando solución en bd..\n");
-        // Vuelos
-        for (Vuelo vueloAlg : solucion.getVuelosEnTransito()) {
-            VueloEntity vueloEntity = vueloAdapter.toEntity(vueloAlg);
+        // Vuelos (ADD)
+        for (Vuelo vuelo : solucion.getVuelosEnTransito()) {
+            VueloEntity vueloEntity = vueloAdapter.toEntity(vuelo);
             if (vueloEntity != null && vueloEntity.getId() == null) {
                 vueloService.save(vueloEntity);
-                System.out.println("[+] VUELO: " + vueloEntity.getCodigo());
+                System.out.println("[*] VUELO: " + vueloEntity.getCodigo());
             }
         }
-        // Rutas
-        for (Ruta rutaAlg : solucion.getRutasEnOperacion()) {
-            RutaEntity rutaEntity = rutaAdapter.toEntity(rutaAlg);
+        // Rutas (ADD/UP) & Vuelos (UP)
+        for (Ruta ruta : solucion.getRutasEnOperacion()) {
+            RutaEntity rutaEntity = rutaAdapter.toEntity(ruta);
             if (rutaEntity != null) {
-                rutaEntity.getVuelos().clear();
-                for (Vuelo vuelo : rutaAlg.getVuelos()) {
+                for (Vuelo vuelo : ruta.getVuelos()) {
                     VueloEntity vueloEntity = vueloAdapter.toEntity(vuelo);
                     if (vueloEntity != null) {
+                        if(rutaEntity.getVuelos().contains(vueloEntity)) {
+                            rutaEntity.getVuelos().remove(vueloEntity);
+                        }
                         rutaEntity.getVuelos().add(vueloEntity);
                     }
                 }
-                if (rutaEntity.getId() == null) {
-                    rutaService.save(rutaEntity);
-                    System.out.println("[+] RUTA: " + rutaEntity.getCodigo() + " ('" + rutaEntity.getVuelos().size() + "' vuelos)");
-                }
+                rutaService.save(rutaEntity);
+                System.out.println("[*] RUTA: " + rutaEntity.getCodigo() + " {'" + rutaEntity.getVuelos().size() + "' vuelos!}");
             }
         }
-        /*
-        // Pedidos & Lotes
-        for (Pedido pedidoAlg : solucion.getPedidosAtendidos()) {
-            PedidoEntity pedidoEntity = pedidoService.findByCodigo(pedidoAlg.getCodigo()).orElse(null);
-            if (pedidoEntity == null) {
-                continue;
-            }
-            pedidoEntity.setFechaHoraExpiracionLocal(pedidoAlg.getFechaHoraExpiracionLocal());
-            pedidoEntity.setFechaHoraExpiracionUTC(pedidoAlg.getFechaHoraExpiracionUTC());
-            pedidoEntity.getRutas().clear();
-            pedidoEntity.getLotes().clear();
-            for (Map.Entry<Ruta, Lote> entry : pedidoAlg.getLotesPorRuta().entrySet()) {
-                Ruta rutaAlg = entry.getKey();
-                Lote loteAlg = entry.getValue();
-                RutaEntity rutaEntity = rutaAdapter.toEntity(rutaAlg);
-                if (rutaEntity == null || rutaEntity.getId() == null) {
-                    continue;
+        // Pedidos (UP) & Segmentaciones (ADD/UP)
+        for (Pedido pedido : solucion.getPedidosAtendidos()) {
+            PedidoEntity pedidoEntity = pedidoAdapter.toEntity(pedido);
+            if(pedidoEntity != null) {
+                for(Segmentacion segmentacion : pedido.getSegmentaciones()) {
+                    SegmentacionEntity segmentacionEntity = segmentacionAdapter.toEntity(segmentacion);
+                    if(segmentacionEntity != null) {
+                        if(pedidoEntity.getSegmentaciones().contains(segmentacionEntity)) {
+                            pedidoEntity.getSegmentaciones().remove(segmentacionEntity);
+                        }
+                        pedidoEntity.getSegmentaciones().add(segmentacionEntity);
+                    }
                 }
-                LoteEntity loteEntity = loteAdapter.toEntity(loteAlg);
-                if (loteEntity == null) {
-                    continue;
-                }
-                loteEntity.setRuta(rutaEntity);
-                loteEntity.setPedido(pedidoEntity);
-                if (!pedidoEntity.getRutas().contains(rutaEntity)) {
-                    pedidoEntity.getRutas().add(rutaEntity);
-                }
-                pedidoEntity.getLotes().add(loteEntity);
             }
             pedidoService.save(pedidoEntity);
-            System.out.println("[*] PEDIDO: " + pedidoEntity.getCodigo() + " ('" + pedidoEntity.getRutas().size() + "' rutas | '" + pedidoEntity.getLotes().size() + "' lotes)");
+            System.out.println("[*] PEDIDO: " + pedidoEntity.getCodigo() + " ('" + pedidoEntity.getSegmentaciones().getLast().getLotes().size() + "' lotes!)");
         }
-        // Registros
-        for (Aeropuerto aeropuertoAlg : problematica.destinos) {
-            if (aeropuertoAlg == null || aeropuertoAlg.getRegistros().isEmpty()) {
-                continue;
-            }
-            AeropuertoEntity aeropuertoEntity = aeropuertoService.findByCodigo(aeropuertoAlg.getCodigo()).orElse(null);
-            if (aeropuertoEntity == null) {
-                continue;
-            }
-            aeropuertoEntity.getRegistros().clear();
-            for (Registro registroAlg : aeropuertoAlg.getRegistros()) {
-                RegistroEntity registroEntity = new RegistroEntity();
-                registroEntity.setCodigo(registroAlg.getCodigo());
-                registroEntity.setFechaHoraIngresoLocal(registroAlg.getFechaHoraIngresoLocal());
-                registroEntity.setFechaHoraIngresoUTC(registroAlg.getFechaHoraIngresoUTC());
-                registroEntity.setFechaHoraEgresoLocal(registroAlg.getFechaHoraEgresoLocal());
-                registroEntity.setFechaHoraEgresoUTC(registroAlg.getFechaHoraEgresoUTC());
-                registroEntity.setAeropuerto(aeropuertoEntity);
-                String codigoLote = registroAlg.getLote().getCodigo();
-                LoteEntity loteEntity = loteService.findByCodigo(codigoLote).orElse(null);
-                if (loteEntity == null) {
-                    continue;
+        // Aeropuertos (UP) && Registros (ADD/UP)
+        for(Aeropuerto aeropuerto : solucion.getAeropuertosTransitados()) {
+            AeropuertoEntity aeropuertoEntity = aeropuertoAdapter.toEntity(aeropuerto);
+            if(aeropuertoEntity != null) {
+                for(Registro registro : aeropuerto.getRegistros()) {
+                    RegistroEntity registroEntity = registroAdapter.toEntity(registro);
+                    if(registroEntity != null) {
+                        if(aeropuertoEntity.getRegistros().contains(registroEntity)) {
+                            aeropuertoEntity.getRegistros().remove(registroEntity);
+                        }
+                        aeropuertoEntity.getRegistros().add(registroEntity);
+                    }
                 }
-                registroEntity.setLote(loteEntity);
-                aeropuertoEntity.getRegistros().add(registroEntity);
-            }
-            if (!aeropuertoEntity.getRegistros().isEmpty()) {
                 aeropuertoService.save(aeropuertoEntity);
-                System.out.println("[*] AEROPUERTO: " + aeropuertoEntity.getCodigo() + " ('" + aeropuertoEntity.getRegistros().size() + "' registros)");
+                System.out.println("[*] AEROPUERTO: " + aeropuertoEntity.getCodigo());
             }
         }
-         */
         System.out.println("\nSOLUCIÓN ALMACENADA!");
     }
 
@@ -250,30 +218,26 @@ public class MonitorService {
     public SolutionResponse obtenerOperacion(OperationRequest request) {
         try {
             LocalDateTime fechaHoraInicio = (G4D.isAdmissible(request.getFechaHoraInicio())) ? G4D.toDateTime(request.getFechaHoraInicio()) : G4D.toDateTime("1999-12-31 23:59:59");
-            LocalDateTime fechaHoraFin = (G4D.isAdmissible(request.getFechaHoraFin())) ? G4D.toDateTime(request.getFechaHoraFin()) : LocalDateTime.now();
-            if(fechaHoraFin.isBefore(fechaHoraInicio)) {
-                return new SolutionResponse(false, "Rango invalido.");
-            }
-            return devolverSolucion(fechaHoraInicio, fechaHoraFin);
+            return devolverSolucion(fechaHoraInicio);
         } catch (Exception e) {
             e.printStackTrace();
             return new SolutionResponse(false, "ERROR - ENVÍO HACIA OPERACIÓN: " + e.getMessage());
         }
     }
 
-    private SolutionResponse devolverSolucion(LocalDateTime fechaHoraInicio, LocalDateTime fechaHoraFin) {
+    private SolutionResponse devolverSolucion(LocalDateTime fechaHoraInicio) {
         String tipoEscenario = "OPERACION";
         List<PedidoDTO> pedidosDTO = new ArrayList<>();
-        List<PedidoEntity> pedidosEntity = pedidoService.findAllByDateTimeRange(fechaHoraInicio, fechaHoraFin, tipoEscenario);
+        List<PedidoEntity> pedidosEntity = pedidoService.findAllSinceDateTime(fechaHoraInicio, tipoEscenario);
         pedidosEntity.forEach(p -> pedidosDTO.add(pedidoMapper.toDTO(p)));
         List<AeropuertoDTO> aeropuertosDTO = new ArrayList<>();
         List<AeropuertoEntity> aeropuertosEntity = aeropuertoService.findAll();
         aeropuertosEntity.forEach(a ->  aeropuertosDTO.add(aeropuertoMapper.toDTO(a)));
         List<VueloDTO> vuelosDTO = new ArrayList<>();
-        List<VueloEntity> vuelosEntity = vueloService.findAllByDateTimeRange(fechaHoraInicio, fechaHoraFin, tipoEscenario);
+        List<VueloEntity> vuelosEntity = vueloService.findAllSinceDateTime(fechaHoraInicio, tipoEscenario);
         vuelosEntity.forEach(v -> vuelosDTO.add(vueloMapper.toDTO(v)));
         List<RutaDTO> rutasDTO = new ArrayList<>();
-        List<RutaEntity> rutasEntity = rutaService.findAllByDateTimeRange(fechaHoraInicio, fechaHoraFin, tipoEscenario);
+        List<RutaEntity> rutasEntity = rutaService.findAllSinceDateTime(fechaHoraInicio, tipoEscenario);
         rutasEntity.forEach(r -> rutasDTO.add(rutaMapper.toDTO(r)));
         limpiarPools();
         return new SolutionResponse(true, "Simulación correctamente enviada!", pedidosDTO, aeropuertosDTO, vuelosDTO, rutasDTO);

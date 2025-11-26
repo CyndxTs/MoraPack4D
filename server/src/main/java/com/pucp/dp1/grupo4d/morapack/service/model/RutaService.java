@@ -68,6 +68,10 @@ public class RutaService {
     public List<RutaEntity> findAllByDateTimeRange(LocalDateTime fechaHoraInicio, LocalDateTime fechaHoraFin, String tipoEscenario) {
         return  rutaRepository.findAllByDateTimeRange(fechaHoraInicio, fechaHoraFin, tipoEscenario);
     }
+
+    public List<RutaEntity> findAllSinceDateTime(LocalDateTime fechaHoraInicio, String tipoEscenario) {
+        return  rutaRepository.findAllSinceDateTime(fechaHoraInicio, tipoEscenario);
+    }
     
     public ListResponse listar(ListRequest request) {
         try {

@@ -84,6 +84,10 @@ public class PedidoService {
         return  pedidoRepository.findAllByDateTimeRange(fechaHoraInicio, fechaHoraFin, tipoEscenario);
     }
 
+    public List<PedidoEntity> findAllSinceDateTime(LocalDateTime fechaHoraInicio, String tipoEscenario) {
+        return  pedidoRepository.findAllSinceDateTime(fechaHoraInicio, tipoEscenario);
+    }
+
     public List<PedidoEntity> findAllByDestino(AeropuertoEntity destino) {
         return pedidoRepository.findAllByDestino(destino);
     }
