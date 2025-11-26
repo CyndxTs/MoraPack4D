@@ -1,4 +1,6 @@
-/** @typedef {import("./RegistroDTO.js").RegistroDTO} RegistroDTO */
+/**
+ * @typedef {import("./RegistroDTO.js").RegistroDTO} RegistroDTO
+ */
 
 /**
  * @typedef {Object} AeropuertoDTO
@@ -9,8 +11,8 @@
  * @property {string} alias
  * @property {number} husoHorario
  * @property {number} capacidad
- * @property {number} latitudDEC
- * @property {number} longitudDEC
+ * @property {number} latitud
+ * @property {number} longitud
  * @property {boolean} esSede
  * @property {RegistroDTO[]} registros
  */
