@@ -1,15 +1,20 @@
 /**
- * @typedef {import("./LotePorRutaDTO.js").LotePorRutaDTO} LotePorRutaDTO */
+ * @typedef {import("./SegmentacionDTO.js").SegmentacionDTO} SegmentacionDTO
+ */
 
 /**
  * @typedef {Object} PedidoDTO
  * @property {string} codigo
  * @property {string} codCliente
  * @property {number} cantidadSolicitada
- * @property {string} fechaHoraGeneracion  // "dd/MM/yyyy HH:mm"
- * @property {string} fechaHoraExpiracion  // "dd/MM/yyyy HH:mm"
+ * @property {boolean} fueAtendido
+ * @property {string} fechaHoraGeneracion
+ * @property {string} fechaHoraExpiracion
  * @property {string} codDestino
- * @property {LotePorRutaDTO[]} lotesPorRuta
+ * @property {string} tipoEscenario
+ * @property {SegmentacionDTO[]} segmentaciones
  */
 
 export {};
+
+// "dd/MM/yyyy HH:mm"
