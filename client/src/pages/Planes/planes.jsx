@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from "react";
-import './vuelos.scss'
+import './planes.scss'
 import { ButtonAdd, Input, Table, SidebarActions, Notification, LoadingOverlay, Pagination, RemoveFileButton, Dropdown } from "../../components/UI/ui";
-import { listarPlanes } from "../../services/planesService";
-import { importarVuelos } from "../../services/generalService";
+import { listarPlanes, importarPlanes } from "../../services/planesService";
 import plus from '../../assets/icons/plus.svg';
 import hideIcon from '../../assets/icons/hide-sidebar.png';
 
-export default function Vuelos() {
+export default function Planes() {
   const [collapsed, setCollapsed] = useState(false);
   const [codigoFiltro, setCodigoFiltro] = useState("");
   const [ordenHora, setOrdenHora] = useState("");
@@ -16,8 +15,8 @@ export default function Vuelos() {
     { label: "Descendente", value: "desc" },
   ];
 
-  const [vuelos, setVuelos] = useState([]);
-  const [vuelosOriginales, setVuelosOriginales] = useState([]);
+  const [planes, setPlanes] = useState([]);
+  const [planesOriginales, setPlanesOriginales] = useState([]);
 
   const [codigo, setCodigo] = useState("");
   const [horaSalida, setHoraSalida] = useState("");
@@ -39,19 +38,19 @@ export default function Vuelos() {
   };
 
   useEffect(() => {
-    const fetchVuelos = async () => {
+    const fetchPlanes = async () => {
       try {
-        const data = await listarPlanes();
-        setVuelos(data.dtos || []);
-        setVuelosOriginales(data.dtos || []);
+        const data = await listarPlanes(0,3000);
+        setPlanes(data.dtos || []);
+        setPlanesOriginales(data.dtos || []);
       } catch (err) {
         console.error(err);
-        showNotification("danger", "Error al cargar vuelos");
+        showNotification("danger", "Error al cargar planes de vuelos");
       } finally {
         setLoading(false);
       }
     };
-    fetchVuelos();
+    fetchPlanes();
   }, []);
 
   
@@ -100,16 +99,16 @@ export default function Vuelos() {
 
       if (archivo) {
         // Importar usando AlgorithmController
-        await importarVuelos(archivo);
-        showNotification("success", "Vuelos importados correctamente");
+        await importarPlanes(archivo);
+        showNotification("success", "Planes de vuelos importados correctamente");
       } else {
         // Aquí podrías implementar agregar manualmente un vuelo si lo decides
-        showNotification("success", "Vuelo agregado correctamente");
+        showNotification("success", "Planes de vuelos agregado correctamente");
       }
 
       // Recargar lista
-      const data = await listarPlanes();
-      setVuelos(data.dtos || []);
+      const data = await listarPlanes(0,3000);
+      setPlanes(data.dtos || []);
 
       // Reset form & modal
       setIsModalOpen(false);
@@ -133,7 +132,7 @@ export default function Vuelos() {
 
   //Filtro
   const handleFilter = () => {
-    let lista = [...vuelosOriginales];
+    let lista = [...planesOriginales];
 
     // 1) Filtro por código
     if (codigoFiltro.trim()) {
@@ -153,7 +152,7 @@ export default function Vuelos() {
       );
     }
 
-    setVuelos(lista);
+    setPlanes(lista);
     setCurrentPage(1);
   };
 
@@ -161,7 +160,7 @@ export default function Vuelos() {
   const handleCleanFilters = () => {
     setCodigoFiltro("");
     setOrdenHora("")
-    setVuelos(vuelosOriginales);
+    setPlanes(planesOriginales);
     setCurrentPage(1);
   };
 
@@ -171,14 +170,14 @@ export default function Vuelos() {
   const itemsPerPage = 20;
   const indexOfLast = currentPage * itemsPerPage;
   const indexOfFirst = indexOfLast - itemsPerPage;
-  const currentVuelos = vuelos.slice(indexOfFirst, indexOfLast);
+  const currentPlanes = planes.slice(indexOfFirst, indexOfLast);
 
   return (
     <div className="page">
 
       {(loading || processing) && (
         <LoadingOverlay
-          text={processing ? "Procesando vuelos..." : "Cargando vuelos..."}
+          text={processing ? "Cargando planes de vuelos..." : "Cargando planes de vuelos..."}
         />
       )}
 
@@ -238,15 +237,15 @@ export default function Vuelos() {
         </div>
 
         {loading ? (
-          <LoadingOverlay text="Cargando vuelos..." />
+          <LoadingOverlay text="Cargando planes de vuelos..." />
         ) : (
           <>
             <Table
               headers={headers}
-              data={currentVuelos}
+              data={currentPlanes}
             />
             <Pagination
-              totalItems={vuelos.length}
+              totalItems={planes.length}
               itemsPerPage={itemsPerPage}
               currentPage={currentPage}
               onPageChange={setCurrentPage}

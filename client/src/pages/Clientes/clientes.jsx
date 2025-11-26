@@ -3,8 +3,7 @@ import "./clientes.scss";
 import { ButtonAdd, Input, Radio, Table, LoadingOverlay, Pagination, Notification, SidebarActions, RemoveFileButton } from "../../components/UI/ui";
 import plus from "../../assets/icons/plus.svg";
 import hideIcon from "../../assets/icons/hide-sidebar.png";
-import { listarClientes  } from "../../services/clienteService";
-import { importarClientes } from "../../services/generalService";
+import { listarClientes, importarClientes  } from "../../services/clienteService";
 
 export default function Clientes() {
   const [collapsed, setCollapsed] = useState(false);
@@ -32,7 +31,7 @@ export default function Clientes() {
   useEffect(() => {
     const fetchClientes = async () => {
       try {
-        const data = await listarClientes();
+        const data = await listarClientes(0,300);
         setClientes(data.dtos || []);
         setClientesOriginales(data.dtos || []);
       } catch (err) {

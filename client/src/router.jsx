@@ -4,7 +4,7 @@ import Layout from './layout/layout'
 import Home from './pages/Home/home'
 import Aeropuertos from './pages/Aeropuertos/aeropuertos'
 import Clientes from './pages/Clientes/clientes'
-import Vuelos from './pages/Vuelos/vuelos'
+import Planes from './pages/Planes/planes'
 import Pedidos from './pages/Pedidos/pedidos'
 import Planificacion from './pages/Planificacion/planificacion'
 import Simulacion from './pages/Simulacion/simulacion'
@@ -20,7 +20,7 @@ const router = createBrowserRouter([
       { path: 'home', element: <Home /> },
       { path: 'clientes', element: <Clientes /> },
       { path: 'aeropuertos', element: <Aeropuertos /> },
-      { path: 'vuelos', element: <Vuelos /> },
+      { path: 'planes', element: <Planes /> },
       { path: 'pedidos', element: <Pedidos /> },
       { path: 'planificacion', element: <Planificacion /> },
       { path: 'simulacion', element: <Simulacion /> },

@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_URL = "/api/planes";
+const API_URL = "/api/vuelos";
 
 // Listar solo los aeropuertos básicos
 export const listarVuelos = async () => {

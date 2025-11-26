@@ -6,12 +6,11 @@ import {
   Notification, LoadingOverlay, Pagination, RemoveFileButton, Dropdown3  
 } from "../../components/UI/ui";
 
-import { importarPedidos, importarPedidosLista } from "../../services/generalService";
 import plus from '../../assets/icons/plus.svg';
 import hideIcon from '../../assets/icons/hide-sidebar.png';
 
 import { useAppData } from "../../dataProvider";
-import { listarPedidos } from "../../services/pedidoService";
+import { listarPedidos, importarPedido, importarPedidos } from "../../services/pedidoService";
 
 export default function Pedidos() {
 
@@ -79,20 +78,7 @@ export default function Pedidos() {
   // =============================
   function unirFechaHora(f, h) {
     if (!f || !h) return null;
-    return `${f} ${h}:00`;
-  }
-
-  function obtenerSiguienteIdPedido() {
-    if (pedidosOriginales.length < 1) return "00000001";
-
-    const ids = pedidosOriginales.map(p => {
-      const ult8 = p.codigo?.slice(-8) || "0";
-      const num = parseInt(ult8);
-      return isNaN(num) ? 0 : num;
-    });
-
-    const maxId = Math.max(...ids);
-    return String(maxId + 1).padStart(8, "0");
+    return `${f}T${h}:00`;
   }
 
   const formatearFechaInput = (f) => f.replace(/-/g, "");
@@ -103,7 +89,7 @@ export default function Pedidos() {
       return "";
 
     return (
-      obtenerSiguienteIdPedido() +
+      "XXXXXXXX" +
       "-" + formatearFechaInput(fecha) +
       "-" + formatearHoraInput(hora) +
       "-" + cantidad.padStart(3, "0") +
@@ -126,11 +112,29 @@ export default function Pedidos() {
           return;
         }
 
-        const fechaInicio = unirFechaHora(fechaArchivoFechaI, fechaArchivoHoraI);
-        const fechaFin = unirFechaHora(fechaArchivoFechaF, fechaArchivoHoraF);
+        console.log(fechaArchivoFechaI);
+        console.log(fechaArchivoHoraI);
+        console.log(fechaArchivoFechaF);
+        console.log(fechaArchivoHoraF);
 
-        await importarPedidos(archivo, fechaInicio, fechaFin);
-        showNotification("success", "Pedidos importados correctamente");
+        console.log("Final Inicio:", unirFechaHora(fechaArchivoFechaI, fechaArchivoHoraI));
+        console.log("Final Fin:", unirFechaHora(fechaArchivoFechaF, fechaArchivoHoraF));
+
+        const req = {
+          tipoArchivo: "SIMULACION",
+          fechaHoraInicio: unirFechaHora(fechaArchivoFechaI, fechaArchivoHoraI),
+          fechaHoraFin: unirFechaHora(fechaArchivoFechaF, fechaArchivoHoraF)
+        };
+
+        console.log(archivo);
+        console.log(req);
+
+        const respuesta = await importarPedidos(archivo, req);
+        if (respuesta.success) {
+          showNotification("success", respuesta.message || "Pedidos importados correctamente");
+        } else {
+          showNotification("danger", respuesta.message || "Ocurrió un error al importar los pedidos");
+        }
       } 
 
       // --- MANUAL ---
@@ -143,22 +147,22 @@ export default function Pedidos() {
         const fechaGeneracion = unirFechaHora(fecha, hora);
 
         const dto = {
-          codigo: selectedDestino.codigo + obtenerSiguienteIdPedido().toString().padStart(9, "0"),
+          codigo: null,
           codCliente: selectedCliente.codigo,
           codDestino: selectedDestino.codigo,
           fechaHoraGeneracion: fechaGeneracion,
           cantidadSolicitada: Number(cantidad),
-          fechaHoraExpiracion: null,
-          lotesPorRuta: []
+          lotesPorRuta: [],
+          tipoEscenario: "OPERACION"
         };
 
-        await importarPedidosLista([dto]);
+        await importarPedido(dto);
 
         showNotification("success", "Pedido manual registrado correctamente");
       }
 
       // Recargar tabla DESDE BACKEND
-      const nuevos = await listarPedidos();
+      const nuevos = await listarPedidos(0,10000);
       setPedidos(nuevos.dtos || []);
       setPedidosOriginales(nuevos.dtos || []);
 
