@@ -65,13 +65,13 @@ public class EventoService {
 
     public ListResponse listar(ListRequest request) {
         try {
-            int page = (G4D.isAdmissible(request.getPage())) ? request.getPage() : 0;
-            int size = (G4D.isAdmissible(request.getSize())) ? request.getSize() : 10;
+            int page = G4D.toAdmissibleValue(request.getPage(), 0);
+            int size = G4D.toAdmissibleValue(request.getPage(), 10);
             Pageable pageable = PageRequest.of(page, size, Sort.by("codigo").ascending());
-            List<DTO> eventosDTO = new ArrayList<>();
-            List<EventoEntity> eventosEntity = this.findAll(pageable);
-            eventosEntity.forEach(e -> eventosDTO.add(eventoMapper.toDTO(e)));
-            return new ListResponse(true, "Eventos listados correctamente!", eventosDTO);
+            List<DTO> dtos = new ArrayList<>();
+            List<EventoEntity> entities = this.findAll(pageable);
+            entities.forEach(entity -> dtos.add(eventoMapper.toDTO(entity)));
+            return new ListResponse(true, "Eventos listados correctamente!", dtos);
         } catch (Exception e) {
             return new ListResponse(false, "ERROR - LISTADO: " + e.getMessage());
         } finally {

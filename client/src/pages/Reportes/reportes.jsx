@@ -43,7 +43,7 @@ export default function Reportes() {
       titulo: "Total de Pedidos",
       descripcion: "Cantidad total de pedidos registrados en el sistema.",
       valor: "1,245",
-      detalle: "Pedidos procesados en el periodo actual."
+      detalle: "Pedidos procesados en el periodo completed."
     },
     {
       categoria: "Pedidos",

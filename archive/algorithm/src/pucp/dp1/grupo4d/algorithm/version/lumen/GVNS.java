@@ -333,7 +333,7 @@ public class GVNS {
                     continue;
                 } else G4D.Logger.log("[DISPONIBLES]");
                 G4D.Logger.delete_current_line();
-                G4D.Logger.logf("Mejor fitness actual: %.3f | >> INSERTANDO..", mejorFitness);
+                G4D.Logger.logf("Mejor fitness completed: %.3f | >> INSERTANDO..", mejorFitness);
                 rutasDest.sort(Comparator.comparing(Ruta::getFechaHoraLlegadaUTC));
                 insertarEleLotes(rutasOrig, rutasDest, lotesPorRuta, vuelosEnTransito, rutasEnOperacion);
                 solucion.setFitness();
@@ -436,7 +436,7 @@ public class GVNS {
                     continue;
                 } else G4D.Logger.log("[DISPONIBLES]");
                 G4D.Logger.delete_current_line();
-                G4D.Logger.logf("Mejor fitness actual: %.3f | >> INTERCAMBIANDO..", mejorFitness);
+                G4D.Logger.logf("Mejor fitness completed: %.3f | >> INTERCAMBIANDO..", mejorFitness);
                 grupoA.sort(Comparator.comparing(Ruta::getFechaHoraLlegadaUTC));
                 grupoB.sort(Comparator.comparing(Ruta::getFechaHoraLlegadaUTC));
                 intercambiarEleLotes(grupoA, grupoB, lotesPorRuta, vuelosEnTransito, rutasEnOperacion);
@@ -546,7 +546,7 @@ public class GVNS {
                     continue;
                 } else G4D.Logger.log("[DISPONIBLES]");
                 G4D.Logger.delete_current_line();
-                G4D.Logger.logf("Mejor fitness actual: %.3f | >> REALOCANDO..", mejorFitness);
+                G4D.Logger.logf("Mejor fitness completed: %.3f | >> REALOCANDO..", mejorFitness);
                 realocarEleLotes(rutasOrig, rutasDest, lotesPorRuta, vuelosEnTransito, rutasEnOperacion);
                 solucion.setFitness();
                 double fitnessObtenido = solucion.getFitness();

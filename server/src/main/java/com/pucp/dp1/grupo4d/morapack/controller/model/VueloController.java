@@ -12,8 +12,6 @@ import com.pucp.dp1.grupo4d.morapack.service.model.VueloService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-
 @RestController
 @RequestMapping("/api/vuelos")
 public class VueloController {

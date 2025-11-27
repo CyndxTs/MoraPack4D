@@ -93,13 +93,13 @@ public class AeropuertoService {
 
     public ListResponse listar(ListRequest request) {
         try {
-            int page = (G4D.isAdmissible(request.getPage())) ? request.getPage() : 0;
-            int size = (G4D.isAdmissible(request.getSize())) ? request.getSize() : 10;
+            int page = G4D.toAdmissibleValue(request.getPage(), 0);
+            int size = G4D.toAdmissibleValue(request.getPage(), 10);
             Pageable pageable = PageRequest.of(page, size, Sort.by("codigo").ascending());
-            List<DTO> aeropuertosDTO = new ArrayList<>();
-            List<AeropuertoEntity> aeropuertosEntity = this.findAll(pageable);
-            aeropuertosEntity.forEach(a -> aeropuertosDTO.add(aeropuertoMapper.toDTO(a)));
-            return new ListResponse(true, "Aeropuertos listados correctamente!", aeropuertosDTO);
+            List<DTO> dtos = new ArrayList<>();
+            List<AeropuertoEntity> entities = this.findAll(pageable);
+            entities.forEach(entity -> dtos.add(aeropuertoMapper.toDTO(entity)));
+            return new ListResponse(true, "Aeropuertos listados correctamente!", dtos);
         } catch (Exception e) {
             return new ListResponse(false, "ERROR - LISTADO: " + e.getMessage());
         } finally {
@@ -109,20 +109,20 @@ public class AeropuertoService {
 
     public ListResponse filtrar(FilterRequest<AeropuertoDTO> request) {
         try {
-            int page = (G4D.isAdmissible(request.getPage())) ? request.getPage() : 0;
-            int size = (G4D.isAdmissible(request.getSize())) ? request.getSize() : 10;
+            int page = G4D.toAdmissibleValue(request.getPage(), 0);
+            int size = G4D.toAdmissibleValue(request.getPage(), 10);
             Pageable pageable = PageRequest.of(page, size, Sort.by("codigo").ascending());
-            AeropuertoDTO dto = request.getDto();
-            String codigo = G4D.toAdmissibleValue(dto.getCodigo());
-            String alias = G4D.toAdmissibleValue(dto.getAlias());
-            String continente = G4D.toAdmissibleValue(dto.getContinente());
-            String pais = G4D.toAdmissibleValue(dto.getPais());
-            String ciudad = G4D.toAdmissibleValue(dto.getCiudad());
-            Boolean esSede = dto.getEsSede();
-            List<DTO> aeropuertosDTO = new ArrayList<>();
-            List<AeropuertoEntity> aeropuertosEntity = aeropuertoRepository.filterBy(codigo, alias, continente, pais, ciudad, esSede, pageable).getContent();
-            aeropuertosEntity.forEach(a -> aeropuertosDTO.add(aeropuertoMapper.toDTO(a)));
-            return new ListResponse(true, "Aeropuertos filtrados correctamente!", aeropuertosDTO);
+            AeropuertoDTO model = request.getFilterModel();
+            String codigo = G4D.toAdmissibleValue(model.getCodigo());
+            String alias = G4D.toAdmissibleValue(model.getAlias());
+            String continente = G4D.toAdmissibleValue(model.getContinente());
+            String pais = G4D.toAdmissibleValue(model.getPais());
+            String ciudad = G4D.toAdmissibleValue(model.getCiudad());
+            Boolean esSede = model.getEsSede();
+            List<DTO> dtos = new ArrayList<>();
+            List<AeropuertoEntity> entities = aeropuertoRepository.filterBy(codigo, alias, continente, pais, ciudad, esSede, pageable).getContent();
+            entities.forEach(entity -> dtos.add(aeropuertoMapper.toDTO(entity)));
+            return new ListResponse(true, "Aeropuertos filtrados correctamente!", dtos);
         } catch (Exception e) {
             return new ListResponse(false, "ERROR - FILTRADO: " + e.getMessage());
         } finally {
@@ -133,19 +133,7 @@ public class AeropuertoService {
     public GenericResponse importar(ImportRequest<AeropuertoDTO> request) {
         try {
             AeropuertoDTO dto = request.getDto();
-            AeropuertoEntity aeropuerto = new AeropuertoEntity();
-            aeropuerto.setCodigo(dto.getCodigo());
-            aeropuerto.setCiudad(dto.getCiudad());
-            aeropuerto.setPais(dto.getPais());
-            aeropuerto.setContinente(dto.getContinente());
-            aeropuerto.setAlias(dto.getAlias());
-            aeropuerto.setHusoHorario(dto.getHusoHorario());
-            aeropuerto.setCapacidad(dto.getCapacidad());
-            aeropuerto.setEsSede(dto.getEsSede());
-            aeropuerto.setLatitudDEC(dto.getLatitud());
-            aeropuerto.setLatitudDMS(G4D.toLatDMS(aeropuerto.getLatitudDEC()));
-            aeropuerto.setLongitudDEC(dto.getLongitud());
-            aeropuerto.setLongitudDMS(G4D.toLonDMS(aeropuerto.getLongitudDEC()));
+            AeropuertoEntity aeropuerto = aeropuertoMapper.toEntity(dto);
             this.save(aeropuerto);
             G4D.Logger.logln("[<] AEROPUERTO CARGADO!");
             return new GenericResponse(true, "Aeropuerto importado correctamente!");
@@ -199,6 +187,8 @@ public class AeropuertoService {
             return new  GenericResponse(false, "ERROR - IMPORTACIÓN: " + e.getMessage());
         } catch (Exception e) {
             return new GenericResponse(false, "ERROR - IMPORTACIÓN: " + e.getMessage());
+        } finally {
+            clearPools();
         }
     }
 

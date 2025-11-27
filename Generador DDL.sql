@@ -66,16 +66,18 @@ CREATE TABLE IF NOT EXISTS `morapack4d`.`PEDIDO` (
   `cantidad_solicitada` INT NOT NULL,
   `fh_generacion_local` DATETIME NOT NULL,
   `fh_generacion_utc` DATETIME NOT NULL,
+  `fh_procesamiento_local` DATETIME NULL DEFAULT NULL,
+  `fh_procesamiento_utc` DATETIME NULL DEFAULT NULL,
   `fh_expiracion_local` DATETIME NULL DEFAULT NULL,
   `fh_expiracion_utc` DATETIME NULL DEFAULT NULL,
   `fue_atendido` TINYINT NOT NULL DEFAULT 0,
-  `tipo` ENUM('OPERACION', 'SIMULACION') NOT NULL DEFAULT 'SIMULACION',
+  `tipo_escenario` ENUM('OPERACION', 'SIMULACION') NOT NULL DEFAULT 'SIMULACION',
   `id_cliente` INT NOT NULL,
   `id_aeropuerto_destino` INT NOT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE INDEX `codigo_UNIQUE` (`codigo` ASC) VISIBLE,
   INDEX `fk_PEDIDO_CLIENTE1_idx` (`id_cliente` ASC) VISIBLE,
   INDEX `fk_PEDIDO_AEROPUERTO1_idx` (`id_aeropuerto_destino` ASC) VISIBLE,
+  UNIQUE INDEX `UK_CODIGO_TIPO_ESCENARIO` (`codigo` ASC, `tipo_escenario` ASC) VISIBLE,
   CONSTRAINT `fk_PEDIDO_CLIENTE1`
     FOREIGN KEY (`id_cliente`)
     REFERENCES `morapack4d`.`CLIENTE` (`id`)

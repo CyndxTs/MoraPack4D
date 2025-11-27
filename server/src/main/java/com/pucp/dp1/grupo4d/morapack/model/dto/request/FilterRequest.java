@@ -13,5 +13,5 @@ import lombok.Data;
 public class FilterRequest<T extends DTO> {
     private Integer page;
     private Integer size;
-    private T dto;
+    private T filterModel;
 }

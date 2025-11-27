@@ -81,10 +81,10 @@ public class ParametrosService {
 
     public ListResponse listar() {
         try {
-            List<DTO> parametrosDTO = new ArrayList<>();
-            List<ParametrosEntity> parametrosEntity = this.findAll();
-            parametrosEntity.forEach(p -> parametrosDTO.add(parametrosMapper.toDTO(p)));
-            return new ListResponse(true, "Parametros listados correctamente!", parametrosDTO);
+            List<DTO> dtos = new ArrayList<>();
+            List<ParametrosEntity> entities = this.findAll();
+            entities.forEach(entity -> dtos.add(parametrosMapper.toDTO(entity)));
+            return new ListResponse(true, "Parametros listados correctamente!", dtos);
         } catch (Exception e) {
             return new ListResponse(false, "ERROR - LISTADO: " + e.getMessage());
         } finally {

@@ -16,27 +16,6 @@ import org.springframework.stereotype.Component;
 @Component
 public class ParametrosMapper {
 
-    public void toAlgorithm(ParametrosEntity entity) {
-        Problematica.MAX_DIAS_ENTREGA_INTRACONTINENTAL = entity.getMaxDiasEntregaIntracontinental();
-        Problematica.MAX_DIAS_ENTREGA_INTERCONTINENTAL = entity.getMaxDiasEntregaIntercontinental();
-        Problematica.MAX_HORAS_RECOJO = entity.getMaxHorasRecojo();
-        Problematica.MAX_HORAS_ESTANCIA = entity.getMaxHorasEstancia();
-        Problematica.MIN_HORAS_ESTANCIA = entity.getMinHorasEstancia();
-        Problematica.CODIGOS_DE_ORIGENES = entity.getCodOrigenes();
-        GVNS.D_MIN = entity.getDMin();
-        GVNS.I_MAX = entity.getIMax();
-        GVNS.L_MIN = entity.getEleMin();
-        GVNS.L_MAX = entity.getEleMax();
-        GVNS.K_MIN = entity.getKMin();
-        GVNS.K_MAX = entity.getKMax();
-        GVNS.T_MAX = entity.getTMax();
-        GVNS.MAX_INTENTOS = entity.getMaxIntentos();
-        Solucion.f_UA = entity.getFactorDeUmbralDeAberracion();
-        Solucion.f_UT = entity.getFactorDeUtilizacionTemporal();
-        Solucion.f_DE = entity.getFactorDeDesviacionEspacial();
-        Solucion.f_DO = entity.getFactorDeDisposicionOperacional();
-    }
-
     public void toAlgorithm(ParametrosDTO dto) {
         Problematica.MAX_DIAS_ENTREGA_INTRACONTINENTAL = dto.getMaxDiasEntregaIntracontinental();
         Problematica.MAX_DIAS_ENTREGA_INTERCONTINENTAL = dto.getMaxDiasEntregaIntercontinental();
@@ -58,27 +37,26 @@ public class ParametrosMapper {
         Solucion.f_DO = dto.getFactorDeDisposicionOperacional();
     }
 
-    public ParametrosEntity toEntity(ParametrosDTO dto) {
-        ParametrosEntity entity = new ParametrosEntity();
-        entity.setMaxDiasEntregaIntracontinental(dto.getMaxDiasEntregaIntracontinental());
-        entity.setMaxDiasEntregaIntercontinental(dto.getMaxDiasEntregaIntercontinental());
-        entity.setMaxHorasRecojo(dto.getMaxHorasRecojo());
-        entity.setMaxHorasEstancia(dto.getMaxHorasEstancia());
-        entity.setMinHorasEstancia(dto.getMinHorasEstancia());
-        entity.setCodOrigenes(dto.getCodOrigenes());
-        entity.setDMin(dto.getDMin());
-        entity.setIMax(dto.getIMax());
-        entity.setEleMin(dto.getEleMin());
-        entity.setEleMax(dto.getEleMax());
-        entity.setKMin(dto.getKMin());
-        entity.setKMax(dto.getKMax());
-        entity.setTMax(dto.getTMax());
-        entity.setMaxIntentos(dto.getMaxIntentos());
-        entity.setFactorDeUmbralDeAberracion(dto.getFactorDeUmbralDeAberracion());
-        entity.setFactorDeUtilizacionTemporal(dto.getFactorDeUtilizacionTemporal());
-        entity.setFactorDeDesviacionEspacial(dto.getFactorDeDesviacionEspacial());
-        entity.setFactorDeDisposicionOperacional(dto.getFactorDeDisposicionOperacional());
-        return entity;
+    public void toDTO() {
+        ParametrosDTO dto = new ParametrosDTO();
+        dto.setMaxDiasEntregaIntracontinental(Problematica.MAX_DIAS_ENTREGA_INTRACONTINENTAL);
+        dto.setMaxDiasEntregaIntercontinental(Problematica.MAX_DIAS_ENTREGA_INTERCONTINENTAL);
+        dto.setMaxHorasRecojo(Problematica.MAX_HORAS_RECOJO);
+        dto.setMaxHorasEstancia(Problematica.MAX_HORAS_ESTANCIA);
+        dto.setMinHorasEstancia(Problematica.MIN_HORAS_ESTANCIA);
+        dto.setCodOrigenes(Problematica.CODIGOS_DE_ORIGENES);
+        dto.setDMin(GVNS.D_MIN);
+        dto.setIMax(GVNS.I_MAX);
+        dto.setEleMin(GVNS.L_MIN);
+        dto.setEleMax(GVNS.L_MAX);
+        dto.setKMin(GVNS.K_MIN);
+        dto.setKMax(GVNS.K_MAX);
+        dto.setTMax(GVNS.T_MAX);
+        dto.setMaxIntentos(GVNS.MAX_INTENTOS);
+        dto.setFactorDeUmbralDeAberracion(Solucion.f_UA);
+        dto.setFactorDeUtilizacionTemporal(Solucion.f_UT);
+        dto.setFactorDeDesviacionEspacial(Solucion.f_DE);
+        dto.setFactorDeDisposicionOperacional(Solucion.f_DO);
     }
 
     public ParametrosDTO toDTO(ParametrosEntity entity) {
@@ -102,5 +80,28 @@ public class ParametrosMapper {
         dto.setFactorDeDesviacionEspacial(entity.getFactorDeDesviacionEspacial());
         dto.setFactorDeDisposicionOperacional(entity.getFactorDeDisposicionOperacional());
         return dto;
+    }
+
+    public ParametrosEntity toEntity(ParametrosDTO dto) {
+        ParametrosEntity entity = new ParametrosEntity();
+        entity.setMaxDiasEntregaIntracontinental(dto.getMaxDiasEntregaIntracontinental());
+        entity.setMaxDiasEntregaIntercontinental(dto.getMaxDiasEntregaIntercontinental());
+        entity.setMaxHorasRecojo(dto.getMaxHorasRecojo());
+        entity.setMaxHorasEstancia(dto.getMaxHorasEstancia());
+        entity.setMinHorasEstancia(dto.getMinHorasEstancia());
+        entity.setCodOrigenes(dto.getCodOrigenes());
+        entity.setDMin(dto.getDMin());
+        entity.setIMax(dto.getIMax());
+        entity.setEleMin(dto.getEleMin());
+        entity.setEleMax(dto.getEleMax());
+        entity.setKMin(dto.getKMin());
+        entity.setKMax(dto.getKMax());
+        entity.setTMax(dto.getTMax());
+        entity.setMaxIntentos(dto.getMaxIntentos());
+        entity.setFactorDeUmbralDeAberracion(dto.getFactorDeUmbralDeAberracion());
+        entity.setFactorDeUtilizacionTemporal(dto.getFactorDeUtilizacionTemporal());
+        entity.setFactorDeDesviacionEspacial(dto.getFactorDeDesviacionEspacial());
+        entity.setFactorDeDisposicionOperacional(dto.getFactorDeDisposicionOperacional());
+        return entity;
     }
 }

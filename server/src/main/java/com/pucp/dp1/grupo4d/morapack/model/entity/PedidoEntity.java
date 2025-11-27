@@ -7,7 +7,6 @@
 package com.pucp.dp1.grupo4d.morapack.model.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.pucp.dp1.grupo4d.morapack.model.enums.EstadoLote;
 import com.pucp.dp1.grupo4d.morapack.model.enums.TipoEscenario;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
@@ -16,14 +15,14 @@ import java.util.List;
 import java.util.Objects;
 
 @Entity
-@Table(name = "PEDIDO", schema = "morapack4d")
+@Table(name = "PEDIDO", schema = "morapack4d", uniqueConstraints = {@UniqueConstraint(name = "UK_CODIGO_TIPO_ESCENARIO", columnNames = {"codigo", "tipo_escenario"})})
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class PedidoEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @Column(nullable = false, unique = true, length = 15)
+    @Column(nullable = false, length = 15)
     private String codigo;
 
     @Column(name = "cantidad_solicitada", nullable = false)
@@ -35,6 +34,12 @@ public class PedidoEntity {
     @Column(name = "fh_generacion_utc", nullable = false)
     private LocalDateTime fechaHoraGeneracionUTC;
 
+    @Column(name = "fh_procesamiento_local")
+    private LocalDateTime fechaHoraProcesamientoLocal;
+
+    @Column(name = "fh_procesamiento_utc")
+    private LocalDateTime fechaHoraProcesamientoUTC;
+
     @Column(name = "fh_expiracion_local")
     private LocalDateTime fechaHoraExpiracionLocal;
 
@@ -45,7 +50,7 @@ public class PedidoEntity {
     private Boolean fueAtendido = false;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "tipo", nullable = false)
+    @Column(name = "tipo_escenario", nullable = false)
     private TipoEscenario tipoEscenario = TipoEscenario.SIMULACION;
 
     @ManyToOne
@@ -84,6 +89,10 @@ public class PedidoEntity {
     public void setFechaHoraGeneracionLocal(LocalDateTime fechaHoraGeneracionLocal) { this.fechaHoraGeneracionLocal = fechaHoraGeneracionLocal; }
     public LocalDateTime getFechaHoraGeneracionUTC() { return fechaHoraGeneracionUTC; }
     public void setFechaHoraGeneracionUTC(LocalDateTime fechaHoraGeneracionUTC) { this.fechaHoraGeneracionUTC = fechaHoraGeneracionUTC; }
+    public LocalDateTime getFechaHoraProcesamientoLocal() { return fechaHoraProcesamientoLocal; }
+    public void setFechaHoraProcesamientoLocal(LocalDateTime fechaHoraProcesamientoLocal) { this.fechaHoraProcesamientoLocal = fechaHoraProcesamientoLocal; }
+    public LocalDateTime getFechaHoraProcesamientoUTC() { return fechaHoraProcesamientoUTC; }
+    public void setFechaHoraProcesamientoUTC(LocalDateTime fechaHoraProcesamientoUTC) { this.fechaHoraProcesamientoUTC = fechaHoraProcesamientoUTC; }
     public LocalDateTime getFechaHoraExpiracionLocal() { return fechaHoraExpiracionLocal; }
     public void setFechaHoraExpiracionLocal(LocalDateTime fechaHoraExpiracionLocal) { this.fechaHoraExpiracionLocal = fechaHoraExpiracionLocal; }
     public LocalDateTime getFechaHoraExpiracionUTC() { return fechaHoraExpiracionUTC; }
@@ -91,7 +100,7 @@ public class PedidoEntity {
     public Boolean getFueAtendido() { return fueAtendido; }
     public void setFueAtendido(Boolean fueAtendido) { this.fueAtendido = fueAtendido; }
     public TipoEscenario getTipoEscenario() { return tipoEscenario; }
-    public void setTipo(TipoEscenario tipoEscenario) { this.tipoEscenario = tipoEscenario; }
+    public void setTipoEscenario(TipoEscenario tipoEscenario) { this.tipoEscenario = tipoEscenario; }
     public ClienteEntity getCliente() { return cliente; }
     public void setCliente(ClienteEntity cliente) { this.cliente = cliente; }
     public AeropuertoEntity getDestino() { return destino; }

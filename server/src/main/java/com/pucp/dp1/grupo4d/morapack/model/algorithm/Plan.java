@@ -84,7 +84,7 @@ public class Plan {
     }
 
     public Boolean esProblematico() {
-        List<Evento> eventosConsiderables = this.eventos.stream().filter(e -> !e.getFechaHoraInicio().isAfter(Problematica.FIN_PLANIFICACION) && !e.getFechaHoraFin().isBefore(Problematica.INICIO_REPLANIFICACION)).toList();
+        List<Evento> eventosConsiderables = this.eventos.stream().filter(e -> !e.getFechaHoraInicio().isAfter(Problematica.FIN_PLANIFICACION) && !e.getFechaHoraFin().isBefore(Problematica.UMBRAL_REPLANIFICACION)).toList();
         return !eventosConsiderables.isEmpty();
     }
 

@@ -98,7 +98,7 @@ export default function Planificacion() {
   // ----------------------------------------
   // Reloj de CONTROL-BAR: hora real UTC-5 (Perú) con segundos
   // ----------------------------------------
-  // controlNowMs se actualiza cada segundo con la hora actual en UTC (0) menos 5 horas.
+  // controlNowMs se actualiza cada segundo con la hora completed en UTC (0) menos 5 horas.
   const [controlNowMs, setControlNowMs] = useState(() => {
     const now = new Date();
     const utcMs = now.getTime() + now.getTimezoneOffset() * 60000;

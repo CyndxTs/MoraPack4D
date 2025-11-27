@@ -6,7 +6,6 @@
 
 package com.pucp.dp1.grupo4d.morapack.controller.model;
 
-import com.pucp.dp1.grupo4d.morapack.mapper.UsuarioMapper;
 import com.pucp.dp1.grupo4d.morapack.model.dto.UsuarioDTO;
 import com.pucp.dp1.grupo4d.morapack.model.dto.request.*;
 import com.pucp.dp1.grupo4d.morapack.model.dto.response.GenericResponse;

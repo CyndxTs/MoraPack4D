@@ -75,16 +75,21 @@ public class RutaService {
     
     public ListResponse listar(ListRequest request) {
         try {
-            int page = (G4D.isAdmissible(request.getPage())) ? request.getPage() : 0;
-            int size = (G4D.isAdmissible(request.getSize())) ? request.getSize() : 10;
+            int page = G4D.toAdmissibleValue(request.getPage(), 0);
+            int size = G4D.toAdmissibleValue(request.getPage(), 10);
             Pageable pageable = PageRequest.of(page, size,  Sort.by(Sort.Order.asc("fechaHoraSalidaUTC"), Sort.Order.asc("fechaHoraLlegadaUTC")));
-            List<DTO> rutasDTO = new ArrayList<>();
-            List<RutaEntity> rutasEntity = this.findAll(pageable);
-            rutasEntity.forEach(r -> rutasDTO.add(rutaMapper.toDTO(r)));
-            return new ListResponse(true, "Rutas listadas correctamente!", rutasDTO);
+            List<DTO> dtos = new ArrayList<>();
+            List<RutaEntity> entities = this.findAll(pageable);
+            entities.forEach(entity -> dtos.add(rutaMapper.toDTO(entity)));
+            return new ListResponse(true, "Rutas listadas correctamente!", dtos);
         } catch (Exception e) {
-            e.printStackTrace();
             return new ListResponse(false, "ERROR - LISTADO: " + e.getMessage());
+        } finally {
+            clearPools();
         }
+    }
+
+    public void clearPools() {
+        rutaMapper.clearPools();
     }
 }

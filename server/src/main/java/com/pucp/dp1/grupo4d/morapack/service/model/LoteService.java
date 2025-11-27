@@ -66,13 +66,13 @@ public class LoteService {
 
     public ListResponse listar(ListRequest request) {
         try {
-            int page = (G4D.isAdmissible(request.getPage())) ? request.getPage() : 0;
-            int size = (G4D.isAdmissible(request.getSize())) ? request.getSize() : 10;
+            int page = G4D.toAdmissibleValue(request.getPage(), 0);
+            int size = G4D.toAdmissibleValue(request.getPage(), 10);
             Pageable pageable = PageRequest.of(page, size, Sort.by("codigo").ascending());
-            List<DTO> lotesDTO = new ArrayList<>();
-            List<LoteEntity> lotesEntity = this.findAll(pageable);
-            lotesEntity.forEach(l -> lotesDTO.add(loteMapper.toDTO(l)));
-            return new ListResponse(true, "Lotes listados correctamente!", lotesDTO);
+            List<DTO> dtos = new ArrayList<>();
+            List<LoteEntity> entities = this.findAll(pageable);
+            entities.forEach(entity -> dtos.add(loteMapper.toDTO(entity)));
+            return new ListResponse(true, "Lotes listados correctamente!", dtos);
         } catch (Exception e) {
             return new ListResponse(false, "ERROR - LISTADO: " + e.getMessage());
         } finally {

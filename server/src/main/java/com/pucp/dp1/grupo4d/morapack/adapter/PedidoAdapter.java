@@ -46,6 +46,7 @@ public class PedidoAdapter {
         algorithm.setCodigo(entity.getCodigo());
         algorithm.setCantidadSolicitada(entity.getCantidadSolicitada());
         algorithm.setFechaHoraGeneracion(entity.getFechaHoraGeneracionUTC());
+        algorithm.setFechaHoraProcesamiento(entity.getFechaHoraProcesamientoUTC());
         algorithm.setFechaHoraExpiracion(entity.getFechaHoraExpiracionUTC());
         algorithm.setFueAtendido(entity.getFueAtendido());
         Cliente cliente = usuarioAdapter.toAlgorithm(entity.getCliente());
@@ -71,6 +72,8 @@ public class PedidoAdapter {
         if (entity == null) {
             return null;
         }
+        entity.setFechaHoraProcesamientoUTC(algorithm.getFechaHoraProcesamiento());
+        entity.setFechaHoraProcesamientoLocal(G4D.toLocal(algorithm.getFechaHoraProcesamiento(), algorithm.getDestino().getHusoHorario()));
         entity.setFechaHoraExpiracionUTC(algorithm.getFechaHoraExpiracion());
         entity.setFechaHoraExpiracionLocal(G4D.toLocal(algorithm.getFechaHoraExpiracion(), entity.getDestino().getHusoHorario()));
         entity.setFueAtendido(algorithm.getFueAtendido());

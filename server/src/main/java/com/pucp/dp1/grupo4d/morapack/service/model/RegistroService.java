@@ -69,16 +69,21 @@ public class RegistroService {
 
     public ListResponse listar(ListRequest request) {
         try {
-            int page = (G4D.isAdmissible(request.getPage())) ? request.getPage() : 0;
-            int size = (G4D.isAdmissible(request.getSize())) ? request.getSize() : 10;
+            int page = G4D.toAdmissibleValue(request.getPage(), 0);
+            int size = G4D.toAdmissibleValue(request.getPage(), 10);
             Pageable pageable = PageRequest.of(page, size,  Sort.by(Sort.Order.asc("fechaHoraIngresoUTC"), Sort.Order.asc("fechaHoraEgresoUTC")));
-            List<DTO> registrosDTO = new ArrayList<>();
-            List<RegistroEntity> registrosEntity = this.findAll(pageable);
-            registrosEntity.forEach(r -> registrosDTO.add(registroMapper.toDTO(r)));
-            return new ListResponse(true, "Registros listados correctamente!", registrosDTO);
+            List<DTO> dtos = new ArrayList<>();
+            List<RegistroEntity> entities = this.findAll(pageable);
+            entities.forEach(entity -> dtos.add(registroMapper.toDTO(entity)));
+            return new ListResponse(true, "Registros listados correctamente!", dtos);
         } catch (Exception e) {
-            e.printStackTrace();
             return new ListResponse(false, "ERROR - LISTADO: " + e.getMessage());
+        } finally {
+            clearPools();
         }
+    }
+
+    public void clearPools() {
+        registroMapper.clearPools();
     }
 }

@@ -24,7 +24,6 @@ public class SegmentacionService {
 
     private final SegmentacionRepository segmentacionRepository;
     private final SegmentacionMapper segmentacionMapper;
-    private final HashMap<String, SegmentacionEntity> segmentaciones = new HashMap<>();
 
     public SegmentacionService(SegmentacionRepository segmentacionRepository, SegmentacionMapper segmentacionMapper) {
         this.segmentacionRepository = segmentacionRepository;
@@ -65,13 +64,13 @@ public class SegmentacionService {
 
     public ListResponse listar(ListRequest request) {
         try {
-            int page = (G4D.isAdmissible(request.getPage())) ? request.getPage() : 0;
-            int size = (G4D.isAdmissible(request.getSize())) ? request.getSize() : 10;
+            int page = G4D.toAdmissibleValue(request.getPage(), 0);
+            int size = G4D.toAdmissibleValue(request.getPage(), 10);
             Pageable pageable = PageRequest.of(page, size, Sort.by("codigo").ascending());
-            List<DTO> segmentacionesDTO = new ArrayList<>();
-            List<SegmentacionEntity> segmentacionesEntity = this.findAll(pageable);
-            segmentacionesEntity.forEach(s -> segmentacionesDTO.add(segmentacionMapper.toDTO(s)));
-            return new ListResponse(true, "Segmentaciones listadas correctamente!", segmentacionesDTO);
+            List<DTO> dtos = new ArrayList<>();
+            List<SegmentacionEntity> entities = this.findAll(pageable);
+            entities.forEach(entity -> dtos.add(segmentacionMapper.toDTO(entity)));
+            return new ListResponse(true, "Segmentaciones listadas correctamente!", dtos);
         } catch (Exception e) {
             return new ListResponse(false, "ERROR - LISTADO: " + e.getMessage());
         } finally {
@@ -80,7 +79,6 @@ public class SegmentacionService {
     }
 
     public void clearPools() {
-        segmentaciones.clear();
         segmentacionMapper.clearPools();
     }
 }

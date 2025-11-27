@@ -21,6 +21,7 @@ public class Pedido {
     private Integer cantidadSolicitada;
     private Boolean fueAtendido;
     private LocalDateTime fechaHoraGeneracion;
+    private LocalDateTime fechaHoraProcesamiento;
     private LocalDateTime fechaHoraExpiracion;
     private Cliente cliente;
     private Aeropuerto destino;
@@ -39,6 +40,7 @@ public class Pedido {
         pedido.cantidadSolicitada = this.cantidadSolicitada;
         pedido.fueAtendido = this.fueAtendido;
         pedido.fechaHoraGeneracion = this.fechaHoraGeneracion;
+        pedido.fechaHoraProcesamiento = this.fechaHoraProcesamiento;
         pedido.fechaHoraExpiracion = this.fechaHoraExpiracion;
         pedido.cliente = (this.cliente != null) ? poolClientes.computeIfAbsent(this.cliente.getCodigo(), codigo -> this.cliente.replicar()) : null;
         pedido.destino = (this.destino != null) ? poolAeropuertos.computeIfAbsent(this.destino.getCodigo(), codigo -> this.destino.replicar(poolLotes)) : null;
@@ -134,6 +136,14 @@ public class Pedido {
 
     public void setFechaHoraGeneracion(LocalDateTime fechaHoraGeneracion) {
         this.fechaHoraGeneracion = fechaHoraGeneracion;
+    }
+
+    public LocalDateTime getFechaHoraProcesamiento() {
+        return fechaHoraProcesamiento;
+    }
+
+    public void setFechaHoraProcesamiento(LocalDateTime fechaHoraProcesamiento) {
+        this.fechaHoraProcesamiento = fechaHoraProcesamiento;
     }
 
     public LocalDateTime getFechaHoraExpiracion() {
