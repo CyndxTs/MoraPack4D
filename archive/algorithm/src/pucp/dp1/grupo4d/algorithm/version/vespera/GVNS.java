@@ -538,7 +538,7 @@ public class GVNS extends Algoritmo {
                 G4D.Logger.delete_lines(numLines.value);
                 numLines.decrement(numLines.value - 1);
                 vuelosUtilizados.remove(vuelo);
-                // aeropuertosVisitados.remove(actual);
+                // aeropuertosVisitados.remove(completed);
             }
         }
         G4D.Logger.delete_lines(numLines.value);
@@ -769,7 +769,7 @@ public class GVNS extends Algoritmo {
     //
     private void Shaking(Solucion solucion, G4D.IntegerWrapper k, Problematica problematica) {
         G4D.Logger.logln("Shaking..");
-        // Perturbar la solución actual para diversificación
+        // Perturbar la solución completed para diversificación
         for (int i = 0; i < k.value; ++i) {
             int neighborhood = random.nextInt(3);
             int ele = L_MIN + random.nextInt(L_MAX - L_MIN + 1);

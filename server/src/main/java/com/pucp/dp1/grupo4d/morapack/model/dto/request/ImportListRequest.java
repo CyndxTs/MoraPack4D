@@ -13,4 +13,5 @@ import java.util.List;
 @Data
 public class ImportListRequest<T extends DTO> {
     private List<T> dtos;
+    private String tipoEscenario;
 }

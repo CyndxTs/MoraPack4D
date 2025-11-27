@@ -22,6 +22,7 @@ public class PedidoDTO implements DTO {
     private Integer cantidadSolicitada;
     private Boolean fueAtendido;
     private String fechaHoraGeneracion;
+    private String fechaHoraProcesamiento;
     private String fechaHoraExpiracion;
     private String codDestino;
     private String tipoEscenario;

@@ -6,9 +6,11 @@
 
 package com.pucp.dp1.grupo4d.morapack.model.dto.request;
 
+import com.pucp.dp1.grupo4d.morapack.model.dto.ParametrosDTO;
 import lombok.Data;
 
 @Data
 public class OperationRequest {
-    private String fechaHoraInicio;
+    private String fechaHoraActual;
+    private ParametrosDTO parametros;
 }

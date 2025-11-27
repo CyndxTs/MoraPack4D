@@ -12,6 +12,7 @@ import com.pucp.dp1.grupo4d.morapack.model.dto.AeropuertoDTO;
 import com.pucp.dp1.grupo4d.morapack.model.dto.RegistroDTO;
 import com.pucp.dp1.grupo4d.morapack.model.entity.AeropuertoEntity;
 import com.pucp.dp1.grupo4d.morapack.model.entity.RegistroEntity;
+import com.pucp.dp1.grupo4d.morapack.util.G4D;
 import org.springframework.stereotype.Component;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -78,6 +79,27 @@ public class AeropuertoMapper {
         dto.setRegistros(registrosDTO);
         poolDTO.put(entity.getCodigo(), dto);
         return dto;
+    }
+
+    public AeropuertoEntity toEntity(AeropuertoDTO dto) {
+        if(poolDTO.containsKey(dto.getCodigo())) {
+            return null;
+        }
+        AeropuertoEntity entity = new AeropuertoEntity();
+        entity.setCodigo(dto.getCodigo());
+        entity.setCiudad(dto.getCiudad());
+        entity.setPais(dto.getPais());
+        entity.setContinente(dto.getContinente());
+        entity.setAlias(dto.getAlias());
+        entity.setHusoHorario(dto.getHusoHorario());
+        entity.setCapacidad(dto.getCapacidad());
+        entity.setEsSede(dto.getEsSede());
+        entity.setLatitudDEC(dto.getLatitud());
+        entity.setLatitudDMS(G4D.toLatDMS(entity.getLatitudDEC()));
+        entity.setLongitudDEC(dto.getLongitud());
+        entity.setLongitudDMS(G4D.toLonDMS(entity.getLongitudDEC()));
+        poolDTO.put(dto.getCodigo(), dto);
+        return entity;
     }
 
     public void clearPools() {

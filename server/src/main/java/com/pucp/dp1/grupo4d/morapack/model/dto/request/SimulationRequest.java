@@ -12,6 +12,8 @@ import lombok.Data;
 @Data
 public class SimulationRequest {
     private String fechaHoraInicio;
-    private String fechaHoraFim;
-    private ParametrosDTO parameters;
+    private String fechaHoraFin;
+    private ParametrosDTO parametros;
+    private Double multiplicadorTemporal;
+    private Double tamanioDeSaltoTemporal;
 }

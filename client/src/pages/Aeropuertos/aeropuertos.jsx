@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from "react";
 import "./aeropuertos.scss";
 import { ButtonAdd, Input, Checkbox, Dropdown, Table, SidebarActions, Notification, LoadingOverlay, Pagination, RemoveFileButton, Radio  } from "../../components/UI/ui";
-import { listarAeropuertos  } from "../../services/aeropuertoService";
-import { importarAeropuertos } from "../../services/generalService";
+import { listarAeropuertos, importarAeropuertos  } from "../../services/aeropuertoService";
 import plus from '../../assets/icons/plus.svg';
 import hideIcon from '../../assets/icons/hide-sidebar.png';
 
@@ -38,7 +37,7 @@ export default function Aeropuertos() {
   useEffect(() => {
     const fetchAeropuertos = async () => {
       try {
-        const data = await listarAeropuertos();
+        const data = await listarAeropuertos(0,30);
         setAeropuertos(data.dtos || []);
         setAeropuertosOriginales(data.dtos || []);
       } catch (err) {
@@ -102,7 +101,7 @@ export default function Aeropuertos() {
         showNotification("success", "Aeropuerto agregado correctamente");
       }
 
-      const data = await listarAeropuertos();
+      const data = await listarAeropuertos(0,30);
       setAeropuertos(data.dtos || []);
       setIsModalOpen(false);
       setArchivo(null);
@@ -198,7 +197,7 @@ export default function Aeropuertos() {
 
       {(loading || processing) && (
         <LoadingOverlay
-          text={processing ? "Cargando aeropuertos..." : "Cargando aeropuertos..."}
+          text={processing ? "Procesando aeropuertos..." : "Cargando aeropuertos..."}
         />
       )}
 

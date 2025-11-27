@@ -345,6 +345,10 @@ public class G4D {
     public static String toAdmissibleValue(String str) {
         return (isAdmissible(str)) ? str : null;
     }
+    // Convertir 'String' a valor admisible
+    public static String toAdmissibleValue(String str, String defaultValue) {
+        return (isAdmissible(str)) ? str : defaultValue;
+    }
     // Validar admisibilidad de formato de 'Number'
     public static Boolean isAdmissible(Number num) {
         return num != null && num.doubleValue() >= 0;
@@ -353,10 +357,14 @@ public class G4D {
     public static <N extends Number> N toAdmissibleValue(N num) {
         return (isAdmissible(num)) ? num : null;
     }
+    // Convertir 'Number' a valor admisible
+    public static <N extends Number> N toAdmissibleValue(N num, N defaultValue) {
+        return (isAdmissible(num)) ? num : defaultValue;
+    }
     // Convertir 'EnumString' a valor admisible
     public static <E extends Enum<E>> E toAdmissibleValue(String str, Class<E> enumType) {
         try {
-            return Enum.valueOf(enumType, toAdmissibleValue(str.toUpperCase()));
+            return Enum.valueOf(enumType, toAdmissibleValue(str));
         } catch (Exception e) {
             return null;
         }
@@ -364,6 +372,30 @@ public class G4D {
     // Convertir 'Collection' a valor admisible
     public static <T, C extends Collection<T>> C toAdmissibleValue(C collection, Supplier<C> supplier) {
         return (collection != null) ? collection : supplier.get();
+    }
+    // Converit 'DateTimeString' a valor admisible
+    public static LocalDateTime toAdmissibleValue(String dts, LocalDateTime defaultValue) {
+        try {
+            return toDateTime(dts);
+        } catch (Exception e) {
+            return defaultValue;
+        }
+    }
+    // Convertir 'TimeString' a valor admisible
+    public static LocalTime toAdmissibleValue(String ts, LocalTime defaultValue) {
+        try {
+            return toTime(ts);
+        } catch (Exception e) {
+            return defaultValue;
+        }
+    }
+    // Convertir 'DateString' a valor admisible
+    public static LocalDate toAdmissibleValue(String ds, LocalDate defaultValue) {
+        try {
+            return toDate(ds);
+        } catch (Exception e) {
+            return defaultValue;
+        }
     }
     // Clase 'Wrapper' para enteros
     public static class IntegerWrapper {

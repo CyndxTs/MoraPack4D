@@ -75,16 +75,21 @@ public class VueloService {
 
     public ListResponse listar(ListRequest request) {
         try {
-            int page = (G4D.isAdmissible(request.getPage())) ? request.getPage() : 0;
-            int size = (G4D.isAdmissible(request.getSize())) ? request.getSize() : 10;
+            int page = G4D.toAdmissibleValue(request.getPage(), 0);
+            int size = G4D.toAdmissibleValue(request.getPage(), 10);
             Pageable pageable = PageRequest.of(page, size,  Sort.by(Sort.Order.asc("fechaHoraSalidaUTC"), Sort.Order.asc("fechaHoraLlegadaUTC")));
-            List<DTO> vuelosDTO = new ArrayList<>();
-            List<VueloEntity> vuelosEntity = this.findAll(pageable);
-            vuelosEntity.forEach(v -> vuelosDTO.add(vueloMapper.toDTO(v)));
-            return new ListResponse(true, "Vuelos listados correctamente!", vuelosDTO);
+            List<DTO> dtos = new ArrayList<>();
+            List<VueloEntity> entities = this.findAll(pageable);
+            entities.forEach(entity -> dtos.add(vueloMapper.toDTO(entity)));
+            return new ListResponse(true, "Vuelos listados correctamente!", dtos);
         } catch (Exception e) {
-            e.printStackTrace();
             return new ListResponse(false, "ERROR - LISTADO: " + e.getMessage());
+        } finally {
+            clearPools();
         }
+    }
+
+    public void clearPools() {
+        vueloMapper.clearPools();
     }
 }

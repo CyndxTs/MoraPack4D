@@ -5,9 +5,8 @@ import plus from "../../assets/icons/plus.svg";
 import run from "../../assets/icons/run.svg";
 import config from "../../assets/icons/config.svg";
 import hideIcon from "../../assets/icons/hide-sidebar.png";
-import { listarPedidos } from "../../services/pedidoService";
+import { listarPedidos, importarPedido, importarPedidos } from "../../services/pedidoService";
 import { listarParametros } from "../../services/parametrosService";
-import { importarPedidos, importarPedidosLista } from "../../services/generalService";
 import { useAppData } from "../../dataProvider";
 import { MapContainer, TileLayer, Marker, Popup, Polyline, useMapEvent  } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -99,7 +98,7 @@ export default function Planificacion() {
   // ----------------------------------------
   // Reloj de CONTROL-BAR: hora real UTC-5 (Perú) con segundos
   // ----------------------------------------
-  // controlNowMs se actualiza cada segundo con la hora actual en UTC (0) menos 5 horas.
+  // controlNowMs se actualiza cada segundo con la hora completed en UTC (0) menos 5 horas.
   const [controlNowMs, setControlNowMs] = useState(() => {
     const now = new Date();
     const utcMs = now.getTime() + now.getTimezoneOffset() * 60000;
@@ -212,8 +211,18 @@ export default function Planificacion() {
         console.log(fechaInicio);
         console.log(fechaFin);
 
-        await importarPedidos(archivo, fechaInicio, fechaFin);
-        showNotification("success", "Pedidos importados correctamente");
+        const req = {
+          tipoArchivo: "SIMULACION",
+          fechaHoraInicio: unirFechaHora(fechaArchivoFechaI, fechaArchivoHoraI),
+          fechaHoraFin: unirFechaHora(fechaArchivoFechaF, fechaArchivoHoraF)
+        };
+
+        const respuesta = await importarPedidos(archivo, req);
+        if (respuesta.success) {
+          showNotification("success", respuesta.message || "Pedidos importados correctamente");
+        } else {
+          showNotification("danger", respuesta.message || "Ocurrió un error al importar los pedidos");
+        }
       }
 
       // --- CASO 2: MANUAL ---
@@ -226,22 +235,18 @@ export default function Planificacion() {
         const fechaGeneracion = unirFechaHora(fecha, hora);
 
         const dto = {
-          codigo: selectedDestino.codigo + obtenerSiguienteIdPedido().toString().padStart(9, "0"),
+          codigo: null,
           codCliente: selectedCliente.codigo,
           codDestino: selectedDestino.codigo,
           fechaHoraGeneracion: fechaGeneracion,
           cantidadSolicitada: Number(cantidad),
-          fechaHoraExpiracion: null,       
-          lotesPorRuta: []
+          lotesPorRuta: [],
+          tipoEscenario: "OPERACION"
         };
 
-        const dtos = [];
-        dtos.push(dto);
-
         console.log("DTO generado:", dto);
-        console.log("Lista DTOS:", dtos);
 
-        await importarPedidosLista(dtos);
+        await importarPedido(dto);
 
         showNotification("success", "Pedido manual registrado correctamente");
         resetDatos();
@@ -266,26 +271,13 @@ export default function Planificacion() {
       return "";
 
     return (
-      obtenerSiguienteIdPedido() +
+      "XXXXXXXX" +
       "-" + formatearFechaInput(fecha) +
       "-" + formatearHoraeInput(hora) +
       "-" + cantidad.padStart(3, "0") +
       "-" + selectedDestino.codigo +
       "-" + selectedCliente.codigo.padStart(7, "0")
     );
-  }
-
-  function obtenerSiguienteIdPedido() {
-    if (pedidosOriginales.length < 1) return "00000001";
-
-    const ids = pedidosOriginales.map(p => {
-      const ult8 = p.codigo?.slice(-8) || "0";
-      const num = parseInt(ult8);
-      return isNaN(num) ? 0 : num;
-    });
-
-    const maxId = Math.max(...ids);
-    return String(maxId + 1).padStart(8, "0");
   }
 
   // ----------------------------------------
@@ -375,6 +367,31 @@ export default function Planificacion() {
       const origen = aeropuertos.find(a => a.codigo === v.plan.codOrigen);
       const destino = aeropuertos.find(a => a.codigo === v.plan.codDestino);
 
+      // ❗ Si falta alguno o no tiene lat/lng → vuelo sin path (no se dibuja)
+      if (!origen || !destino ||
+          origen.latitudDEC == null || origen.longitudDEC == null ||
+          destino.latitudDEC == null || destino.longitudDEC == null) {
+
+        return {
+          code: v.codigo,
+          startMs,
+          endMs,
+          originName: origen?.ciudad ?? "N/A",
+          destinationName: destino?.ciudad ?? "N/A",
+          startTime: v.fechaHoraSalida,
+          endTime: v.fechaHoraLlegada,
+          capacity: 0,
+          origen,
+          destino,
+          path: [],        // <-- vacío
+          progress: 0,
+          visible: false,
+          arrived: false,
+          position: null   // <-- no hay posición inicial
+        };
+      }
+
+      // Si hay coordenadas, sí generamos path
       const path = generateGeodesicPath(
         origen.latitudDEC,
         origen.longitudDEC,
@@ -399,9 +416,9 @@ export default function Planificacion() {
         arrived: false,
         position: path[0]
       };
-
     });
   }
+
 
   useEffect(() => {
     if (!vuelos || vuelos.length === 0 || !aeropuertos) return;
@@ -455,6 +472,16 @@ export default function Planificacion() {
   // Generación de path geodésico (utilidad)
   // ----------------------------------------
   function generateGeodesicPath(lat1, lon1, lat2, lon2, numPoints = 100) {
+    // Si falta algún valor → regresamos un path vacío
+    if (
+      lat1 == null || lon1 == null ||
+      lat2 == null || lon2 == null ||
+      isNaN(lat1) || isNaN(lon1) ||
+      isNaN(lat2) || isNaN(lon2)
+    ) {
+      return [];
+    }
+
     const toRad = (deg) => (deg * Math.PI) / 180;
     const toDeg = (rad) => (rad * 180) / Math.PI;
 
@@ -610,6 +637,8 @@ export default function Planificacion() {
               <ButtonAdd
                 icon={run}
                 label={"Replanificar"}
+              />
+              <ButtonAdd icon={plus} label="Agreg. pedido" 
                 onClick={() => {
                   const now = new Date();
                   const yyyy = now.getUTCFullYear();
@@ -620,10 +649,10 @@ export default function Planificacion() {
 
                   setFecha(`${yyyy}-${mm}-${dd}`);   // input type="date" usa YYYY-MM-DD
                   setHora(`${HH}:${MM}`); 
+                  setIsModalPedidoOpen(true);
                 }}
               />
-              <ButtonAdd icon={plus} label="Agreg. pedido" onClick={() => setIsModalPedidoOpen(true)} />
-                <ButtonAdd icon={config} label="Config. parám." onClick={() => openModal(true)} />
+              <ButtonAdd icon={config} label="Config. parám." onClick={() => openModal(true)} />
             </div>
 
             <span className="sidebar-subtitle">Filtros</span>
@@ -669,18 +698,25 @@ export default function Planificacion() {
             />
 
             {/* Marcadores de aeropuertos (usando tu lista aeropuertos) */}
-            {aeropuertos.map((aero) => (
-              <Marker
-                key={aero.codigo}
-                position={[aero.latitudDEC, aero.longitudDEC]}
-                icon={airportIcon}
-                eventHandlers={{
-                  click: () =>
-                    setSelectedItem(
-                      `Aeropuerto ${aero.ciudad} (${aero.codigo}) - ${aero.pais}`
-                    )
-                }}
-              >
+            {aeropuertos
+              .filter(aero =>
+                aero.latitudDEC !== null &&
+                aero.longitudDEC !== null &&
+                !isNaN(aero.latitudDEC) &&
+                !isNaN(aero.longitudDEC)
+              )
+              .map((aero) => (
+                <Marker
+                  key={aero.codigo}
+                  position={[aero.latitudDEC, aero.longitudDEC]}
+                  icon={airportIcon}
+                  eventHandlers={{
+                    click: () =>
+                      setSelectedItem(
+                        `Aeropuerto ${aero.ciudad} (${aero.codigo}) - ${aero.pais}`
+                      )
+                  }}
+                >
                 <Popup>
                   <b>{aero.ciudad}</b><br />
                   Código: {aero.codigo}<br />

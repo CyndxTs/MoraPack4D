@@ -22,7 +22,8 @@ public class Problematica {
     public static Double MAX_HORAS_ESTANCIA;
     public static LocalDateTime INICIO_PLANIFICACION;
     public static LocalDateTime FIN_PLANIFICACION;
-    public static LocalDateTime INICIO_REPLANIFICACION;
+    public static LocalDateTime UMBRAL_REPLANIFICACION;
+    public static LocalDateTime TIEMPO_ACTUAL;
     public static String ESCENARIO;
     public static List<String> CODIGOS_DE_ORIGENES;
     public static List<PuntoDeReplanificacion> PUNTOS_REPLANIFICACION;
@@ -112,7 +113,12 @@ public class Problematica {
         G4D.IntegerWrapper cantAtendidos = new G4D.IntegerWrapper();
         List<PedidoEntity> pedidosEntity = pedidoService.findAllByDateTimeRange(INICIO_PLANIFICACION, FIN_PLANIFICACION, ESCENARIO);
         pedidosEntity.forEach(entity -> {
-            if(entity.getFueAtendido()) cantAtendidos.increment();
+            if(entity.getFueAtendido()) {
+                cantAtendidos.increment();
+            }
+            if(entity.getFechaHoraProcesamientoUTC() == null) {
+                entity.setFechaHoraGeneracionUTC(TIEMPO_ACTUAL);
+            }
             Pedido pedido = pedidoAdapter.toAlgorithm(entity);
             pedidos.add(pedido);
         });

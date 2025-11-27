@@ -14,6 +14,7 @@ import com.pucp.dp1.grupo4d.morapack.model.dto.PlanDTO;
 import com.pucp.dp1.grupo4d.morapack.model.entity.AeropuertoEntity;
 import com.pucp.dp1.grupo4d.morapack.model.entity.EventoEntity;
 import com.pucp.dp1.grupo4d.morapack.model.entity.PlanEntity;
+import com.pucp.dp1.grupo4d.morapack.service.model.AeropuertoService;
 import com.pucp.dp1.grupo4d.morapack.util.G4D;
 import org.springframework.stereotype.Component;
 
@@ -27,9 +28,11 @@ public class PlanMapper {
 
     private final Map<String, PlanDTO> poolDTO = new HashMap<>();
     private final EventoMapper eventoMapper;
+    private final AeropuertoService aeropuertoService;
 
-    public PlanMapper(EventoMapper eventoMapper) {
+    public PlanMapper(EventoMapper eventoMapper, AeropuertoService aeropuertoService) {
         this.eventoMapper = eventoMapper;
+        this.aeropuertoService = aeropuertoService;
     }
 
     public PlanDTO toDTO(Plan algorithm) {
@@ -84,7 +87,34 @@ public class PlanMapper {
         return planDTO;
     }
 
+    public PlanEntity toEntity(PlanDTO dto) throws Exception{
+        if(poolDTO.containsKey(dto.getCodigo())) {
+            return null;
+        }
+        PlanEntity entity =  new PlanEntity();
+        entity.setCodigo(dto.getCodigo());
+        entity.setDistancia(dto.getDistancia());
+        entity.setDuracion(dto.getDuracion());
+        String codOrigen = dto.getCodOrigen();
+        AeropuertoEntity origen = aeropuertoService.obtenerPorCodigo(codOrigen);
+        if(origen != null) {
+            String codDestino = dto.getCodDestino();
+            AeropuertoEntity destino = aeropuertoService.obtenerPorCodigo(codDestino);
+            if(destino != null) {
+                entity.setOrigen(origen);
+                entity.setDestino(destino);
+                entity.setHoraSalidaUTC(G4D.toTime(dto.getHoraSalida()));
+                entity.setHoraSalidaLocal(G4D.toLocal(entity.getHoraSalidaUTC(), origen.getHusoHorario()));
+                entity.setHoraLlegadaUTC(G4D.toTime(dto.getHoraLlegada()));
+                entity.setHoraLlegadaLocal(G4D.toLocal(entity.getHoraLlegadaUTC(), destino.getHusoHorario()));
+                return entity;
+            } else throw new Exception(String.format("El destino del plan es inválido. ('%s')", codDestino));
+        } else throw new Exception(String.format("El origen del plan es inválido. ('%s')", codOrigen));
+    }
+
     public void clearPools() {
         poolDTO.clear();
+        eventoMapper.clearPools();
+        aeropuertoService.clearPools();
     }
 }

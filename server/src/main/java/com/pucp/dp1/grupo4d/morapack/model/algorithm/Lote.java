@@ -31,7 +31,7 @@ public class Lote {
 
     public Boolean esModificable(Ruta rutaAsignada) {
         boolean loteReplanificado = this.getEstado() == EstadoLote.REPLANIFICADO;
-        boolean rutaPosterior = rutaAsignada.getFechaHoraSalida().isAfter(Problematica.INICIO_REPLANIFICACION);
+        boolean rutaPosterior = rutaAsignada.getFechaHoraSalida().isAfter(Problematica.UMBRAL_REPLANIFICACION);
         return loteReplanificado || rutaPosterior;
     }
 

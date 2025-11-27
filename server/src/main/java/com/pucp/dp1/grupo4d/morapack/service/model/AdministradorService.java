@@ -78,13 +78,13 @@ public class AdministradorService {
 
     public ListResponse listar(ListRequest request) {
         try {
-            int page = (G4D.isAdmissible(request.getPage())) ? request.getPage() : 0;
-            int size = (G4D.isAdmissible(request.getSize())) ? request.getSize() : 10;
+            int page = G4D.toAdmissibleValue(request.getPage(), 0);
+            int size = G4D.toAdmissibleValue(request.getPage(), 10);
             Pageable pageable = PageRequest.of(page, size, Sort.by("codigo").ascending());
-            List<DTO> administradoresDTO = new ArrayList<>();
-            List<AdministradorEntity> administradoresEntity = this.findAll(pageable);
-            administradoresEntity.forEach(a -> administradoresDTO.add(usuarioMapper.toDTO(a)));
-            return new ListResponse(true, "Administradores listados correctamente!", administradoresDTO);
+            List<DTO> dtos = new ArrayList<>();
+            List<AdministradorEntity> entities = this.findAll(pageable);
+            entities.forEach(entity -> dtos.add(usuarioMapper.toDTO(entity)));
+            return new ListResponse(true, "Administradores listados correctamente!", dtos);
         } catch (Exception e) {
             return new ListResponse(false, "ERROR - LISTADO: " + e.getMessage());
         } finally {
@@ -94,17 +94,17 @@ public class AdministradorService {
 
     public ListResponse filtrar(FilterRequest<UsuarioDTO> request) {
         try {
-            int page = (G4D.isAdmissible(request.getPage())) ? request.getPage() : 0;
-            int size = (G4D.isAdmissible(request.getSize())) ? request.getSize() : 10;
+            int page = G4D.toAdmissibleValue(request.getPage(), 0);
+            int size = G4D.toAdmissibleValue(request.getPage(), 10);
             Pageable pageable = PageRequest.of(page, size, Sort.by("codigo").ascending());
-            UsuarioDTO dto = request.getDto();
-            String nombre = G4D.toAdmissibleValue(dto.getNombre());
-            String correo = G4D.toAdmissibleValue(dto.getCorreo());
-            EstadoUsuario estado = G4D.toAdmissibleValue(dto.getEstado(), EstadoUsuario.class);
-            List<DTO> administradoresDTO = new ArrayList<>();
-            List<AdministradorEntity> administradoresEntity = administradorRepository.filterBy(nombre, correo, estado, pageable).getContent();
-            administradoresEntity.forEach(a -> administradoresDTO.add(usuarioMapper.toDTO(a)));
-            return new ListResponse(true, "Administradores filtrados correctamente!", administradoresDTO);
+            UsuarioDTO model = request.getFilterModel();
+            String nombre = G4D.toAdmissibleValue(model.getNombre());
+            String correo = G4D.toAdmissibleValue(model.getCorreo());
+            EstadoUsuario estado = G4D.toAdmissibleValue(model.getEstado(), EstadoUsuario.class);
+            List<DTO> dtos = new ArrayList<>();
+            List<AdministradorEntity> entities = administradorRepository.filterBy(nombre, correo, estado, pageable).getContent();
+            entities.forEach(entity -> dtos.add(usuarioMapper.toDTO(entity)));
+            return new ListResponse(true, "Administradores filtrados correctamente!", dtos);
         } catch (Exception e) {
             return new ListResponse(false, "ERROR - FILTRADO: " + e.getMessage());
         } finally {

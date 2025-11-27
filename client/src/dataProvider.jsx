@@ -33,11 +33,11 @@ export function DataProvider({ children }) {
           planesData
         ] = await Promise.all([
           listarPedidos(),
-          listarClientes(),
-          listarAeropuertos(),
+          listarClientes(0,300),
+          listarAeropuertos(0,300),
           listarRutas(),
           listarVuelos(),
-          listarPlanes()
+          listarPlanes(0,3000)
         ]);
 
         // PEDIDOS
@@ -131,7 +131,7 @@ export function DataProvider({ children }) {
     return `${yyyy}-${MM}-${dd} ${HH}:${mm}:${ss}`;
   }
 
-  useEffect(() => {
+  /*useEffect(() => {
     const interval = setInterval(async () => {
       console.log("Ejecutando verificación automática de pedidos...");
 
@@ -168,6 +168,7 @@ export function DataProvider({ children }) {
 
     return () => clearInterval(interval);
   }, []); // <-- súper importante: vacío
+  */
 
   async function ejecutarPlanificarConNuevos(fechaInicio, fechaFin) {
     const p = (await listarParametros()).dtos[0];
