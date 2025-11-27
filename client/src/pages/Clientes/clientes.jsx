@@ -145,7 +145,7 @@ export default function Clientes() {
         showNotification("success", "Cliente agregado correctamente");
       }
 
-      const data = await listarClientes();
+      const data = await listarClientes(0, 300);
       setClientes(data.dtos || []);
       setIsModalOpen(false);
       setArchivo(null);

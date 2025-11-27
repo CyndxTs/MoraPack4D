@@ -35,6 +35,7 @@ export default function Planificacion() {
   const [horaF, setHoraF] = useState("");
   const [loadedOnOpen, setLoadedOnOpen] = useState(false);
   const [parametros, setParametros] = useState(null);
+  const [tipoEscenario, setTipoEscenario] = useState("");
 
   // control visual / inputs
   const [codigoVuelo, setCodigoVuelo] = useState("");
@@ -199,10 +200,10 @@ export default function Planificacion() {
 
       // --- CASO 1: ARCHIVO ---
       if (archivo) {
-        if (archivo.name !== "Pedidos.txt") {
+        /*if (archivo.name !== "Pedidos.txt") {
           showNotification("warning", "El archivo debe llamarse 'Pedidos.txt'.");
           return;
-        }
+        }*/
 
         const fechaInicio = unirFechaHora(fechaArchivoFechaI, fechaArchivoHoraI);
         const fechaFin = unirFechaHora(fechaArchivoFechaF, fechaArchivoHoraF);
@@ -212,11 +213,12 @@ export default function Planificacion() {
         console.log(fechaFin);
 
         const req = {
-          tipoArchivo: "SIMULACION",
+          tipoEscenario: tipoEscenario,
           fechaHoraInicio: unirFechaHora(fechaArchivoFechaI, fechaArchivoHoraI),
           fechaHoraFin: unirFechaHora(fechaArchivoFechaF, fechaArchivoHoraF)
         };
 
+        console.log(req);
         const respuesta = await importarPedidos(archivo, req);
         if (respuesta.success) {
           showNotification("success", respuesta.message || "Pedidos importados correctamente");
@@ -241,9 +243,10 @@ export default function Planificacion() {
           fechaHoraGeneracion: fechaGeneracion,
           cantidadSolicitada: Number(cantidad),
           lotesPorRuta: [],
-          tipoEscenario: "OPERACION"
+          tipoEscenario: tipoEscenario
         };
 
+        console.log(dto);
         console.log("DTO generado:", dto);
 
         await importarPedido(dto);
@@ -946,6 +949,22 @@ export default function Planificacion() {
                 />
               </>
               )}
+
+              <label>Tipo de escenario</label>
+                <Radio
+                  name="tipoEscenario"
+                  label="OPERACION"
+                  value="OPERACION"
+                  checked={tipoEscenario === "OPERACION"}
+                  onChange={(e) => setTipoEscenario(e.target.value)}
+                />
+                <Radio
+                  name="tipoEscenario"
+                  label="SIMLULACION"
+                  value="SIMLULACION"
+                  checked={tipoEscenario === "SIMLULACION"}
+                  onChange={(e) => setTipoEscenario(e.target.value)}
+                />
 
               <label>Fecha y hora de generación (UTC)</label>
               <DateTimeInline

@@ -3,7 +3,7 @@ import "./pedidos.scss";
 
 import { 
   ButtonAdd, Input, DateTimeInline, Dropdown, Table, SidebarActions, 
-  Notification, LoadingOverlay, Pagination, RemoveFileButton, Dropdown3  
+  Notification, LoadingOverlay, Pagination, RemoveFileButton, Dropdown3, Radio 
 } from "../../components/UI/ui";
 
 import plus from '../../assets/icons/plus.svg';
@@ -38,6 +38,7 @@ export default function Pedidos() {
   const [fechaArchivoHoraI, setFechaArchivoHoraI] = useState("");
   const [fechaArchivoFechaF, setFechaArchivoFechaF] = useState("");
   const [fechaArchivoHoraF, setFechaArchivoHoraF] = useState("");
+  const [tipoEscenario, setTipoEscenario] = useState("");
 
   // Tabla y filtros
   const [pedidosOriginales, setPedidosOriginales] = useState([]);
@@ -107,10 +108,10 @@ export default function Pedidos() {
 
       // --- ARCHIVO ---
       if (archivo) {
-        if (archivo.name !== "Pedidos.txt") {
+        /*if (archivo.name !== "Pedidos.txt") {
           showNotification("warning", "El archivo debe llamarse 'Pedidos.txt'.");
           return;
-        }
+        }*/
 
         console.log(fechaArchivoFechaI);
         console.log(fechaArchivoHoraI);
@@ -121,7 +122,7 @@ export default function Pedidos() {
         console.log("Final Fin:", unirFechaHora(fechaArchivoFechaF, fechaArchivoHoraF));
 
         const req = {
-          tipoArchivo: "SIMULACION",
+          tipoEscenario: tipoEscenario,
           fechaHoraInicio: unirFechaHora(fechaArchivoFechaI, fechaArchivoHoraI),
           fechaHoraFin: unirFechaHora(fechaArchivoFechaF, fechaArchivoHoraF)
         };
@@ -153,9 +154,10 @@ export default function Pedidos() {
           fechaHoraGeneracion: fechaGeneracion,
           cantidadSolicitada: Number(cantidad),
           lotesPorRuta: [],
-          tipoEscenario: "OPERACION"
+          tipoEscenario: tipoEscenario
         };
 
+        console.log(dto);
         await importarPedido(dto);
 
         showNotification("success", "Pedido manual registrado correctamente");
@@ -359,6 +361,22 @@ export default function Pedidos() {
                   />
                 </>
               )}
+
+              <label>Tipo de escenario</label>
+                <Radio
+                  name="tipoEscenario"
+                  label="OPERACION"
+                  value="OPERACION"
+                  checked={tipoEscenario === "OPERACION"}
+                  onChange={(e) => setTipoEscenario(e.target.value)}
+                />
+                <Radio
+                  name="tipoEscenario"
+                  label="SIMLULACION"
+                  value="SIMLULACION"
+                  checked={tipoEscenario === "SIMLULACION"}
+                  onChange={(e) => setTipoEscenario(e.target.value)}
+                />
 
               <label>Fecha y hora generación (UTC)</label>
               <DateTimeInline

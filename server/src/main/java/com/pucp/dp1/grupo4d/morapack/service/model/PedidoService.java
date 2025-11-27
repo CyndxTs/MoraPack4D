@@ -101,7 +101,7 @@ public class PedidoService {
     public ListResponse listar(ListRequest request) {
         try {
             int page = G4D.toAdmissibleValue(request.getPage(), 0);
-            int size = G4D.toAdmissibleValue(request.getPage(), 10);
+            int size = G4D.toAdmissibleValue(request.getSize(), 10);
             Pageable pageable = PageRequest.of(page, size, Sort.by("codigo").ascending());
             List<DTO> dtos = new ArrayList<>();
             List<PedidoEntity> entities = this.findAll(pageable);

@@ -32,7 +32,7 @@ export function DataProvider({ children }) {
           vuelosData,
           planesData
         ] = await Promise.all([
-          listarPedidos(),
+          listarPedidos(0,3000),
           listarClientes(0,300),
           listarAeropuertos(0,300),
           listarRutas(),
