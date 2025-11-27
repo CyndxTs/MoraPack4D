@@ -6,13 +6,17 @@ import plus from "../../assets/icons/plus.svg";
 import run from "../../assets/icons/run.svg";
 import { listarParametros } from "../../services/parametrosService";
 import { listarAeropuertos } from "../../services/aeropuertoService";
-import { planificar } from "../../services/planificarService";
+import {connectSimulatorWS,sendSimulationRequest,disconnectWS} from "../../services/planificarService";
 
 import { MapContainer, TileLayer, Marker, Popup, Polyline, useMapEvent  } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from "leaflet";
-
 import planeIconImg from "../../assets/icons/planeMora.svg";
+/**
+ * @typedef {import("../../types/simulationRequest/SimulationRequest").SimulationRequest} SimulationRequest
+ */
+
+
 
 export default function Simulacion() {
   const [collapsed, setCollapsed] = useState(false);
@@ -26,7 +30,8 @@ export default function Simulacion() {
   // -------- MODAL --------
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const [tipoSimulacion] = useState("semanal");
+  const [tipoSimulacion, setTipoSimulacion] = useState("semanal");
+
 
   const [fechaI, setFechaI] = useState("");
   const [horaI, setHoraI] = useState("");
@@ -44,10 +49,6 @@ export default function Simulacion() {
     if (v === "" || v === null || v === undefined) return null;
     return Number(v);
   };
-  const [replanificar] = useState(false);
-  const [guardarPlanificacion] = useState(false);
-  const [reparametrizar, setReparametrizar] = useState(false);   
-  const [guardarParametrizacion] = useState(false);
 
 
   const [maxDiasEntregaIntercontinental, setMaxDiasEntregaIntercontinental] = useState();
@@ -55,21 +56,8 @@ export default function Simulacion() {
   const [maxHorasRecojo, setMaxHorasRecojo] = useState();
   const [minHorasEstancia, setMinHorasEstancia] = useState();
   const [maxHorasEstancia, setMaxHorasEstancia] = useState();
-  const [considerarDesfaseTemporal] = useState(false);
 
-  const [dMin, setDMin] = useState();
-  const [iMax, setIMax] = useState();
-  const [eleMin, setEleMin] = useState();
-  const [eleMax, setEleMax] = useState();
-  const [kMin, setKMin] = useState();
-  const [kMax, setKMax] = useState();
-  const [tMax, setTMax] = useState();
-  const [maxIntentos, setMaxIntentos] = useState();
 
-  const [factorDeUmbralDeAberracion, setFactorDeUmbralDeAberracion] = useState();
-  const [factorDeUtilizacionTemporal, setFactorDeUtilizacionTemporal] = useState();
-  const [factorDeDesviacionEspacial, setFactorDeDesviacionEspacial] = useState();
-  const [factorDeDisposicionOperacional, setFactorDeDisposicionOperacional] = useState();
 
   //Aeropuertos
   const [airports, setAirports] = useState(null);
@@ -270,29 +258,31 @@ useEffect(() => {
     const base = fromInputsToMsUTC(inputDate, inputTime);
     setSimNowMs(base);
 
-    // Resetear vuelos al origen usando la última planificación
+    // Resetear vuelos al origen usando la última planificación recibida
     if (airports && rawFlights.length > 0) {
       const reset = rawFlights.map((v) => {
-        const origin = airports[v.plan.codOrigen];
-        const dest = airports[v.plan.codDestino];
+        const origin = airports[v.codOrigen];
+        const dest   = airports[v.codDestino];
         if (!origin || !dest) return null;
 
-        const startMs = parseUtcToMs(f.fechaSalida);
-        const endMs   = parseUtcToMs(f.fechaLlegada);
+        const startMs = parseFechaHoraToMs(v.fechaHoraSalida);
+        const endMs   = parseFechaHoraToMs(v.fechaHoraLlegada);
+        const durationSec = Math.max((endMs - startMs) / 1000, 60);
         const path = generateGeodesicPath(origin.lat, origin.lng, dest.lat, dest.lng, 120);
 
         return {
-          code: f.codigo,
-          origin, 
+          code: v.codigo,
+          origin,
           originName: origin.name,
-          destination: dest, 
+          destination: dest,
           destinationName: dest.name,
-          startTime: v.fechaHoraSalida, 
+          startTime: v.fechaHoraSalida,
           endTime: v.fechaHoraLlegada,
-          startMs, endMs,
+          startMs,
+          endMs,
           capacity: v.capacidadOcupada,
-          planeCapacity: v.plan.capacidad,
-          durationSec: Math.max((endMs - startMs)/1000, 60),
+          planeCapacity: v.capacidadMaxima,
+          durationSec,
           progress: 0,
           arrived: false,
           path,
@@ -308,8 +298,8 @@ useEffect(() => {
 
     setBtnState({
       start: { disabled: false, color: "blue" },
-      pause: { disabled: true, color: "grey" },
-      stop:  { disabled: true, color: "grey" }
+      pause: { disabled: true,  color: "grey" },
+      stop:  { disabled: true,  color: "grey" }
     });
   };
   
@@ -403,38 +393,27 @@ const airportIcon = L.divIcon({
   useEffect(() => {
     const fetchParametrosYAeropuertos = async () => {
       try {
-        const p = (await listarParametros()).dtos[0];
+        /** @type {ParametrosResponse} */
+        const parametrosResponse = await listarParametros();
+        /** @type {ParametrosDTO} */
+        const p = parametrosResponse.dtos[0];
+
         const a = await listarAeropuertos();
 
-        setParametros(p);
+        setParametros(p);           // si quieres conservar todo el objeto
         setAeropuertos(a.dtos ?? []);
 
-        // setear parámetros desde BD
+        // === SOLO LOS 5 PARAMETROS A MOSTRAR EN EL POPUP ===
         setMaxDiasEntregaIntercontinental(p.maxDiasEntregaIntercontinental);
         setMaxDiasEntregaIntracontinental(p.maxDiasEntregaIntracontinental);
         setMaxHorasRecojo(p.maxHorasRecojo);
         setMinHorasEstancia(p.minHorasEstancia);
         setMaxHorasEstancia(p.maxHorasEstancia);
 
-        setDMin(p.dMin);
-        setIMax(p.iMax);
-        setEleMin(p.eleMin);
-        setEleMax(p.eleMax);
-        setKMin(p.kMin);
-        setKMax(p.kMax);
-        setTMax(p.tMax);
-        setMaxIntentos(p.maxIntentos);
-
-        setFactorDeUmbralDeAberracion(p.factorDeUmbralDeAberracion);
-        setFactorDeUtilizacionTemporal(p.factorDeUtilizacionTemporal);
-        setFactorDeDesviacionEspacial(p.factorDeDesviacionEspacial);
-        setFactorDeDisposicionOperacional(p.factorDeDisposicionOperacional);
 
         setCodOrigenes(prev =>
           prev.length === 0 ? (p.codOrigenes || []) : prev
         );
-
-
       } catch (err) {
         showNotification("danger", "Error cargando parámetros");
       }
@@ -447,6 +426,7 @@ const airportIcon = L.divIcon({
   }, [isModalOpen, loadedOnOpen]);
 
 
+ 
   const buildSimulationFromSolution = (solution) => {
     if (!solution) return;
 
@@ -454,9 +434,9 @@ const airportIcon = L.divIcon({
     const airportMap = {};
     (solution.aeropuertosTransitados || []).forEach(a => {
       airportMap[a.codigo] = {
-        lat: a.latitudDEC,
-        lng: a.longitudDEC,
-        name: a.alias || a.ciudad,  // cómo se mostrará en el mapa
+        lat: a.latitud,          // 
+        lng: a.longitud,         // 
+        name: a.alias || a.ciudad,
         code: a.codigo,
         city: a.ciudad,
         country: a.pais,
@@ -467,25 +447,28 @@ const airportIcon = L.divIcon({
     setAirports(airportMap);
     setLoadingAirports(false);
 
-    // 2) Guardar vuelos crudos para poder reconstruirlos al hacer "Detener"
+    // 2) Guardar vuelos crudos (VueloDTO) para poder reconstruirlos al hacer "Detener"
     const vuelos = solution.vuelosEnTransito || [];
     setRawFlights(vuelos);
 
-    // 3) Construir flights con el mismo formato que usabas con WS
+    // 3) Construir flights en el formato interno usado por la simulación
     const mappedFlights = vuelos.map((v) => {
-      const origin = airportMap[v.plan.codOrigen];
-      const dest   = airportMap[v.plan.codDestino];
+      // Obtener aeropuertos de origen y destino
+      const origin = airportMap[v.codOrigen];
+      const dest   = airportMap[v.codDestino];
 
       if (!origin || !dest) {
         console.warn(
-          `Vuelo ${v.codigo} omitido: no se encontró aeropuerto ${v.plan.codOrigen} o ${v.plan.codDestino}`
+          `Vuelo ${v.codigo} omitido: no se encontró aeropuerto ${v.codOrigen} o ${v.codDestino}`
         );
         return null;
       }
 
+      // Tus fechas vienen como "dd/MM/yyyy HH:mm"
       const startMs = parseFechaHoraToMs(v.fechaHoraSalida);
       const endMs   = parseFechaHoraToMs(v.fechaHoraLlegada);
       const durationSec = Math.max((endMs - startMs) / 1000, 60);
+
       const path = generateGeodesicPath(origin.lat, origin.lng, dest.lat, dest.lng, 120);
 
       return {
@@ -498,8 +481,8 @@ const airportIcon = L.divIcon({
         endTime: v.fechaHoraLlegada,
         startMs,
         endMs,
-        capacity: v.capacidadOcupada,    // lo que realmente transporta
-        planeCapacity: v.plan.capacidad, // capacidad total del avión (extra, por si la quieres mostrar)
+        capacity: v.capacidadOcupada,    // 
+        planeCapacity: v.capacidadMaxima, // 
         durationSec,
         progress: 0,
         arrived: false,
@@ -512,6 +495,27 @@ const airportIcon = L.divIcon({
     setFlights(mappedFlights);
   };
 
+  useEffect(() => {
+    // Conectamos al WS y nos suscribimos a /topic/simulator
+    connectSimulatorWS((solution) => {
+      console.log("SolutionResponse recibido por WS:", solution);
+
+      if (solution.success) {
+        showNotification("success", "Plan generado correctamente");
+        buildSimulationFromSolution(solution);
+        setInputDate(fechaI);
+        setInputTime(horaI);
+      } else {
+        showNotification("danger", solution.message || "Error generando el plan");
+      }
+    });
+
+    // Al desmontar la pantalla, cortamos la conexión
+    return () => {
+      disconnectWS();
+    };
+  }, []); // 👈 solo una vez al montar
+
   const handlePlanear = async () => {
     try {
       setLoading(true);
@@ -522,61 +526,30 @@ const airportIcon = L.divIcon({
         return;
       }
 
+      /** @type {SimulationRequest} */
       const body = {
-        replanificar,
-        guardarPlanificacion,
-        reparametrizar,
-        guardarParametrizacion,
-        considerarDesfaseTemporal: !!considerarDesfaseTemporal,
+        fechaHoraInicio: `${fechaI}T${horaI}:00`,
+        fechaHoraFim: `${fechaF}T${horaF}:00`,
         parameters: {
-          fechaHoraInicio: `${fechaI}T${horaI}:00`,
-          fechaHoraFin: `${fechaF}T${horaF}:00`,
-
-          maxDiasEntregaIntercontinental: (maxDiasEntregaIntercontinental),
-          maxDiasEntregaIntracontinental: (maxDiasEntregaIntracontinental),
-          maxHorasRecojo: (maxHorasRecojo),
-          minHorasEstancia: (minHorasEstancia),
-          maxHorasEstancia: (maxHorasEstancia),
-          considerarDesfaseTemporal: !!considerarDesfaseTemporal,
+          maxDiasEntregaIntercontinental,
+          maxDiasEntregaIntracontinental,
+          maxHorasRecojo,
+          minHorasEstancia,
+          maxHorasEstancia,
           codOrigenes,
-
-          dMin: (dMin),
-          iMax: (iMax),
-          eleMin: (eleMin),
-          eleMax: (eleMax),
-          kMin: (kMin),
-          kMax: (kMax),
-          tMax: (tMax),
-          maxIntentos: (maxIntentos),
-
-          factorDeUmbralDeAberracion: (factorDeUmbralDeAberracion),
-          factorDeUtilizacionTemporal: (factorDeUtilizacionTemporal),
-          factorDeDesviacionEspacial: (factorDeDesviacionEspacial),
-          factorDeDisposicionOperacional: (factorDeDisposicionOperacional)
-        }
+        },
       };
 
-      console.log(body)
-      const result = await planificar(body);
-
-      if (result.success) {
-        showNotification("success", "Plan generado correctamente");
-        buildSimulationFromSolution(result);
-        //seteamos en base a la fecha y hora inicio del modal al planificar
-        setInputDate(fechaI);
-        setInputTime(horaI);
-      } else {
-        showNotification("danger", result.message || "Error generando el plan");
-      }
-
+      console.log("SimulationRequest enviado por WS:", body);
+      sendSimulationRequest(body); // 👈 va por WebSocket
       closeModal();
-
     } catch (err) {
       showNotification("danger", err.message);
     } finally {
       setLoading(false);
     }
   };
+
 
   // LIMPIAR MODAL SIEMPRE QUE SE CIERRA
   const resetModal = () => {
@@ -599,15 +572,14 @@ const airportIcon = L.divIcon({
 
   // Manejo de fechas según tipo de simulación
   useEffect(() => {
-    if (tipoSimulacion === "semanal") {
-      if (fechaI && horaI) {
+    if (fechaI && horaI) {
         const start = new Date(`${fechaI}T${horaI}:00Z`);
         const end = new Date(start.getTime() + 7 * 24 * 60 * 60 * 1000);
 
         setFechaF(end.toISOString().slice(0, 10));
         setHoraF(end.toISOString().slice(11, 16));
-      }
     }
+    
 
   }, [tipoSimulacion, fechaI, horaI]);
 
@@ -785,10 +757,10 @@ const airportIcon = L.divIcon({
               {selectedItem ? (
                 <>
                   <h3>Información seleccionada</h3>
-                  <body>{selectedItem}</body>
+                  <p>{selectedItem}</p>
                 </>
               ) : (
-                <body className="placeholder">Haz clic en un avión o aeropuerto para ver detalles.</body>
+                <p className="placeholder">Haz clic en un avión o aeropuerto para ver detalles.</p>
               )}
             </div>
             <div className="info-triangle"></div>
@@ -806,238 +778,113 @@ const airportIcon = L.divIcon({
             </div>
 
             <div className="modal-body">
+              {/* === RANGO DE SIMULACIÓN === */}
+              <span className="sidebar-subtitle">Rango de simulación</span>
 
-              {/* TIPO DE SIMULACIÓN */}
-              <span className="sidebar-subtitle">Tipo de simulación</span>
-
-              <Radio name="tipoSim" label="Semanal"
-                value="semanal"
-                checked={true}
-                disabled={true}
-                onChange={() => {}} />
-
-              <Radio name="tipoSim" label="Colapso logístico"
-                value="colapso"
-                checked={tipoSimulacion === "colapso"}
-                onChange={(e) => setTipoSimulacion(e.target.value)} />
-
-              <hr />
-
-              <span className="sidebar-subtitle">Planificación</span>
-              {/* === PLANIFICACIÓN === */}
-
-              <label>¿Replanificar?</label>
-              <Radio
-                name="replanificar"
-                label="Sí"
-                value="true"
-                checked={false}
-                disabled={true}
-                onChange={() => {}}
-              />
-              <Radio
-                name="replanificar"
-                label="No"
-                value="false"
-                checked={true}
-                disabled={true}
-                onChange={() => {}}
+              <label>Fecha y hora de inicio (UTC)</label>
+              <DateTimeInline
+                dateValue={fechaI}
+                timeValue={horaI}
+                onDateChange={(e) => setFechaI(e.target.value)}
+                onTimeChange={(e) => setHoraI(e.target.value)}
               />
 
-              <label>¿Guardar planificación?</label>
-              <Radio
-                name="guardarPlanificacion"
-                label="Sí"
-                value="true"
-                checked={false}
-                disabled={true}
-                onChange={() => {}}
-              />
-              <Radio
-                name="guardarPlanificacion"
-                label="No"
-                value="false"
-                checked={true}
-                disabled={true}
-                onChange={() => {}}
+              <label>Fecha y hora de fin (UTC)</label>
+              <DateTimeInline
+                dateValue={fechaF}
+                timeValue={horaF}
+                onDateChange={(e) => setFechaF(e.target.value)}
+                onTimeChange={(e) => setHoraF(e.target.value)}
+                disabled={true}  // la calculas en el useEffect
               />
 
-              <label>¿Reparametrizar?</label>
-              <Radio
-                name="reparametrizar"
-                label="Sí"
-                value="true"
-                checked={reparametrizar === true}
-                onChange={(e) => setReparametrizar(toBoolean(e.target.value))}
-              />
-              <Radio
-                name="reparametrizar"
-                label="No"
-                value="false"
-                checked={reparametrizar === false}
-                onChange={(e) => setReparametrizar(toBoolean(e.target.value))}
-              />
+              {/* === CIUDADES SEDE (codOrigenes) === */}
+              <span className="sidebar-subtitle">Ciudades sede</span>
 
-              <label>¿Guardar parametrización?</label>
-              <Radio
-                name="guardarParametrizacion"
-                label="Sí"
-                value="true"
-                checked={false}
-                disabled={true}
-                onChange={() => {}}
-              />
-              <Radio
-                name="guardarParametrizacion"
-                label="No"
-                value="false"
-                checked={true}
-                disabled={true}
-                onChange={() => {}}
-              />
-
-              <hr />
-
-              {reparametrizar && (
-                <div className={`parametros-container ${reparametrizar ? "open" : "closed"}`}>
-                  <span className="sidebar-subtitle">Parámetros</span>
-
-                  {/* FECHAS SIEMPRE VISIBLES, SOLO SE DESHABILITAN */}
-                  <label>Fecha y hora de inicio (UTC)</label>
-                  <DateTimeInline
-                    dateValue={fechaI}
-                    timeValue={horaI}
-                    onDateChange={(e) => setFechaI(e.target.value)}
-                    onTimeChange={(e) => setHoraI(e.target.value)}
-                  />
-
-                  <label>Fecha y hora de fin (UTC)</label>
-                  <DateTimeInline
-                    dateValue={fechaF}
-                    timeValue={horaF}
-                    onDateChange={(e) => setFechaF(e.target.value)}
-                    onTimeChange={(e) => setHoraF(e.target.value)}
-                    disabled={true}
-                  />
-
-                  <label>Ciudades sede</label>              
-                  {/* LISTA DE SELECCIONADOS TIPO CHIP */}
-                  <div className="selected-codes">
-                    {codOrigenes.map((cod) => (
-                      <div key={cod} className="chip">
-                        <span>{cod}</span>
-                        <button
-                          className="chip-remove"
-                          onClick={() => {
-                            setCodOrigenes(codOrigenes.filter(c => c !== cod));
-                          }}
-                        >
-                          ×
-                        </button>
-                      </div>
-                    ))}
+              {/* Chips con los códigos seleccionados */}
+              <div className="selected-codes">
+                {codOrigenes.map((cod) => (
+                  <div key={cod} className="chip">
+                    <span>{cod}</span>
+                    <button
+                      className="chip-remove"
+                      onClick={() => {
+                        setCodOrigenes(codOrigenes.filter((c) => c !== cod));
+                      }}
+                    >
+                      ×
+                    </button>
                   </div>
-                  {/* ORÍGENES */}
-                  <Dropdown2
-                    label="Códigos Origen"
-                    multiple={true}
-                    value={codOrigenes}
-                    onChange={setCodOrigenes}
-                    options={aeropuertos.map(a => ({
-                      label: `${a.codigo} - ${a.ciudad} - ${a.pais}`,
-                      value: a.codigo
-                    }))}
-                  />
+                ))}
+              </div>
 
-                  {/* BOOLEANO */}
-                  <label>¿Considerar desfase temporal?</label>
-                  <Radio
-                    name="desfase"
-                    label="Sí"
-                    value="true"
-                    checked={false}
-                    disabled={true}
-                    onChange={() => {}}
-                  />
-                  <Radio
-                    name="desfase"
-                    label="No"
-                    value="false"
-                    checked={true}
-                    disabled={true}
-                    onChange={() => {}}
-                  />
+              {/* Dropdown para agregar / quitar códigos origen */}
+              <Dropdown2
+                label="Códigos origen"
+                multiple={true}
+                value={codOrigenes}
+                onChange={setCodOrigenes}
+                options={aeropuertos.map((a) => ({
+                  label: `${a.codigo} - ${a.ciudad} - ${a.pais}`,
+                  value: a.codigo,
+                }))}
+              />
 
-                  {/* NUMÉRICOS */}
-                  <label>Max días entrega intercontinental</label>
-                  <Input label="Max días entrega intercontinental" type="number"
-                    value={maxDiasEntregaIntercontinental} onChange={(e) => setMaxDiasEntregaIntercontinental(parseNumber(e.target.value))}/>
+              {/* === PARÁMETROS QUE SE ENVIARÁN AL BACK === */}
+              <span className="sidebar-subtitle">Parámetros de planificación</span>
 
-                  <label>Max días entrega intracontinental</label>
-                  <Input label="Max días entrega intracontinental" type="number"
-                    value={maxDiasEntregaIntracontinental} onChange={(e) => setMaxDiasEntregaIntracontinental(parseNumber(e.target.value))}/>
+              <label>Máx. días entrega intercontinental</label>
+              <Input
+                label="Máx. días entrega intercontinental"
+                type="number"
+                value={maxDiasEntregaIntercontinental}
+                onChange={(e) =>
+                  setMaxDiasEntregaIntercontinental(parseNumber(e.target.value))
+                }
+              />
 
-                  <label>Max horas recojo</label>
-                  <Input label="Max horas recojo" type="number"
-                    value={maxHorasRecojo} onChange={(e) => setMaxHorasRecojo(parseNumber(e.target.value))}/>
+              <label>Máx. días entrega intracontinental</label>
+              <Input
+                label="Máx. días entrega intracontinental"
+                type="number"
+                value={maxDiasEntregaIntracontinental}
+                onChange={(e) =>
+                  setMaxDiasEntregaIntracontinental(parseNumber(e.target.value))
+                }
+              />
 
-                  <label>Min horas estancia</label>
-                  <Input label="Min horas estancia" type="number"
-                    value={minHorasEstancia} onChange={(e) => setMinHorasEstancia(parseNumber(e.target.value))}/>
+              <label>Máx. horas de recojo</label>
+              <Input
+                label="Máx. horas de recojo"
+                type="number"
+                value={maxHorasRecojo}
+                onChange={(e) => setMaxHorasRecojo(parseNumber(e.target.value))}
+              />
 
-                  <label>Max horas estancia</label>
-                  <Input label="Max horas estancia" type="number"
-                    value={maxHorasEstancia} onChange={(e) => setMaxHorasEstancia(parseNumber(e.target.value))}/>
+              <label>Mín. horas de estancia</label>
+              <Input
+                label="Mín. horas de estancia"
+                type="number"
+                value={minHorasEstancia}
+                onChange={(e) => setMinHorasEstancia(parseNumber(e.target.value))}
+              />
 
-                  {/* OPTIMIZACIÓN */}
-                  <label>dMin</label>
-                  <Input label="dMin" type="number" value={dMin} onChange={(e) => setDMin(parseNumber(e.target.value))}/>
-
-                  <label>iMax</label>
-                  <Input label="iMax" type="number" value={iMax} onChange={(e) => setIMax(parseNumber(e.target.value))}/>
-
-                  <label>eleMin</label>
-                  <Input label="eleMin" type="number" value={eleMin} onChange={(e) => setEleMin(parseNumber(e.target.value))}/>
-
-                  <label>eleMax</label>
-                  <Input label="eleMax" type="number" value={eleMax} onChange={(e) => setEleMax(parseNumber(e.target.value))}/>
-
-                  <label>kMin</label>
-                  <Input label="kMin" type="number" value={kMin} onChange={(e) => setKMin(parseNumber(e.target.value))}/>
-
-                  <label>kMax</label>
-                  <Input label="kMax" type="number" value={kMax} onChange={(e) => setKMax(parseNumber(e.target.value))}/>
-
-                  <label>tMax</label>
-                  <Input label="tMax" type="number" value={tMax} onChange={(e) => setTMax(parseNumber(e.target.value))}/>
-
-                  <label>Max intentos</label>
-                  <Input label="Max intentos" type="number" value={maxIntentos} onChange={(e) => setMaxIntentos(parseNumber(e.target.value))}/>
-
-                  {/* FACTORES */}
-                  <label>Factor de Umbral de Aberración</label>
-                  <Input label="Factor de Umbral de Aberración" type="number"
-                    value={factorDeUmbralDeAberracion} onChange={(e) => setFactorDeUmbralDeAberracion(parseNumber(e.target.value))}/>
-
-                  <label>Factor de Utilización Temporal</label>
-                  <Input label="Factor de Utilización Temporal" type="number"
-                    value={factorDeUtilizacionTemporal} onChange={(e) => setFactorDeUtilizacionTemporal(parseNumber(e.target.value))}/>
-
-                  <label>Factor de Desviación Espacial</label>
-                  <Input label="Factor de Desviación Espacial" type="number"
-                    value={factorDeDesviacionEspacial} onChange={(e) => setFactorDeDesviacionEspacial(parseNumber(e.target.value))}/>
-
-                  <label>Factor de Disposición Operacional</label>
-                  <Input label="Factor de Disposición Operacional" type="number"
-                    value={factorDeDisposicionOperacional} onChange={(e) => setFactorDeDisposicionOperacional(parseNumber(e.target.value))}/>
-                </div>
-              )}
-            
+              <label>Máx. horas de estancia</label>
+              <Input
+                label="Máx. horas de estancia"
+                type="number"
+                value={maxHorasEstancia}
+                onChange={(e) => setMaxHorasEstancia(parseNumber(e.target.value))}
+              />
             </div>
 
             <div className="modal-footer">
-              <button className="btn red" onClick={closeModal}>Cancelar</button>
-              <button className="btn green" onClick={handlePlanear}>Planear</button>
+              <button className="btn red" onClick={closeModal}>
+                Cancelar
+              </button>
+              <button className="btn green" onClick={handlePlanear}>
+                Planear
+              </button>
             </div>
           </div>
         </div>

@@ -1,13 +1,23 @@
 import axios from "axios";
 
-const API_URL = "/api/parametros"; 
+/**
+ * @typedef {import("../types/parametros/ParametrosResponse.js").ParametrosResponse} ParametrosResponse
+ */
 
+const API_URL = "/api/parametros";
+
+/**
+ * Obtiene los parámetros globales de planificación.
+ * @returns {Promise<ParametrosResponse>}
+ */
 export const listarParametros = async () => {
   try {
     const response = await axios.get(API_URL);
-    return response.data;
+    /** @type {ParametrosResponse} */
+    const data = response.data;
+    return data;
   } catch (error) {
-    console.error("Error al listar clientes:", error);
+    console.error("Error al listar parámetros:", error);
     throw error;
   }
 };

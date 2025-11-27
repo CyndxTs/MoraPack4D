@@ -1,24 +1,56 @@
-import axios from "axios";
-
-/** 
- * @typedef {import("../types/simulationResponse/SolutionResponse.js").SolutionResponse} SolutionResponse 
+// src/services/simulationService.js
+import { Client } from "@stomp/stompjs";
+/**
+ * @typedef {import("../types/simulationRequest/SimulationRequest").SimulationRequest} SimulationRequest
  */
 
-const API_URL = "/api/algorithm/planificar";
+const SOCKET_URL =
+  (window.location.protocol === "https:" ? "wss://" : "ws://") +
+  window.location.host +
+  "/ws";
+
+let client = null;
+
+export function connectSimulatorWS(onSolution) {
+  if (client && client.active) return;
+
+  client = new Client({
+    brokerURL: SOCKET_URL,
+    reconnectDelay: 5000,
+    debug: () => {}, 
+    onConnect: () => {
+      console.log("STOMP conectado a", SOCKET_URL);
+      client.subscribe("/topic/simulator", (message) => {
+        const solution = JSON.parse(message.body);
+        onSolution(solution);
+      });
+    },
+    onStompError: (frame) => {
+      console.error("Error STOMP:", frame.headers["message"], frame.body);
+    },
+  });
+
+  client.activate();
+}
 
 /**
- * Llama al backend de planificación.
- * @param {Object} request
- * @returns {Promise<SolutionResponse>}
+ * @param {SimulationRequest} request
  */
-export async function planificar(request) {
-  try {
-    const response = await axios.post(API_URL, request);
-    return response.data;
-  } catch (error) {
-    if (error.response) {
-      throw new Error(error.response.data.message || "Error en planificación");
-    }
-    throw new Error("No se pudo conectar con el servidor");
+export function sendSimulationRequest(request) {
+  if (!client || !client.connected) {
+    console.error("STOMP no conectado; no se puede enviar SimulationRequest");
+    return;
+  }
+
+  client.publish({
+    destination: "/app/obtenerSimulacion",
+    body: JSON.stringify(request),
+  });
+}
+
+export function disconnectWS() {
+  if (client) {
+    client.deactivate();
+    client = null;
   }
 }
