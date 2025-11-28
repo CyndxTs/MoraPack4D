@@ -27,12 +27,9 @@ public class ParametrosController {
     public ResponseEntity<ListResponse> listar() {
         try {
             ListResponse response = parametrosService.listar();
-            if (response.getSuccess()) {
-                return ResponseEntity.ok(response);
-            } else {
-                return ResponseEntity.badRequest().body(response);
-            }
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
+            e.printStackTrace();
             return ResponseEntity.internalServerError().body(new ListResponse(false, "ERROR INTERNO: " + e.getMessage()));
         }
     }
@@ -41,12 +38,9 @@ public class ParametrosController {
     public ResponseEntity<GenericResponse> importar(@RequestBody ImportRequest<ParametrosDTO> request) {
         try {
             GenericResponse response = parametrosService.importar(request);
-            if (response.getSuccess()) {
-                return ResponseEntity.ok(response);
-            } else {
-                return ResponseEntity.badRequest().body(response);
-            }
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
+            e.printStackTrace();
             return ResponseEntity.internalServerError().body(new GenericResponse(false, "ERROR INTERNO: " + e.getMessage()));
         }
     }

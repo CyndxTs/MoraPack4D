@@ -21,10 +21,10 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import com.pucp.dp1.grupo4d.morapack.model.algorithm.*;
-import com.pucp.dp1.grupo4d.morapack.model.enums.EstadoLote;
-import com.pucp.dp1.grupo4d.morapack.model.enums.TipoEvento;
-import com.pucp.dp1.grupo4d.morapack.model.enums.TipoRuta;
-import com.pucp.dp1.grupo4d.morapack.util.G4D;
+import com.pucp.dp1.grupo4d.morapack.model.enumeration.EstadoLote;
+import com.pucp.dp1.grupo4d.morapack.model.enumeration.TipoEvento;
+import com.pucp.dp1.grupo4d.morapack.model.enumeration.TipoRuta;
+import com.pucp.dp1.grupo4d.morapack.util.G4DUtility;
 
 public class GVNS {
     public static Double D_MIN = 0.005;                 // Diferencia mínima considerable de fitness
@@ -43,43 +43,43 @@ public class GVNS {
     }
 
     public void planificar(Problematica problematica) {
-        G4D.Logger.Stats.set_global_start();
+        G4DUtility.Logger.Stats.set_global_start();
         // Declaracion & inicialización de variables
         Solucion x = new Solucion();
         // Solución inicial (Nearest Neighbor)
-        G4D.Logger.Stats.set_local_start();
-        G4D.Logger.log("Generando solución inicial.. ");
+        G4DUtility.Logger.Stats.set_local_start();
+        G4DUtility.Logger.log("Generando solución inicial.. ");
         solucionInicial(problematica, x);
-        G4D.Logger.Stats.set_local_duration();
+        G4DUtility.Logger.Stats.set_local_duration();
         if(x.getFitness() < 0) return;
-        G4D.Logger.logf("[+] SOLUCION INICIAL GENERADA! (FITNESS: %.3f)%n", x.getFitness());
-        G4D.Logger.Stats.log_stat_local_sol();
+        G4DUtility.Logger.logf("[+] SOLUCION INICIAL GENERADA! (FITNESS: %.3f)%n", x.getFitness());
+        G4DUtility.Logger.Stats.log_stat_local_sol();
         imprimirSolucion(x, "SolucionInicial.txt");
         this.solucion = x;
         // Optimización inicial (Variable Neighborhood Descent)
-        G4D.Logger.Stats.set_local_start();
-        G4D.Logger.log("Realizando optimización inicial.. ");
+        G4DUtility.Logger.Stats.set_local_start();
+        G4DUtility.Logger.log("Realizando optimización inicial.. ");
         VND(x);
-        G4D.Logger.Stats.set_local_duration();
-        G4D.Logger.logf("[+] OPTIMIZACION INICIAL REALIZADA! (FITNESS: %.3f)%n", x.getFitness());
-        G4D.Logger.Stats.log_stat_local_sol();
+        G4DUtility.Logger.Stats.set_local_duration();
+        G4DUtility.Logger.logf("[+] OPTIMIZACION INICIAL REALIZADA! (FITNESS: %.3f)%n", x.getFitness());
+        G4DUtility.Logger.Stats.log_stat_local_sol();
         imprimirSolucion(x, "SolucionVND.txt");
         this.solucion = x;
         // Optimización final (Variable Neighborhood Search)
-        G4D.Logger.Stats.set_local_start();
-        G4D.Logger.logln("Realizando optimización final.. [VNS]");
+        G4DUtility.Logger.Stats.set_local_start();
+        G4DUtility.Logger.logln("Realizando optimización final.. [VNS]");
         VNS(x);
-        G4D.Logger.Stats.set_local_duration();
-        G4D.Logger.logf("[+] OPTIMIZACION FINAL REALIZADA! (FITNESS: %.3f)%n", x.getFitness());
-        G4D.Logger.Stats.log_stat_local_sol();
+        G4DUtility.Logger.Stats.set_local_duration();
+        G4DUtility.Logger.logf("[+] OPTIMIZACION FINAL REALIZADA! (FITNESS: %.3f)%n", x.getFitness());
+        G4DUtility.Logger.Stats.log_stat_local_sol();
         imprimirSolucion(x, "SolucionGVNS.txt");
         this.solucion = x;
-        G4D.Logger.Stats.set_global_duration();
-        G4D.Logger.Stats.log_stat_global_sol();
+        G4DUtility.Logger.Stats.set_global_duration();
+        G4DUtility.Logger.Stats.log_stat_global_sol();
     }
 
     private void solucionInicial(Problematica problematica, Solucion solucion) {
-        G4D.Logger.logln("[NN]");
+        G4DUtility.Logger.logln("[NN]");
         // Declaración & inicialización de variables
         Boolean errorDeEnrutamiento = false, haySolucion = false;
         Solucion sAux = new Solucion();
@@ -94,39 +94,39 @@ public class GVNS {
             List<Pedido> pedidos = pAux.pedidos;
             Set<Vuelo> vuelosEnTransito = pAux.vuelos;
             Set<Ruta> rutasEnOperacion = pAux.rutas;
-            G4D.Logger.logf(">> Iteración: %d de '%d':%n", i + 1, I_MAX);
+            G4DUtility.Logger.logf(">> Iteración: %d de '%d':%n", i + 1, I_MAX);
             errorDeEnrutamiento = false;
-            G4D.Logger.Stats.numPed = 1;
-            G4D.Logger.Stats.posPed = 0;
-            G4D.Logger.Stats.posProd = 0;
+            G4DUtility.Logger.Stats.numPed = 1;
+            G4DUtility.Logger.Stats.posPed = 0;
+            G4DUtility.Logger.Stats.posProd = 0;
             //
             prepararReplanificacion(pedidos, planes);
-            G4D.Logger.Stats.set_process_start();
+            G4DUtility.Logger.Stats.set_process_start();
             for (Pedido pedido : pedidos) {
-                G4D.Logger.Stats.numProd = 1;
-                G4D.Logger.Stats.log_stat_ped();
+                G4DUtility.Logger.Stats.numProd = 1;
+                G4DUtility.Logger.Stats.log_stat_ped();
 
                 if(!pedido.getFueAtendido()) {
                     boolean pedidoAtendido = atenderPedido(pedido, origenes, planes, vuelosEnTransito, rutasEnOperacion);
                     if(!pedidoAtendido) {
-                        G4D.Logger.Stats.log_err_stat();
+                        G4DUtility.Logger.Stats.log_err_stat();
                         errorDeEnrutamiento = true;
                         break;
                     }
                 } else {
                     boolean pedidoReatendido = reatenderPedido(pedido, origenes, planes, vuelosEnTransito, rutasEnOperacion);
                     if(!pedidoReatendido) {
-                        G4D.Logger.Stats.log_err_stat();
+                        G4DUtility.Logger.Stats.log_err_stat();
                         errorDeEnrutamiento = true;
                         break;
                     }
                 }
-                G4D.Logger.Stats.set_proccess_duration();
-                G4D.Logger.Stats.next_ped();
+                G4DUtility.Logger.Stats.set_proccess_duration();
+                G4DUtility.Logger.Stats.next_ped();
             }
             // Validación por error de enrutamiento
             if(errorDeEnrutamiento) {
-                G4D.Logger.delete_lines(8);
+                G4DUtility.Logger.delete_lines(8);
                 continue;
             }
             // Actualización de solución
@@ -137,19 +137,19 @@ public class GVNS {
             sAux.getAeropuertosTransitados().addAll(destinos);
             sAux.setFitness();
             double fitnessObtenido = sAux.getFitness();
-            G4D.Logger.logf(":: Mejor fitness completed: %.3f | Fitness obtenido: %.3f", mejorFitness, fitnessObtenido);
+            G4DUtility.Logger.logf(":: Mejor fitness completed: %.3f | Fitness obtenido: %.3f", mejorFitness, fitnessObtenido);
             // Validación por mejor solución
             if(fitnessObtenido < mejorFitness) {
-                G4D.Logger.logln(" | >> Nuevo mejor!");
+                G4DUtility.Logger.logln(" | >> Nuevo mejor!");
                 mejorFitness = sAux.getFitness();
                 solucion.reasignar(sAux);
                 haySolucion = true;
-            } else G4D.Logger.logln();
-            G4D.Logger.delete_lines(3);
+            } else G4DUtility.Logger.logln();
+            G4DUtility.Logger.delete_lines(3);
         }
         // Validación por inexistencia de solución
         if(!haySolucion) {
-            G4D.Logger.logf_err("ERROR: No fue posible enrutar todos los pedidos en '%d' iteraciones.%n", I_MAX);
+            G4DUtility.Logger.logf_err("ERROR: No fue posible enrutar todos los pedidos en '%d' iteraciones.%n", I_MAX);
             this.solucion = null;
             solucion.setFitness(-9999.99);
         }
@@ -224,32 +224,32 @@ public class GVNS {
         Set<Ruta> rutasAsignadas = new HashSet<>(rutasEnOperacion);
         // Exploración aleatoria de orígenes
         while(!origenesDisponibles.isEmpty()) {
-            G4D.Logger.Stats.log_stat_prod();
-            G4D.Logger.logf(">>> ATENDIENDO PEDIDO #%d | %d de '%d' productos enrutados.%n", G4D.Logger.Stats.numPed, G4D.Logger.Stats.numProd - 1, pedido.getCantidadSolicitada());
+            G4DUtility.Logger.Stats.log_stat_prod();
+            G4DUtility.Logger.logf(">>> ATENDIENDO PEDIDO #%d | %d de '%d' productos enrutados.%n", G4DUtility.Logger.Stats.numPed, G4DUtility.Logger.Stats.numProd - 1, pedido.getCantidadSolicitada());
             Aeropuerto origen = origenesDisponibles.get(random.nextInt(origenesDisponibles.size()));
-            G4D.Logger.logf("> ORIGEN:  %s%n> DESTINO: %s%n", origen, destino);
+            G4DUtility.Logger.logf("> ORIGEN:  %s%n> DESTINO: %s%n", origen, destino);
             TipoRuta tipoRuta = (origen.getContinente().compareTo(destino.getContinente()) == 0) ? TipoRuta.INTRACONTINENTAL : TipoRuta.INTERCONTINENTAL;
             LocalDateTime fechaHoraLimite = fechaHoraGeneracion.plusMinutes(tipoRuta.getMaxMinutosParaEntrega());
             // Búsqueda de ruta reutilizable
             Ruta ruta = buscarRutaVoraz(fechaHoraInicial, fechaHoraLimite, origen, destino, rutasAsignadas);
-            G4D.Logger.delete_upper_line();
+            G4DUtility.Logger.delete_upper_line();
             if(ruta == null) {
                 // Construcción de nueva ruta
                 ruta = construirRutaVoraz(fechaHoraInicial, fechaHoraLimite, origen, destino, planes, vuelosActivados);
                 if(ruta == null) {
-                    G4D.Logger.logln_err("ERROR: No fue posible generar una ruta a partir de este origen.");
+                    G4DUtility.Logger.logln_err("ERROR: No fue posible generar una ruta a partir de este origen.");
                     origenesDisponibles.remove(origen);
-                    if(!origenesDisponibles.isEmpty()) G4D.Logger.delete_lines(8);
-                    else G4D.Logger.delete_lines(6);
+                    if(!origenesDisponibles.isEmpty()) G4DUtility.Logger.delete_lines(8);
+                    else G4DUtility.Logger.delete_lines(6);
                     continue;
-                } else G4D.Logger.delete_upper_line();
+                } else G4DUtility.Logger.delete_upper_line();
                 ruta.setTipo(tipoRuta);
             }
-            G4D.Logger.logf("> RUTA:    %s -> '%d' intermedios -> %s%n", origen.getCodigo(), ruta.getVuelos().size() - 1, destino.getCodigo());
+            G4DUtility.Logger.logf("> RUTA:    %s -> '%d' intermedios -> %s%n", origen.getCodigo(), ruta.getVuelos().size() - 1, destino.getCodigo());
             // Segmentación de pedido respecto a disponibilidad de ruta
             int rCapDisp = ruta.obtenerCapacidadDisponible();
             int cantEnrutables = Math.min(rCapDisp, cantPorEnrutar);
-            G4D.Logger.logf("Enrutando %d productos..", cantEnrutables);
+            G4DUtility.Logger.logf("Enrutando %d productos..", cantEnrutables);
             // Producción y registro de segmento de pedido
             Lote lote = origen.generarLoteDeProductos(cantEnrutables);
             ruta.registraLoteDeProductos(lote, vuelosActivados, rutasAsignadas);
@@ -261,21 +261,21 @@ public class GVNS {
             }
             segmentacion.getLotesPorRuta().put(ruta, lote);
             cantPorEnrutar -= cantEnrutables;
-            G4D.Logger.Stats.set_proccess_duration();
-            G4D.Logger.Stats.next_lot(cantEnrutables);
-            G4D.Logger.logln(" | [REALIZADO]");
+            G4DUtility.Logger.Stats.set_proccess_duration();
+            G4DUtility.Logger.Stats.next_lot(cantEnrutables);
+            G4DUtility.Logger.logln(" | [REALIZADO]");
             // Validación por atención completa de pedido
             if(cantPorEnrutar == 0) {
                 pedido.setFueAtendido(true);
-                G4D.Logger.delete_lines(6);
-                G4D.Logger.logf(">>> PEDIDO #%d ATENDIDO! | '%d' de '%d' productos enrutados!%n", G4D.Logger.Stats.numPed, G4D.Logger.Stats.numProd, pedido.getCantidadSolicitada());
+                G4DUtility.Logger.delete_lines(6);
+                G4DUtility.Logger.logf(">>> PEDIDO #%d ATENDIDO! | '%d' de '%d' productos enrutados!%n", G4DUtility.Logger.Stats.numPed, G4DUtility.Logger.Stats.numProd, pedido.getCantidadSolicitada());
                 pedido.setFechaHoraExpiracion();
                 vuelosEnTransito.addAll(vuelosActivados);
                 rutasEnOperacion.addAll(rutasAsignadas);
-                G4D.Logger.delete_lines(6);
+                G4DUtility.Logger.delete_lines(6);
                 return true;
             }
-            G4D.Logger.delete_lines(8);
+            G4DUtility.Logger.delete_lines(8);
         }
         return false;
     }
@@ -284,8 +284,8 @@ public class GVNS {
                                  Aeropuerto destino, Set<Ruta> rutasAsignadas) {
         Aeropuerto origen = pdr.getAeropuerto();
         if(origen.equals(destino)) {
-            G4D.Logger.log(" [NO ENCONTRADA]");
-            G4D.Logger.logln_err(" | ERROR: ORIGEN == DESTINO");
+            G4DUtility.Logger.log(" [NO ENCONTRADA]");
+            G4DUtility.Logger.logln_err(" | ERROR: ORIGEN == DESTINO");
             return null;
         }
         // Búsqueda de ruta reutilizable
@@ -302,41 +302,41 @@ public class GVNS {
                 }).toList();
         for(Ruta ruta : rutasPosibles) {
             if(!ruta.esAlcanzable(fechaHoraInicial, fechaHoraLimite)) continue;
-            G4D.Logger.logln(" [ENCONTRADA]");
+            G4DUtility.Logger.logln(" [ENCONTRADA]");
             return ruta;
         }
-        G4D.Logger.logln(" [NO ENCONTRADA]");
+        G4DUtility.Logger.logln(" [NO ENCONTRADA]");
         return null;
     }
 
     private Ruta buscarRutaVoraz(LocalDateTime fechaHoraInicial, LocalDateTime fechaHoraLimite,
                                  Aeropuerto origen, Aeropuerto destino, Set<Ruta> rutasAsignadas) {
-        G4D.Logger.log("Buscando ruta en operacion..");
+        G4DUtility.Logger.log("Buscando ruta en operacion..");
         // Validación por origen factible
         if(origen.equals(destino)) {
-            G4D.Logger.log(" [NO ENCONTRADA]");
-            G4D.Logger.logln_err(" | ERROR: ORIGEN == DESTINO");
+            G4DUtility.Logger.log(" [NO ENCONTRADA]");
+            G4DUtility.Logger.logln_err(" | ERROR: ORIGEN == DESTINO");
             return null;
         }
         // Búsqueda de ruta reutilizable
         List<Ruta> rutasPosibles = rutasAsignadas.stream().filter(r -> r.getOrigen().equals(origen) && r.getDestino().equals(destino)).filter(Ruta::getEstaOperativa).toList();
         for(Ruta ruta : rutasPosibles) {
             if(!ruta.esAlcanzable(fechaHoraInicial, fechaHoraLimite)) continue;
-            G4D.Logger.logln(" [ENCONTRADA]");
+            G4DUtility.Logger.logln(" [ENCONTRADA]");
             return ruta;
         }
-        G4D.Logger.logln(" [NO ENCONTRADA]");
+        G4DUtility.Logger.logln(" [NO ENCONTRADA]");
         return null;
     }
 
     private Ruta construirRutaVoraz(LocalDateTime fechaHoraInicial, LocalDateTime fechaHoraLimite, Aeropuerto origen,
                                     Aeropuerto destino, List<Plan> planes, Set<Vuelo> vuelosActivados) {
-        G4D.Logger.log("Construyendo nueva ruta..");
+        G4DUtility.Logger.log("Construyendo nueva ruta..");
         // Validación por origen factible
         if(origen.equals(destino)) {
-            G4D.Logger.logln_err(" | ERROR: ORIGEN == DESTINO");
+            G4DUtility.Logger.logln_err(" | ERROR: ORIGEN == DESTINO");
             return null;
-        } else G4D.Logger.logln();
+        } else G4DUtility.Logger.logln();
         // Declaración & inicialización de variables
         Ruta ruta = new Ruta();
         List<Vuelo> secuenciaDeVuelos = new ArrayList<>();
@@ -346,38 +346,38 @@ public class GVNS {
         // Construcción de nueva ruta
         while (!actual.equals(destino)) {
             aeropuertosVisitados.add(actual);
-            G4D.Logger.logf("- Num. vuelos asignados: %d%n", secuenciaDeVuelos.size());
-            G4D.Logger.logf("- Aeropuerto completed: %s%n", actual);
+            G4DUtility.Logger.logf("- Num. vuelos asignados: %d%n", secuenciaDeVuelos.size());
+            G4DUtility.Logger.logf("- Aeropuerto completed: %s%n", actual);
             // Búsqueda de plan de vuelo más próximo
-            G4D.Logger.log(": Buscando mejor plan de vuelo..");
+            G4DUtility.Logger.log(": Buscando mejor plan de vuelo..");
             Plan mejorPlan = obtenerPlanMasProximo(actual, destino, fechaHoraActual, fechaHoraLimite, planes, aeropuertosVisitados, vuelosActivados);
             if(mejorPlan == null) {
-                G4D.Logger.log(" [NO ENCONTRADO]");
-                G4D.Logger.delete_lines(4);
-                G4D.Logger.log("Construyendo nueva ruta..");
-                G4D.Logger.logln_err(" | ERROR: Deadline..");
+                G4DUtility.Logger.log(" [NO ENCONTRADO]");
+                G4DUtility.Logger.delete_lines(4);
+                G4DUtility.Logger.log("Construyendo nueva ruta..");
+                G4DUtility.Logger.logln_err(" | ERROR: Deadline..");
                 return null;
-            } else G4D.Logger.logln(" [ENCONTRADO]");
+            } else G4DUtility.Logger.logln(" [ENCONTRADO]");
             // Búsqueda de vuelo activo con el mejor plan
-            G4D.Logger.log(": Bucando vuelo en tránsito..");
+            G4DUtility.Logger.log(": Bucando vuelo en tránsito..");
             Vuelo vuelo = mejorPlan.obtenerVueloActivo(fechaHoraActual, vuelosActivados);
             if(vuelo == null) {
-                G4D.Logger.logln(" [NO_ENCONTRADO] | Activando nuevo vuelo..");
+                G4DUtility.Logger.logln(" [NO_ENCONTRADO] | Activando nuevo vuelo..");
                 vuelo = new Vuelo();
                 vuelo.setPlan(mejorPlan);
                 vuelo.setCapacidadDisponible(vuelo.getPlan().getCapacidad());
                 vuelo.instanciarHorarios(fechaHoraActual);
-            } else G4D.Logger.logln(" [ENCONTRADO]");
+            } else G4DUtility.Logger.logln(" [ENCONTRADO]");
             // Asignación de vuelo
             secuenciaDeVuelos.add(vuelo);
             fechaHoraActual = vuelo.getFechaHoraLlegada();
             actual = vuelo.getPlan().getDestino();
-            G4D.Logger.logf(": Vuelo asignado: %s -> %s%n", vuelo.getPlan().getOrigen().getCodigo(), actual.getCodigo());
-            G4D.Logger.delete_lines(6);
+            G4DUtility.Logger.logf(": Vuelo asignado: %s -> %s%n", vuelo.getPlan().getOrigen().getCodigo(), actual.getCodigo());
+            G4DUtility.Logger.delete_lines(6);
         }
-        G4D.Logger.delete_upper_line();
+        G4DUtility.Logger.delete_upper_line();
         // Actualización de ruta construida
-        G4D.Logger.logln("DESTINO ALCANZADO! | Guardando ruta..");
+        G4DUtility.Logger.logln("DESTINO ALCANZADO! | Guardando ruta..");
         ruta.setOrigen(origen);
         ruta.setDestino(destino);
         ruta.setVuelos(secuenciaDeVuelos);
@@ -388,13 +388,13 @@ public class GVNS {
     }
 
     private Ruta construirRutaVoraz(Ruta rutaAsignadaInicial, PuntoDeReplanificacion pdr, LocalDateTime fechaHoraLimite, Aeropuerto destino, List<Plan> planes, Set<Vuelo> vuelosActivados) {
-        G4D.Logger.log("Construyendo nueva ruta..");
+        G4DUtility.Logger.log("Construyendo nueva ruta..");
         Aeropuerto origen = pdr.getAeropuerto();
         // Validación por origen factible
         if(origen.equals(destino)) {
-            G4D.Logger.logln_err(" | ERROR: ORIGEN == DESTINO");
+            G4DUtility.Logger.logln_err(" | ERROR: ORIGEN == DESTINO");
             return null;
-        } else G4D.Logger.logln();
+        } else G4DUtility.Logger.logln();
         // Declaración & inicialización de variables
         Ruta ruta = new Ruta();
         Aeropuerto actual = origen;
@@ -406,38 +406,38 @@ public class GVNS {
         // Construcción de nueva ruta
         while (!actual.equals(destino)) {
             aeropuertosVisitados.add(actual);
-            G4D.Logger.logf("- Num. vuelos asignados: %d%n", secuenciaDeVuelos.size());
-            G4D.Logger.logf("- Aeropuerto completed: %s%n", actual);
+            G4DUtility.Logger.logf("- Num. vuelos asignados: %d%n", secuenciaDeVuelos.size());
+            G4DUtility.Logger.logf("- Aeropuerto completed: %s%n", actual);
             // Búsqueda de plan de vuelo más próximo
-            G4D.Logger.log(": Buscando mejor plan de vuelo..");
+            G4DUtility.Logger.log(": Buscando mejor plan de vuelo..");
             Plan mejorPlan = obtenerPlanMasProximo(actual, destino, fechaHoraActual, fechaHoraLimite, planes, aeropuertosVisitados, vuelosActivados);
             if(mejorPlan == null) {
-                G4D.Logger.log(" [NO ENCONTRADO]");
-                G4D.Logger.delete_lines(4);
-                G4D.Logger.log("Construyendo nueva ruta..");
-                G4D.Logger.logln_err(" | ERROR: Deadline..");
+                G4DUtility.Logger.log(" [NO ENCONTRADO]");
+                G4DUtility.Logger.delete_lines(4);
+                G4DUtility.Logger.log("Construyendo nueva ruta..");
+                G4DUtility.Logger.logln_err(" | ERROR: Deadline..");
                 return null;
-            } else G4D.Logger.logln(" [ENCONTRADO]");
+            } else G4DUtility.Logger.logln(" [ENCONTRADO]");
             // Búsqueda de vuelo activo con el mejor plan
-            G4D.Logger.log(": Bucando vuelo en tránsito..");
+            G4DUtility.Logger.log(": Bucando vuelo en tránsito..");
             Vuelo vuelo = mejorPlan.obtenerVueloActivo(fechaHoraActual, vuelosActivados);
             if(vuelo == null) {
-                G4D.Logger.logln(" [NO_ENCONTRADO] | Activando nuevo vuelo..");
+                G4DUtility.Logger.logln(" [NO_ENCONTRADO] | Activando nuevo vuelo..");
                 vuelo = new Vuelo();
                 vuelo.setPlan(mejorPlan);
                 vuelo.setCapacidadDisponible(vuelo.getPlan().getCapacidad());
                 vuelo.instanciarHorarios(fechaHoraActual);
-            } else G4D.Logger.logln(" [ENCONTRADO]");
+            } else G4DUtility.Logger.logln(" [ENCONTRADO]");
             // Asignación de vuelo
             secuenciaDeVuelos.add(vuelo);
             fechaHoraActual = vuelo.getFechaHoraLlegada();
             actual = vuelo.getPlan().getDestino();
-            G4D.Logger.logf(": Vuelo asignado: %s -> %s%n", vuelo.getPlan().getOrigen().getCodigo(), actual.getCodigo());
-            G4D.Logger.delete_lines(6);
+            G4DUtility.Logger.logf(": Vuelo asignado: %s -> %s%n", vuelo.getPlan().getOrigen().getCodigo(), actual.getCodigo());
+            G4DUtility.Logger.delete_lines(6);
         }
-        G4D.Logger.delete_upper_line();
+        G4DUtility.Logger.delete_upper_line();
         // Actualización de ruta construida
-        G4D.Logger.logln("DESTINO ALCANZADO! | Guardando ruta..");
+        G4DUtility.Logger.logln("DESTINO ALCANZADO! | Guardando ruta..");
         ruta.setOrigen(origen);
         ruta.setDestino(destino);
         ruta.setVuelos(secuenciaDeVuelos);
@@ -515,15 +515,15 @@ public class GVNS {
                 // Segmentación de pedido respecto a disponibilidad de ruta
                 int rCapDisp = ruta.obtenerCapacidadDisponible();
                 int cantEnrutables = Math.min(rCapDisp, restantePorReplanificar);
-                G4D.Logger.logf("Enrutando %d productos..", cantEnrutables);
+                G4DUtility.Logger.logf("Enrutando %d productos..", cantEnrutables);
                 // Producción y registro de segmento de pedido
                 Lote lote = ruta.getOrigen().generarLoteDeProductos(cantEnrutables);
                 ruta.registraLoteDeProductos(lote, vuelosActivados, rutasAsignadas);
                 nuevaSegmentacion.put(ruta, lote);
                 restantePorReplanificar -= cantEnrutables;
-                G4D.Logger.Stats.set_proccess_duration();
-                G4D.Logger.Stats.next_lot(cantEnrutables);
-                G4D.Logger.logln(" | [REALIZADO]");
+                G4DUtility.Logger.Stats.set_proccess_duration();
+                G4DUtility.Logger.Stats.next_lot(cantEnrutables);
+                G4DUtility.Logger.logln(" | [REALIZADO]");
                 // Validación por atención completa de pedido
                 if(restantePorReplanificar == 0) {
                     vuelosEnTransito.addAll(vuelosActivados);
@@ -543,12 +543,12 @@ public class GVNS {
     }
 
     private void VND(Solucion solucion) {
-        G4D.Logger.logln("[VND]");
+        G4DUtility.Logger.logln("[VND]");
         // Declaración & inicialización de variables
         boolean huboMejora;
         // Búsqueda local de soluciones por nivel de intensidad
         for(int ele = L_MIN; ele <= L_MAX; ele++) {
-            G4D.Logger.logf(">> Intensidad de busqueda: %d de '%d'%n", ele, L_MAX);
+            G4DUtility.Logger.logf(">> Intensidad de busqueda: %d de '%d'%n", ele, L_MAX);
             int i = 1, j = 0;
             // Iteración de vecindarios a visitar
             while (i <= 3) {
@@ -556,7 +556,7 @@ public class GVNS {
                 huboMejora = false;
                 if(j == 3) {
                     j = 0;
-                    G4D.Logger.delete_lines(4);
+                    G4DUtility.Logger.delete_lines(4);
                 }
                 switch (i) {
                     case 1:
@@ -578,12 +578,12 @@ public class GVNS {
                     i++;
                 }
             }
-            G4D.Logger.delete_lines(2 + j);
+            G4DUtility.Logger.delete_lines(2 + j);
         }
     }
 
     private Boolean LSCompactar(Solucion solucion, int ele) {
-        G4D.Logger.logln("> Realizando búsqueda local por 'Compactación'..");
+        G4DUtility.Logger.logln("> Realizando búsqueda local por 'Compactación'..");
         // Declaración & inicialización de variables
         boolean huboMejora = false;
         double fitnessInicial = solucion.getFitness(), mejorFitness = solucion.getFitness();
@@ -600,17 +600,17 @@ public class GVNS {
             // Carga de restricciones por replanificación
             pedido.cargarRestriccionesDeReplanificacion(segmentacionModificable, secuenciasIntocables);
             // Validación de aptitud
-            G4D.Logger.logf("- Validando aptitud del pedido #%d de '%d'..", posPedido+1, G4D.Logger.Stats.totalPed);
+            G4DUtility.Logger.logf("- Validando aptitud del pedido #%d de '%d'..", posPedido+1, G4DUtility.Logger.Stats.totalPed);
             if (segmentacionModificable.size() < ele + 1) {
-                G4D.Logger.logln(" [NO APTO]");
-                G4D.Logger.delete_upper_line();
+                G4DUtility.Logger.logln(" [NO APTO]");
+                G4DUtility.Logger.delete_upper_line();
                 continue;
-            } else G4D.Logger.logln(" [APTO]");
-            List<List<Ruta>> combinaciones = G4D.getPossibleCombinations(new ArrayList<>(segmentacionModificable.keySet()), ele);
+            } else G4DUtility.Logger.logln(" [APTO]");
+            List<List<Ruta>> combinaciones = G4DUtility.Calculator.getPossibleCombinations(new ArrayList<>(segmentacionModificable.keySet()), ele);
             int posMejorComb = -1;
             // Iteración de combinaciones
             for (int posComb = 0; posComb < combinaciones.size(); posComb++) {
-                G4D.Logger.logf(": Validando combinación #%d de '%d'..", posComb+1, combinaciones.size());
+                G4DUtility.Logger.logf(": Validando combinación #%d de '%d'..", posComb+1, combinaciones.size());
                 List<Ruta> rutasOrig = combinaciones.get(posComb);
                 int totalCompactar = rutasOrig.stream().mapToInt(r -> segmentacionModificable.get(r).getTamanio()).sum();
                 List<Ruta> rutasDest = segmentacionModificable.keySet().stream().filter(r -> !rutasOrig.contains(r))
@@ -619,26 +619,26 @@ public class GVNS {
                         .collect(Collectors.toList());
                 int capDispTotal = rutasDest.stream().mapToInt(Ruta::obtenerCapacidadDisponible).sum();
                 if (capDispTotal < totalCompactar) {
-                    G4D.Logger.logln(" [INVALIDA]");
-                    G4D.Logger.delete_upper_line();
+                    G4DUtility.Logger.logln(" [INVALIDA]");
+                    G4DUtility.Logger.delete_upper_line();
                     continue;
-                } else G4D.Logger.logln("[VALIDA]");
+                } else G4DUtility.Logger.logln("[VALIDA]");
                 // Compactación
-                G4D.Logger.logf(": Mejor fitness completed: %.3f | >> COMPACTANDO..", mejorFitness);
+                G4DUtility.Logger.logf(": Mejor fitness completed: %.3f | >> COMPACTANDO..", mejorFitness);
                 rutasDest.sort(Comparator.comparing(Ruta::getFechaHoraLlegada));
                 compactarSegmentacion(rutasOrig, rutasDest, segmentacion, vuelosEnTransito, rutasEnOperacion);
                 solucion.setFitness();
                 double fitnessObtenido = solucion.getFitness();
-                G4D.Logger.logf(" | >> Fitness obtenido: %.3f", fitnessObtenido);
-                if (G4D.isProximatelyFewer(fitnessObtenido, mejorFitness, D_MIN)) {
-                    G4D.Logger.logln(" | ¡NUEVO MEJOR!");
+                G4DUtility.Logger.logf(" | >> Fitness obtenido: %.3f", fitnessObtenido);
+                if (G4DUtility.Calculator.isProximatelyFewer(fitnessObtenido, mejorFitness, D_MIN)) {
+                    G4DUtility.Logger.logln(" | ¡NUEVO MEJOR!");
                     mejorFitness = solucion.getFitness();
                     posMejorComb = posComb;
                     huboMejora = true;
-                } else G4D.Logger.logln();
+                } else G4DUtility.Logger.logln();
                 // Reversión de cambios
                 revertirCambios(segmentacion, segmentacionAux, vuelosEnTransito, rutasEnOperacion);
-                G4D.Logger.delete_lines(3);
+                G4DUtility.Logger.delete_lines(3);
             }
             // Aplicar mejor combinación
             if (posMejorComb != -1) {
@@ -650,14 +650,14 @@ public class GVNS {
                 rutasDest.sort(Comparator.comparing(Ruta::getFechaHoraLlegada));
                 compactarSegmentacion(rutasOrig, rutasDest, segmentacion, vuelosEnTransito, rutasEnOperacion);
             }
-            G4D.Logger.delete_upper_line();
+            G4DUtility.Logger.delete_upper_line();
         }
         solucion.setFitness();
-        G4D.Logger.delete_upper_line();
-        G4D.Logger.logf("> 'Compactación' : %.3f -> %.3f", fitnessInicial, mejorFitness);
+        G4DUtility.Logger.delete_upper_line();
+        G4DUtility.Logger.logf("> 'Compactación' : %.3f -> %.3f", fitnessInicial, mejorFitness);
         if (huboMejora) {
-            G4D.Logger.logln(" | FITNESS OPTIMIZADO!");
-        } else G4D.Logger.logln(" | Fitness mantenido..");
+            G4DUtility.Logger.logln(" | FITNESS OPTIMIZADO!");
+        } else G4DUtility.Logger.logln(" | Fitness mantenido..");
         return huboMejora;
     }
 
@@ -702,7 +702,7 @@ public class GVNS {
     }
 
     private Boolean LSFusionar(Solucion solucion, int ele) {
-        G4D.Logger.logln("> Realizando búsqueda local por 'Fusión'..");
+        G4DUtility.Logger.logln("> Realizando búsqueda local por 'Fusión'..");
         // Declaración & inicialización de variables
         boolean huboMejora = false;
         double fitnessInicial = solucion.getFitness();
@@ -712,7 +712,7 @@ public class GVNS {
         Set<Ruta> rutasEnOperacion = solucion.getRutasEnOperacion();
         // Fusión de rutas de pedidos
         for (int posPedido = 0; posPedido < pedidos.size(); posPedido++) {
-            G4D.Logger.logf("- Evaluando rutas del pedido #%d de '%d'..%n", posPedido+1, G4D.Logger.Stats.totalPed);
+            G4DUtility.Logger.logf("- Evaluando rutas del pedido #%d de '%d'..%n", posPedido+1, G4DUtility.Logger.Stats.totalPed);
             Pedido pedido = pedidos.get(posPedido);
             Map<Ruta, Lote> segmentacion = pedido.obtenerSegementacionVigente().getLotesPorRuta();
             Map<Ruta, Lote> segmentacionModificable = new HashMap<>();
@@ -724,30 +724,30 @@ public class GVNS {
                     .filter(r -> !r.getFechaHoraSalida().isBefore(pedido.getFechaHoraGeneracion()) && !r.getFechaHoraLlegada().isAfter(pedido.getFechaHoraExpiracion()))
                     .sorted(Comparator.comparing(Ruta::getFechaHoraLlegada))
                     .collect(Collectors.toList());
-            List<List<Ruta>> combinaciones = G4D.getCrossedCombinations(rutasIni, rutasFin, 1, 1);
+            List<List<Ruta>> combinaciones = G4DUtility.Calculator.getCrossedCombinations(rutasIni, rutasFin, 1, 1);
             int cantCombinaciones = Math.min(ele, combinaciones.size());
             int posMejorComb = -1, posMejorConexionIni = -1, posMejorConexionFin = -1;
             // Combinaciones
             for(int posComb = 0; posComb < cantCombinaciones; posComb++) {
                 // Validación de aptitud de combinación
-                G4D.Logger.logf(": Validando combinación #%d de '%d'..", posComb+1, cantCombinaciones);
+                G4DUtility.Logger.logf(": Validando combinación #%d de '%d'..", posComb+1, cantCombinaciones);
                 List<Ruta> combinacion = combinaciones.get(posComb);
                 Ruta rIni = combinacion.get(0);
                 Ruta rFin = combinacion.get(1);
                 List<Aeropuerto> saFin = rFin.obtenerSecuenciaDeAeropuertos();
                 if(saFin.size() < 3) {
-                    G4D.Logger.logln(" [INVALIDA]");
-                    G4D.Logger.delete_upper_line();
+                    G4DUtility.Logger.logln(" [INVALIDA]");
+                    G4DUtility.Logger.delete_upper_line();
                     continue;
-                } else G4D.Logger.logln(" [VALIDA]");
+                } else G4DUtility.Logger.logln(" [VALIDA]");
                 for(int posConexionFin = saFin.size() - 2, numConexion = 1; posConexionFin > 0; posConexionFin--, numConexion++) {
-                    G4D.Logger.logf(": Validando conexion #%d de '%d'..", numConexion, saFin.size());
+                    G4DUtility.Logger.logf(": Validando conexion #%d de '%d'..", numConexion, saFin.size());
                     Aeropuerto aConexion = saFin.get(posConexionFin);
                     List<Aeropuerto> saIni = rIni.obtenerSecuenciaDeAeropuertos();
                     int posConexionIni = saIni.indexOf(aConexion);
                     if(posConexionIni == -1) {
-                        G4D.Logger.logln(" [INVALIDA]");
-                        G4D.Logger.delete_upper_line();
+                        G4DUtility.Logger.logln(" [INVALIDA]");
+                        G4DUtility.Logger.delete_upper_line();
                         continue;
                     }
                     // Validación de aptitud de fusión por existencia de disponibilidad de ruta
@@ -756,8 +756,8 @@ public class GVNS {
                     List<Vuelo> svFin = new ArrayList<>(rFin.getVuelos().subList(posConexionFin + 1, rFin.getVuelos().size()));
                     LocalDateTime fechaHoraSalidaDesdeConexion = svIni.getFirst().getFechaHoraSalida();
                     if(fechaHoraLlegadaAConexion.isAfter(fechaHoraSalidaDesdeConexion) || fechaHoraLlegadaAConexion.plusMinutes((long)(60*Problematica.MAX_HORAS_ESTANCIA)).isAfter(fechaHoraSalidaDesdeConexion)) {
-                        G4D.Logger.logln(" [INVALIDA]");
-                        G4D.Logger.delete_upper_line();
+                        G4DUtility.Logger.logln(" [INVALIDA]");
+                        G4DUtility.Logger.delete_upper_line();
                         continue;
                     }
                     List<Vuelo> svNew = new ArrayList<>();
@@ -766,43 +766,43 @@ public class GVNS {
                     Ruta rNew = new Ruta(rIni);
                     rNew.setVuelos(svNew);
                     if(!rNew.respetaSecuenciasInalterables(List.of(rIni), secuenciasIntocables)) {
-                        G4D.Logger.logln(" [INVALIDA]");
-                        G4D.Logger.delete_upper_line();
+                        G4DUtility.Logger.logln(" [INVALIDA]");
+                        G4DUtility.Logger.delete_upper_line();
                         continue;
                     }
                     Lote lote = segmentacion.get(rIni);
                     rIni.eliminarRegistroDeLoteDeProductos(lote);
                     if(rNew.obtenerCapacidadDisponible() < lote.getTamanio()) {
-                        G4D.Logger.logln(" [INVALIDA]");
+                        G4DUtility.Logger.logln(" [INVALIDA]");
                         rIni.registraLoteDeProductos(lote, vuelosEnTransito, rutasEnOperacion);
-                        G4D.Logger.delete_upper_line();
+                        G4DUtility.Logger.delete_upper_line();
                         continue;
-                    } else G4D.Logger.logln(" [VALIDA]");
+                    } else G4DUtility.Logger.logln(" [VALIDA]");
                     // Fusión
-                    G4D.Logger.logf(": Mejor fitness completed: %.3f | >> FUSIONANDO..", mejorFitness);
+                    G4DUtility.Logger.logf(": Mejor fitness completed: %.3f | >> FUSIONANDO..", mejorFitness);
                     segmentacion.remove(rIni);
                     rNew.registraLoteDeProductos(lote, vuelosEnTransito, rutasEnOperacion);
                     segmentacion.put(rNew, lote);
                     solucion.setFitness();
                     double fitnessObtenido = solucion.getFitness();
-                    G4D.Logger.logf(" | >> Fitness obtenido: %.3f", fitnessObtenido);
+                    G4DUtility.Logger.logf(" | >> Fitness obtenido: %.3f", fitnessObtenido);
                     // Validación por mejora de fitness
-                    if (G4D.isProximatelyFewer(fitnessObtenido, mejorFitness, D_MIN)) {
-                        G4D.Logger.logln(" | ¡NUEVO MEJOR!");
+                    if (G4DUtility.Calculator.isProximatelyFewer(fitnessObtenido, mejorFitness, D_MIN)) {
+                        G4DUtility.Logger.logln(" | ¡NUEVO MEJOR!");
                         mejorFitness = fitnessObtenido;
                         huboMejora = true;
                         posMejorComb = posComb;
                         posMejorConexionIni = posConexionIni;
                         posMejorConexionFin = posConexionFin;
-                    } else G4D.Logger.logln();
+                    } else G4DUtility.Logger.logln();
                     // Reversión de cambios [Nuevos]
                     rNew.eliminarRegistroDeLoteDeProductos(lote);
                     segmentacion.remove(rNew);
                     rIni.registraLoteDeProductos(lote, vuelosEnTransito, rutasEnOperacion);
                     segmentacion.put(rIni, lote);
-                    G4D.Logger.delete_lines(3);
+                    G4DUtility.Logger.delete_lines(3);
                 }
-                G4D.Logger.delete_upper_line();
+                G4DUtility.Logger.delete_upper_line();
             }
             // Validación de existencia de mejora por fusión
             if(posMejorComb != -1) {
@@ -824,20 +824,20 @@ public class GVNS {
                 rNew.registraLoteDeProductos(lote, vuelosEnTransito, rutasEnOperacion);
                 segmentacion.put(rNew, lote);
             }
-            G4D.Logger.delete_upper_line();
+            G4DUtility.Logger.delete_upper_line();
         }
         // Actualización de solución
         solucion.setFitness();
-        G4D.Logger.delete_upper_line();
-        G4D.Logger.logf("> 'Fusión'       : %.3f -> %.3f", fitnessInicial, mejorFitness);
+        G4DUtility.Logger.delete_upper_line();
+        G4DUtility.Logger.logf("> 'Fusión'       : %.3f -> %.3f", fitnessInicial, mejorFitness);
         if (huboMejora) {
-            G4D.Logger.logln(" | FITNESS OPTIMIZADO!");
-        } else G4D.Logger.logln(" | Fitness mantenido..");
+            G4DUtility.Logger.logln(" | FITNESS OPTIMIZADO!");
+        } else G4DUtility.Logger.logln(" | Fitness mantenido..");
         return huboMejora;
     }
 
     private Boolean LSRealocar(Solucion solucion, int ele) {
-        G4D.Logger.logln("> Realizando búsqueda local por 'Realocación'..");
+        G4DUtility.Logger.logln("> Realizando búsqueda local por 'Realocación'..");
         boolean huboMejora = false;
         double fitnessInicial = solucion.getFitness();
         double mejorFitness = fitnessInicial;
@@ -852,14 +852,14 @@ public class GVNS {
             Map<Ruta, List<Aeropuerto>> secuenciasIntocables = new HashMap<>();
             pedido.cargarRestriccionesDeReplanificacion(segmentacionModificable, secuenciasIntocables);
             // Validación de aptitud
-            G4D.Logger.logf("- Validando aptitud del pedido #%d de '%d'..", posPedido+1, G4D.Logger.Stats.totalPed);
+            G4DUtility.Logger.logf("- Validando aptitud del pedido #%d de '%d'..", posPedido+1, G4DUtility.Logger.Stats.totalPed);
             if (segmentacionModificable.size() < ele) {
-                G4D.Logger.logln(" [NO APTO]");
-                G4D.Logger.delete_upper_line();
+                G4DUtility.Logger.logln(" [NO APTO]");
+                G4DUtility.Logger.delete_upper_line();
                 continue;
-            } else G4D.Logger.logln("[APTO]");
+            } else G4DUtility.Logger.logln("[APTO]");
             List<Ruta> rutas = new ArrayList<>(segmentacionModificable.keySet());
-            List<List<Ruta>> combinaciones = G4D.getPossibleCombinations(rutas, ele);
+            List<List<Ruta>> combinaciones = G4DUtility.Calculator.getPossibleCombinations(rutas, ele);
             List<Ruta> rutasDest = rutasEnOperacion.stream().filter(r -> !rutas.contains(r))
                     .filter(r -> r.getDestino().equals(pedido.getDestino()))
                     .filter(r -> !r.getFechaHoraSalida().isBefore(pedido.getFechaHoraGeneracion()) && !r.getFechaHoraLlegada().isAfter(pedido.getFechaHoraExpiracion()))
@@ -871,43 +871,43 @@ public class GVNS {
             int posMejorComb = -1;
             // Iteración de combinaciones
             for (int posComb = 0; posComb < combinaciones.size(); posComb++) {
-                G4D.Logger.logf(": Validando combinación #%d de '%d'..", posComb+1, combinaciones.size());
+                G4DUtility.Logger.logf(": Validando combinación #%d de '%d'..", posComb+1, combinaciones.size());
                 List<Ruta> rutasOrig = combinaciones.get(posComb);
                 int totalRealocar = rutasOrig.stream().mapToInt(r -> segmentacionModificable.get(r).getTamanio()).sum();
                 if (capDispTotal < totalRealocar) {
-                    G4D.Logger.logln(" [INVALIDA]");
-                    G4D.Logger.delete_upper_line();
+                    G4DUtility.Logger.logln(" [INVALIDA]");
+                    G4DUtility.Logger.delete_upper_line();
                     continue;
-                } else G4D.Logger.logln(" [VALIDA]");
+                } else G4DUtility.Logger.logln(" [VALIDA]");
                 // Realocación
-                G4D.Logger.logf(": Mejor fitness completed: %.3f | >> REALOCANDO..", mejorFitness);
+                G4DUtility.Logger.logf(": Mejor fitness completed: %.3f | >> REALOCANDO..", mejorFitness);
                 realocarSegmentacion(rutasOrig, rutasDest, segmentacion, vuelosEnTransito, rutasEnOperacion);
                 solucion.setFitness();
                 double fitnessObtenido = solucion.getFitness();
-                G4D.Logger.logf(" | >> Fitness obtenido: %.3f", fitnessObtenido);
-                if (G4D.isProximatelyFewer(fitnessObtenido, mejorFitness, D_MIN)) {
-                    G4D.Logger.logln(" | ¡NUEVO MEJOR!");
+                G4DUtility.Logger.logf(" | >> Fitness obtenido: %.3f", fitnessObtenido);
+                if (G4DUtility.Calculator.isProximatelyFewer(fitnessObtenido, mejorFitness, D_MIN)) {
+                    G4DUtility.Logger.logln(" | ¡NUEVO MEJOR!");
                     mejorFitness = fitnessObtenido;
                     posMejorComb = posComb;
                     huboMejora = true;
-                } else G4D.Logger.logln();
+                } else G4DUtility.Logger.logln();
                 // Reversión de cambios
                 revertirCambios(segmentacion, segmentacionAux, vuelosEnTransito, rutasEnOperacion);
-                G4D.Logger.delete_lines(3);
+                G4DUtility.Logger.delete_lines(3);
             }
             // Aplicar mejor combinación
             if(posMejorComb != -1) {
                 List<Ruta> rutasOrig = combinaciones.get(posMejorComb);
                 realocarSegmentacion(rutasOrig, rutasDest, segmentacion, vuelosEnTransito, rutasEnOperacion);
             }
-            G4D.Logger.delete_upper_line();
+            G4DUtility.Logger.delete_upper_line();
         }
         solucion.setFitness();
-        G4D.Logger.delete_upper_line();
-        G4D.Logger.logf("> 'Realocación'  : %.3f -> %.3f", fitnessInicial, mejorFitness);
+        G4DUtility.Logger.delete_upper_line();
+        G4DUtility.Logger.logf("> 'Realocación'  : %.3f -> %.3f", fitnessInicial, mejorFitness);
         if (huboMejora) {
-            G4D.Logger.logln(" | FITNESS OPTIMIZADO!");
-        } else G4D.Logger.logln(" | Fitness mantenido..");
+            G4DUtility.Logger.logln(" | FITNESS OPTIMIZADO!");
+        } else G4DUtility.Logger.logln(" | Fitness mantenido..");
         return huboMejora;
     }
 
@@ -934,11 +934,11 @@ public class GVNS {
     private void VNS(Solucion solucion) {
         // Declaración & inicialización de variables
         Solucion x_best = solucion.replicar();
-        G4D.IntegerWrapper t = new G4D.IntegerWrapper(), t_best = new G4D.IntegerWrapper();
+        G4DUtility.IntegerWrapper t = new G4DUtility.IntegerWrapper(), t_best = new G4DUtility.IntegerWrapper();
         Instant start = Instant.now();
         // Búsqueda global de soluciones por nivel de perturbación
         do {
-            G4D.IntegerWrapper k = new G4D.IntegerWrapper(K_MIN);
+            G4DUtility.IntegerWrapper k = new G4DUtility.IntegerWrapper(K_MIN);
             solucion.reasignar(x_best.replicar());
             while (t.value < T_MAX && k.value <= K_MAX) {
                 Solucion x_prima = new Solucion();
@@ -947,20 +947,20 @@ public class GVNS {
                 // Realización de agitaciones aleatorias continuas
                 while (true) {
                     x_prima = solucion.replicar();
-                    G4D.Logger.log("Agitando.. ");
+                    G4DUtility.Logger.log("Agitando.. ");
                     Shaking(x_prima, k);
-                    Boolean huboAlteracion = G4D.areProximatelyEqual(solucion.getFitness(), x_prima.getFitness(), D_MIN);
+                    Boolean huboAlteracion = G4DUtility.Calculator.areProximatelyEqual(solucion.getFitness(), x_prima.getFitness(), D_MIN);
                     // Validación de solución por umbral de aberración
                     if (huboAlteracion  && x_prima.getFitness() < solucion.obtenerUmbralDeAberracion()) {
-                        G4D.Logger.logln(" | >> POSIBLE MEJOR SOLUCIÓN");
+                        G4DUtility.Logger.logln(" | >> POSIBLE MEJOR SOLUCIÓN");
                         solucionValida = true;
                         break;
                     } else {
                         if(!huboAlteracion) {
-                            G4D.Logger.logln(" | >> SIN ALTERACIÓN");
-                        } else G4D.Logger.logln(" | >> ABERRACIÓN");
+                            G4DUtility.Logger.logln(" | >> SIN ALTERACIÓN");
+                        } else G4DUtility.Logger.logln(" | >> ABERRACIÓN");
                         if (intentos >= MAX_INTENTOS) {
-                            G4D.Logger.log("LIMITE DE INTENTOS ALCANZADO.");
+                            G4DUtility.Logger.log("LIMITE DE INTENTOS ALCANZADO.");
                             break;
                         }
                         intentos++;
@@ -969,22 +969,22 @@ public class GVNS {
                 // Validación de existencia de solución
                 if (!solucionValida) {
                     k.value++;
-                    G4D.Logger.delete_lines(1 + intentos);
+                    G4DUtility.Logger.delete_lines(1 + intentos);
                     continue;
                 }
                 // Reoptimización de posible mejor solución
                 Solucion x_prima_doble = x_prima.replicar();
-                G4D.Logger.log("Reoptimizando.. ");
+                G4DUtility.Logger.log("Reoptimizando.. ");
                 VND(x_prima_doble);
-                G4D.Logger.delete_upper_line();
-                G4D.Logger.logf("> 'Reoptimización' : %.3f -> %.3f%n", x_prima.getFitness(), x_prima_doble.getFitness());
+                G4DUtility.Logger.delete_upper_line();
+                G4DUtility.Logger.logf("> 'Reoptimización' : %.3f -> %.3f%n", x_prima.getFitness(), x_prima_doble.getFitness());
                 // Actualización de tiempo transcurrido
                 Instant end = Instant.now();
                 t.value = (int) Duration.between(start, end).getSeconds();
                 // Actualización de vecindario
-                G4D.Logger.log("Validando nuevo vencindario.. ");
+                G4DUtility.Logger.log("Validando nuevo vencindario.. ");
                 NeighborhoodChange(solucion, x_prima_doble, x_best, k, t, t_best);
-                G4D.Logger.delete_lines(2 + intentos);
+                G4DUtility.Logger.delete_lines(2 + intentos);
             }
             // Actualización de tiempo transcurrido
             Instant end = Instant.now();
@@ -994,19 +994,19 @@ public class GVNS {
         solucion.reasignar(x_best);
     }
 
-    private void Shaking(Solucion solucion, G4D.IntegerWrapper k) {
-        G4D.Logger.logln("[RAND]");
+    private void Shaking(Solucion solucion, G4DUtility.IntegerWrapper k) {
+        G4DUtility.Logger.logln("[RAND]");
         // Declaración & inicialización de variables
         int j = 0;
         double fitnessInicial = solucion.getFitness();
         // Perturbación aleatoria de solución por nivel de intesidad
-        G4D.Logger.logf(">> Intensidad de perturbación: %d de '%d'%n", k.value, K_MAX);
+        G4DUtility.Logger.logf(">> Intensidad de perturbación: %d de '%d'%n", k.value, K_MAX);
         for (int i = 0; i < k.value; ++i) {
             int neighborhood = random.nextInt(3);
             int ele = L_MIN + random.nextInt(L_MAX - L_MIN + 1);
             if(j == 3) {
                 j = 0;
-                G4D.Logger.delete_lines(4);
+                G4DUtility.Logger.delete_lines(4);
             }
             switch (neighborhood) {
                 case 0:
@@ -1021,12 +1021,12 @@ public class GVNS {
             }
             j++;
         }
-        G4D.Logger.delete_lines(3 + j);
-        G4D.Logger.logf("> 'Agitación'    : %.3f -> %.3f", fitnessInicial, solucion.getFitness());
+        G4DUtility.Logger.delete_lines(3 + j);
+        G4DUtility.Logger.logf("> 'Agitación'    : %.3f -> %.3f", fitnessInicial, solucion.getFitness());
     }
 
     private void TCompactar(Solucion solucion, int ele) {
-        G4D.Logger.logln("> Realizando perturbación por 'Compactación'..");
+        G4DUtility.Logger.logln("> Realizando perturbación por 'Compactación'..");
         // Declaración & inicialización de variables
         double fitnessInicial = solucion.getFitness();
         List<Pedido> pedidos = solucion.getPedidosAtendidos();
@@ -1041,15 +1041,15 @@ public class GVNS {
             // Carga de secuencias intocables por replanificación
             pedido.cargarRestriccionesDeReplanificacion(segmentacionModificable, secuenciasIntocables);
             // Validación por aptitud de pedido para compactar
-            G4D.Logger.logf("- Validando aptitud del pedido #%d de '%d'..", posPedido+1, G4D.Logger.Stats.totalPed);
+            G4DUtility.Logger.logf("- Validando aptitud del pedido #%d de '%d'..", posPedido+1, G4DUtility.Logger.Stats.totalPed);
             if (segmentacionModificable.size() < ele + 1) {
-                G4D.Logger.logln(" [NO APTO]");
-                G4D.Logger.delete_upper_line();
+                G4DUtility.Logger.logln(" [NO APTO]");
+                G4DUtility.Logger.delete_upper_line();
                 continue;
-            } else G4D.Logger.logln(" [APTO]");
+            } else G4DUtility.Logger.logln(" [APTO]");
             // Validación por aptitud de combinación
-            G4D.Logger.log(": Validando combinación aleatoria.. ");
-            List<List<Ruta>> combinaciones = G4D.getPossibleCombinations(new ArrayList<>(segmentacion.keySet()), ele);
+            G4DUtility.Logger.log(": Validando combinación aleatoria.. ");
+            List<List<Ruta>> combinaciones = G4DUtility.Calculator.getPossibleCombinations(new ArrayList<>(segmentacion.keySet()), ele);
             List<Ruta> rutasOrig = combinaciones.get(random.nextInt(combinaciones.size()));
             int totalCompactar = rutasOrig.stream().mapToInt(r -> segmentacionModificable.get(r).getTamanio()).sum();
             List<Ruta> rutasDest = segmentacionModificable.keySet().stream().filter(r -> !rutasOrig.contains(r))
@@ -1058,24 +1058,24 @@ public class GVNS {
                     .collect(Collectors.toList());
             int capDispTotal = rutasDest.stream().mapToInt(Ruta::obtenerCapacidadDisponible).sum();
             if (capDispTotal < totalCompactar) {
-                G4D.Logger.logln("[INVALIDA]");
-                G4D.Logger.delete_lines(3);
+                G4DUtility.Logger.logln("[INVALIDA]");
+                G4DUtility.Logger.delete_lines(3);
                 continue;
-            } else G4D.Logger.logln("[VALIDA]");
+            } else G4DUtility.Logger.logln("[VALIDA]");
             // Compactación
-            G4D.Logger.logln(": Compactando..");
+            G4DUtility.Logger.logln(": Compactando..");
             Collections.shuffle(rutasDest);
             compactarSegmentacion(rutasOrig, rutasDest, segmentacion, vuelosEnTransito, rutasEnOperacion);
-            G4D.Logger.delete_lines(4);
+            G4DUtility.Logger.delete_lines(4);
         }
         // Actualización de solución
         solucion.setFitness();
-        G4D.Logger.delete_upper_line();
-        G4D.Logger.logf("> 'Compactación' : %.3f -> %.3f%n", fitnessInicial, solucion.getFitness());
+        G4DUtility.Logger.delete_upper_line();
+        G4DUtility.Logger.logf("> 'Compactación' : %.3f -> %.3f%n", fitnessInicial, solucion.getFitness());
     }
 
     private void TFusionar(Solucion solucion, int ele) {
-        G4D.Logger.logln("> Realizando perturbación por 'Fusión'..");
+        G4DUtility.Logger.logln("> Realizando perturbación por 'Fusión'..");
         // Declaración & inicialización de variables
         double fitnessInicial = solucion.getFitness();
         List<Pedido> pedidos = solucion.getPedidosAtendidos();
@@ -1094,23 +1094,23 @@ public class GVNS {
                     .filter(r -> !r.getFechaHoraSalida().isBefore(pedido.getFechaHoraGeneracion()) && !r.getFechaHoraLlegada().isAfter(pedido.getFechaHoraExpiracion()))
                     .collect(Collectors.toList());
             Collections.shuffle(rutasFin);
-            G4D.Logger.logf("- Evaluando ruta aleatoria del pedido #%d de '%d'..%n", posPedido+1, G4D.Logger.Stats.totalPed);
-            List<List<Ruta>> combinaciones = G4D.getCrossedCombinations(rutasIni, rutasFin, 1, 1);
+            G4DUtility.Logger.logf("- Evaluando ruta aleatoria del pedido #%d de '%d'..%n", posPedido+1, G4DUtility.Logger.Stats.totalPed);
+            List<List<Ruta>> combinaciones = G4DUtility.Calculator.getCrossedCombinations(rutasIni, rutasFin, 1, 1);
             int cantCombinaciones = Math.min(ele, combinaciones.size());
             // Validación por existencia de rutas para fusionar
             if(combinaciones.isEmpty()) {
-                G4D.Logger.delete_upper_line();
+                G4DUtility.Logger.delete_upper_line();
                 continue;
             }
             List<Ruta> combinacion = combinaciones.get(random.nextInt(cantCombinaciones));
             Ruta rIni = combinacion.get(0);
             Ruta rFin = combinacion.get(1);
             // Validación de fusión por tamanio de ruta
-            G4D.Logger.log(": Validando fusión aleatoria..");
+            G4DUtility.Logger.log(": Validando fusión aleatoria..");
             List<Aeropuerto> saFin = rFin.obtenerSecuenciaDeAeropuertos();
             if(saFin.size() < 3) {
-                G4D.Logger.logln(" [INVALIDA]");
-                G4D.Logger.delete_lines(3);
+                G4DUtility.Logger.logln(" [INVALIDA]");
+                G4DUtility.Logger.delete_lines(3);
                 continue;
             }
             // Validación de fusión por existencia de conexión en ruta
@@ -1119,8 +1119,8 @@ public class GVNS {
             List<Aeropuerto> saIni = rIni.obtenerSecuenciaDeAeropuertos();
             int posConexionIni = saIni.indexOf(aConexion);
             if(posConexionIni == -1) {
-                G4D.Logger.logln(" [INVALIDA]");
-                G4D.Logger.delete_lines(3);
+                G4DUtility.Logger.logln(" [INVALIDA]");
+                G4DUtility.Logger.delete_lines(3);
                 continue;
             }
             // Validación de fusión por existencia de disponibilidad en ruta
@@ -1129,8 +1129,8 @@ public class GVNS {
             List<Vuelo> svFin = new ArrayList<>(rFin.getVuelos().subList(posConexionFin + 1, rFin.getVuelos().size()));
             LocalDateTime fechaHoraSalidaDesdeConexion = svIni.getFirst().getFechaHoraSalida();
             if(fechaHoraLlegadaAConexion.isAfter(fechaHoraSalidaDesdeConexion) || fechaHoraLlegadaAConexion.plusMinutes((long)(60*Problematica.MAX_HORAS_ESTANCIA)).isAfter(fechaHoraSalidaDesdeConexion)) {
-                G4D.Logger.logln(" [INVALIDA]");
-                G4D.Logger.delete_lines(3);
+                G4DUtility.Logger.logln(" [INVALIDA]");
+                G4DUtility.Logger.delete_lines(3);
                 continue;
             }
             List<Vuelo> svNew = new ArrayList<>();
@@ -1139,34 +1139,34 @@ public class GVNS {
             Ruta rNew = new Ruta(rIni);
             rNew.setVuelos(svNew);
             if(!rNew.respetaSecuenciasInalterables(List.of(rIni), secuenciasIntocables)) {
-                G4D.Logger.logln(" [INVALIDA]");
-                G4D.Logger.delete_lines(3);
+                G4DUtility.Logger.logln(" [INVALIDA]");
+                G4DUtility.Logger.delete_lines(3);
                 continue;
             }
             Lote lote = segmentacion.get(rIni);
             rIni.eliminarRegistroDeLoteDeProductos(lote);
             segmentacion.remove(rIni);
             if(rNew.obtenerCapacidadDisponible() < lote.getTamanio()) {
-                G4D.Logger.logln(" [INVALIDA]");
+                G4DUtility.Logger.logln(" [INVALIDA]");
                 rIni.registraLoteDeProductos(lote, vuelosEnTransito, rutasEnOperacion);
                 segmentacion.put(rIni, lote);
-                G4D.Logger.delete_lines(3);
+                G4DUtility.Logger.delete_lines(3);
                 continue;
-            } else G4D.Logger.logln(" [VALIDA]");
+            } else G4DUtility.Logger.logln(" [VALIDA]");
             // Fusión
-            G4D.Logger.logln(": Fusionando..");
+            G4DUtility.Logger.logln(": Fusionando..");
             rNew.registraLoteDeProductos(lote, vuelosEnTransito, rutasEnOperacion);
             segmentacion.put(rNew, lote);
-            G4D.Logger.delete_lines(4);
+            G4DUtility.Logger.delete_lines(4);
         }
         // Actualización de solución
         solucion.setFitness();
-        G4D.Logger.delete_upper_line();
-        G4D.Logger.logf("> 'Fusión'       : %.3f -> %.3f%n", fitnessInicial, solucion.getFitness());
+        G4DUtility.Logger.delete_upper_line();
+        G4DUtility.Logger.logf("> 'Fusión'       : %.3f -> %.3f%n", fitnessInicial, solucion.getFitness());
     }
 
     private void TRealocar(Solucion solucion, int ele) {
-        G4D.Logger.logln("> Realizando perturbación por 'Realocación'..");
+        G4DUtility.Logger.logln("> Realizando perturbación por 'Realocación'..");
         // Declaración & inicialización de variables
         double fitnessInicial = solucion.getFitness();
         List<Pedido> pedidos = solucion.getPedidosAtendidos();
@@ -1181,16 +1181,16 @@ public class GVNS {
             // Carga de restricciones por replanificacion
             pedido.cargarRestriccionesDeReplanificacion(segmentacionModificable, secuenciasIntocables);
             // Validación por aptitud de pedido para realocar
-            G4D.Logger.logf("- Validando aptitud del pedido #%d de '%d'..", posPedido+1, G4D.Logger.Stats.totalPed);
+            G4DUtility.Logger.logf("- Validando aptitud del pedido #%d de '%d'..", posPedido+1, G4DUtility.Logger.Stats.totalPed);
             if (segmentacion.size() < ele) {
-                G4D.Logger.logln("[NO APTO]");
-                G4D.Logger.delete_upper_line();
+                G4DUtility.Logger.logln("[NO APTO]");
+                G4DUtility.Logger.delete_upper_line();
                 continue;
-            } else G4D.Logger.logln("[APTO]");
+            } else G4DUtility.Logger.logln("[APTO]");
             // Validación por aptitud de combinación
-            G4D.Logger.log(": Validando combinación aleatoria.. ");
+            G4DUtility.Logger.log(": Validando combinación aleatoria.. ");
             List<Ruta> rutas = new ArrayList<>(segmentacionModificable.keySet());
-            List<List<Ruta>> combinaciones = G4D.getPossibleCombinations(rutas, ele);
+            List<List<Ruta>> combinaciones = G4DUtility.Calculator.getPossibleCombinations(rutas, ele);
             List<Ruta> rutasOrig = combinaciones.get(random.nextInt(combinaciones.size()));
             List<Ruta> rutasDest = rutasEnOperacion.stream().filter(r -> !rutas.contains(r))
                     .filter(r -> r.getDestino().equals(pedido.getDestino()))
@@ -1202,36 +1202,36 @@ public class GVNS {
             int capDispTotal = rutasDest.stream().mapToInt(Ruta::obtenerCapacidadDisponible).sum();
             int totalRealocar = rutasOrig.stream().mapToInt(r -> segmentacionModificable.get(r).getTamanio()).sum();
             if (capDispTotal < totalRealocar) {
-                G4D.Logger.logln("[INVALIDA]");
-                G4D.Logger.delete_lines(3);
+                G4DUtility.Logger.logln("[INVALIDA]");
+                G4DUtility.Logger.delete_lines(3);
                 continue;
-            } else G4D.Logger.logln("[VALIDA]");
+            } else G4DUtility.Logger.logln("[VALIDA]");
             // Realocación
-            G4D.Logger.logln(": Realocando..");
+            G4DUtility.Logger.logln(": Realocando..");
             Collections.shuffle(rutasDest);
             realocarSegmentacion(rutasOrig, rutasDest, segmentacion, vuelosEnTransito, rutasEnOperacion);
-            G4D.Logger.delete_lines(4);
+            G4DUtility.Logger.delete_lines(4);
         }
         // Actualización de solución
         solucion.setFitness();
-        G4D.Logger.delete_upper_line();
-        G4D.Logger.logf("> 'Realocación'  : %.3f -> %.3f%n", fitnessInicial, solucion.getFitness());
+        G4DUtility.Logger.delete_upper_line();
+        G4DUtility.Logger.logf("> 'Realocación'  : %.3f -> %.3f%n", fitnessInicial, solucion.getFitness());
     }
 
     private void NeighborhoodChange(Solucion solucionAux,
                                     Solucion x_prima_doble, Solucion x_best,
-                                    G4D.IntegerWrapper k, G4D.IntegerWrapper t,
-                                    G4D.IntegerWrapper t_best) {
-        G4D.Logger.log("[NeighborhoodChange]");
+                                    G4DUtility.IntegerWrapper k, G4DUtility.IntegerWrapper t,
+                                    G4DUtility.IntegerWrapper t_best) {
+        G4DUtility.Logger.log("[NeighborhoodChange]");
         // Validación por mejor vecindario
         if (x_prima_doble.getFitness() < x_best.getFitness()) {
-            G4D.Logger.logf("| > NUEVO MEJOR [%.3f]", x_prima_doble.getFitness());
+            G4DUtility.Logger.logf("| > NUEVO MEJOR [%.3f]", x_prima_doble.getFitness());
             x_best.reasignar(x_prima_doble.replicar());
             solucionAux.reasignar(x_prima_doble);
             k.value = K_MIN;
             t_best.value = t.value;
         } else {
-            G4D.Logger.log("| No es mejor.");
+            G4DUtility.Logger.log("| No es mejor.");
             k.value++;
         }
     }
@@ -1239,33 +1239,33 @@ public class GVNS {
     public void imprimirSolucion(String rutaArchivo) { imprimirSolucion(this.solucion, rutaArchivo); }
 
     private void imprimirSolucion(Solucion solucion, String rutaArchivo) {
-        G4D.Logger.logf("Cargando archivo 'Solucion' a la ruta '%s'..",rutaArchivo);
+        G4DUtility.Logger.logf("Cargando archivo 'Solucion' a la ruta '%s'..",rutaArchivo);
         // Declaración & inicialización de variables
         int dimLinea = 181;
         try {
             // Inicialización de archivo
-            G4D.Printer.open(rutaArchivo);
+            G4DUtility.Printer.open(rutaArchivo);
             // Impresion de reporte
-            G4D.Printer.fill_line('=', dimLinea);
-            G4D.Printer.print_centered("FITNESS DE LA SOLUCIÓN", dimLinea);
-            G4D.Printer.print_centered(
+            G4DUtility.Printer.fill_line('=', dimLinea);
+            G4DUtility.Printer.print_centered("FITNESS DE LA SOLUCIÓN", dimLinea);
+            G4DUtility.Printer.print_centered(
                     String.format("%.2f",
                             solucion.getFitness()
                     ), dimLinea);
-            G4D.Printer.println();
-            G4D.Printer.print_centered(
+            G4DUtility.Printer.println();
+            G4DUtility.Printer.print_centered(
                     String.format("%s%35s%39s",
                             "UTILIZACION TEMPORAL",
                             "DESVIACION ESPACIAL",
                             "DISPOSICION OPERACIONAL"
                     ), dimLinea);
-            G4D.Printer.print_centered(
+            G4DUtility.Printer.print_centered(
                     String.format("%s%35s%37s",
                             String.format("%.2f%%", 100*solucion.getRatioPromedioDeUtilizacionTemporal()),
                             String.format("%.2f%%", 100*solucion.getRatioPromedioDeDesviacionEspacial()),
                             String.format("%.2f%%", 100*solucion.getRatioPromedioDeDisposicionOperacional())
                     ), dimLinea);
-            G4D.Printer.fill_line('=', dimLinea);
+            G4DUtility.Printer.fill_line('=', dimLinea);
             List<Pedido> sol_pedidos = solucion.getPedidosAtendidos();
             int cantPedidos = sol_pedidos.size();
             for (int posPedido = 0; posPedido < cantPedidos; posPedido++) {
@@ -1277,13 +1277,13 @@ public class GVNS {
                 LocalDateTime ped_fechaHoraExpiracion = pedido.getFechaHoraExpiracion();
                 Cliente ped_cli = pedido.getCliente();
                 Aeropuerto ped_aDest = pedido.getDestino();
-                G4D.Printer.print_centered(
+                G4DUtility.Printer.print_centered(
                         String.format(
                                 "PEDIDO #%d",
                                 posPedido + 1
                         ), dimLinea);
-                G4D.Printer.fill_line('-', dimLinea, 4);
-                G4D.Printer.printf(
+                G4DUtility.Printer.fill_line('-', dimLinea, 4);
+                G4DUtility.Printer.printf(
                         "%4s%-50s%8s%-30s%27s%28s%30s%n",
                         " ",
                         "CLIENTE",
@@ -1293,20 +1293,20 @@ public class GVNS {
                         "INSTANTE DE REGISTRO",
                         "INSTANTE DE EXPIRACION"
                 );
-                G4D.Printer.printf(
+                G4DUtility.Printer.printf(
                         "%4s%-50s%8s%-30s%19s%34s%29s%n",
                         " ",
                         ped_cli,
                         " ",
                         ped_aDest,
                         String.format("%03d", pedido.getCantidadSolicitada()),
-                        G4D.toDisplayString(ped_fechaHoraGeneracion),
-                        G4D.toDisplayString(ped_fechaHoraExpiracion)
+                        G4DUtility.Convertor.toDisplayString(ped_fechaHoraGeneracion),
+                        G4DUtility.Convertor.toDisplayString(ped_fechaHoraExpiracion)
                 );
-                G4D.Printer.println();
-                G4D.Printer.print_centered(">> RUTAS PLANIFICADAS PARA EL PEDIDO <<", dimLinea);
-                G4D.Printer.println();
-                G4D.Printer.fill_line('*', dimLinea, 8);
+                G4DUtility.Printer.println();
+                G4DUtility.Printer.print_centered(">> RUTAS PLANIFICADAS PARA EL PEDIDO <<", dimLinea);
+                G4DUtility.Printer.println();
+                G4DUtility.Printer.fill_line('*', dimLinea, 8);
                 List<Ruta> ped_rutas = new ArrayList<>(pedido.obtenerSegementacionVigente().getLotesPorRuta().keySet());
                 ped_rutas.sort(Comparator.comparing(Ruta::getFechaHoraSalida));
                 int cantRutas = ped_rutas.size();
@@ -1317,19 +1317,19 @@ public class GVNS {
                     double rut_duracionActivaTotalLot = rut_duracionActivaTotalInd*rut_numProdAsignados;
                     double rut_duracionPasivaTotalInd = ruta.obtenerDuracionPasivaTotal(ped_fechaHoraGeneracion);
                     double rut_duracionPasivaTotalLot = rut_duracionPasivaTotalInd*rut_numProdAsignados;
-                    double rut_tiempoOptimizadoInd = G4D.getElapsedHours(ruta.getFechaHoraLlegada(), ped_fechaHoraExpiracion);
+                    double rut_tiempoOptimizadoInd = G4DUtility.Calculator.getElapsedHours(ruta.getFechaHoraLlegada(), ped_fechaHoraExpiracion);
                     double rut_tiempoOptimizadoLot = rut_tiempoOptimizadoInd*rut_numProdAsignados;
                     Aeropuerto rut_aOrig = ruta.getOrigen();
-                    G4D.Printer.printf("%10s RUTA #%s | ORIGEN: %-30s | TIPO DE ENVIO: %s | INSTANTE DE ENTREGA: %s | CANTIDAD ASIGNADA DE PRODUCTOS: %3d%n",
+                    G4DUtility.Printer.printf("%10s RUTA #%s | ORIGEN: %-30s | TIPO DE ENVIO: %s | INSTANTE DE ENTREGA: %s | CANTIDAD ASIGNADA DE PRODUCTOS: %3d%n",
                             ">>",
                             String.format("%03d", posRuta + 1),
                             rut_aOrig,
                             ruta.getTipo(),
-                            G4D.toDisplayString(ruta.getFechaHoraLlegada()),
+                            G4DUtility.Convertor.toDisplayString(ruta.getFechaHoraLlegada()),
                             rut_numProdAsignados
                     );
-                    G4D.Printer.println();
-                    G4D.Printer.printf(
+                    G4DUtility.Printer.println();
+                    G4DUtility.Printer.printf(
                             "%39s%4s%-30s%54s%3s%s%n",
                             "INSTANTE DE SALIDA",
                             " ",
@@ -1340,35 +1340,37 @@ public class GVNS {
                     );
                     List<Vuelo> vuelos = ruta.getVuelos();
                     for (Vuelo vuelo : vuelos) {
-                        G4D.Printer.print_centered(
+                        G4DUtility.Printer.print_centered(
                                 String.format("[%s]    %-30s            > > > > > >            [%s]    %-30s",
-                                        G4D.toDisplayString(vuelo.getFechaHoraSalida()),
+                                        G4DUtility.Convertor.toDisplayString(vuelo.getFechaHoraSalida()),
                                         vuelo.getPlan().getOrigen(),
-                                        G4D.toDisplayString(vuelo.getFechaHoraLlegada()),
+                                        G4DUtility.Convertor.toDisplayString(vuelo.getFechaHoraLlegada()),
                                         vuelo.getPlan().getDestino()
                                 ), dimLinea);
                     }
-                    G4D.Printer.fill_line('.', dimLinea, 8);
-                    G4D.Printer.printf("%27s%22s%16s%n", "Resumen de la ruta:","INDIVIDUAL","LOTE");
-                    G4D.Printer.printf("%8s%-30s%11s%20s%n", " ", ">> Duración 'Activa':", G4D.toDisplayString(rut_duracionActivaTotalInd), G4D.toDisplayString(rut_duracionActivaTotalLot));
-                    G4D.Printer.printf("%8s%-30s%11s%20s%n", " ", ">> Duración 'Pasiva':", G4D.toDisplayString(rut_duracionPasivaTotalInd), G4D.toDisplayString(rut_duracionPasivaTotalLot));
-                    G4D.Printer.printf("%8s%-30s%11s%20s%n", " ", ">> Tiempo optimizado:", G4D.toDisplayString(rut_tiempoOptimizadoInd), G4D.toDisplayString(rut_tiempoOptimizadoLot));
-                    if (posRuta != cantRutas - 1) G4D.Printer.fill_line('*', dimLinea, 8);
+                    G4DUtility.Printer.fill_line('.', dimLinea, 8);
+                    G4DUtility.Printer.printf("%27s%22s%16s%n", "Resumen de la ruta:","INDIVIDUAL","LOTE");
+                    G4DUtility.Printer.printf("%8s%-30s%11s%20s%n", " ", ">> Duración 'Activa':", G4DUtility.Convertor.toDisplayString(rut_duracionActivaTotalInd), G4DUtility.Convertor.toDisplayString(rut_duracionActivaTotalLot));
+                    G4DUtility.Printer.printf("%8s%-30s%11s%20s%n", " ", ">> Duración 'Pasiva':", G4DUtility.Convertor.toDisplayString(rut_duracionPasivaTotalInd), G4DUtility.Convertor.toDisplayString(rut_duracionPasivaTotalLot));
+                    G4DUtility.Printer.printf("%8s%-30s%11s%20s%n", " ", ">> Tiempo optimizado:", G4DUtility.Convertor.toDisplayString(rut_tiempoOptimizadoInd), G4DUtility.Convertor.toDisplayString(rut_tiempoOptimizadoLot));
+                    if (posRuta != cantRutas - 1) {
+                        G4DUtility.Printer.fill_line('*', dimLinea, 8);
+                    }
                     ped_duracionActivaTotal += rut_duracionActivaTotalLot;
                     ped_duracionPasivaTotal += rut_duracionPasivaTotalLot;
                     ped_tiempoOptimizado += rut_tiempoOptimizadoLot;
                 }
-                G4D.Printer.fill_line('-', dimLinea, 4);
-                G4D.Printer.printf("%23s%23s%n", "Resumen del pedido:","TOTAL");
-                G4D.Printer.printf("%4s%-30s%15s%n", " ", ">> Duración 'Activa':", G4D.toDisplayString(ped_duracionActivaTotal));
-                G4D.Printer.printf("%4s%-30s%15s%n", " ", ">> Duración 'Pasiva':", G4D.toDisplayString(ped_duracionPasivaTotal));
-                G4D.Printer.printf("%4s%-30s%15s%n", " ", ">> Tiempo optimizado:", G4D.toDisplayString(ped_tiempoOptimizado));
-                G4D.Printer.fill_line('=', dimLinea);
+                G4DUtility.Printer.fill_line('-', dimLinea, 4);
+                G4DUtility.Printer.printf("%23s%23s%n", "Resumen del pedido:","TOTAL");
+                G4DUtility.Printer.printf("%4s%-30s%15s%n", " ", ">> Duración 'Activa':", G4DUtility.Convertor.toDisplayString(ped_duracionActivaTotal));
+                G4DUtility.Printer.printf("%4s%-30s%15s%n", " ", ">> Duración 'Pasiva':", G4DUtility.Convertor.toDisplayString(ped_duracionPasivaTotal));
+                G4DUtility.Printer.printf("%4s%-30s%15s%n", " ", ">> Tiempo optimizado:", G4DUtility.Convertor.toDisplayString(ped_tiempoOptimizado));
+                G4DUtility.Printer.fill_line('=', dimLinea);
             }
-            G4D.Printer.flush();
-            G4D.Printer.close();
-            G4D.Logger.delete_current_line();
-            G4D.Logger.logf("[>] ARCHIVO 'SOLUCION' GENERADO! (RUTA: '%s')%n", rutaArchivo);
+            G4DUtility.Printer.flush();
+            G4DUtility.Printer.close();
+            G4DUtility.Logger.delete_current_line();
+            G4DUtility.Logger.logf("[>] ARCHIVO 'SOLUCION' GENERADO! (RUTA: '%s')%n", rutaArchivo);
         } catch (Exception e) {
             e.printStackTrace();
         }

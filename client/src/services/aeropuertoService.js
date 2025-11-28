@@ -10,6 +10,7 @@ export const listarAeropuertos = async (page = 0, size = 30) => {
     });
 
     return response.data;
+    return response.data; // ListResponse con { success, mensaje, dtos }
   } catch (error) {
     console.error("Error al listar aeropuertos:", error);
     throw error;

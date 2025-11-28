@@ -11,7 +11,7 @@ import java.time.LocalTime;
 import java.util.*;
 
 import com.pucp.dp1.grupo4d.morapack.algorithm.Problematica;
-import com.pucp.dp1.grupo4d.morapack.util.G4D;
+import com.pucp.dp1.grupo4d.morapack.util.G4DUtility;
 
 public class Plan {
     private String codigo;
@@ -25,7 +25,7 @@ public class Plan {
     private List<Evento> eventos;
 
     public Plan() {
-        this.codigo = G4D.Generator.getUniqueString("PLA");
+        this.codigo = G4DUtility.Generator.getUniqueString("PLA");
         this.capacidad = 0;
         this.duracion = 0.0;
         this.distancia = 0.0;
@@ -34,7 +34,7 @@ public class Plan {
 
     public Plan(Plan plan) {
         this.reasignar(plan);
-        this.codigo = G4D.Generator.getUniqueString("PLA");
+        this.codigo = G4DUtility.Generator.getUniqueString("PLA");
     }
 
     public void reasignar(Plan plan) {
@@ -64,16 +64,16 @@ public class Plan {
     }
 
     public Double obtenerLejania(LocalDateTime fechaHoraActual, Aeropuerto aDest) {
-        LocalDateTime[] rango = G4D.getDateTimeRange(this.horaSalida, this.horaLlegada, fechaHoraActual);
+        LocalDateTime[] rango = G4DUtility.Convertor.toDateTimeRange(this.horaSalida, this.horaLlegada, fechaHoraActual);
         LocalDateTime fechaHoraLlegadaUTC = rango[1];
-        double transcurrido = G4D.getElapsedHours(fechaHoraActual, fechaHoraLlegadaUTC);
+        double transcurrido = G4DUtility.Calculator.getElapsedHours(fechaHoraActual, fechaHoraLlegadaUTC);
         double distanciaFinal = this.destino.obtenerDistanciaHasta(aDest);
         return transcurrido + 0.0085 * distanciaFinal;
     }
 
     public Vuelo obtenerVueloActivo(LocalDateTime fechaHoraActual, Set<Vuelo> vuelosActivos) {
         List<Vuelo> vuelosPosibles = vuelosActivos.stream().filter(v -> this.esEquivalente(v.getPlan())).toList();
-        LocalDateTime[] rango = G4D.getDateTimeRange(this.horaSalida, this.horaLlegada, fechaHoraActual);
+        LocalDateTime[] rango = G4DUtility.Convertor.toDateTimeRange(this.horaSalida, this.horaLlegada, fechaHoraActual);
         LocalDateTime fechaHoraSalida = rango[0], fechaHoraLlegada = rango[1];
         for(Vuelo vuelo : vuelosPosibles) {
             if(fechaHoraSalida.equals(vuelo.getFechaHoraSalida()) && fechaHoraLlegada.equals(vuelo.getFechaHoraLlegada())) {
@@ -91,7 +91,7 @@ public class Plan {
     public Boolean esAlcanzable(LocalDateTime fechaHoraActual, LocalDateTime fechaHoraLimite, Aeropuerto aDest, Set<Vuelo> vuelosActivos) {
         LocalDateTime origFechaHoraMinEgreso = fechaHoraActual.plusMinutes((long)(60*Problematica.MIN_HORAS_ESTANCIA));
         LocalDateTime origFechaHoraMaxEgreso = fechaHoraActual.plusMinutes((long)(60*Problematica.MAX_HORAS_ESTANCIA));
-        LocalDateTime[] rango = G4D.getDateTimeRange(this.horaSalida, this.horaLlegada, fechaHoraActual);
+        LocalDateTime[] rango = G4DUtility.Convertor.toDateTimeRange(this.horaSalida, this.horaLlegada, fechaHoraActual);
         LocalDateTime vFechaHoraSalida = rango[0], vFechaHoraLlegada = rango[1];
         if(vFechaHoraSalida.isBefore(origFechaHoraMinEgreso) || vFechaHoraSalida.isAfter(origFechaHoraMaxEgreso) || vFechaHoraLlegada.isAfter(fechaHoraLimite)) return false;
         LocalDateTime destFechaHoraMaxEgreso = vFechaHoraLlegada.plusMinutes((long)(60*((!this.destino.equals(aDest)) ? Problematica.MAX_HORAS_ESTANCIA : Problematica.MAX_HORAS_RECOJO)));
@@ -155,8 +155,8 @@ public class Plan {
     }
 
     public void setDuracion() {
-        LocalDateTime[] rango = G4D.getDateTimeRange(this.horaSalida, this.horaLlegada, LocalDateTime.now());
-        this.duracion = G4D.getElapsedHours(rango[0], rango[1]);
+        LocalDateTime[] rango = G4DUtility.Convertor.toDateTimeRange(this.horaSalida, this.horaLlegada, LocalDateTime.now());
+        this.duracion = G4DUtility.Calculator.getElapsedHours(rango[0], rango[1]);
     }
 
     public void setDuracion(double duracion) {

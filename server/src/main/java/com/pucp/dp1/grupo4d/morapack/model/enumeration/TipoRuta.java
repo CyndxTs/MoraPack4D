@@ -4,7 +4,7 @@
  >> File:       TipoRuta.java
  [**/
 
-package com.pucp.dp1.grupo4d.morapack.model.enums;
+package com.pucp.dp1.grupo4d.morapack.model.enumeration;
 import com.pucp.dp1.grupo4d.morapack.algorithm.Problematica;
 
 public enum TipoRuta {

@@ -7,7 +7,7 @@
 package com.pucp.dp1.grupo4d.morapack.model.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.pucp.dp1.grupo4d.morapack.model.enums.TipoRuta;
+import com.pucp.dp1.grupo4d.morapack.model.enumeration.TipoRuta;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;

@@ -13,8 +13,8 @@ import java.util.Map;
 import java.util.Objects;
 
 import com.pucp.dp1.grupo4d.morapack.algorithm.Problematica;
-import com.pucp.dp1.grupo4d.morapack.model.enums.TipoRuta;
-import com.pucp.dp1.grupo4d.morapack.util.G4D;
+import com.pucp.dp1.grupo4d.morapack.model.enumeration.TipoRuta;
+import com.pucp.dp1.grupo4d.morapack.util.G4DUtility;
 
 public class Pedido {
     private String codigo;
@@ -28,7 +28,7 @@ public class Pedido {
     private List<Segmentacion> segmentaciones;
 
     public Pedido() {
-        this.codigo = G4D.Generator.getUniqueString("PED");
+        this.codigo = G4DUtility.Generator.getUniqueString("PED");
         this.cantidadSolicitada = 0;
         this.fueAtendido = false;
         this.segmentaciones = new ArrayList<>();

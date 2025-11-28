@@ -13,14 +13,14 @@ import lombok.Setter;
 @Getter
 @Setter
 public class AuthenticationResponse extends GenericResponse {
-    private UsuarioDTO user;
+    private UsuarioDTO usuario;
 
-    public AuthenticationResponse(Boolean success, String message) {
-        super(success, message);
+    public AuthenticationResponse(Boolean exito, String mensaje) {
+        super(exito, mensaje);
     }
 
-    public AuthenticationResponse(Boolean success, String message, UsuarioDTO user) {
-        super(success, message);
-        this.user = user;
+    public AuthenticationResponse(Boolean exito, String mensaje, UsuarioDTO usuario) {
+        super(exito, mensaje);
+        this.usuario = usuario;
     }
 }

@@ -7,7 +7,7 @@
 package com.pucp.dp1.grupo4d.morapack.repository;
 
 import com.pucp.dp1.grupo4d.morapack.model.entity.VueloEntity;
-import com.pucp.dp1.grupo4d.morapack.model.enums.TipoEscenario;
+import com.pucp.dp1.grupo4d.morapack.model.enumeration.TipoEscenario;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;

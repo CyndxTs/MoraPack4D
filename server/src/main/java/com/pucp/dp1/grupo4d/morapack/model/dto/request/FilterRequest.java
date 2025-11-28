@@ -11,7 +11,7 @@ import lombok.Data;
 
 @Data
 public class FilterRequest<T extends DTO> {
-    private Integer page;
-    private Integer size;
-    private T filterModel;
+    private Integer pagina;
+    private Integer tamanio;
+    private T modelo;
 }

@@ -11,6 +11,7 @@ import com.pucp.dp1.grupo4d.morapack.model.dto.request.FilterRequest;
 import com.pucp.dp1.grupo4d.morapack.model.dto.request.ListRequest;
 import com.pucp.dp1.grupo4d.morapack.model.dto.response.GenericResponse;
 import com.pucp.dp1.grupo4d.morapack.model.dto.response.ListResponse;
+import com.pucp.dp1.grupo4d.morapack.model.exception.G4DException;
 import com.pucp.dp1.grupo4d.morapack.service.model.ClienteService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -28,16 +29,13 @@ public class ClienteController {
     @GetMapping
     public ResponseEntity<ListResponse> listar() {
         try {
-            ListRequest request = new ListRequest();
-            request.setPage(0);
-            request.setSize(30);
+            ListRequest request = new ListRequest(1, 30);
             ListResponse response = clienteService.listar(request);
-            if (response.getSuccess()) {
-                return ResponseEntity.ok(response);
-            } else {
-                return ResponseEntity.badRequest().body(response);
-            }
+            return ResponseEntity.ok(response);
+        } catch (G4DException e) {
+            return ResponseEntity.badRequest().body(new ListResponse(false, e.getMessage()));
         } catch (Exception e) {
+            e.printStackTrace();
             return ResponseEntity.internalServerError().body(new ListResponse(false, "ERROR INTERNO: " + e.getMessage()));
         }
     }
@@ -46,12 +44,11 @@ public class ClienteController {
     public ResponseEntity<ListResponse> listar(@RequestBody ListRequest request) {
         try {
             ListResponse response = clienteService.listar(request);
-            if (response.getSuccess()) {
-                return ResponseEntity.ok(response);
-            } else {
-                return ResponseEntity.badRequest().body(response);
-            }
+            return ResponseEntity.ok(response);
+        } catch (G4DException e) {
+            return ResponseEntity.badRequest().body(new ListResponse(false, e.getMessage()));
         } catch (Exception e) {
+            e.printStackTrace();
             return ResponseEntity.internalServerError().body(new ListResponse(false, "ERROR INTERNO: " + e.getMessage()));
         }
     }
@@ -60,12 +57,11 @@ public class ClienteController {
     public ResponseEntity<ListResponse> filtrar(@RequestBody FilterRequest<UsuarioDTO> request) {
         try {
             ListResponse response = clienteService.filtrar(request);
-            if (response.getSuccess()) {
-                return ResponseEntity.ok(response);
-            } else {
-                return ResponseEntity.badRequest().body(response);
-            }
+            return ResponseEntity.ok(response);
+        } catch (G4DException e) {
+            return ResponseEntity.badRequest().body(new ListResponse(false, e.getMessage()));
         } catch (Exception e) {
+            e.printStackTrace();
             return ResponseEntity.internalServerError().body(new ListResponse(false, "ERROR INTERNO: " + e.getMessage()));
         }
     }
@@ -74,12 +70,11 @@ public class ClienteController {
     public ResponseEntity<GenericResponse> importar(@RequestParam("file") MultipartFile file) {
         try {
             GenericResponse response = clienteService.importar(file);
-            if (response.getSuccess()) {
-                return ResponseEntity.ok(response);
-            } else {
-                return ResponseEntity.badRequest().body(response);
-            }
+            return ResponseEntity.ok(response);
+        } catch (G4DException e) {
+            return ResponseEntity.badRequest().body(new GenericResponse(false, e.getMessage()));
         } catch (Exception e) {
+            e.printStackTrace();
             return ResponseEntity.internalServerError().body(new GenericResponse(false, "ERROR INTERNO: " + e.getMessage()));
         }
     }

@@ -8,7 +8,7 @@ package com.pucp.dp1.grupo4d.morapack.repository;
 
 import com.pucp.dp1.grupo4d.morapack.model.entity.AeropuertoEntity;
 import com.pucp.dp1.grupo4d.morapack.model.entity.PedidoEntity;
-import com.pucp.dp1.grupo4d.morapack.model.enums.TipoEscenario;
+import com.pucp.dp1.grupo4d.morapack.model.enumeration.TipoEscenario;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -21,8 +21,17 @@ import java.util.Optional;
 
 @Repository
 public interface PedidoRepository extends JpaRepository<PedidoEntity, Integer> {
-    Optional<PedidoEntity> findByCodigo(String codigo);
     List<PedidoEntity> findAllByDestino(AeropuertoEntity destino);
+
+    @Query("""
+    SELECT p
+    FROM PedidoEntity p
+    WHERE p.codigo = :codigo
+      AND p.tipoEscenario = :tipoEscenario
+    """)
+    Optional<PedidoEntity> findByCodigoEscenario(
+            @Param("codigo") String codigo,
+            @Param("tipoEscenario") TipoEscenario tipoEscenario);
 
     @Query("""
     SELECT p

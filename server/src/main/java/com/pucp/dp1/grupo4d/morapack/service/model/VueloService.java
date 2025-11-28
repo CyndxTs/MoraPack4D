@@ -11,10 +11,9 @@ import com.pucp.dp1.grupo4d.morapack.model.dto.DTO;
 import com.pucp.dp1.grupo4d.morapack.model.dto.request.ListRequest;
 import com.pucp.dp1.grupo4d.morapack.model.dto.response.ListResponse;
 import com.pucp.dp1.grupo4d.morapack.model.entity.VueloEntity;
-import com.pucp.dp1.grupo4d.morapack.model.enums.TipoEscenario;
+import com.pucp.dp1.grupo4d.morapack.model.enumeration.TipoEscenario;
 import com.pucp.dp1.grupo4d.morapack.repository.VueloRepository;
-import com.pucp.dp1.grupo4d.morapack.util.G4D;
-import org.springframework.data.domain.PageRequest;
+import com.pucp.dp1.grupo4d.morapack.util.G4DUtility;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
@@ -67,23 +66,17 @@ public class VueloService {
     }
 
     public List<VueloEntity> findAllByDateTimeRange(LocalDateTime fechaHoraInicio, LocalDateTime fechaHoraFin, String tipoEscenario) {
-        TipoEscenario escenario = G4D.toAdmissibleValue(tipoEscenario, TipoEscenario.class);
-        if (escenario == null) {
-            return new ArrayList<>();
-        } else return vueloRepository.findAllByDateTimeRange(fechaHoraInicio, fechaHoraFin, escenario);
+        TipoEscenario escenario = G4DUtility.Convertor.toAdmissible(tipoEscenario, TipoEscenario.class);
+        return vueloRepository.findAllByDateTimeRange(fechaHoraInicio, fechaHoraFin, escenario);
     }
 
-    public ListResponse listar(ListRequest request) {
+    public ListResponse listar(ListRequest request) throws Exception {
         try {
-            int page = G4D.toAdmissibleValue(request.getPage(), 0);
-            int size = G4D.toAdmissibleValue(request.getSize(), 10);
-            Pageable pageable = PageRequest.of(page, size,  Sort.by(Sort.Order.asc("fechaHoraSalidaUTC"), Sort.Order.asc("fechaHoraLlegadaUTC")));
+            Pageable pageable = G4DUtility.Convertor.toAdmissible(request.getPagina(), request.getTamanio(), Sort.Order.asc("fechaHoraSalidaUTC"), Sort.Order.asc("fechaHoraLlegadaUTC"));
             List<DTO> dtos = new ArrayList<>();
             List<VueloEntity> entities = this.findAll(pageable);
             entities.forEach(entity -> dtos.add(vueloMapper.toDTO(entity)));
-            return new ListResponse(true, "Vuelos listados correctamente!", dtos);
-        } catch (Exception e) {
-            return new ListResponse(false, "ERROR - LISTADO: " + e.getMessage());
+            return new ListResponse(true, String.format("Vuelos listados correctamente! ('%d')", dtos.size()), dtos);
         } finally {
             clearPools();
         }

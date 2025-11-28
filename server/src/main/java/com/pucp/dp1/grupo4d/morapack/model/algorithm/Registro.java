@@ -8,7 +8,7 @@ package com.pucp.dp1.grupo4d.morapack.model.algorithm;
 
 import java.time.LocalDateTime;
 import java.util.Map;
-import com.pucp.dp1.grupo4d.morapack.util.G4D;
+import com.pucp.dp1.grupo4d.morapack.util.G4DUtility;
 
 public class Registro {
     private String codigo;
@@ -18,7 +18,7 @@ public class Registro {
     private Lote lote;
 
     public Registro() {
-        this.codigo = G4D.Generator.getUniqueString("REG");
+        this.codigo = G4DUtility.Generator.getUniqueString("REG");
         this.sigueVigente = true;
     }
 

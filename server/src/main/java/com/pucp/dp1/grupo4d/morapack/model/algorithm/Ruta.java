@@ -13,8 +13,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
 import com.pucp.dp1.grupo4d.morapack.algorithm.Problematica;
-import com.pucp.dp1.grupo4d.morapack.model.enums.TipoRuta;
-import com.pucp.dp1.grupo4d.morapack.util.G4D;
+import com.pucp.dp1.grupo4d.morapack.model.enumeration.TipoRuta;
+import com.pucp.dp1.grupo4d.morapack.util.G4DUtility;
 
 public class Ruta {
     private String codigo;
@@ -29,7 +29,7 @@ public class Ruta {
     private List<Vuelo> vuelos;
 
     public Ruta() {
-        this.codigo = G4D.Generator.getUniqueString("RUT");
+        this.codigo = G4DUtility.Generator.getUniqueString("RUT");
         this.duracion = 0.0;
         this.distancia = 0.0;
         this.estaOperativa = true;
@@ -38,7 +38,7 @@ public class Ruta {
 
     public Ruta(Ruta ruta) {
         this.reasignar(ruta);
-        this.codigo = G4D.Generator.getUniqueString("RUT");
+        this.codigo = G4DUtility.Generator.getUniqueString("RUT");
     }
 
     public void reasignar(Ruta ruta) {
@@ -117,10 +117,10 @@ public class Ruta {
     }
 
     public Double obtenerDuracionPasivaTotal(LocalDateTime fechaHoraInicial) {
-        double duracionPasiva = G4D.getElapsedHours(fechaHoraInicial, this.fechaHoraSalida);
+        double duracionPasiva = G4DUtility.Calculator.getElapsedHours(fechaHoraInicial, this.fechaHoraSalida);
         for(int i = 0; i < this.vuelos.size() - 1; i++) {
             Vuelo vA = this.vuelos.get(i), vB = this.vuelos.get(i + 1);
-            duracionPasiva += G4D.getElapsedHours(vA.getFechaHoraLlegada(), vB.getFechaHoraSalida());
+            duracionPasiva += G4DUtility.Calculator.getElapsedHours(vA.getFechaHoraLlegada(), vB.getFechaHoraSalida());
         }
         return duracionPasiva;
     }
@@ -231,7 +231,7 @@ public class Ruta {
     }
 
     public void setDuracion() {
-        this.duracion = G4D.getElapsedHours(this.vuelos.getFirst().getFechaHoraSalida(), this.vuelos.getLast().getFechaHoraLlegada());
+        this.duracion = G4DUtility.Calculator.getElapsedHours(this.vuelos.getFirst().getFechaHoraSalida(), this.vuelos.getLast().getFechaHoraLlegada());
     }
 
     public void setDuracion(Double duracion) {

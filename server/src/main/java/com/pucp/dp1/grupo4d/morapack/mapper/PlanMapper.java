@@ -14,8 +14,9 @@ import com.pucp.dp1.grupo4d.morapack.model.dto.PlanDTO;
 import com.pucp.dp1.grupo4d.morapack.model.entity.AeropuertoEntity;
 import com.pucp.dp1.grupo4d.morapack.model.entity.EventoEntity;
 import com.pucp.dp1.grupo4d.morapack.model.entity.PlanEntity;
+import com.pucp.dp1.grupo4d.morapack.model.exception.G4DException;
 import com.pucp.dp1.grupo4d.morapack.service.model.AeropuertoService;
-import com.pucp.dp1.grupo4d.morapack.util.G4D;
+import com.pucp.dp1.grupo4d.morapack.util.G4DUtility;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -45,8 +46,8 @@ public class PlanMapper {
         planDTO.setCodOrigen(origen.getCodigo());
         Aeropuerto destino = algorithm.getDestino();
         planDTO.setCodDestino(destino.getCodigo());
-        planDTO.setHoraSalida(G4D.toDisplayString(algorithm.getHoraSalida()));
-        planDTO.setHoraLlegada(G4D.toDisplayString(algorithm.getHoraLlegada()));
+        planDTO.setHoraSalida(G4DUtility.Convertor.toDisplayString(algorithm.getHoraSalida()));
+        planDTO.setHoraLlegada(G4DUtility.Convertor.toDisplayString(algorithm.getHoraLlegada()));
         planDTO.setCapacidad(algorithm.getCapacidad());
         planDTO.setDuracion(algorithm.getDuracion());
         planDTO.setDistancia(algorithm.getDistancia());
@@ -71,8 +72,8 @@ public class PlanMapper {
         planDTO.setCodOrigen(origenEntity.getCodigo());
         AeropuertoEntity destinoEntity = entity.getDestino();
         planDTO.setCodDestino(destinoEntity.getCodigo());
-        planDTO.setHoraSalida(G4D.toDisplayString(entity.getHoraSalidaUTC()));
-        planDTO.setHoraLlegada(G4D.toDisplayString(entity.getHoraLlegadaUTC()));
+        planDTO.setHoraSalida(G4DUtility.Convertor.toDisplayString(entity.getHoraSalidaUTC()));
+        planDTO.setHoraLlegada(G4DUtility.Convertor.toDisplayString(entity.getHoraLlegadaUTC()));
         planDTO.setCapacidad(entity.getCapacidad());
         planDTO.setDuracion(entity.getDuracion());
         planDTO.setDistancia(entity.getDistancia());
@@ -103,13 +104,13 @@ public class PlanMapper {
             if(destino != null) {
                 entity.setOrigen(origen);
                 entity.setDestino(destino);
-                entity.setHoraSalidaUTC(G4D.toTime(dto.getHoraSalida()));
-                entity.setHoraSalidaLocal(G4D.toLocal(entity.getHoraSalidaUTC(), origen.getHusoHorario()));
-                entity.setHoraLlegadaUTC(G4D.toTime(dto.getHoraLlegada()));
-                entity.setHoraLlegadaLocal(G4D.toLocal(entity.getHoraLlegadaUTC(), destino.getHusoHorario()));
+                entity.setHoraSalidaUTC(G4DUtility.Convertor.toTime(dto.getHoraSalida()));
+                entity.setHoraSalidaLocal(G4DUtility.Convertor.toLocal(entity.getHoraSalidaUTC(), origen.getHusoHorario()));
+                entity.setHoraLlegadaUTC(G4DUtility.Convertor.toTime(dto.getHoraLlegada()));
+                entity.setHoraLlegadaLocal(G4DUtility.Convertor.toLocal(entity.getHoraLlegadaUTC(), destino.getHusoHorario()));
                 return entity;
-            } else throw new Exception(String.format("El destino del plan es inválido. ('%s')", codDestino));
-        } else throw new Exception(String.format("El origen del plan es inválido. ('%s')", codOrigen));
+            } else throw new G4DException(String.format("El destino ('%s') del plan es inválido.", codDestino));
+        } else throw new G4DException(String.format("El origen ('%s') del plan es inválido.", codOrigen));
     }
 
     public void clearPools() {

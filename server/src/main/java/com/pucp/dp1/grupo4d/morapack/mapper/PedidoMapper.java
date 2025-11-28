@@ -11,10 +11,11 @@ import com.pucp.dp1.grupo4d.morapack.model.algorithm.*;
 import com.pucp.dp1.grupo4d.morapack.model.dto.PedidoDTO;
 import com.pucp.dp1.grupo4d.morapack.model.dto.SegmentacionDTO;
 import com.pucp.dp1.grupo4d.morapack.model.entity.*;
-import com.pucp.dp1.grupo4d.morapack.model.enums.TipoEscenario;
+import com.pucp.dp1.grupo4d.morapack.model.enumeration.TipoEscenario;
+import com.pucp.dp1.grupo4d.morapack.model.exception.G4DException;
 import com.pucp.dp1.grupo4d.morapack.service.model.AeropuertoService;
 import com.pucp.dp1.grupo4d.morapack.service.model.ClienteService;
-import com.pucp.dp1.grupo4d.morapack.util.G4D;
+import com.pucp.dp1.grupo4d.morapack.util.G4DUtility;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
@@ -47,9 +48,9 @@ public class PedidoMapper {
         dto.setCodigo(algorithm.getCodigo());
         dto.setFueAtendido(algorithm.getFueAtendido());
         dto.setCantidadSolicitada(algorithm.getCantidadSolicitada());
-        dto.setFechaHoraGeneracion(G4D.toDisplayString(algorithm.getFechaHoraGeneracion()));
-        dto.setFechaHoraProcesamiento(G4D.toDisplayString(algorithm.getFechaHoraProcesamiento()));
-        dto.setFechaHoraExpiracion(G4D.toDisplayString(algorithm.getFechaHoraExpiracion()));
+        dto.setFechaHoraGeneracion(G4DUtility.Convertor.toDisplayString(algorithm.getFechaHoraGeneracion()));
+        dto.setFechaHoraProcesamiento(G4DUtility.Convertor.toDisplayString(algorithm.getFechaHoraProcesamiento()));
+        dto.setFechaHoraExpiracion(G4DUtility.Convertor.toDisplayString(algorithm.getFechaHoraExpiracion()));
         Cliente cliente = algorithm.getCliente();
         dto.setCodCliente(cliente.getCodigo());
         dto.setTipoEscenario(Problematica.ESCENARIO);
@@ -74,9 +75,9 @@ public class PedidoMapper {
         dto.setCodigo(entity.getCodigo());
         dto.setCantidadSolicitada(entity.getCantidadSolicitada());
         dto.setFueAtendido(entity.getFueAtendido());
-        dto.setFechaHoraGeneracion(G4D.toDisplayString(entity.getFechaHoraGeneracionUTC()));
-        dto.setFechaHoraGeneracion(G4D.toDisplayString(entity.getFechaHoraGeneracionUTC()));
-        dto.setFechaHoraExpiracion(G4D.toDisplayString(entity.getFechaHoraExpiracionUTC()));
+        dto.setFechaHoraGeneracion(G4DUtility.Convertor.toDisplayString(entity.getFechaHoraGeneracionUTC()));
+        dto.setFechaHoraGeneracion(G4DUtility.Convertor.toDisplayString(entity.getFechaHoraGeneracionUTC()));
+        dto.setFechaHoraExpiracion(G4DUtility.Convertor.toDisplayString(entity.getFechaHoraExpiracionUTC()));
         ClienteEntity clienteEntity = entity.getCliente();
         dto.setCodCliente(clienteEntity.getCodigo());
         AeropuertoEntity destinoEntity = entity.getDestino();
@@ -107,15 +108,15 @@ public class PedidoMapper {
             entity.setDestino(destino);
             entity.setTipoEscenario(TipoEscenario.valueOf(dto.getTipoEscenario()));
             entity.setCantidadSolicitada(dto.getCantidadSolicitada());
-            entity.setFechaHoraGeneracionUTC(G4D.toDateTime(dto.getFechaHoraGeneracion()));
-            entity.setFechaHoraGeneracionLocal(G4D.toLocal(entity.getFechaHoraGeneracionUTC(), destino.getHusoHorario()));
-            entity.setFechaHoraProcesamientoUTC(G4D.toAdmissibleValue(dto.getFechaHoraProcesamiento(), (LocalDateTime) null));
-            entity.setFechaHoraProcesamientoLocal(entity.getFechaHoraProcesamientoUTC() != null ? G4D.toLocal(entity.getFechaHoraProcesamientoUTC(), destino.getHusoHorario()) : null);
-            entity.setFechaHoraExpiracionUTC(G4D.toAdmissibleValue(dto.getFechaHoraExpiracion(), (LocalDateTime) null));
-            entity.setFechaHoraExpiracionLocal(entity.getFechaHoraExpiracionUTC() != null ? G4D.toLocal(entity.getFechaHoraExpiracionUTC(), destino.getHusoHorario()) : null);
+            entity.setFechaHoraGeneracionUTC(G4DUtility.Convertor.toDateTime(dto.getFechaHoraGeneracion()));
+            entity.setFechaHoraGeneracionLocal(G4DUtility.Convertor.toLocal(entity.getFechaHoraGeneracionUTC(), destino.getHusoHorario()));
+            entity.setFechaHoraProcesamientoUTC(G4DUtility.Convertor.toAdmissible(dto.getFechaHoraProcesamiento(), (LocalDateTime) null));
+            entity.setFechaHoraProcesamientoLocal(entity.getFechaHoraProcesamientoUTC() != null ? G4DUtility.Convertor.toLocal(entity.getFechaHoraProcesamientoUTC(), destino.getHusoHorario()) : null);
+            entity.setFechaHoraExpiracionUTC(G4DUtility.Convertor.toAdmissible(dto.getFechaHoraExpiracion(), (LocalDateTime) null));
+            entity.setFechaHoraExpiracionLocal(entity.getFechaHoraExpiracionUTC() != null ? G4DUtility.Convertor.toLocal(entity.getFechaHoraExpiracionUTC(), destino.getHusoHorario()) : null);
             entity.setFueAtendido(dto.getFueAtendido() != null ? dto.getFueAtendido() : false);
             return entity;
-        } else throw new Exception(String.format("El destino del pedido es inválido. ('%s')", codDestino));
+        } else throw new G4DException(String.format("El destino ('%s') del pedido es inválido.", codDestino));
     }
 
     public void clearPools() {

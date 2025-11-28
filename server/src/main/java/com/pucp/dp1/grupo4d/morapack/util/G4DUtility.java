@@ -1,12 +1,16 @@
 /**]
  >> Project:    MoraPack
  >> Author:     Grupo 4D
- >> File:       G4D.java
+ >> File:       G4DUtility.java
  [**/
 
 package com.pucp.dp1.grupo4d.morapack.util;
 
+import com.pucp.dp1.grupo4d.morapack.model.exception.G4DException;
+import org.springframework.data.domain.Sort;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.PageRequest;
 import java.io.*;
 import java.math.BigInteger;
 import java.nio.charset.Charset;
@@ -22,382 +26,372 @@ import java.util.logging.SimpleFormatter;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class G4D {
-    private static final double EARTH_RADIUS_KM = 6371.0;
-    private static final DateTimeFormatter dtf_ui = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
-    private static final DateTimeFormatter dtf_db = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-    private static final DateTimeFormatter dtf_js = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
-    private static final DateTimeFormatter tf_ui = DateTimeFormatter.ofPattern("HH:mm");
-    private static final DateTimeFormatter tf_db = DateTimeFormatter.ofPattern("HH:mm:ss");
-    private static final DateTimeFormatter tf_js = DateTimeFormatter.ofPattern("HH:mm:ss");
-    private static final DateTimeFormatter df_ui = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-    private static final DateTimeFormatter df_db = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-    private static final DateTimeFormatter df_js = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+public class G4DUtility {
 
-    // Obtener latitud 'DEC' a partir de latitud 'DMS'
-    public static double toLatDEC(String latDMS) {
-        latDMS = latDMS.trim();
-        boolean negative = latDMS.endsWith("S");
-        latDMS = latDMS.replaceAll("[NS]", "").trim();
-        String[] parts = latDMS.split("[°'\"]+");
-        int degrees = Integer.parseInt(parts[0].trim());
-        int minutes = Integer.parseInt(parts[1].trim());
-        int seconds = Integer.parseInt(parts[2].trim());
-        double decimal = degrees + (minutes / 60.0) + (seconds / 3600.0);
-        return negative ? -decimal : decimal;
-    }
-    // Obtener latitud 'DMS' a partir de latitud 'DEC'
-    public static String toLatDMS(double latDEC) {
-        String hemisphere = latDEC >= 0 ? "N" : "S";
-        double abs = Math.abs(latDEC);
-        int degrees = (int) abs;
-        double minutesDec = (abs - degrees) * 60;
-        int minutes = (int) minutesDec;
-        double secondsDec = (minutesDec - minutes) * 60;
-        int seconds = (int) Math.round(secondsDec);
-        return String.format("%02d° %02d' %02d\" %s", degrees, minutes, seconds, hemisphere);
-    }
-    // Obtener longitud 'DEC' a partir de longitud 'DMS'
-    public static double toLonDEC(String lonDMS) {
-        lonDMS = lonDMS.trim();
-        boolean negative = lonDMS.endsWith("W");
-        lonDMS = lonDMS.replaceAll("[EW]", "").trim();
-        String[] parts = lonDMS.split("[°'\"]+");
-        int degrees = Integer.parseInt(parts[0].trim());
-        int minutes = Integer.parseInt(parts[1].trim());
-        int seconds = Integer.parseInt(parts[2].trim());
-        double decimal = degrees + (minutes / 60.0) + (seconds / 3600.0);
-        return negative ? -decimal : decimal;
-    }
-    // Obtener longitud 'DMS' a partir de longitud 'DEC'
-    public static String toLonDMS(double lonDEC) {
-        String hemisphere = lonDEC >= 0 ? "E" : "W";
-        double abs = Math.abs(lonDEC);
-        int degrees = (int) abs;
-        double minutesDec = (abs - degrees) * 60;
-        int minutes = (int) minutesDec;
-        double secondsDec = (minutesDec - minutes) * 60;
-        int seconds = (int) Math.round(secondsDec);
-        return String.format("%03d° %02d' %02d\" %s", degrees, minutes, seconds, hemisphere);
-    }
-    // Obtener distancia 'Geodésica'
-    public static double getGeodesicDistance(double origLat, double origLon, double destLat, double destLon) {
-        double lat1 = Math.toRadians(origLat);
-        double lon1 = Math.toRadians(origLon);
-        double lat2 = Math.toRadians(destLat);
-        double lon2 = Math.toRadians(destLon);
-        double dLat = lat2 - lat1;
-        double dLon = lon2 - lon1;
-        double h = Math.pow(Math.sin(dLat / 2), 2) + Math.cos(lat1) * Math.cos(lat2) * Math.pow(Math.sin(dLon / 2), 2);
-        return 2 * EARTH_RADIUS_KM * Math.asin(Math.sqrt(h));
-    }
-    // Obtener 'DisplayString' a partir de 'TimeDEC'
-    public static String toDisplayString(double tDEC) {
-        try {
-            int total = (int) (tDEC * 60);
-            int dias = total / 1440, horas = (total % 1440) / 60, minutos = total % 60;
-            return dias > 0 ? String.format("%dd %2dh %2dm", dias, horas, minutos) : String.format("%2dh %2dm", horas, minutos);
-        } catch (Exception e) {
-            return null;
+    // Clase 'Auxiliar' para realizar cálculos
+    public static class Calculator {
+        private static final double EARTH_RADIUS_KM = 6371.0;
+
+        // Obtener latitud 'DEC' a partir de latitud 'DMS'
+        public static double getLatDEC(String latDMS) {
+            latDMS = latDMS.trim();
+            boolean negative = latDMS.endsWith("S");
+            latDMS = latDMS.replaceAll("[NS]", "").trim();
+            String[] parts = latDMS.split("[°'\"]+");
+            int degrees = Integer.parseInt(parts[0].trim());
+            int minutes = Integer.parseInt(parts[1].trim());
+            int seconds = Integer.parseInt(parts[2].trim());
+            double decimal = degrees + (minutes / 60.0) + (seconds / 3600.0);
+            return negative ? -decimal : decimal;
         }
-    }
-    // Obtener 'DisplayString' a partir de 'DateTime'
-    public static String toDisplayString(LocalDateTime dt) {
-        try {
-            return dt.format(dtf_ui);
-        } catch (Exception e) {
-            return null;
+        // Obtener latitud 'DMS' a partir de latitud 'DEC'
+        public static String getLatDMS(double latDEC) {
+            String hemisphere = latDEC >= 0 ? "N" : "S";
+            double abs = Math.abs(latDEC);
+            int degrees = (int) abs;
+            double minutesDec = (abs - degrees) * 60;
+            int minutes = (int) minutesDec;
+            double secondsDec = (minutesDec - minutes) * 60;
+            int seconds = (int) Math.round(secondsDec);
+            return String.format("%02d° %02d' %02d\" %s", degrees, minutes, seconds, hemisphere);
         }
-    }
-    // Obtener 'DateTime' a partir de 'DateTimeString'
-    public static LocalDateTime toDateTime(String dts) {
-        try {
-            return LocalDateTime.parse(dts, dtf_ui);
-        } catch (Exception e) {
-            try {
-                return LocalDateTime.parse(dts, dtf_db);
-            } catch (Exception ex) {
-                try {
-                    return LocalDateTime.parse(dts, dtf_js);
-                } catch (Exception exc) {
-                    throw new RuntimeException(exc);
-                }
+        // Obtener longitud 'DEC' a partir de longitud 'DMS'
+        public static double getLonDEC(String lonDMS) {
+            lonDMS = lonDMS.trim();
+            boolean negative = lonDMS.endsWith("W");
+            lonDMS = lonDMS.replaceAll("[EW]", "").trim();
+            String[] parts = lonDMS.split("[°'\"]+");
+            int degrees = Integer.parseInt(parts[0].trim());
+            int minutes = Integer.parseInt(parts[1].trim());
+            int seconds = Integer.parseInt(parts[2].trim());
+            double decimal = degrees + (minutes / 60.0) + (seconds / 3600.0);
+            return negative ? -decimal : decimal;
+        }
+        // Obtener longitud 'DMS' a partir de longitud 'DEC'
+        public static String getLonDMS(double lonDEC) {
+            String hemisphere = lonDEC >= 0 ? "E" : "W";
+            double abs = Math.abs(lonDEC);
+            int degrees = (int) abs;
+            double minutesDec = (abs - degrees) * 60;
+            int minutes = (int) minutesDec;
+            double secondsDec = (minutesDec - minutes) * 60;
+            int seconds = (int) Math.round(secondsDec);
+            return String.format("%03d° %02d' %02d\" %s", degrees, minutes, seconds, hemisphere);
+        }
+        // Obtener distancia geodésica
+        public static double getGeodesicDistance(double origLat, double origLon, double destLat, double destLon) {
+            double lat1 = Math.toRadians(origLat);
+            double lon1 = Math.toRadians(origLon);
+            double lat2 = Math.toRadians(destLat);
+            double lon2 = Math.toRadians(destLon);
+            double dLat = lat2 - lat1;
+            double dLon = lon2 - lon1;
+            double h = Math.pow(Math.sin(dLat / 2), 2) + Math.cos(lat1) * Math.cos(lat2) * Math.pow(Math.sin(dLon / 2), 2);
+            return 2 * EARTH_RADIUS_KM * Math.asin(Math.sqrt(h));
+        }
+        // Obtener tiempo transcurrido en 'horas' entre 2 'DateTime'
+        public static double getElapsedHours(LocalDateTime dtStart, LocalDateTime dtEnd) {
+            return Duration.between(dtStart, dtEnd).toMinutes() / 60.0;
+        }
+        // Obtener tiempo transcurrido en 'horas' entre 2 'Time'
+        public static double getElapsedHours(LocalTime tStart, LocalTime tEnd) {
+            double duration = Duration.between(tStart, tEnd).toMinutes() / 60.0;
+            if (duration < 0) {
+                duration += 24.0;
             }
+            return duration;
         }
-    }
-    // Obtener 'DateTime' a partir de 'Date' y 'Time'
-    public static LocalDateTime toDateTime(LocalDate d, LocalTime t) {
-        return LocalDateTime.of(d, t);
-    }
-    // Obtener 'DateTime' a partir de 'Time'
-    public static LocalDateTime toDateTime(LocalTime t) {
-        return toDateTime(LocalDateTime.now().toLocalDate(), t);
-    }
-    // Obtener 'DateTime' a partir de 'Time' y 'DateTime' de referencia
-    public static LocalDateTime toDateTime(LocalTime t, LocalDateTime dt_ref) {
-        return toDateTime(dt_ref.toLocalDate(), t);
-    }
-    // Obtener 'DateTime {UTC}' a partir de 'DateTime {Local}'
-    public static LocalDateTime toUTC(LocalDateTime dt, Integer gmt) {
-        return dt.minusHours(Long.valueOf(gmt));
-    }
-    // Obtener 'DateTime {Local}' a partir de 'DateTime {UTC}'
-    public static LocalDateTime toLocal(LocalDateTime dt, Integer gmt) {
-        return dt.plusHours(Long.valueOf(gmt));
-    }
-    // Obtener tiempo transcurrido en 'horas' entre 2 'DateTime'
-    public static double getElapsedHours(LocalDateTime dtStart, LocalDateTime dtEnd) {
-        return Duration.between(dtStart, dtEnd).toMinutes() / 60.0;
-    }
-    // Obtener 'DisplayString' a partir de 'Time'
-    public static String toDisplayString(LocalTime t) {
-        try {
-            return t.format(tf_ui);
-        } catch (Exception e) {
-            return null;
+        // Obtener todas las posibles combinaciones de una lista de elementos
+        public static <T> List<List<T>> getPossibleCombinations(List<T> elements, int groupSize) {
+            List<List<T>> result = new ArrayList<>();
+            generateCombinations(elements, groupSize, 0, new ArrayList<>(), result);
+            return result;
         }
-    }
-    // Obtener 'Time' a partir de 'TimeString'
-    public static LocalTime toTime(String ts) {
-        try {
-            return LocalTime.parse(ts, tf_ui);
-        } catch (Exception e) {
-            try {
-                return LocalTime.parse(ts, tf_db);
-            } catch (Exception ex) {
-                try {
-                    return LocalTime.parse(ts, tf_js);
-                } catch (Exception exc) {
-                    throw new RuntimeException(exc);
-                }
+        // Generar todas las posibles combinaciones de una lista de elementos
+        private static <T> void generateCombinations(List<T> elements, int groupSize, int inicio, List<T> actual, List<List<T>> result) {
+            if (actual.size() == groupSize) {
+                result.add(new ArrayList<>(actual));
+                return;
             }
-        }
-    }
-    // Obtener 'Time {UTC}' a partir de 'Time {Local}'
-    public static LocalTime toUTC(LocalTime t, Integer gmt) {
-        return t.minusHours(Long.valueOf(gmt));
-    }
-    // Obtener 'Time {Local}' a partir de 'Time {UTC}'
-    public static LocalTime toLocal(LocalTime t, Integer gmt) {
-        return t.plusHours(Long.valueOf(gmt));
-    }
-    // Obtener tiempo transcurrido en 'horas' entre 2 'Time'
-    public static double getElapsedHours(LocalTime tStart, LocalTime tEnd) {
-        double duration = Duration.between(tStart, tEnd).toMinutes() / 60.0;
-        if (duration < 0) {
-            duration += 24.0;
-        }
-        return duration;
-    }
-    // Obtener 'Date' a partir de 'DateString'
-    public static LocalDate toDate(String ds) {
-        try {
-            return LocalDate.parse(ds, df_ui);
-        } catch (Exception e) {
-            try {
-                return LocalDate.parse(ds, df_db);
-            } catch (Exception ex) {
-                try {
-                    return LocalDate.parse(ds, df_js);
-                } catch (Exception exc) {
-                    throw new RuntimeException(exc);
-                }
-            }
-        }
-    }
-    // Obtener 'Date' a partir de 'TimeINT'
-    public static LocalDate toDate(Integer tINT) {
-        int year = tINT / 10000;
-        int month = (tINT / 100) % 100;
-        int day = tINT % 100;
-        return LocalDate.of(year, month, day);
-    }
-    // Obtener 'DateTimeRange' a partir de 2 'Time' con referencia a 'DateTime'
-    public static LocalDateTime[] getDateTimeRange(LocalTime t_departure, LocalTime t_arrival, LocalDateTime dt_ref) {
-        LocalDateTime departure = toDateTime(t_departure, dt_ref);
-        LocalDateTime arrival = toDateTime(t_arrival, dt_ref);
-        if(arrival.isBefore(departure)) {
-            arrival = arrival.plusDays(1);
-        }
-        if(departure.isBefore(dt_ref)) {
-            departure = departure.plusDays(1);
-            arrival = arrival.plusDays(1);
-        }
-        return new LocalDateTime[]{departure, arrival};
-    }
-    // Obtener 'Charset' de un archivo
-    public static Charset getFileCharset(Object file) {
-        try (InputStream fis = getInputStream(file)) {
-            byte[] bom = new byte[3];
-            Integer n = fis.read(bom, 0, bom.length);
-            if (n >= 2) {
-                if ((bom[0] & 0xFF) == 0xFF && (bom[1] & 0xFF) == 0xFE) {
-                    return StandardCharsets.UTF_16LE; // UTF-16 Little Endian
-                }
-                if ((bom[0] & 0xFF) == 0xFE && (bom[1] & 0xFF) == 0xFF) {
-                    return StandardCharsets.UTF_16BE; // UTF-16 Big Endian
-                }
-            }
-            if (n == 3) {
-                if ((bom[0] & 0xFF) == 0xEF && (bom[1] & 0xFF) == 0xBB && (bom[2] & 0xFF) == 0xBF) {
-                    return StandardCharsets.UTF_8; // UTF-8 with BOM
-                }
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return StandardCharsets.UTF_8; // default UTF-8
-    }
-    // Obtener InputStream desde File o MultipartFile
-    private static InputStream getInputStream(Object file) throws IOException {
-        if (file instanceof File f) {
-            return new FileInputStream(f);
-        } else if (file instanceof MultipartFile mf) {
-            return mf.getInputStream();
-        } else {
-            throw new IllegalArgumentException("Tipo no soportado para getFileCharset: " + file.getClass());
-        }
-    }
-    //
-    public static Boolean areProximatelyEqual(double v1, double v2, double epsilon) {
-        return Math.abs(v1 - v2) > epsilon;
-    }
-    //
-    public static Boolean isProximatelyFewer(double v1, double v2, double epsilon) {
-        return v1 < v2 - epsilon;
-    }
-    //
-    public static <T> List<List<T>> getPossibleCombinations(List<T> elements, int groupSize) {
-        List<List<T>> result = new ArrayList<>();
-        generateCombinations(elements, groupSize, 0, new ArrayList<>(), result);
-        return result;
-    }
-    //
-    private static <T> void generateCombinations(List<T> elements, int groupSize, int inicio, List<T> actual, List<List<T>> result) {
-        if (actual.size() == groupSize) {
-            result.add(new ArrayList<>(actual));
-            return;
-        }
-        Set<T> used = new HashSet<>();
-        for (int i = inicio; i < elements.size(); i++) {
-            T elemento = elements.get(i);
-            if (used.contains(elemento)) {
-                continue;
-            }
-            used.add(elemento);
-            actual.add(elemento);
-            generateCombinations(elements, groupSize, i + 1, actual, result);
-            actual.remove(actual.size() - 1);
-        }
-    }
-    //
-    public static <T> List<List<T>> getCrossedCombinations(List<T> listaA, List<T> listaB, int groupSizeA, int groupSizeB) {
-        List<List<T>> resultado = new ArrayList<>();
-        generateCrossedCombinations(listaA,listaB,groupSizeA,groupSizeB,0,0,new ArrayList<>(),new HashSet<>(),resultado);
-        return resultado;
-    }
-    //
-    private static <T> void generateCrossedCombinations(List<T> listaA, List<T> listaB, int groupSizeA, int groupSizeB, int inicioA, int inicioB, List<T> actual, Set<T> usados, List<List<T>> resultado) {
-        int tamanioActual = actual.size();
-        int tamanioTotal = groupSizeA + groupSizeB;
-        if (tamanioActual == tamanioTotal) {
-            resultado.add(new ArrayList<>(actual));
-            return;
-        }
-        if (tamanioActual < groupSizeA) {
-            Set<T> usadosEnNivel = new HashSet<>();
-            for (int i = inicioA; i < listaA.size(); i++) {
-                T elemento = listaA.get(i);
-                if (usadosEnNivel.contains(elemento)) {
+            Set<T> used = new HashSet<>();
+            for (int i = inicio; i < elements.size(); i++) {
+                T elemento = elements.get(i);
+                if (used.contains(elemento)) {
                     continue;
                 }
-                usadosEnNivel.add(elemento);
-                usados.add(elemento);
+                used.add(elemento);
                 actual.add(elemento);
-                generateCrossedCombinations(listaA, listaB, groupSizeA, groupSizeB, i + 1, 0, actual, usados, resultado);
+                generateCombinations(elements, groupSize, i + 1, actual, result);
                 actual.remove(actual.size() - 1);
-                usados.remove(elemento);
-            }
-        } else {
-            Set<T> usadosEnNivel = new HashSet<>();
-            for (int i = inicioB; i < listaB.size(); i++) {
-                T elemento = listaB.get(i);
-                if (usados.contains(elemento)) {
-                    continue;
-                }
-                if (usadosEnNivel.contains(elemento)) {
-                    continue;
-                }
-                usadosEnNivel.add(elemento);
-                usados.add(elemento);
-                actual.add(elemento);
-                generateCrossedCombinations(listaA, listaB, groupSizeA, groupSizeB, inicioA, i + 1, actual, usados, resultado);
-                actual.remove(actual.size() - 1);
-                usados.remove(elemento);
             }
         }
-    }
-    // Validar admisibilidad de formato de 'String'
-    public static Boolean isAdmissible(String str) {
-        return str != null && !str.isBlank();
-    }
-    // Convertir 'String' a valor admisible
-    public static String toAdmissibleValue(String str) {
-        return (isAdmissible(str)) ? str : null;
-    }
-    // Convertir 'String' a valor admisible
-    public static String toAdmissibleValue(String str, String defaultValue) {
-        return (isAdmissible(str)) ? str : defaultValue;
-    }
-    // Validar admisibilidad de formato de 'Number'
-    public static Boolean isAdmissible(Number num) {
-        return num != null && num.doubleValue() >= 0;
-    }
-    // Convertir 'Number' a valor admisible
-    public static <N extends Number> N toAdmissibleValue(N num) {
-        return (isAdmissible(num)) ? num : null;
-    }
-    // Convertir 'Number' a valor admisible
-    public static <N extends Number> N toAdmissibleValue(N num, N defaultValue) {
-        return (isAdmissible(num)) ? num : defaultValue;
-    }
-    // Convertir 'EnumString' a valor admisible
-    public static <E extends Enum<E>> E toAdmissibleValue(String str, Class<E> enumType) {
-        try {
-            return Enum.valueOf(enumType, toAdmissibleValue(str));
-        } catch (Exception e) {
-            return null;
+        // Obtener las combinaciones cruzadas entre 2 listas de elementos
+        public static <T> List<List<T>> getCrossedCombinations(List<T> listaA, List<T> listaB, int groupSizeA, int groupSizeB) {
+            List<List<T>> resultado = new ArrayList<>();
+            generateCrossedCombinations(listaA,listaB,groupSizeA,groupSizeB,0,0,new ArrayList<>(),new HashSet<>(),resultado);
+            return resultado;
+        }
+        // Generar las combinaciones cruzadas entre 2 listas de elementos
+        private static <T> void generateCrossedCombinations(List<T> listaA, List<T> listaB, int groupSizeA, int groupSizeB, int inicioA, int inicioB, List<T> actual, Set<T> usados, List<List<T>> resultado) {
+            int tamanioActual = actual.size();
+            int tamanioTotal = groupSizeA + groupSizeB;
+            if (tamanioActual == tamanioTotal) {
+                resultado.add(new ArrayList<>(actual));
+                return;
+            }
+            if (tamanioActual < groupSizeA) {
+                Set<T> usadosEnNivel = new HashSet<>();
+                for (int i = inicioA; i < listaA.size(); i++) {
+                    T elemento = listaA.get(i);
+                    if (usadosEnNivel.contains(elemento)) {
+                        continue;
+                    }
+                    usadosEnNivel.add(elemento);
+                    usados.add(elemento);
+                    actual.add(elemento);
+                    generateCrossedCombinations(listaA, listaB, groupSizeA, groupSizeB, i + 1, 0, actual, usados, resultado);
+                    actual.remove(actual.size() - 1);
+                    usados.remove(elemento);
+                }
+            } else {
+                Set<T> usadosEnNivel = new HashSet<>();
+                for (int i = inicioB; i < listaB.size(); i++) {
+                    T elemento = listaB.get(i);
+                    if (usados.contains(elemento)) {
+                        continue;
+                    }
+                    if (usadosEnNivel.contains(elemento)) {
+                        continue;
+                    }
+                    usadosEnNivel.add(elemento);
+                    usados.add(elemento);
+                    actual.add(elemento);
+                    generateCrossedCombinations(listaA, listaB, groupSizeA, groupSizeB, inicioA, i + 1, actual, usados, resultado);
+                    actual.remove(actual.size() - 1);
+                    usados.remove(elemento);
+                }
+            }
+        }
+        // Validar si 2 'Number' son aproximadamente iguales
+        public static <N extends Number> boolean areProximatelyEqual(N n1, N n2, double epsilon) {
+            return Math.abs(n1.doubleValue() - n2.doubleValue()) < epsilon;
+        }
+        // Validar si 1 'Number' es aproximadamente menor que otro 'Number'
+        public static <N extends Number> boolean isProximatelyFewer(N n1, N n2, double epsilon) {
+            return n1.doubleValue() < n2.doubleValue() - epsilon;
+        }
+        // Validar si 1 'Number' es aproximadamente mayor que otro 'Number'
+        public static <N extends Number> boolean isProximatelyGreater(N n1, N n2, double epsilon) {
+            return n1.doubleValue() > n2.doubleValue() + epsilon;
         }
     }
-    // Convertir 'Collection' a valor admisible
-    public static <T, C extends Collection<T>> C toAdmissibleValue(C collection, Supplier<C> supplier) {
-        return (collection != null) ? collection : supplier.get();
-    }
-    // Converit 'DateTimeString' a valor admisible
-    public static LocalDateTime toAdmissibleValue(String dts, LocalDateTime defaultValue) {
-        try {
-            return toDateTime(dts);
-        } catch (Exception e) {
-            return defaultValue;
+    // Clase 'Auxiliar' para realizar conversiones
+    public static class Convertor {
+        private static final DateTimeFormatter dtf_ui = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+        private static final DateTimeFormatter dtf_db = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        private static final DateTimeFormatter dtf_js = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
+        private static final DateTimeFormatter tf_ui = DateTimeFormatter.ofPattern("HH:mm");
+        private static final DateTimeFormatter tf_db = DateTimeFormatter.ofPattern("HH:mm:ss");
+        private static final DateTimeFormatter tf_js = DateTimeFormatter.ofPattern("HH:mm:ss");
+        private static final DateTimeFormatter df_ui = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+        private static final DateTimeFormatter df_db = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        private static final DateTimeFormatter df_js = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+
+
+        // Obtener 'DisplayString' a partir de 'DateTime'
+        public static String toDisplayString(LocalDateTime dt) {
+            try {
+                return dt.format(dtf_ui);
+            } catch (Exception e) {
+                return null;
+            }
+        }
+        // Obtener 'DisplayString' a partir de 'Time'
+        public static String toDisplayString(LocalTime t) {
+            try {
+                return t.format(tf_ui);
+            } catch (Exception e) {
+                return null;
+            }
+        }
+        // Obtener 'DisplayString' a partir de 'TimeDEC' (Horas)
+        public static String toDisplayString(double tDEC) {
+            try {
+                int total = (int) (tDEC * 60);
+                int dias = total / 1440, horas = (total % 1440) / 60, minutos = total % 60;
+                return dias > 0 ? String.format("%dd %2dh %2dm", dias, horas, minutos) : String.format("%2dh %2dm", horas, minutos);
+            } catch (Exception e) {
+                return null;
+            }
+        }
+        // Obtener 'DateTimeRange' a partir de 2 'Time' con referencia a 'DateTime'
+        public static LocalDateTime[] toDateTimeRange(LocalTime t_departure, LocalTime t_arrival, LocalDateTime dt_ref) {
+            LocalDateTime departure = toDateTime(t_departure, dt_ref);
+            LocalDateTime arrival = toDateTime(t_arrival, dt_ref);
+            if(arrival.isBefore(departure)) {
+                arrival = arrival.plusDays(1);
+            }
+            if(departure.isBefore(dt_ref)) {
+                departure = departure.plusDays(1);
+                arrival = arrival.plusDays(1);
+            }
+            return new LocalDateTime[]{departure, arrival};
+        }
+        // Obtener 'DateTime' a partir de 'DateTimeString'
+        public static LocalDateTime toDateTime(String dts) {
+            try {
+                return LocalDateTime.parse(dts, dtf_ui);
+            } catch (Exception e) {
+                try {
+                    return LocalDateTime.parse(dts, dtf_db);
+                } catch (Exception ex) {
+                    try {
+                        return LocalDateTime.parse(dts, dtf_js);
+                    } catch (Exception exc) {
+                        throw new RuntimeException(exc);
+                    }
+                }
+            }
+        }
+        // Obtener 'DateTime' a partir de 'Date' y 'Time'
+        public static LocalDateTime toDateTime(LocalDate d, LocalTime t) {
+            return LocalDateTime.of(d, t);
+        }
+        // Obtener 'DateTime' a partir de 'Time'
+        public static LocalDateTime toDateTime(LocalTime t) {
+            return toDateTime(LocalDateTime.now().toLocalDate(), t);
+        }
+        // Obtener 'DateTime' a partir de 'Time' y 'DateTime' de referencia
+        public static LocalDateTime toDateTime(LocalTime t, LocalDateTime dt_ref) {
+            return toDateTime(dt_ref.toLocalDate(), t);
+        }
+        // Obtener 'DateTime {UTC}' a partir de 'DateTime {Local}'
+        public static LocalDateTime toUTC(LocalDateTime dt, Integer gmt) {
+            return dt.minusHours(Long.valueOf(gmt));
+        }
+        // Obtener 'DateTime {Local}' a partir de 'DateTime {UTC}'
+        public static LocalDateTime toLocal(LocalDateTime dt, Integer gmt) {
+            return dt.plusHours(Long.valueOf(gmt));
+        }
+        // Obtener 'Date' a partir de 'DateString'
+        public static LocalDate toDate(String ds) {
+            try {
+                return LocalDate.parse(ds, df_ui);
+            } catch (Exception e) {
+                try {
+                    return LocalDate.parse(ds, df_db);
+                } catch (Exception ex) {
+                    try {
+                        return LocalDate.parse(ds, df_js);
+                    } catch (Exception exc) {
+                        throw new RuntimeException(exc);
+                    }
+                }
+            }
+        }
+        // Obtener 'Date' a partir de 'TimeINT' (yyyymmdd)
+        public static LocalDate toDate(Integer tINT) {
+            int year = tINT / 10000;
+            int month = (tINT / 100) % 100;
+            int day = tINT % 100;
+            return LocalDate.of(year, month, day);
+        }
+        // Obtener 'Time' a partir de 'TimeString'
+        public static LocalTime toTime(String ts) {
+            try {
+                return LocalTime.parse(ts, tf_ui);
+            } catch (Exception e) {
+                try {
+                    return LocalTime.parse(ts, tf_db);
+                } catch (Exception ex) {
+                    try {
+                        return LocalTime.parse(ts, tf_js);
+                    } catch (Exception exc) {
+                        throw new RuntimeException(exc);
+                    }
+                }
+            }
+        }
+        // Obtener 'Time {UTC}' a partir de 'Time {Local}'
+        public static LocalTime toUTC(LocalTime t, Integer gmt) {
+            return t.minusHours(Long.valueOf(gmt));
+        }
+        // Obtener 'Time {Local}' a partir de 'Time {UTC}'
+        public static LocalTime toLocal(LocalTime t, Integer gmt) {
+            return t.plusHours(Long.valueOf(gmt));
+        }
+        // Obtener 'AdmissiblePageable' de atributos
+        public static Pageable toAdmissible(Integer page, Integer size, Sort.Order... orders) throws Exception {
+            if (!isAdmissible(page)) {
+                throw new G4DException(String.format("El número de página '%d' es inválido.", page));
+            }
+            if (!isAdmissible(size)) {
+                throw new G4DException(String.format("El tamaño de página '%d' es inválido.", size));
+            }
+            return PageRequest.of(page - 1, size, Sort.by(orders));
+        }
+        // Validar admisibilidad de 'String'
+        public static boolean isAdmissible(String str) {
+            return str != null && !str.isBlank();
+        }
+        // Obtener 'AdmissibleString' de 'String'
+        public static String toAdmissible(String str) {
+            return (isAdmissible(str)) ? str : null;
+        }
+        // Obtener 'AdmissibleString' de 'String'
+        public static String toAdmissible(String str, String defaultValue) {
+            return (isAdmissible(str)) ? str : defaultValue;
+        }
+        // Validar admisibilidad de 'Number'
+        public static boolean isAdmissible(Number num) {
+            return num != null && num.doubleValue() >= 0;
+        }
+        // Obtener 'AdmissibleNumer' de 'Number'
+        public static <N extends Number> N toAdmissible(N num) {
+            return (isAdmissible(num)) ? num : null;
+        }
+        // Obtener 'AdmissibleNumer' de 'Number'
+        public static <N extends Number> N toAdmissible(N num, N defaultValue) {
+            return (isAdmissible(num)) ? num : defaultValue;
+        }
+        // Obtener 'AdmissibleCollection' de 'Collection'
+        public static <T, C extends Collection<T>> C toAdmissible(C collection, Supplier<C> supplier) {
+            return (collection != null) ? collection : supplier.get();
+        }
+        // Obtener 'AdmissibleEnum' de 'EnumString'
+        public static <E extends Enum<E>> E toAdmissible(String es, Class<E> enumType) {
+            try {
+                return Enum.valueOf(enumType, toAdmissible(es));
+            } catch (Exception e) {
+                return null;
+            }
+        }
+        // Obtener 'AdmissibleDateTime' de 'DateTimeString'
+        public static LocalDateTime toAdmissible(String dts, LocalDateTime defaultValue) {
+            try {
+                return toDateTime(dts);
+            } catch (Exception e) {
+                return defaultValue;
+            }
+        }
+        // Obtener 'AdmissibleDate' de 'DateString'
+        public static LocalDate toAdmissible(String ds, LocalDate defaultValue) {
+            try {
+                return toDate(ds);
+            } catch (Exception e) {
+                return defaultValue;
+            }
+        }
+        // Obtener 'AdmissibleTime' de 'TimeString'
+        public static LocalTime toAdmissible(String ts, LocalTime defaultValue) {
+            try {
+                return toTime(ts);
+            } catch (Exception e) {
+                return defaultValue;
+            }
         }
     }
-    // Convertir 'TimeString' a valor admisible
-    public static LocalTime toAdmissibleValue(String ts, LocalTime defaultValue) {
-        try {
-            return toTime(ts);
-        } catch (Exception e) {
-            return defaultValue;
-        }
-    }
-    // Convertir 'DateString' a valor admisible
-    public static LocalDate toAdmissibleValue(String ds, LocalDate defaultValue) {
-        try {
-            return toDate(ds);
-        } catch (Exception e) {
-            return defaultValue;
-        }
-    }
-    // Clase 'Wrapper' para enteros
+    // Clase 'Auxiliar' para contener enteros
     public static class IntegerWrapper {
         public int value;
 
@@ -434,7 +428,44 @@ public class G4D {
             return Integer.compare(this.value, other.value);
         }
     }
-    // Clase 'Auxiliar' para impresión en archivos
+    // Clase 'Auxiliar' para leer archivos
+    public static class Reader {
+
+        // Obtener 'Charset' de un archivo
+        public static Charset getFileCharset(Object file) {
+            try (InputStream fis = getInputStream(file)) {
+                byte[] bom = new byte[3];
+                Integer n = fis.read(bom, 0, bom.length);
+                if (n >= 2) {
+                    if ((bom[0] & 0xFF) == 0xFF && (bom[1] & 0xFF) == 0xFE) {
+                        return StandardCharsets.UTF_16LE; // UTF-16 Little Endian
+                    }
+                    if ((bom[0] & 0xFF) == 0xFE && (bom[1] & 0xFF) == 0xFF) {
+                        return StandardCharsets.UTF_16BE; // UTF-16 Big Endian
+                    }
+                }
+                if (n == 3) {
+                    if ((bom[0] & 0xFF) == 0xEF && (bom[1] & 0xFF) == 0xBB && (bom[2] & 0xFF) == 0xBF) {
+                        return StandardCharsets.UTF_8; // UTF-8 with BOM
+                    }
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            return StandardCharsets.UTF_8; // default UTF-8
+        }
+        // Obtener InputStream de 'File' o 'MultipartFile'
+        private static InputStream getInputStream(Object file) throws IOException {
+            if (file instanceof File f) {
+                return new FileInputStream(f);
+            } else if (file instanceof MultipartFile mf) {
+                return mf.getInputStream();
+            } else {
+                throw new IllegalArgumentException("Tipo no soportado para getFileCharset: " + file.getClass());
+            }
+        }
+    }
+    // Clase 'Auxiliar' para imprimir archivos
     public static class Printer {
         private static PrintWriter pw;
 
@@ -502,9 +533,11 @@ public class G4D {
             pw.println(String.valueOf(border.charAt(0)).repeat(space - 1) + text + String.valueOf(border.charAt(1)).repeat(space - 1));
         }
     }
-    // Clase 'Auxiliar' para logeo de acciones
+    // Clase 'Auxiliar' para logeo dinámico
     public static class Logger {
-        private static enum Action {
+
+        // Enumeracion 'Auxiliar' para organización de acciones de logger
+        private enum Action {
             UP("U","A"),
             DOWN("D","B"),
             RIGHT("R","C"),
@@ -544,8 +577,8 @@ public class G4D {
                 return "\u001B[" + mode + code;
             }
         }
-
-        private static enum Color {
+        // Enumeración 'Auxiliar' para manejor de colores en logger
+        private enum Color {
             RESET("0","0"),
             RED("R","31"),
             GREEN("G","32"),
@@ -651,7 +684,7 @@ public class G4D {
         }
 
         public static void delete_upper_line() {
-            G4D.Logger.delete_current_line();
+            G4DUtility.Logger.delete_current_line();
             logger.info(getCustomAction("U1Cl2"));
         }
 
@@ -671,6 +704,10 @@ public class G4D {
 
         public static void reset_color() {
             logger.info(Color.reset_color());
+        }
+
+        public static void custom_action(String actions) {
+            logger.info(getCustomAction(actions));
         }
 
         private static String getCustomAction(String actions) {
@@ -699,7 +736,7 @@ public class G4D {
             }
             return ansiString.toString();
         }
-
+        // Clase 'Auxiliar' para manejo de estadistícas de ejecución de algoritmo en el logger
         public static class Stats {
             private static Instant g_start;
             private static Instant l_start;
@@ -765,26 +802,26 @@ public class G4D {
             }
 
             public static void log_stat_ped() {
-                G4D.Logger.logf("[#] TOTAL DE PEDIDOS ATENDIDOS: %d de' %d'%n", posPed, totalPed);
-                G4D.Logger.logf("[#] TIEMPO PROMEDIO DE ATENCION DE PEDIDO: %.3f ms.%n", get_mean_time_by_ped());
+                G4DUtility.Logger.logf("[#] TOTAL DE PEDIDOS ATENDIDOS: %d de' %d'%n", posPed, totalPed);
+                G4DUtility.Logger.logf("[#] TIEMPO PROMEDIO DE ATENCION DE PEDIDO: %.3f ms.%n", get_mean_time_by_ped());
             }
 
             public static void log_stat_prod() {
-                G4D.Logger.logf("[#] TOTAL DE PRODUCTOS ENRUTADOS: %d de '%d'%n", posProd, totalProd);
-                G4D.Logger.logf("[#] TIEMPO PROMEDIO DE ENRUTAMIENTO DE PRODUCTO: %.3f us.%n", get_mean_time_by_prod());
+                G4DUtility.Logger.logf("[#] TOTAL DE PRODUCTOS ENRUTADOS: %d de '%d'%n", posProd, totalProd);
+                G4DUtility.Logger.logf("[#] TIEMPO PROMEDIO DE ENRUTAMIENTO DE PRODUCTO: %.3f us.%n", get_mean_time_by_prod());
             }
 
             public static void log_stat_local_sol() {
-                G4D.Logger.logf("[#] TIEMPO DE CONVERGENCIA: %.2f seg.%n", get_convergence_time());
+                G4DUtility.Logger.logf("[#] TIEMPO DE CONVERGENCIA: %.2f seg.%n", get_convergence_time());
             }
 
             public static void log_stat_global_sol() {
-                G4D.Logger.logf("[#] TIEMPO TOTAL DE REALIZACION: %.2f seg.%n", get_convergence_time());
+                G4DUtility.Logger.logf("[#] TIEMPO TOTAL DE REALIZACION: %.2f seg.%n", get_convergence_time());
             }
 
             public static void log_err_stat() {
-                G4D.Logger.logf_err("[ERROR] No se pudo enrutar el producto #%d del pedido #%s.%n", numProd, numPed);
-                G4D.Logger.logf_err("[ERROR] Solo se atendieron %d de '%d' pedidos. (%d de '%d' productos)%n", posPed, totalPed, posProd, totalProd);
+                G4DUtility.Logger.logf_err("[ERROR] No se pudo enrutar el producto #%d del pedido #%s.%n", numProd, numPed);
+                G4DUtility.Logger.logf_err("[ERROR] Solo se atendieron %d de '%d' pedidos. (%d de '%d' productos)%n", posPed, totalPed, posProd, totalProd);
             }
 
             public static void next_lot(int cantProd) {
@@ -798,7 +835,7 @@ public class G4D {
             }
         }
     }
-    // Clase 'Auxiliar' para generación de valores
+    // Clase 'Auxiliar' para generación de valores aleatorios
     public static class Generator {
         private static final Random random = new Random();
 
@@ -1043,7 +1080,6 @@ public class G4D {
             while (partes.size() < cantNombres + cantApellidos) {
                 partes.add(apellidosPosibles[random.nextInt(apellidosPosibles.length)]);
             }
-
             return String.join(" ", partes);
         }
         // Obtener 'UniqueEmail'
@@ -1060,7 +1096,7 @@ public class G4D {
                 boolean addSeparator = random.nextBoolean();
                 if(addSeparator && i != positions.length - 1) email.append((random.nextBoolean())? "_": ".");
             }
-            return email + "@G4D.com";
+            return email + "@G4DUtility.com";
         }
         // Obtener 'AgregarRandomInteger' a 'String'
         public static String addRandomInteger(String str, int index) {

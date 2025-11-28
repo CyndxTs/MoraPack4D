@@ -6,8 +6,8 @@
 
 package com.pucp.dp1.grupo4d.morapack.model.algorithm;
 
-import com.pucp.dp1.grupo4d.morapack.model.enums.TipoEvento;
-import com.pucp.dp1.grupo4d.morapack.util.G4D;
+import com.pucp.dp1.grupo4d.morapack.model.enumeration.TipoEvento;
+import com.pucp.dp1.grupo4d.morapack.util.G4DUtility;
 import java.time.LocalDateTime;
 
 public class Evento {
@@ -19,7 +19,7 @@ public class Evento {
     private LocalDateTime fechaHoraLlegada;
 
     public Evento() {
-        this.codigo = G4D.Generator.getUniqueString("EVE");
+        this.codigo = G4DUtility.Generator.getUniqueString("EVE");
         this.tipo = TipoEvento.CANCELACION;
     }
 

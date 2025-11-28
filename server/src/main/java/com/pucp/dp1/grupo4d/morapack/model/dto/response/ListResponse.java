@@ -17,13 +17,13 @@ import java.util.List;
 public class ListResponse extends GenericResponse {
     private List<DTO> dtos;
 
-    public ListResponse(Boolean success, String message) {
-        super(success, message);
+    public ListResponse(Boolean exito, String mensaje) {
+        super(exito, mensaje);
         dtos = new ArrayList<>();
     }
 
-    public ListResponse(Boolean success, String message, List<DTO> dtos) {
-        super(success, message);
+    public ListResponse(Boolean exito, String mensaje, List<DTO> dtos) {
+        super(exito, mensaje);
         this.dtos = dtos;
     }
 }

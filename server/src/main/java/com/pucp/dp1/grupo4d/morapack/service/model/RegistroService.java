@@ -10,16 +10,12 @@ import com.pucp.dp1.grupo4d.morapack.mapper.RegistroMapper;
 import com.pucp.dp1.grupo4d.morapack.model.dto.DTO;
 import com.pucp.dp1.grupo4d.morapack.model.dto.request.ListRequest;
 import com.pucp.dp1.grupo4d.morapack.model.dto.response.ListResponse;
-import com.pucp.dp1.grupo4d.morapack.model.entity.AdministradorEntity;
-import com.pucp.dp1.grupo4d.morapack.model.entity.PlanEntity;
 import com.pucp.dp1.grupo4d.morapack.model.entity.RegistroEntity;
 import com.pucp.dp1.grupo4d.morapack.repository.RegistroRepository;
-import com.pucp.dp1.grupo4d.morapack.util.G4D;
-import org.springframework.data.domain.PageRequest;
+import com.pucp.dp1.grupo4d.morapack.util.G4DUtility;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -67,17 +63,13 @@ public class RegistroService {
         return registroRepository.findByCodigo(codigo).isPresent();
     }
 
-    public ListResponse listar(ListRequest request) {
+    public ListResponse listar(ListRequest request) throws Exception{
         try {
-            int page = G4D.toAdmissibleValue(request.getPage(), 0);
-            int size = G4D.toAdmissibleValue(request.getSize(), 10);
-            Pageable pageable = PageRequest.of(page, size,  Sort.by(Sort.Order.asc("fechaHoraIngresoUTC"), Sort.Order.asc("fechaHoraEgresoUTC")));
+            Pageable pageable = G4DUtility.Convertor.toAdmissible(request.getPagina(), request.getTamanio(), Sort.Order.asc("fechaHoraIngresoUTC"), Sort.Order.asc("fechaHoraEgresoUTC"));
             List<DTO> dtos = new ArrayList<>();
             List<RegistroEntity> entities = this.findAll(pageable);
             entities.forEach(entity -> dtos.add(registroMapper.toDTO(entity)));
-            return new ListResponse(true, "Registros listados correctamente!", dtos);
-        } catch (Exception e) {
-            return new ListResponse(false, "ERROR - LISTADO: " + e.getMessage());
+            return new ListResponse(true, String.format("Registros listados correctamente! ('%d')", dtos.size()), dtos);
         } finally {
             clearPools();
         }

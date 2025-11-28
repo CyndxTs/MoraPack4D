@@ -13,94 +13,91 @@ import com.pucp.dp1.grupo4d.morapack.model.dto.request.SignUpRequest;
 import com.pucp.dp1.grupo4d.morapack.model.dto.response.AuthenticationResponse;
 import com.pucp.dp1.grupo4d.morapack.model.entity.ClienteEntity;
 import com.pucp.dp1.grupo4d.morapack.model.entity.AdministradorEntity;
-import com.pucp.dp1.grupo4d.morapack.model.enums.EstadoUsuario;
-import com.pucp.dp1.grupo4d.morapack.model.enums.TipoUsuario;
+import com.pucp.dp1.grupo4d.morapack.model.enumeration.EstadoUsuario;
+import com.pucp.dp1.grupo4d.morapack.model.enumeration.TipoUsuario;
+import com.pucp.dp1.grupo4d.morapack.model.exception.G4DException;
 import com.pucp.dp1.grupo4d.morapack.service.model.AdministradorService;
 import com.pucp.dp1.grupo4d.morapack.service.model.ClienteService;
-import com.pucp.dp1.grupo4d.morapack.util.G4D;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.pucp.dp1.grupo4d.morapack.util.G4DUtility;
 import org.springframework.stereotype.Service;
-import java.util.OptionalInt;
 
 @Service
 public class AuthenticactionService {
 
-    @Autowired
-    private ClienteService clienteService;
+    private final ClienteService clienteService;
+    private final AdministradorService administradorService;
+    private final UsuarioMapper usuarioMapper;
 
-    @Autowired
-    private AdministradorService administradorService;
+    public AuthenticactionService(ClienteService clienteService, AdministradorService administradorService, UsuarioMapper usuarioMapper) {
+        this.clienteService = clienteService;
+        this.administradorService = administradorService;
+        this.usuarioMapper = usuarioMapper;
+    }
 
-    @Autowired
-    private UsuarioMapper usuarioMapper;
-
-    public AuthenticationResponse signIn(SignInRequest request) {
+    public AuthenticationResponse signIn(SignInRequest request) throws Exception{
         try {
-            String correo = G4D.toAdmissibleValue(request.getCorreo());
-            String contrasenia = G4D.toAdmissibleValue(request.getContrasenia());
-            TipoUsuario tipoUsuario = G4D.toAdmissibleValue(request.getTipoUsuario(), TipoUsuario.class);
+            String correo = G4DUtility.Convertor.toAdmissible(request.getCorreo(), "");
+            String contrasenia = G4DUtility.Convertor.toAdmissible(request.getContrasenia(), "");
+            TipoUsuario tipoUsuario = G4DUtility.Convertor.toAdmissible(request.getTipoUsuario(), TipoUsuario.class);
             switch (tipoUsuario) {
                 case CLIENTE:
                     ClienteEntity cliente = clienteService.findByCorreo(correo).orElse(null);
                     if (cliente == null) {
-                        return new AuthenticationResponse(false, "Correo no registrado.");
-                    }
-                    if (cliente.getEstado() == EstadoUsuario.DISABLED) {
-                        return new AuthenticationResponse(false, "Cuenta deshabilitada.");
+                        throw new G4DException("Correo no registrado.");
                     }
                     if (!contrasenia.equals(cliente.getContrasenia())) {
-                        return new AuthenticationResponse(false, "Contraseña incorrecta.");
+                        throw new G4DException("Contraseña incorrecta.");
+                    }
+                    if (cliente.getEstado() == EstadoUsuario.DISABLED) {
+                        throw new G4DException("Cuenta deshabilitada.");
                     }
                     cliente.setEstado(EstadoUsuario.ONLINE);
                     clienteService.save(cliente);
-                    return new AuthenticationResponse(false, "SignIn exitoso!", usuarioMapper.toDTO(cliente));
+                    return new AuthenticationResponse(true, "SignIn exitoso!", usuarioMapper.toDTO(cliente));
                 case ADMINISTRADOR:
                     AdministradorEntity administrador = administradorService.findByCorreo(correo).orElse(null);
                     if (administrador == null) {
-                        return new AuthenticationResponse(false, "Correo no registrado.");
-                    }
-                    if (administrador.getEstado() == EstadoUsuario.DISABLED) {
-                        return new AuthenticationResponse(false, "Cuenta deshabilitada.");
+                        throw new G4DException("Correo no registrado.");
                     }
                     if (!contrasenia.equals(administrador.getContrasenia())) {
-                        return new AuthenticationResponse(false, "Contraseña incorrecta.");
+                        throw new G4DException("Contraseña incorrecta.");
+                    }
+                    if (administrador.getEstado() == EstadoUsuario.DISABLED) {
+                        throw new G4DException("Cuenta deshabilitada.");
                     }
                     administrador.setEstado(EstadoUsuario.ONLINE);
                     administradorService.save(administrador);
                     return new AuthenticationResponse(true, "SignIn exitoso!", usuarioMapper.toDTO(administrador));
                 default:
-                    return new AuthenticationResponse(false, "Tipo de usuario inválido.");
+                    throw new G4DException("Tipo de usuario inválido.");
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-            return new AuthenticationResponse(false, "ERROR - SIGNIN: " + e.getMessage());
         } finally {
             limpiarPools();
         }
     }
 
-    public AuthenticationResponse signUp(SignUpRequest request) {
+    public AuthenticationResponse signUp(SignUpRequest request) throws Exception {
         try {
-            String nombre = G4D.toAdmissibleValue(request.getNombre());
-            String correo = G4D.toAdmissibleValue(request.getCorreo());
-            String contrasenia = G4D.toAdmissibleValue(request.getContrasenia());
-            TipoUsuario tipoUsuario = G4D.toAdmissibleValue(request.getTipoUsuario(), TipoUsuario.class);
+            String nombre = G4DUtility.Convertor.toAdmissible(request.getNombre(), "");
+            String correo = G4DUtility.Convertor.toAdmissible(request.getCorreo(), "");
+            String contrasenia = G4DUtility.Convertor.toAdmissible(request.getContrasenia(), "");
+            TipoUsuario tipoUsuario = G4DUtility.Convertor.toAdmissible(request.getTipoUsuario(), TipoUsuario.class);
             switch (tipoUsuario) {
                 case CLIENTE:
                     if (clienteService.findByCorreo(correo).isPresent()) {
-                        return new AuthenticationResponse(false, "Correo en uso.");
+                        throw new G4DException("Correo en uso.");
                     }
                     ClienteEntity cliente = new ClienteEntity();
-                    cliente.setCodigo(obtenerNuevoCodigo(tipoUsuario));
+                    cliente.setCodigo(this.obtenerNuevoCodigo(tipoUsuario));
                     cliente.setNombre(nombre);
                     cliente.setCorreo(correo);
                     cliente.setContrasenia(contrasenia);
                     cliente.setEstado(EstadoUsuario.ONLINE);
                     clienteService.save(cliente);
-                    return new AuthenticationResponse(false, "SignUp Exitoso!", usuarioMapper.toDTO(cliente));
+                    return new AuthenticationResponse(true, "SignUp Exitoso!", usuarioMapper.toDTO(cliente));
                 case ADMINISTRADOR:
                     if (administradorService.findByCorreo(correo).isPresent()) {
-                        return new AuthenticationResponse(false, "Correo en uso.");
+                        throw new G4DException("Correo en uso.");
                     }
                     AdministradorEntity administrador = new AdministradorEntity();
                     administrador.setCodigo(obtenerNuevoCodigo(tipoUsuario));
@@ -111,36 +108,32 @@ public class AuthenticactionService {
                     administradorService.save(administrador);
                     return new AuthenticationResponse(true, "SignUp Exitoso!", usuarioMapper.toDTO(administrador));
                 default:
-                    return new AuthenticationResponse(false, "Tipo de usuario inválido.");
+                    throw new G4DException("Tipo de usuario inválido.");
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-            return new AuthenticationResponse(false, "ERROR - SIGNUP: " + e.getMessage());
         } finally {
             limpiarPools();
         }
     }
 
     private String obtenerNuevoCodigo(TipoUsuario tipoUsuario) {
-        OptionalInt maxCodigo = switch (tipoUsuario) {
-            case CLIENTE -> clienteService.findAll().stream().mapToInt(c -> Integer.parseInt(c.getCodigo())).max();
-            case ADMINISTRADOR -> administradorService.findAll().stream().mapToInt(a -> Integer.parseInt(a.getCodigo().substring(5))).max();
+        return switch (tipoUsuario) {
+            case CLIENTE -> clienteService.obtenerNuevoCodigo();
+            case ADMINISTRADOR -> administradorService.obtenerNuevoCodigo();
         };
-        return String.format("%07d", maxCodigo.orElse(0) + 1);
     }
 
-    public AuthenticationResponse signOut(SignOutRequest request) {
+    public AuthenticationResponse signOut(SignOutRequest request) throws Exception {
         try {
-            String correo = G4D.toAdmissibleValue(request.getCorreo());
-            TipoUsuario tipoUsuario = G4D.toAdmissibleValue(request.getTipoUsuario(), TipoUsuario.class);
+            String correo = G4DUtility.Convertor.toAdmissible(request.getCorreo(), "");
+            TipoUsuario tipoUsuario = G4DUtility.Convertor.toAdmissible(request.getTipoUsuario(), TipoUsuario.class);
             switch (tipoUsuario) {
                 case CLIENTE:
                     ClienteEntity cliente = clienteService.findByCorreo(correo).orElse(null);
                     if (cliente == null) {
-                        return new AuthenticationResponse(false, "Correo no registrado.");
+                        throw new G4DException("Correo no registrado.");
                     }
                     if (cliente.getEstado() != EstadoUsuario.ONLINE) {
-                        return new AuthenticationResponse(false, "El usuario no está en línea.");
+                        throw new G4DException("El usuario no está en línea.");
                     }
                     cliente.setEstado(EstadoUsuario.OFFLINE);
                     clienteService.save(cliente);
@@ -148,20 +141,17 @@ public class AuthenticactionService {
                 case ADMINISTRADOR:
                     AdministradorEntity administrador = administradorService.findByCorreo(correo).orElse(null);
                     if (administrador == null) {
-                        return new AuthenticationResponse(false, "Correo no registrado.");
+                        throw new G4DException("Correo no registrado.");
                     }
                     if (administrador.getEstado() != EstadoUsuario.ONLINE) {
-                        return new AuthenticationResponse(false, "El usuario no está en línea.");
+                        throw new G4DException("El usuario no está en línea.");
                     }
                     administrador.setEstado(EstadoUsuario.OFFLINE);
                     administradorService.save(administrador);
                     return new AuthenticationResponse(true, "SignOut exitoso!");
                 default:
-                    return new AuthenticationResponse(false, "Tipo de usuario inválido.");
+                    throw new G4DException("Tipo de usuario inválido.");
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-            return new AuthenticationResponse(false, "ERROR - SIGNOUT: " + e.getMessage());
         } finally {
             limpiarPools();
         }

@@ -6,14 +6,11 @@
 
 package com.pucp.dp1.grupo4d.morapack.adapter;
 
+import com.pucp.dp1.grupo4d.morapack.algorithm.Problematica;
 import com.pucp.dp1.grupo4d.morapack.model.algorithm.*;
-import com.pucp.dp1.grupo4d.morapack.model.dto.LoteDTO;
-import com.pucp.dp1.grupo4d.morapack.model.dto.LotePorRutaDTO;
-import com.pucp.dp1.grupo4d.morapack.model.dto.PedidoDTO;
 import com.pucp.dp1.grupo4d.morapack.model.entity.*;
 import com.pucp.dp1.grupo4d.morapack.service.model.PedidoService;
-import com.pucp.dp1.grupo4d.morapack.util.G4D;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.pucp.dp1.grupo4d.morapack.util.G4DUtility;
 import org.springframework.stereotype.Component;
 import java.util.*;
 
@@ -68,14 +65,14 @@ public class PedidoAdapter {
         if(poolEntity.containsKey(algorithm.getCodigo())) {
             return poolEntity.get(algorithm.getCodigo());
         }
-        PedidoEntity entity = pedidoService.findByCodigo(algorithm.getCodigo()).orElse(null);
+        PedidoEntity entity = pedidoService.findByCodigoEscenario(algorithm.getCodigo(), Problematica.ESCENARIO).orElse(null);
         if (entity == null) {
             return null;
         }
         entity.setFechaHoraProcesamientoUTC(algorithm.getFechaHoraProcesamiento());
-        entity.setFechaHoraProcesamientoLocal(G4D.toLocal(algorithm.getFechaHoraProcesamiento(), algorithm.getDestino().getHusoHorario()));
+        entity.setFechaHoraProcesamientoLocal(G4DUtility.Convertor.toLocal(algorithm.getFechaHoraProcesamiento(), algorithm.getDestino().getHusoHorario()));
         entity.setFechaHoraExpiracionUTC(algorithm.getFechaHoraExpiracion());
-        entity.setFechaHoraExpiracionLocal(G4D.toLocal(algorithm.getFechaHoraExpiracion(), entity.getDestino().getHusoHorario()));
+        entity.setFechaHoraExpiracionLocal(G4DUtility.Convertor.toLocal(algorithm.getFechaHoraExpiracion(), entity.getDestino().getHusoHorario()));
         entity.setFueAtendido(algorithm.getFueAtendido());
         poolEntity.put(entity.getCodigo(), entity);
         return entity;

@@ -7,8 +7,8 @@
 package com.pucp.dp1.grupo4d.morapack.model.algorithm;
 
 import com.pucp.dp1.grupo4d.morapack.algorithm.Problematica;
-import com.pucp.dp1.grupo4d.morapack.model.enums.EstadoLote;
-import com.pucp.dp1.grupo4d.morapack.util.G4D;
+import com.pucp.dp1.grupo4d.morapack.model.enumeration.EstadoLote;
+import com.pucp.dp1.grupo4d.morapack.util.G4DUtility;
 
 public class Lote {
     private String codigo;
@@ -16,7 +16,7 @@ public class Lote {
     private EstadoLote estado;
 
     public Lote() {
-        this.codigo = G4D.Generator.getUniqueString("LOT");
+        this.codigo = G4DUtility.Generator.getUniqueString("LOT");
         this.tamanio = 0;
         this.estado = EstadoLote.PLANIFICADO;
     }

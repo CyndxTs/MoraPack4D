@@ -10,6 +10,7 @@ import com.pucp.dp1.grupo4d.morapack.model.dto.request.SignInRequest;
 import com.pucp.dp1.grupo4d.morapack.model.dto.request.SignOutRequest;
 import com.pucp.dp1.grupo4d.morapack.model.dto.request.SignUpRequest;
 import com.pucp.dp1.grupo4d.morapack.model.dto.response.AuthenticationResponse;
+import com.pucp.dp1.grupo4d.morapack.model.exception.G4DException;
 import com.pucp.dp1.grupo4d.morapack.service.AuthenticactionService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -30,12 +31,11 @@ public class AuthenticationController {
     public ResponseEntity<AuthenticationResponse> signin(@RequestBody SignInRequest request) {
         try {
             AuthenticationResponse response = authenticactionService.signIn(request);
-            if(response.getSuccess()) {
-                return ResponseEntity.ok(response);
-            } else {
-                return ResponseEntity.badRequest().body(response);
-            }
+            return ResponseEntity.ok(response);
+        } catch (G4DException e) {
+            return ResponseEntity.badRequest().body(new AuthenticationResponse(false, e.getMessage()));
         } catch (Exception e) {
+            e.printStackTrace();
             return ResponseEntity.internalServerError().body(new AuthenticationResponse(false, "ERROR INTERNO: " + e.getMessage()));
         }
     }
@@ -44,12 +44,11 @@ public class AuthenticationController {
     public ResponseEntity<AuthenticationResponse> signup(@RequestBody SignUpRequest request) {
         try {
             AuthenticationResponse response = authenticactionService.signUp(request);
-            if(response.getSuccess()) {
-                return ResponseEntity.ok(response);
-            } else {
-                return ResponseEntity.badRequest().body(response);
-            }
+            return ResponseEntity.ok(response);
+        } catch (G4DException e) {
+            return ResponseEntity.badRequest().body(new AuthenticationResponse(false, e.getMessage()));
         } catch (Exception e) {
+            e.printStackTrace();
             return ResponseEntity.internalServerError().body(new AuthenticationResponse(false, "ERROR INTERNO: " + e.getMessage()));
         }
     }
@@ -58,12 +57,11 @@ public class AuthenticationController {
     public ResponseEntity<AuthenticationResponse> signout(@RequestBody SignOutRequest request) {
         try {
             AuthenticationResponse response = authenticactionService.signOut(request);
-            if(response.getSuccess()) {
-                return ResponseEntity.ok(response);
-            } else {
-                return ResponseEntity.badRequest().body(response);
-            }
+            return ResponseEntity.ok(response);
+        } catch (G4DException e) {
+            return ResponseEntity.badRequest().body(new AuthenticationResponse(false, e.getMessage()));
         } catch (Exception e) {
+            e.printStackTrace();
             return ResponseEntity.internalServerError().body(new AuthenticationResponse(false, "ERROR INTERNO: " + e.getMessage()));
         }
     }
