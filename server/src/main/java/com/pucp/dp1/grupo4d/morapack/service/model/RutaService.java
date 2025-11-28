@@ -11,6 +11,7 @@ import com.pucp.dp1.grupo4d.morapack.model.dto.DTO;
 import com.pucp.dp1.grupo4d.morapack.model.dto.request.ListRequest;
 import com.pucp.dp1.grupo4d.morapack.model.dto.response.ListResponse;
 import com.pucp.dp1.grupo4d.morapack.model.entity.RutaEntity;
+import com.pucp.dp1.grupo4d.morapack.model.enums.TipoEscenario;
 import com.pucp.dp1.grupo4d.morapack.repository.RutaRepository;
 import com.pucp.dp1.grupo4d.morapack.util.G4D;
 import org.springframework.data.domain.PageRequest;
@@ -66,11 +67,10 @@ public class RutaService {
     }
 
     public List<RutaEntity> findAllByDateTimeRange(LocalDateTime fechaHoraInicio, LocalDateTime fechaHoraFin, String tipoEscenario) {
-        return  rutaRepository.findAllByDateTimeRange(fechaHoraInicio, fechaHoraFin, tipoEscenario);
-    }
-
-    public List<RutaEntity> findAllSinceDateTime(LocalDateTime fechaHoraInicio, String tipoEscenario) {
-        return  rutaRepository.findAllSinceDateTime(fechaHoraInicio, tipoEscenario);
+        TipoEscenario escenario = G4D.toAdmissibleValue(tipoEscenario, TipoEscenario.class);
+        if (escenario == null) {
+            return new ArrayList<>();
+        } else return rutaRepository.findAllByDateTimeRange(fechaHoraInicio, fechaHoraFin, escenario);
     }
     
     public ListResponse listar(ListRequest request) {
