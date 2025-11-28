@@ -1,29 +1,59 @@
 import React, { useState, useEffect, useRef } from "react";
 import "./simulacion.scss";
-import { Radio, Checkbox, Dropdown, Legend, Notification, SidebarActions, ButtonAdd, DateTimeInline, Dropdown2, Input,LoadingOverlay } from "../../components/UI/ui";
-import hideIcon from '../../assets/icons/hide-sidebar.png';
+import {
+  Radio,
+  Checkbox,
+  Dropdown,
+  Legend,
+  Notification,
+  SidebarActions,
+  ButtonAdd,
+  DateTimeInline,
+  Dropdown2,
+  Input,
+  LoadingOverlay,
+} from "../../components/UI/ui";
+import hideIcon from "../../assets/icons/hide-sidebar.png";
 import plus from "../../assets/icons/plus.svg";
 import run from "../../assets/icons/run.svg";
 import { listarParametros } from "../../services/parametrosService";
 import { listarAeropuertos } from "../../services/aeropuertoService";
-import {connectSimulatorWS,sendSimulationRequest,disconnectWS} from "../../services/planificarService";
+import {
+  connectSimulatorWS,
+  sendSimulationRequest,
+  sendStopSimulation,
+  disconnectWS,
+} from "../../services/planificarService";
 
-import { MapContainer, TileLayer, Marker, Popup, Polyline, useMapEvent  } from 'react-leaflet';
-import 'leaflet/dist/leaflet.css';
+import {
+  MapContainer,
+  TileLayer,
+  Marker,
+  Popup,
+  Polyline,
+  useMapEvent,
+} from "react-leaflet";
+import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import planeIconImg from "../../assets/icons/planeMora.svg";
 /**
  * @typedef {import("../../types/simulationRequest/SimulationRequest").SimulationRequest} SimulationRequest
  */
 
-
-
 export default function Simulacion() {
   const [collapsed, setCollapsed] = useState(false);
   const [codigoVuelo, setCodigoVuelo] = useState("");
   const [ciudadDestino, setCiudadDestino] = useState("");
-  const [continente, setContinente] = useState({ america: false, europa: false, asia: false });
-  const [estadoVuelo, setEstadoVuelo] = useState({ enCurso: false, finalizado: false, cancelado: false });
+  const [continente, setContinente] = useState({
+    america: false,
+    europa: false,
+    asia: false,
+  });
+  const [estadoVuelo, setEstadoVuelo] = useState({
+    enCurso: false,
+    finalizado: false,
+    cancelado: false,
+  });
   const [archivo, setArchivo] = useState(null);
   const [selectedItem, setSelectedItem] = useState(null);
 
@@ -31,7 +61,6 @@ export default function Simulacion() {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const [tipoSimulacion, setTipoSimulacion] = useState("semanal");
-
 
   const [fechaI, setFechaI] = useState("");
   const [horaI, setHoraI] = useState("");
@@ -50,26 +79,31 @@ export default function Simulacion() {
     return Number(v);
   };
 
-
-  const [maxDiasEntregaIntercontinental, setMaxDiasEntregaIntercontinental] = useState();
-  const [maxDiasEntregaIntracontinental, setMaxDiasEntregaIntracontinental] = useState();
+  const [maxDiasEntregaIntercontinental, setMaxDiasEntregaIntercontinental] =
+    useState();
+  const [maxDiasEntregaIntracontinental, setMaxDiasEntregaIntracontinental] =
+    useState();
   const [maxHorasRecojo, setMaxHorasRecojo] = useState();
   const [minHorasEstancia, setMinHorasEstancia] = useState();
   const [maxHorasEstancia, setMaxHorasEstancia] = useState();
-
-
+  const [multiplicadorTemporal, setMultiplicadorTemporal] = useState();
+  const [tamanioDeSaltoTemporal, setTamanioDeSaltoTemporal] = useState();
 
   //Aeropuertos
   const [airports, setAirports] = useState(null);
   const [loadingAirports, setLoadingAirports] = useState(true);
-  
-  // Inputs de inicio de simulación (no se auto-actualizan)
-  const [inputDate, setInputDate] = useState(new Date().toISOString().split("T")[0]);
-  const [inputTime, setInputTime] = useState(new Date().toTimeString().slice(0,5));
 
-  // Reloj de simulación (ms) y velocidad: 3600 = 1s real -> 1 hora simulada
+  // Inputs de inicio de simulación (no se auto-actualizan)
+  const [inputDate, setInputDate] = useState(
+    new Date().toISOString().split("T")[0]
+  );
+  const [inputTime, setInputTime] = useState(
+    new Date().toTimeString().slice(0, 5)
+  );
+
+  // Reloj de simulación (ms) y velocidad: 600 = 1s real -> 10 minutos simulados (1h en 6s)
   const [simNowMs, setSimNowMs] = useState(() => Date.now());
-  const [simSpeed, setSimSpeed] = useState(3600);
+  const [simSpeed, setSimSpeed] = useState(600);
 
   // Refs internas para el avance suave
   const baseSimMsRef = useRef(null);
@@ -77,19 +111,18 @@ export default function Simulacion() {
 
   // Helpers de tiempo (trabajamos en UTC porque tu JSON está en UTC)
   const toISODate = (ms) => new Date(ms).toISOString().split("T")[0];
-  const toISOTime = (ms) => new Date(ms).toISOString().slice(11,16);
+  const toISOTime = (ms) => new Date(ms).toISOString().slice(11, 16);
 
   // El backend de planificación manda fechas tipo "03/11/2025 10:20"
   const parseFechaHoraToMs = (fechaHora) => {
     if (!fechaHora) return Date.now();
-    const [fecha, hora] = fechaHora.split(" ");      // "03/11/2025 10:20"
+    const [fecha, hora] = fechaHora.split(" "); // "03/11/2025 10:20"
     const [dia, mes, anio] = fecha.split("/").map(Number);
     const [hh, mm] = hora.split(":").map(Number);
 
     // Lo tratamos como UTC para ser consistentes con el resto de la simulación
     return Date.UTC(anio, mes - 1, dia, hh, mm, 0);
   };
-
 
   const parseUtcToMs = (iso) => {
     // Si viene sin zona ("2025-11-26T20:06:00") lo forzamos a UTC
@@ -98,9 +131,6 @@ export default function Simulacion() {
   };
 
   const fromInputsToMsUTC = (d, t) => new Date(`${d}T${t}:00Z`).getTime();
-
-
-
 
   const [seconds, setSeconds] = useState(0);
   const [timerRunning, setTimerRunning] = useState(false);
@@ -119,95 +149,104 @@ export default function Simulacion() {
   };
 
   //Filtros
-  const handleFilter = async () => {
-
-  };
+  const handleFilter = async () => {};
 
   //Limpiar filtros
-  const handleCleanFilters = async () => {
-
-  };
+  const handleCleanFilters = async () => {};
 
   // Botones
   const [btnState, setBtnState] = useState({
     start: { disabled: false, color: "blue" },
     pause: { disabled: true, color: "grey" },
-    stop:  { disabled: true, color: "grey" }
+    stop: { disabled: true, color: "grey" },
   });
 
   // Cronómetro
   useEffect(() => {
     let timer;
     if (timerRunning) {
-      timer = setInterval(() => setSeconds(s => s + 1), 1000);
+      timer = setInterval(() => setSeconds((s) => s + 1), 1000);
     } else if (!timerRunning && seconds !== 0) {
       clearInterval(timer);
     }
     return () => clearInterval(timer);
   }, [timerRunning]);
 
-useEffect(() => {
-  if (!timerRunning) return;
-  let rafId;
+  useEffect(() => {
+    if (!timerRunning) return;
+    let rafId;
 
-  const tick = (now) => {
-    if (lastRealMsRef.current == null) lastRealMsRef.current = now;
-    const elapsedRealMs = now - lastRealMsRef.current; // ms reales desde el último frame
-    lastRealMsRef.current = now;
+    const tick = (now) => {
+      if (lastRealMsRef.current == null) lastRealMsRef.current = now;
+      const elapsedRealMs = now - lastRealMsRef.current; // ms reales desde el último frame
+      lastRealMsRef.current = now;
 
-    // Avanzar reloj simulado: simSpeed = ms_sim / ms_real (3600 => 1s real = 1h simulada)
-    setSimNowMs(prev => prev + elapsedRealMs * simSpeed);
+      // Avanzar reloj simulado: simSpeed = ms_sim / ms_real (3600 => 1s real = 1h simulada)
+      setSimNowMs((prev) => prev + elapsedRealMs * simSpeed);
 
+      rafId = requestAnimationFrame(tick);
+    };
+
+    lastRealMsRef.current = performance.now();
     rafId = requestAnimationFrame(tick);
-  };
+    return () => cancelAnimationFrame(rafId);
+  }, [timerRunning, simSpeed]);
 
-  lastRealMsRef.current = performance.now();
-  rafId = requestAnimationFrame(tick);
-  return () => cancelAnimationFrame(rafId);
-}, [timerRunning, simSpeed]);
+  useEffect(() => {
+    if (!timerActive) return;
 
-useEffect(() => {
-  if (!timerActive) return;
+    setFlights((prev) =>
+      prev.map((f) => {
+        if (!f || !f.path || f.path.length === 0) return f;
 
-  setFlights(prev => prev.map(f => {
-    if (!f || !f.path || f.path.length === 0) return f;
+        const total = Math.max(f.endMs - f.startMs, 60 * 1000);
 
-    const total = Math.max(f.endMs - f.startMs, 60 * 1000);
+        // Aún no despega
+        if (simNowMs <= f.startMs) {
+          return { ...f, progress: 0, position: f.path[0], arrived: false };
+        }
 
-    // Aún no despega
-    if (simNowMs <= f.startMs) {
-      return { ...f, progress: 0, position: f.path[0], arrived: false };
-    }
+        const frac = Math.min((simNowMs - f.startMs) / total, 1);
+        const idx = Math.floor(frac * (f.path.length - 1));
+        const pos = f.path[idx];
+        const next = f.path[Math.min(idx + 1, f.path.length - 1)];
 
-    const frac = Math.min((simNowMs - f.startMs) / total, 1);
-    const idx  = Math.floor(frac * (f.path.length - 1));
-    const pos  = f.path[idx];
-    const next = f.path[Math.min(idx + 1, f.path.length - 1)];
+        // bearing → rotation
+        const toRad = (d) => (d * Math.PI) / 180,
+          toDeg = (r) => (r * 180) / Math.PI;
+        const lat1 = toRad(pos.lat),
+          lon1 = toRad(pos.lng);
+        const lat2 = toRad(next.lat),
+          lon2 = toRad(next.lng);
+        let bearing = Math.atan2(
+          Math.sin(lon2 - lon1) * Math.cos(lat2),
+          Math.cos(lat1) * Math.sin(lat2) -
+            Math.sin(lat1) * Math.cos(lat2) * Math.cos(lon2 - lon1)
+        );
+        bearing = (toDeg(bearing) + 360) % 360;
+        const rotation = bearing - 45;
 
-    // bearing → rotation
-    const toRad = d => d * Math.PI / 180, toDeg = r => r * 180 / Math.PI;
-    const lat1 = toRad(pos.lat),  lon1 = toRad(pos.lng);
-    const lat2 = toRad(next.lat), lon2 = toRad(next.lng);
-    let bearing = Math.atan2(
-      Math.sin(lon2 - lon1) * Math.cos(lat2),
-      Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(lon2 - lon1)
+        return {
+          ...f,
+          progress: frac,
+          position: pos,
+          rotation,
+          arrived: frac >= 1,
+        };
+      })
     );
-    bearing = (toDeg(bearing) + 360) % 360;
-    const rotation = bearing - 45;
+  }, [simNowMs, timerActive]);
 
-    return { ...f, progress: frac, position: pos, rotation, arrived: frac >= 1 };
-  }));
-}, [simNowMs, timerActive]);
-
-  
   const handleFileChange = (e) => {
     if (e.target.files.length > 0) setArchivo(e.target.files[0].name);
     else setArchivo(null);
   };
 
   const formatTime = (sec) => {
-    const m = Math.floor(sec / 60).toString().padStart(2,'0');
-    const s = (sec % 60).toString().padStart(2,'0');
+    const m = Math.floor(sec / 60)
+      .toString()
+      .padStart(2, "0");
+    const s = (sec % 60).toString().padStart(2, "0");
     return `${m}:${s}`;
   };
 
@@ -220,7 +259,7 @@ useEffect(() => {
       setBtnState({
         start: { disabled: true, color: "grey" },
         pause: { disabled: false, color: "red" },
-        stop:  { disabled: false, color: "blue" }
+        stop: { disabled: false, color: "blue" },
       });
       return;
     }
@@ -235,7 +274,7 @@ useEffect(() => {
     setBtnState({
       start: { disabled: true, color: "grey" },
       pause: { disabled: false, color: "red" },
-      stop:  { disabled: false, color: "blue" }
+      stop: { disabled: false, color: "blue" },
     });
   };
 
@@ -244,52 +283,61 @@ useEffect(() => {
     setBtnState({
       start: { disabled: false, color: "blue" },
       pause: { disabled: true, color: "grey" },
-      stop:  { disabled: false, color: "blue" }
+      stop: { disabled: false, color: "blue" },
     });
     // NOTA: inputs siguen bloqueados hasta stop
   };
 
   const handleStop = () => {
+    // Avisar al backend que detenga la simulación
+    sendStopSimulation();
+
     setTimerRunning(false);
     setTimerActive(false);
     setSeconds(0);
 
-    // Volver el reloj simulado al valor de los inputs
     const base = fromInputsToMsUTC(inputDate, inputTime);
     setSimNowMs(base);
 
-    // Resetear vuelos al origen usando la última planificación recibida
     if (airports && rawFlights.length > 0) {
-      const reset = rawFlights.map((v) => {
-        const origin = airports[v.codOrigen];
-        const dest   = airports[v.codDestino];
-        if (!origin || !dest) return null;
+      const reset = rawFlights
+        .map((v) => {
+          const origin = airports[v.codOrigen];
+          const dest = airports[v.codDestino];
+          if (!origin || !dest) return null;
 
-        const startMs = parseFechaHoraToMs(v.fechaHoraSalida);
-        const endMs   = parseFechaHoraToMs(v.fechaHoraLlegada);
-        const durationSec = Math.max((endMs - startMs) / 1000, 60);
-        const path = generateGeodesicPath(origin.lat, origin.lng, dest.lat, dest.lng, 120);
+          const startMs = parseFechaHoraToMs(v.fechaHoraSalida);
+          const endMs = parseFechaHoraToMs(v.fechaHoraLlegada);
+          const durationSec = Math.max((endMs - startMs) / 1000, 60);
+          const path = generateGeodesicPath(
+            origin.lat,
+            origin.lng,
+            dest.lat,
+            dest.lng,
+            120
+          );
 
-        return {
-          code: v.codigo,
-          origin,
-          originName: origin.name,
-          destination: dest,
-          destinationName: dest.name,
-          startTime: v.fechaHoraSalida,
-          endTime: v.fechaHoraLlegada,
-          startMs,
-          endMs,
-          capacity: v.capacidadOcupada,
-          planeCapacity: v.capacidadMaxima,
-          durationSec,
-          progress: 0,
-          arrived: false,
-          path,
-          position: { lat: origin.lat, lng: origin.lng },
-          rotation: 0,
-        };
-      }).filter(Boolean);
+          return {
+            code: v.codigo,
+            origin,
+            originName: origin.name,
+            destination: dest,
+            destinationName: dest.name,
+            startTime: v.fechaHoraSalida,
+            endTime: v.fechaHoraLlegada,
+            startMs,
+            endMs,
+            capacity: v.capacidadOcupada,
+            planeCapacity: v.capacidadMaxima,
+            durationSec,
+            progress: 0,
+            arrived: false,
+            path,
+            position: { lat: origin.lat, lng: origin.lng },
+            rotation: 0,
+          };
+        })
+        .filter(Boolean);
 
       setFlights(reset);
     } else {
@@ -298,44 +346,40 @@ useEffect(() => {
 
     setBtnState({
       start: { disabled: false, color: "blue" },
-      pause: { disabled: true,  color: "grey" },
-      stop:  { disabled: true,  color: "grey" }
+      pause: { disabled: true, color: "grey" },
+      stop: { disabled: true, color: "grey" },
     });
   };
-  
+
   // Vuelos
   const [flights, setFlights] = useState([]);
   const [rawFlights, setRawFlights] = useState([]);
 
-
-
-
   const createColoredIcon = (filterCss, rotation) =>
-  L.divIcon({
-    html: `<img src="${planeIconImg}" 
+    L.divIcon({
+      html: `<img src="${planeIconImg}" 
                 style="width:18px;
                        transform: rotate(${rotation}deg);
                        transform-origin: center center;
                        filter:${filterCss};
                        transition: transform 0.3s linear;">`,
-    className: "",
+      className: "",
+      iconSize: [18, 18],
+      iconAnchor: [11, 8],
+    });
+
+  const airportIcon = L.divIcon({
+    html: `<div class="airport-marker"></div>`,
+    className: "airport-icon", // 👈 agregamos una clase propia
     iconSize: [18, 18],
-    iconAnchor: [11, 8],
+    iconAnchor: [9, 9],
   });
-
-const airportIcon = L.divIcon({
-  html: `<div class="airport-marker"></div>`,
-  className: "airport-icon",   // 👈 agregamos una clase propia
-  iconSize: [18, 18],
-  iconAnchor: [9, 9],
-});
   //
-
 
   // Detener cronómetro cuando todos los vuelos hayan llegado
   useEffect(() => {
     if (!timerActive || flights.length === 0) return;
-    const allArrivedByTime = flights.every(f => simNowMs >= f.endMs);
+    const allArrivedByTime = flights.every((f) => simNowMs >= f.endMs);
     if (allArrivedByTime) {
       showNotification("info", "Todos los vuelos han llegado a su destino.");
       setTimerRunning(false);
@@ -343,28 +387,29 @@ const airportIcon = L.divIcon({
       setBtnState({
         start: { disabled: true, color: "grey" },
         pause: { disabled: true, color: "grey" },
-        stop:  { disabled: false, color: "blue" }
+        stop: { disabled: false, color: "blue" },
       });
     }
   }, [simNowMs, flights, timerActive]);
 
-
   // Calcula puntos de una ruta geodésica (gran círculo)
   function generateGeodesicPath(lat1, lon1, lat2, lon2, numPoints = 100) {
-    const toRad = deg => (deg * Math.PI) / 180;
-    const toDeg = rad => (rad * 180) / Math.PI;
+    const toRad = (deg) => (deg * Math.PI) / 180;
+    const toDeg = (rad) => (rad * 180) / Math.PI;
 
     lat1 = toRad(lat1);
     lon1 = toRad(lon1);
     lat2 = toRad(lat2);
     lon2 = toRad(lon2);
 
-    const d = 2 * Math.asin(
-      Math.sqrt(
-        Math.sin((lat2 - lat1) / 2) ** 2 +
-        Math.cos(lat1) * Math.cos(lat2) * Math.sin((lon2 - lon1) / 2) ** 2
-      )
-    );
+    const d =
+      2 *
+      Math.asin(
+        Math.sqrt(
+          Math.sin((lat2 - lat1) / 2) ** 2 +
+            Math.cos(lat1) * Math.cos(lat2) * Math.sin((lon2 - lon1) / 2) ** 2
+        )
+      );
 
     if (d === 0) return [{ lat: toDeg(lat1), lng: toDeg(lon1) }];
 
@@ -373,8 +418,12 @@ const airportIcon = L.divIcon({
       const f = i / numPoints;
       const A = Math.sin((1 - f) * d) / Math.sin(d);
       const B = Math.sin(f * d) / Math.sin(d);
-      const x = A * Math.cos(lat1) * Math.cos(lon1) + B * Math.cos(lat2) * Math.cos(lon2);
-      const y = A * Math.cos(lat1) * Math.sin(lon1) + B * Math.cos(lat2) * Math.sin(lon2);
+      const x =
+        A * Math.cos(lat1) * Math.cos(lon1) +
+        B * Math.cos(lat2) * Math.cos(lon2);
+      const y =
+        A * Math.cos(lat1) * Math.sin(lon1) +
+        B * Math.cos(lat2) * Math.sin(lon2);
       const z = A * Math.sin(lat1) + B * Math.sin(lat2);
       const lat = Math.atan2(z, Math.sqrt(x ** 2 + y ** 2));
       const lon = Math.atan2(y, x);
@@ -400,7 +449,7 @@ const airportIcon = L.divIcon({
 
         const a = await listarAeropuertos();
 
-        setParametros(p);           // si quieres conservar todo el objeto
+        setParametros(p); // si quieres conservar todo el objeto
         setAeropuertos(a.dtos ?? []);
 
         // === SOLO LOS 5 PARAMETROS A MOSTRAR EN EL POPUP ===
@@ -410,9 +459,8 @@ const airportIcon = L.divIcon({
         setMinHorasEstancia(p.minHorasEstancia);
         setMaxHorasEstancia(p.maxHorasEstancia);
 
-
-        setCodOrigenes(prev =>
-          prev.length === 0 ? (p.codOrigenes || []) : prev
+        setCodOrigenes((prev) =>
+          prev.length === 0 ? p.codOrigenes || [] : prev
         );
       } catch (err) {
         showNotification("danger", "Error cargando parámetros");
@@ -425,17 +473,15 @@ const airportIcon = L.divIcon({
     }
   }, [isModalOpen, loadedOnOpen]);
 
-
- 
   const buildSimulationFromSolution = (solution) => {
     if (!solution) return;
 
     // 1) Mapear aeropuertosTransitados → airports (mapa por código)
     const airportMap = {};
-    (solution.aeropuertosTransitados || []).forEach(a => {
+    (solution.aeropuertosTransitados || []).forEach((a) => {
       airportMap[a.codigo] = {
-        lat: a.latitud,          // 
-        lng: a.longitud,         // 
+        lat: a.latitud, //
+        lng: a.longitud, //
         name: a.alias || a.ciudad,
         code: a.codigo,
         city: a.ciudad,
@@ -452,69 +498,96 @@ const airportIcon = L.divIcon({
     setRawFlights(vuelos);
 
     // 3) Construir flights en el formato interno usado por la simulación
-    const mappedFlights = vuelos.map((v) => {
-      // Obtener aeropuertos de origen y destino
-      const origin = airportMap[v.codOrigen];
-      const dest   = airportMap[v.codDestino];
+    const mappedFlights = vuelos
+      .map((v) => {
+        // Obtener aeropuertos de origen y destino
+        const origin = airportMap[v.codOrigen];
+        const dest = airportMap[v.codDestino];
 
-      if (!origin || !dest) {
-        console.warn(
-          `Vuelo ${v.codigo} omitido: no se encontró aeropuerto ${v.codOrigen} o ${v.codDestino}`
+        if (!origin || !dest) {
+          console.warn(
+            `Vuelo ${v.codigo} omitido: no se encontró aeropuerto ${v.codOrigen} o ${v.codDestino}`
+          );
+          return null;
+        }
+
+        // Tus fechas vienen como "dd/MM/yyyy HH:mm"
+        const startMs = parseFechaHoraToMs(v.fechaHoraSalida);
+        const endMs = parseFechaHoraToMs(v.fechaHoraLlegada);
+        const durationSec = Math.max((endMs - startMs) / 1000, 60);
+
+        const path = generateGeodesicPath(
+          origin.lat,
+          origin.lng,
+          dest.lat,
+          dest.lng,
+          120
         );
-        return null;
-      }
 
-      // Tus fechas vienen como "dd/MM/yyyy HH:mm"
-      const startMs = parseFechaHoraToMs(v.fechaHoraSalida);
-      const endMs   = parseFechaHoraToMs(v.fechaHoraLlegada);
-      const durationSec = Math.max((endMs - startMs) / 1000, 60);
-
-      const path = generateGeodesicPath(origin.lat, origin.lng, dest.lat, dest.lng, 120);
-
-      return {
-        code: v.codigo,
-        origin,
-        originName: origin.name,
-        destination: dest,
-        destinationName: dest.name,
-        startTime: v.fechaHoraSalida,
-        endTime: v.fechaHoraLlegada,
-        startMs,
-        endMs,
-        capacity: v.capacidadOcupada,    // 
-        planeCapacity: v.capacidadMaxima, // 
-        durationSec,
-        progress: 0,
-        arrived: false,
-        path,
-        position: path[0],
-        rotation: 0,
-      };
-    }).filter(Boolean);
+        return {
+          code: v.codigo,
+          origin,
+          originName: origin.name,
+          destination: dest,
+          destinationName: dest.name,
+          startTime: v.fechaHoraSalida,
+          endTime: v.fechaHoraLlegada,
+          startMs,
+          endMs,
+          capacity: v.capacidadOcupada, //
+          planeCapacity: v.capacidadMaxima, //
+          durationSec,
+          progress: 0,
+          arrived: false,
+          path,
+          position: path[0],
+          rotation: 0,
+        };
+      })
+      .filter(Boolean);
 
     setFlights(mappedFlights);
   };
 
   useEffect(() => {
-    // Conectamos al WS y nos suscribimos a /topic/simulator
-    connectSimulatorWS((solution) => {
-      console.log("SolutionResponse recibido por WS:", solution);
+    connectSimulatorWS(
+      (solution) => {
+        // Mensajes de /topic/simulator  → SolutionResponse
+        console.log("SolutionResponse recibido por WS:", solution);
 
-      if (solution.success) {
-        showNotification("success", "Plan generado correctamente");
-        buildSimulationFromSolution(solution);
-        setInputDate(fechaI);
-        setInputTime(horaI);
-      } else {
-        showNotification("danger", solution.message || "Error generando el plan");
+        if (solution.success) {
+          buildSimulationFromSolution(solution);
+        } else {
+          showNotification("danger", solution.message || "Error en simulación");
+        }
+      },
+      (status) => {
+        // Mensajes de /topic/simulator-status → ProcessStatusResponse
+        console.log("Status simulador:", status);
+
+        if (!status.success) {
+          showNotification("danger", status.message || "Error simulación");
+          return;
+        }
+
+        // Puedes usar status.estadoProceso (INICIADO, FINALIZADO, COLAPSADO, etc.)
+        if (status.estadoProceso === "INICIADO") {
+          showNotification("info", status.message || "Simulación iniciada");
+        } else if (status.estadoProceso === "FINALIZADO") {
+          showNotification(
+            "success",
+            status.message || "Simulación finalizada"
+          );
+        } else if (status.estadoProceso === "COLAPSADO") {
+          showNotification("danger", status.message || "COLAPSO en simulación");
+        }
       }
-    });
+    );
 
-    // Al desmontar la pantalla, cortamos la conexión
     return () => {
       disconnectWS();
     };
-  }, []); // 👈 solo una vez al montar
+  }, []);
 
   const handlePlanear = async () => {
     try {
@@ -529,8 +602,8 @@ const airportIcon = L.divIcon({
       /** @type {SimulationRequest} */
       const body = {
         fechaHoraInicio: `${fechaI}T${horaI}:00`,
-        fechaHoraFim: `${fechaF}T${horaF}:00`,
-        parameters: {
+        fechaHoraFin: `${fechaF}T${horaF}:00`,
+        parametros: {
           maxDiasEntregaIntercontinental,
           maxDiasEntregaIntracontinental,
           maxHorasRecojo,
@@ -538,6 +611,8 @@ const airportIcon = L.divIcon({
           maxHorasEstancia,
           codOrigenes,
         },
+        multiplicadorTemporal,
+        tamanioDeSaltoTemporal,
       };
 
       console.log("SimulationRequest enviado por WS:", body);
@@ -549,7 +624,6 @@ const airportIcon = L.divIcon({
       setLoading(false);
     }
   };
-
 
   // LIMPIAR MODAL SIEMPRE QUE SE CIERRA
   const resetModal = () => {
@@ -567,35 +641,32 @@ const airportIcon = L.divIcon({
   const closeModal = () => {
     resetModal();
     setIsModalOpen(false);
-    setLoadedOnOpen(false);  
+    setLoadedOnOpen(false);
   };
 
   // Manejo de fechas según tipo de simulación
   useEffect(() => {
     if (fechaI && horaI) {
-        const start = new Date(`${fechaI}T${horaI}:00Z`);
-        const end = new Date(start.getTime() + 7 * 24 * 60 * 60 * 1000);
+      const start = new Date(`${fechaI}T${horaI}:00Z`);
+      const end = new Date(start.getTime() + 7 * 24 * 60 * 60 * 1000);
 
-        setFechaF(end.toISOString().slice(0, 10));
-        setHoraF(end.toISOString().slice(11, 16));
+      setFechaF(end.toISOString().slice(0, 10));
+      setHoraF(end.toISOString().slice(11, 16));
     }
-    
-
   }, [tipoSimulacion, fechaI, horaI]);
-
 
   return (
     <div className="page">
       {/* Overlay de carga de simulación */}
       {loading && <LoadingOverlay text="Cargando simulación..." />}
-      
+
       {notification && (
         <Notification
           type={notification.type}
           message={notification.message}
           onClose={() => setNotification(null)}
         />
-      )}    
+      )}
 
       <aside className={`sidebar ${collapsed ? "collapsed" : ""}`}>
         <div className="sidebar-header">
@@ -613,34 +684,38 @@ const airportIcon = L.divIcon({
             <div className="sidebar-content">
               <span className="sidebar-subtitle">Planeación</span>
               <div className="filter-group">
-                <ButtonAdd icon={run} label="Generar plan" onClick={openModal} />
+                <ButtonAdd
+                  icon={run}
+                  label="Generar plan"
+                  onClick={openModal}
+                />
               </div>
 
               <span className="sidebar-subtitle">Filtros</span>
-                <div className="filter-group">
-                  <span className="sidebar-subtitle-strong">Proximamente...</span>
-                  <Dropdown
-                    placeholder="Seleccionar..."
-                    options={[
-                      { label: "Ejemplo 1", value: "ejemplo1" },
-                      { label: "Ejemplo 2", value: "ejemplo2" },          
-                    ]}
-                    onSelect={(val) => setCodigoVuelo(val)}
-                  />
-                </div>
+              <div className="filter-group">
+                <span className="sidebar-subtitle-strong">Proximamente...</span>
+                <Dropdown
+                  placeholder="Seleccionar..."
+                  options={[
+                    { label: "Ejemplo 1", value: "ejemplo1" },
+                    { label: "Ejemplo 2", value: "ejemplo2" },
+                  ]}
+                  onSelect={(val) => setCodigoVuelo(val)}
+                />
+              </div>
 
               <span className="sidebar-subtitle">Leyenda</span>
               <Legend
                 items={[
                   { label: "50% Capacidad", status: "en-curso" },
                   { label: "75% Capacidad", status: "finalizado" },
-                  { label: "100% Capacidad", status: "cancelado" }
+                  { label: "100% Capacidad", status: "cancelado" },
                 ]}
               />
 
-              <SidebarActions 
-                  onFilter={handleFilter}
-                  onClean={handleCleanFilters}
+              <SidebarActions
+                onFilter={handleFilter}
+                onClean={handleCleanFilters}
               />
             </div>
           </>
@@ -651,9 +726,33 @@ const airportIcon = L.divIcon({
         <div className="control-bar">
           <span className="control-label">Controles:</span>
 
-          <button className={`btn ${btnState.start.color}`} onClick={handleStart} disabled={btnState.start.disabled} title={timerActive && !timerRunning ? "Reanudar simulación" : "Iniciar simulación"} > {timerActive && !timerRunning ? "Reanudar" : "Iniciar"} </button>
-          <button className={`btn ${btnState.pause.color}`} onClick={handlePause} disabled={btnState.pause.disabled}>Pausar</button>
-          <button className={`btn ${btnState.stop.color}`} onClick={handleStop} disabled={btnState.stop.disabled}>Detener</button>
+          <button
+            className={`btn ${btnState.start.color}`}
+            onClick={handleStart}
+            disabled={btnState.start.disabled}
+            title={
+              timerActive && !timerRunning
+                ? "Reanudar simulación"
+                : "Iniciar simulación"
+            }
+          >
+            {" "}
+            {timerActive && !timerRunning ? "Reanudar" : "Iniciar"}{" "}
+          </button>
+          <button
+            className={`btn ${btnState.pause.color}`}
+            onClick={handlePause}
+            disabled={btnState.pause.disabled}
+          >
+            Pausar
+          </button>
+          <button
+            className={`btn ${btnState.stop.color}`}
+            onClick={handleStop}
+            disabled={btnState.stop.disabled}
+          >
+            Detener
+          </button>
 
           <span className="info-label">Fecha:</span>
           <span className="value">{toISODate(simNowMs)}</span>
@@ -662,7 +761,7 @@ const airportIcon = L.divIcon({
           <span className="info-label">Tiempo:</span>
           <span className="value">{formatTime(seconds)}</span>
         </div>
-     
+
         <div className="map-and-info">
           <MapContainer id="map" center={[-12.0464, -77.0428]} zoom={3}>
             <TileLayer
@@ -671,29 +770,40 @@ const airportIcon = L.divIcon({
             />
 
             {/* Marcadores de aeropuertos */}
-            {airports && Object.values(airports).map((ap, i) => (
-              <Marker
-                key={i}
-                position={[ap.lat, ap.lng]}
-                icon={airportIcon}
-                eventHandlers={{
-                  click: () =>
-                    setSelectedItem(`Aeropuerto ${ap.name} (${ap.code}) - ${ap.city}, ${ap.country} | Capacidad: ${ap.capacidad}`)
-                }}
-              >
-                <Popup>
-                  <b>{ap.country}</b><br />
-                  Código: {ap.code}<br />
-                  Ciudad: {ap.city}<br />
-                  Capacidad: {ap.capacidad} unidades<br />
-                </Popup>
-              </Marker>
-            ))}
-
+            {airports &&
+              Object.values(airports).map((ap, i) => (
+                <Marker
+                  key={i}
+                  position={[ap.lat, ap.lng]}
+                  icon={airportIcon}
+                  eventHandlers={{
+                    click: () =>
+                      setSelectedItem(
+                        `Aeropuerto ${ap.name} (${ap.code}) - ${ap.city}, ${ap.country} | Capacidad: ${ap.capacidad}`
+                      ),
+                  }}
+                >
+                  <Popup>
+                    <b>{ap.country}</b>
+                    <br />
+                    Código: {ap.code}
+                    <br />
+                    Ciudad: {ap.city}
+                    <br />
+                    Capacidad: {ap.capacidad} unidades
+                    <br />
+                  </Popup>
+                </Marker>
+              ))}
 
             {flights.map((flight, i) => {
               // Si el vuelo o su path aún no existen, no renderizamos nada
-              if (!flight || !flight.path || !Array.isArray(flight.path) || flight.path.length === 0) {
+              if (
+                !flight ||
+                !flight.path ||
+                !Array.isArray(flight.path) ||
+                flight.path.length === 0
+              ) {
                 return null;
               }
 
@@ -704,18 +814,19 @@ const airportIcon = L.divIcon({
               return (
                 <React.Fragment key={flight.code}>
                   {/* Línea del vuelo: solo mostrar cuando el vuelo ya ha despegado */}
-                  {timerActive && simNowMs >= flight.startMs && simNowMs < flight.endMs && (
-                    <Polyline
-                      positions={flight.path.slice(
-                        Math.floor(flight.path.length * flight.progress)
-                      )}
-                      color="#DC3545"
-                      weight={3}
-                      opacity={0.5}
-                      dashArray="6, 10" // punteado
-                    />
-                  )}
-
+                  {timerActive &&
+                    simNowMs >= flight.startMs &&
+                    simNowMs < flight.endMs && (
+                      <Polyline
+                        positions={flight.path.slice(
+                          Math.floor(flight.path.length * flight.progress)
+                        )}
+                        color="#DC3545"
+                        weight={3}
+                        opacity={0.5}
+                        dashArray="6, 10" // punteado
+                      />
+                    )}
 
                   {/* Mostramos el avión solo si no ha llegado */}
                   {!flight.arrived && (
@@ -725,25 +836,24 @@ const airportIcon = L.divIcon({
                       eventHandlers={{
                         click: () =>
                           setSelectedItem(
-      `Vuelo ${flight.code}: ${flight.origin.country} → ${flight.destination.country}
+                            `Vuelo ${flight.code}: ${flight.origin.country} → ${flight.destination.country}
       | Salida: ${flight.startTime} | Llegada: ${flight.endTime}`
-    )
+                          ),
                       }}
                     >
-                    <Popup>
-                      <b>{flight.code}</b>
-                      <br />
-                      {flight.origin.country} → {flight.destination.country}
-                      <br />
-                      Salida: {flight.startTime} | Llegada: {flight.endTime}
-                      <br />
-                      Capacidad: {flight.capacity} pax
-                      <br />
-                      Estado: {flight.arrived ? "Finalizado" : "En curso"}
-                    </Popup>
+                      <Popup>
+                        <b>{flight.code}</b>
+                        <br />
+                        {flight.origin.country} → {flight.destination.country}
+                        <br />
+                        Salida: {flight.startTime} | Llegada: {flight.endTime}
+                        <br />
+                        Capacidad: {flight.capacity} pax
+                        <br />
+                        Estado: {flight.arrived ? "Finalizado" : "En curso"}
+                      </Popup>
                     </Marker>
                   )}
-
                 </React.Fragment>
               );
             })}
@@ -760,14 +870,15 @@ const airportIcon = L.divIcon({
                   <p>{selectedItem}</p>
                 </>
               ) : (
-                <p className="placeholder">Haz clic en un avión o aeropuerto para ver detalles.</p>
+                <p className="placeholder">
+                  Haz clic en un avión o aeropuerto para ver detalles.
+                </p>
               )}
             </div>
             <div className="info-triangle"></div>
           </div>
         </div>
       </section>
-
 
       {/* MODAL */}
       {isModalOpen && (
@@ -795,7 +906,30 @@ const airportIcon = L.divIcon({
                 timeValue={horaF}
                 onDateChange={(e) => setFechaF(e.target.value)}
                 onTimeChange={(e) => setHoraF(e.target.value)}
-                disabled={true}  // la calculas en el useEffect
+                disabled={true}
+              />
+
+              {/* === CONFIGURACIÓN TEMPORAL === */}
+              <span className="sidebar-subtitle">Configuración temporal</span>
+
+              <label>Multiplicador temporal</label>
+              <Input
+                label="Multiplicador temporal"
+                type="number"
+                value={multiplicadorTemporal}
+                onChange={(e) =>
+                  setMultiplicadorTemporal(parseNumber(e.target.value))
+                }
+              />
+
+              <label>Tamaño de salto temporal (horas)</label>
+              <Input
+                label="Tamaño de salto temporal (horas)"
+                type="number"
+                value={tamanioDeSaltoTemporal}
+                onChange={(e) =>
+                  setTamanioDeSaltoTemporal(parseNumber(e.target.value))
+                }
               />
 
               {/* === CIUDADES SEDE (codOrigenes) === */}
@@ -831,7 +965,9 @@ const airportIcon = L.divIcon({
               />
 
               {/* === PARÁMETROS QUE SE ENVIARÁN AL BACK === */}
-              <span className="sidebar-subtitle">Parámetros de planificación</span>
+              <span className="sidebar-subtitle">
+                Parámetros de planificación
+              </span>
 
               <label>Máx. días entrega intercontinental</label>
               <Input
@@ -866,7 +1002,9 @@ const airportIcon = L.divIcon({
                 label="Mín. horas de estancia"
                 type="number"
                 value={minHorasEstancia}
-                onChange={(e) => setMinHorasEstancia(parseNumber(e.target.value))}
+                onChange={(e) =>
+                  setMinHorasEstancia(parseNumber(e.target.value))
+                }
               />
 
               <label>Máx. horas de estancia</label>
@@ -874,7 +1012,9 @@ const airportIcon = L.divIcon({
                 label="Máx. horas de estancia"
                 type="number"
                 value={maxHorasEstancia}
-                onChange={(e) => setMaxHorasEstancia(parseNumber(e.target.value))}
+                onChange={(e) =>
+                  setMaxHorasEstancia(parseNumber(e.target.value))
+                }
               />
             </div>
 

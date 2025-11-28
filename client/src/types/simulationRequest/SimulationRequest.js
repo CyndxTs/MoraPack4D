@@ -5,9 +5,11 @@
 
 /**
  * @typedef {Object} SimulationRequest
- * @property {string} fechaHoraInicio  - "YYYY-MM-DDTHH:mm:ss"
- * @property {string} fechaHoraFim     - "YYYY-MM-DDTHH:mm:ss" 
- * @property {ParametrosRequestDTO} parameters
+ * @property {string} fechaHoraInicio          - "YYYY-MM-DDTHH:mm:ss"
+ * @property {string} fechaHoraFin             - "YYYY-MM-DDTHH:mm:ss"
+ * @property {ParametrosRequestDTO} parametros
+ * @property {number} multiplicadorTemporal
+ * @property {number} tamanioDeSaltoTemporal
  */
 
 export {};

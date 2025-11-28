@@ -2,13 +2,14 @@ import axios from "axios";
 
 const API_URL = "/api/aeropuertos";
 
-export const listarAeropuertos = async (page,size) => {
+export const listarAeropuertos = async (page = 0, size = 30) => {
   try {
-    const response = await axios.get(`${API_URL}/listar`, {
-      params: { page, size },
+    const response = await axios.post(`${API_URL}/listar`, {
+      page,
+      size,
     });
 
-    return response.data; // ListResponse con { success, message, dtos }
+    return response.data;
   } catch (error) {
     console.error("Error al listar aeropuertos:", error);
     throw error;
