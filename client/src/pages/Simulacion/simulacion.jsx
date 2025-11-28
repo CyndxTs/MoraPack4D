@@ -1,88 +1,38 @@
 import React, { useState, useEffect, useRef } from "react";
 import "./simulacion.scss";
-import {
-  Radio,
-  Checkbox,
-  Dropdown,
-  Legend,
-  Notification,
-  SidebarActions,
-  ButtonAdd,
-  DateTimeInline,
-  Dropdown2,
-  Input,
-  LoadingOverlay,
-} from "../../components/UI/ui";
+import {Dropdown,Legend,Notification,SidebarActions,ButtonAdd,DateTimeInline,Dropdown2,Input,LoadingOverlay,}from "../../components/UI/ui";
 import hideIcon from "../../assets/icons/hide-sidebar.png";
-import plus from "../../assets/icons/plus.svg";
 import run from "../../assets/icons/run.svg";
 import { listarParametros } from "../../services/parametrosService";
 import { listarAeropuertos } from "../../services/aeropuertoService";
-import {
-  connectSimulatorWS,
-  sendSimulationRequest,
-  sendStopSimulation,
-  disconnectWS,
-} from "../../services/planificarService";
-
-import {
-  MapContainer,
-  TileLayer,
-  Marker,
-  Popup,
-  Polyline,
-  useMapEvent,
-} from "react-leaflet";
+import {connectSimulatorWS,sendSimulationRequest,sendStopSimulation,disconnectWS,} from "../../services/planificarService";
+import {MapContainer,TileLayer,Marker,Popup,Polyline,useMapEvent,} from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import planeIconImg from "../../assets/icons/planeMora.svg";
 /**
  * @typedef {import("../../types/simulationRequest/SimulationRequest").SimulationRequest} SimulationRequest
  */
-
 export default function Simulacion() {
   const [collapsed, setCollapsed] = useState(false);
   const [codigoVuelo, setCodigoVuelo] = useState("");
-  const [ciudadDestino, setCiudadDestino] = useState("");
-  const [continente, setContinente] = useState({
-    america: false,
-    europa: false,
-    asia: false,
-  });
-  const [estadoVuelo, setEstadoVuelo] = useState({
-    enCurso: false,
-    finalizado: false,
-    cancelado: false,
-  });
-  const [archivo, setArchivo] = useState(null);
   const [selectedItem, setSelectedItem] = useState(null);
-
   // -------- MODAL --------
   const [isModalOpen, setIsModalOpen] = useState(false);
-
-  const [tipoSimulacion, setTipoSimulacion] = useState("semanal");
-
   const [fechaI, setFechaI] = useState("");
   const [horaI, setHoraI] = useState("");
   const [fechaF, setFechaF] = useState("");
   const [horaF, setHoraF] = useState("");
-
   const [loadedOnOpen, setLoadedOnOpen] = useState(false);
-  const [parametros, setParametros] = useState(null);
   const [aeropuertos, setAeropuertos] = useState([]);
   const [codOrigenes, setCodOrigenes] = useState([]);
-
   // estados de todos los parámetros
-  const toBoolean = (v) => v === "true";
   const parseNumber = (v) => {
     if (v === "" || v === null || v === undefined) return null;
     return Number(v);
   };
-
-  const [maxDiasEntregaIntercontinental, setMaxDiasEntregaIntercontinental] =
-    useState();
-  const [maxDiasEntregaIntracontinental, setMaxDiasEntregaIntracontinental] =
-    useState();
+  const [maxDiasEntregaIntercontinental, setMaxDiasEntregaIntercontinental] =useState();
+  const [maxDiasEntregaIntracontinental, setMaxDiasEntregaIntracontinental] = useState();
   const [maxHorasRecojo, setMaxHorasRecojo] = useState();
   const [minHorasEstancia, setMinHorasEstancia] = useState();
   const [maxHorasEstancia, setMaxHorasEstancia] = useState();
@@ -91,8 +41,6 @@ export default function Simulacion() {
 
   //Aeropuertos
   const [airports, setAirports] = useState(null);
-  const [loadingAirports, setLoadingAirports] = useState(true);
-
   // Inputs de inicio de simulación (no se auto-actualizan)
   const [inputDate, setInputDate] = useState(
     new Date().toISOString().split("T")[0]
@@ -100,34 +48,22 @@ export default function Simulacion() {
   const [inputTime, setInputTime] = useState(
     new Date().toTimeString().slice(0, 5)
   );
-
   // Reloj de simulación (ms) y velocidad: 600 = 1s real -> 10 minutos simulados (1h en 6s)
   const [simNowMs, setSimNowMs] = useState(() => Date.now());
-  const [simSpeed, setSimSpeed] = useState(600);
-
+  const SIM_SPEED = 600; 
   // Refs internas para el avance suave
-  const baseSimMsRef = useRef(null);
   const lastRealMsRef = useRef(null);
-
   // Helpers de tiempo (trabajamos en UTC porque tu JSON está en UTC)
   const toISODate = (ms) => new Date(ms).toISOString().split("T")[0];
   const toISOTime = (ms) => new Date(ms).toISOString().slice(11, 16);
-
   // El backend de planificación manda fechas tipo "03/11/2025 10:20"
   const parseFechaHoraToMs = (fechaHora) => {
     if (!fechaHora) return Date.now();
     const [fecha, hora] = fechaHora.split(" "); // "03/11/2025 10:20"
     const [dia, mes, anio] = fecha.split("/").map(Number);
     const [hh, mm] = hora.split(":").map(Number);
-
     // Lo tratamos como UTC para ser consistentes con el resto de la simulación
     return Date.UTC(anio, mes - 1, dia, hh, mm, 0);
-  };
-
-  const parseUtcToMs = (iso) => {
-    // Si viene sin zona ("2025-11-26T20:06:00") lo forzamos a UTC
-    const s = /Z|[+-]\d{2}:\d{2}$/.test(iso) ? iso : iso + "Z";
-    return new Date(s).getTime();
   };
 
   const fromInputsToMsUTC = (d, t) => new Date(`${d}T${t}:00Z`).getTime();
@@ -135,8 +71,6 @@ export default function Simulacion() {
   const [seconds, setSeconds] = useState(0);
   const [timerRunning, setTimerRunning] = useState(false);
   const [timerActive, setTimerActive] = useState(false); // indica si inició cronómetro (start clickeado)
-
-  // Cargar aeropuertos del back una sola vez
 
   //Notificaciones
   const [notification, setNotification] = useState(null);
@@ -147,10 +81,8 @@ export default function Simulacion() {
     setNotification({ type, message });
     setTimeout(() => setNotification(null), 5000);
   };
-
   //Filtros
   const handleFilter = async () => {};
-
   //Limpiar filtros
   const handleCleanFilters = async () => {};
 
@@ -166,9 +98,7 @@ export default function Simulacion() {
     let timer;
     if (timerRunning) {
       timer = setInterval(() => setSeconds((s) => s + 1), 1000);
-    } else if (!timerRunning && seconds !== 0) {
-      clearInterval(timer);
-    }
+    } 
     return () => clearInterval(timer);
   }, [timerRunning]);
 
@@ -182,7 +112,7 @@ export default function Simulacion() {
       lastRealMsRef.current = now;
 
       // Avanzar reloj simulado: simSpeed = ms_sim / ms_real (3600 => 1s real = 1h simulada)
-      setSimNowMs((prev) => prev + elapsedRealMs * simSpeed);
+      setSimNowMs((prev) => prev + elapsedRealMs * SIM_SPEED);
 
       rafId = requestAnimationFrame(tick);
     };
@@ -190,7 +120,7 @@ export default function Simulacion() {
     lastRealMsRef.current = performance.now();
     rafId = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(rafId);
-  }, [timerRunning, simSpeed]);
+  }, [timerRunning]);
 
   useEffect(() => {
     if (!timerActive) return;
@@ -237,10 +167,6 @@ export default function Simulacion() {
     );
   }, [simNowMs, timerActive]);
 
-  const handleFileChange = (e) => {
-    if (e.target.files.length > 0) setArchivo(e.target.files[0].name);
-    else setArchivo(null);
-  };
 
   const formatTime = (sec) => {
     const m = Math.floor(sec / 60)
@@ -446,19 +372,14 @@ export default function Simulacion() {
         const parametrosResponse = await listarParametros();
         /** @type {ParametrosDTO} */
         const p = parametrosResponse.dtos[0];
-
-        const a = await listarAeropuertos();
-
-        setParametros(p); // si quieres conservar todo el objeto
+        const a = await listarAeropuertos();        
         setAeropuertos(a.dtos ?? []);
-
         // === SOLO LOS 5 PARAMETROS A MOSTRAR EN EL POPUP ===
         setMaxDiasEntregaIntercontinental(p.maxDiasEntregaIntercontinental);
         setMaxDiasEntregaIntracontinental(p.maxDiasEntregaIntracontinental);
         setMaxHorasRecojo(p.maxHorasRecojo);
         setMinHorasEstancia(p.minHorasEstancia);
         setMaxHorasEstancia(p.maxHorasEstancia);
-
         setCodOrigenes((prev) =>
           prev.length === 0 ? p.codOrigenes || [] : prev
         );
@@ -491,7 +412,6 @@ export default function Simulacion() {
     });
     console.log("airportMap construido:", airportMap);
     setAirports(airportMap);
-    setLoadingAirports(false);
 
     // 2) Guardar vuelos crudos (VueloDTO) para poder reconstruirlos al hacer "Detener"
     const vuelos = solution.vuelosEnTransito || [];
@@ -510,8 +430,7 @@ export default function Simulacion() {
           );
           return null;
         }
-
-        // Tus fechas vienen como "dd/MM/yyyy HH:mm"
+        // fechas vienen como "dd/MM/yyyy HH:mm"
         const startMs = parseFechaHoraToMs(v.fechaHoraSalida);
         const endMs = parseFechaHoraToMs(v.fechaHoraLlegada);
         const durationSec = Math.max((endMs - startMs) / 1000, 60);
@@ -523,7 +442,6 @@ export default function Simulacion() {
           dest.lng,
           120
         );
-
         return {
           code: v.codigo,
           origin,
@@ -583,7 +501,6 @@ export default function Simulacion() {
         }
       }
     );
-
     return () => {
       disconnectWS();
     };
@@ -616,6 +533,8 @@ export default function Simulacion() {
       };
 
       console.log("SimulationRequest enviado por WS:", body);
+      setInputDate(fechaI);
+      setInputTime(horaI);
       sendSimulationRequest(body); // 👈 va por WebSocket
       closeModal();
     } catch (err) {
@@ -653,7 +572,7 @@ export default function Simulacion() {
       setFechaF(end.toISOString().slice(0, 10));
       setHoraF(end.toISOString().slice(11, 16));
     }
-  }, [tipoSimulacion, fechaI, horaI]);
+  }, [fechaI, horaI]);
 
   return (
     <div className="page">
