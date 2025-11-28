@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import com.pucp.dp1.grupo4d.morapack.algorithm.Problematica;
-import com.pucp.dp1.grupo4d.morapack.util.G4D;
+import com.pucp.dp1.grupo4d.morapack.util.G4DUtility;
 
 public class Aeropuerto {
     private String codigo;
@@ -28,7 +28,7 @@ public class Aeropuerto {
     private List<Registro> registros;
 
     public Aeropuerto() {
-        this.codigo = G4D.Generator.getUniqueString("AER");
+        this.codigo = G4DUtility.Generator.getUniqueString("AER");
         this.capacidad = 0;
         this.registros = new ArrayList<>();
     }
@@ -90,7 +90,7 @@ public class Aeropuerto {
             if(!eventos.isEmpty()) {
                 for(Map.Entry<LocalDateTime, Integer> entry : eventos.entrySet()) {
                     if(!fechaHoraIngresoDeLote.isAfter(entry.getKey()) && disp + entry.getValue() < lote.getTamanio()) {
-                        long maxMinutos = (long)(60*Math.min(G4D.getElapsedHours(fechaHoraIngresoDeLote, entry.getKey()), Problematica.MAX_HORAS_ESTANCIA));
+                        long maxMinutos = (long)(60*Math.min(G4DUtility.Calculator.getElapsedHours(fechaHoraIngresoDeLote, entry.getKey()), Problematica.MAX_HORAS_ESTANCIA));
                         registroDeLote.setFechaHoraEgreso(fechaHoraIngresoDeLote.plusMinutes(maxMinutos));
                         return;
                     }
@@ -122,7 +122,7 @@ public class Aeropuerto {
     }
 
     public Double obtenerDistanciaHasta(Aeropuerto aDest) {
-        return G4D.getGeodesicDistance(this.latitud, this.longitud, aDest.latitud, aDest.longitud);
+        return G4DUtility.Calculator.getGeodesicDistance(this.latitud, this.longitud, aDest.latitud, aDest.longitud);
     }
 
     @Override
@@ -204,7 +204,7 @@ public class Aeropuerto {
     }
 
     public void setLatitud(String latDMS) {
-        this.latitud = G4D.toLatDEC(latDMS);
+        this.latitud = G4DUtility.Calculator.getLatDEC(latDMS);
     }
 
     public void setLatitud(double latitud) {
@@ -216,7 +216,7 @@ public class Aeropuerto {
     }
 
     public void setLongitud(String lonDMS) {
-        this.longitud = G4D.toLonDEC(lonDMS);
+        this.longitud = G4DUtility.Calculator.getLonDEC(lonDMS);
     }
 
     public void setLongitud(double longitud) {

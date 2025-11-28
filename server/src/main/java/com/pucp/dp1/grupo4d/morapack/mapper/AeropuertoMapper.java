@@ -12,7 +12,7 @@ import com.pucp.dp1.grupo4d.morapack.model.dto.AeropuertoDTO;
 import com.pucp.dp1.grupo4d.morapack.model.dto.RegistroDTO;
 import com.pucp.dp1.grupo4d.morapack.model.entity.AeropuertoEntity;
 import com.pucp.dp1.grupo4d.morapack.model.entity.RegistroEntity;
-import com.pucp.dp1.grupo4d.morapack.util.G4D;
+import com.pucp.dp1.grupo4d.morapack.util.G4DUtility;
 import org.springframework.stereotype.Component;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -95,9 +95,9 @@ public class AeropuertoMapper {
         entity.setCapacidad(dto.getCapacidad());
         entity.setEsSede(dto.getEsSede());
         entity.setLatitudDEC(dto.getLatitud());
-        entity.setLatitudDMS(G4D.toLatDMS(entity.getLatitudDEC()));
+        entity.setLatitudDMS(G4DUtility.Calculator.getLatDMS(entity.getLatitudDEC()));
         entity.setLongitudDEC(dto.getLongitud());
-        entity.setLongitudDMS(G4D.toLonDMS(entity.getLongitudDEC()));
+        entity.setLongitudDMS(G4DUtility.Calculator.getLonDMS(entity.getLongitudDEC()));
         poolDTO.put(dto.getCodigo(), dto);
         return entity;
     }

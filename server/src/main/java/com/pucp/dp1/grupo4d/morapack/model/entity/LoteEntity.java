@@ -7,7 +7,7 @@
 package com.pucp.dp1.grupo4d.morapack.model.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.pucp.dp1.grupo4d.morapack.model.enums.EstadoLote;
+import com.pucp.dp1.grupo4d.morapack.model.enumeration.EstadoLote;
 import jakarta.persistence.*;
 import java.util.ArrayList;
 import java.util.List;

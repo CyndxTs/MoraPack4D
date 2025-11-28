@@ -6,7 +6,7 @@
 
 package com.pucp.dp1.grupo4d.morapack.model.dto.response;
 
-import com.pucp.dp1.grupo4d.morapack.util.G4D;
+import com.pucp.dp1.grupo4d.morapack.util.G4DUtility;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -14,12 +14,12 @@ import lombok.Setter;
 @Setter
 public class GenericResponse {
     private String token;
-    private Boolean success;
-    private String message;
+    private Boolean exito;
+    private String mensaje;
 
-    public GenericResponse(Boolean success, String message) {
-        this.token = G4D.Generator.getUniqueString("TOK");
-        this.success = success;
-        this.message = message;
+    public GenericResponse(Boolean exito, String mensaje) {
+        this.token = G4DUtility.Generator.getUniqueString("TOK");
+        this.exito = exito;
+        this.mensaje = mensaje;
     }
 }

@@ -15,7 +15,7 @@ import com.pucp.dp1.grupo4d.morapack.model.dto.SegmentacionDTO;
 import com.pucp.dp1.grupo4d.morapack.model.entity.LoteEntity;
 import com.pucp.dp1.grupo4d.morapack.model.entity.RutaEntity;
 import com.pucp.dp1.grupo4d.morapack.model.entity.SegmentacionEntity;
-import com.pucp.dp1.grupo4d.morapack.util.G4D;
+import com.pucp.dp1.grupo4d.morapack.util.G4DUtility;
 import org.springframework.stereotype.Component;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -38,8 +38,8 @@ public class SegmentacionMapper {
         }
         SegmentacionDTO dto = new SegmentacionDTO();
         dto.setCodigo(algorithm.getCodigo());
-        dto.setFechaHoraAplicacion(G4D.toDisplayString(algorithm.getFechaHoraAplicacion()));
-        dto.setFechaHoraSustitucion(G4D.toDisplayString(algorithm.getFechaHoraSustitucion()));
+        dto.setFechaHoraAplicacion(G4DUtility.Convertor.toDisplayString(algorithm.getFechaHoraAplicacion()));
+        dto.setFechaHoraSustitucion(G4DUtility.Convertor.toDisplayString(algorithm.getFechaHoraSustitucion()));
         List<LotePorRutaDTO> lotesPorRutaDTO = new ArrayList<>();
         Map<Ruta, Lote> lotesPorRuta = algorithm.getLotesPorRuta();
         for(Map.Entry<Ruta, Lote> entry : lotesPorRuta.entrySet()) {
@@ -60,8 +60,8 @@ public class SegmentacionMapper {
         }
         SegmentacionDTO dto = new SegmentacionDTO();
         dto.setCodigo(entity.getCodigo());
-        dto.setFechaHoraAplicacion(G4D.toDisplayString(entity.getFechaHoraAplicacionUTC()));
-        dto.setFechaHoraSustitucion(G4D.toDisplayString(entity.getFechaHoraSustitucionUTC()));
+        dto.setFechaHoraAplicacion(G4DUtility.Convertor.toDisplayString(entity.getFechaHoraAplicacionUTC()));
+        dto.setFechaHoraSustitucion(G4DUtility.Convertor.toDisplayString(entity.getFechaHoraSustitucionUTC()));
         List<LotePorRutaDTO> lotesPorRutaDTO = new ArrayList<>();
         List<LoteEntity> lotesEntity = entity.getLotes();
         for (LoteEntity loteEntity : lotesEntity) {

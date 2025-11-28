@@ -12,7 +12,7 @@ import com.pucp.dp1.grupo4d.morapack.model.algorithm.Segmentacion;
 import com.pucp.dp1.grupo4d.morapack.model.entity.LoteEntity;
 import com.pucp.dp1.grupo4d.morapack.model.entity.RutaEntity;
 import com.pucp.dp1.grupo4d.morapack.model.entity.SegmentacionEntity;
-import com.pucp.dp1.grupo4d.morapack.util.G4D;
+import com.pucp.dp1.grupo4d.morapack.util.G4DUtility;
 import org.springframework.stereotype.Component;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -60,9 +60,9 @@ public class SegmentacionAdapter {
         SegmentacionEntity entity = new SegmentacionEntity();
         entity.setCodigo(algorithm.getCodigo());
         entity.setFechaHoraAplicacionUTC(algorithm.getFechaHoraAplicacion());
-        entity.setFechaHoraAplicacionLocal(G4D.toLocal(algorithm.getFechaHoraAplicacion(), entity.getPedido().getDestino().getHusoHorario()));
+        entity.setFechaHoraAplicacionLocal(G4DUtility.Convertor.toLocal(algorithm.getFechaHoraAplicacion(), entity.getPedido().getDestino().getHusoHorario()));
         entity.setFechaHoraSustitucionUTC(algorithm.getFechaHoraSustitucion());
-        entity.setFechaHoraSustitucionLocal(G4D.toLocal(algorithm.getFechaHoraSustitucion(), entity.getPedido().getDestino().getHusoHorario()));
+        entity.setFechaHoraSustitucionLocal(G4DUtility.Convertor.toLocal(algorithm.getFechaHoraSustitucion(), entity.getPedido().getDestino().getHusoHorario()));
         List<LoteEntity> lotesEntity = new ArrayList<>();
         Map<Ruta, Lote> lotesPorRuta = algorithm.getLotesPorRuta();
         for (Map.Entry<Ruta, Lote> entry : lotesPorRuta.entrySet()) {

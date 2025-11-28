@@ -10,7 +10,7 @@ import com.pucp.dp1.grupo4d.morapack.adapter.*;
 import com.pucp.dp1.grupo4d.morapack.model.algorithm.*;
 import com.pucp.dp1.grupo4d.morapack.model.entity.*;
 import com.pucp.dp1.grupo4d.morapack.service.model.*;
-import com.pucp.dp1.grupo4d.morapack.util.G4D;
+import com.pucp.dp1.grupo4d.morapack.util.G4DUtility;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -23,7 +23,7 @@ public class Problematica {
     public static LocalDateTime INICIO_PLANIFICACION;
     public static LocalDateTime FIN_PLANIFICACION;
     public static LocalDateTime UMBRAL_REPLANIFICACION;
-    public static LocalDateTime TIEMPO_ACTUAL;
+    public static LocalDateTime INSTANTE_DE_PROCESAMIENTO;
     public static String ESCENARIO;
     public static List<String> CODIGOS_DE_ORIGENES;
     public static List<PuntoDeReplanificacion> PUNTOS_REPLANIFICACION;
@@ -83,7 +83,7 @@ public class Problematica {
                             PedidoService pedidoService, PedidoAdapter pedidoAdapter,
                             RutaService rutaService, RutaAdapter rutaAdapter,
                             VueloService vueloService, VueloAdapter vueloAdapter ) {
-        G4D.Logger.logln(">> Cargando desde base de datos..");
+        G4DUtility.Logger.logln(">> Cargando desde base de datos..");
         // Aeropuertos
         List<AeropuertoEntity> aeropuertosEntity = aeropuertoService.findAll();
         aeropuertosEntity.forEach(entity -> {
@@ -94,50 +94,50 @@ public class Problematica {
                 destinos.add(aeropuerto);
             }
         });
-        G4D.Logger.logf("[:] AEROPUERTOS CARGADOS! | '%d' origenes! & '%d' destinos!%n", origenes.size(), destinos.size());
+        G4DUtility.Logger.logf("[:] AEROPUERTOS CARGADOS! | '%d' origenes! & '%d' destinos!%n", origenes.size(), destinos.size());
         // Planes
         List<PlanEntity> planesEntity = planService.findAll();
         planesEntity.forEach(entity -> {
             Plan plan = planAdapter.toAlgorithm(entity);
             planes.add(plan);
         });
-        G4D.Logger.logf("[:] PLANES DE VUELO CARGADOS! | '%d' planes!%n", planes.size());
+        G4DUtility.Logger.logf("[:] PLANES DE VUELO CARGADOS! | '%d' planes!%n", planes.size());
         // Clientes
         List<ClienteEntity> clientesEntity = clienteService.findAllByDateTimeRange(INICIO_PLANIFICACION, FIN_PLANIFICACION, ESCENARIO);
         clientesEntity.forEach(entity -> {
             Cliente cliente = usuarioAdapter.toAlgorithm(entity);
             clientes.add(cliente);
         });
-        G4D.Logger.logf("[:] CLIENTES CARGADOS! | '%d' clientes!%n", clientes.size());
+        G4DUtility.Logger.logf("[:] CLIENTES CARGADOS! | '%d' clientes!%n", clientes.size());
         // Pedidos
-        G4D.IntegerWrapper cantAtendidos = new G4D.IntegerWrapper();
+        G4DUtility.IntegerWrapper cantAtendidos = new G4DUtility.IntegerWrapper();
         List<PedidoEntity> pedidosEntity = pedidoService.findAllByDateTimeRange(INICIO_PLANIFICACION, FIN_PLANIFICACION, ESCENARIO);
         pedidosEntity.forEach(entity -> {
             if(entity.getFueAtendido()) {
                 cantAtendidos.increment();
             }
             if(entity.getFechaHoraProcesamientoUTC() == null) {
-                entity.setFechaHoraGeneracionUTC(TIEMPO_ACTUAL);
+                entity.setFechaHoraGeneracionUTC(INSTANTE_DE_PROCESAMIENTO);
             }
             Pedido pedido = pedidoAdapter.toAlgorithm(entity);
             pedidos.add(pedido);
         });
-        G4D.Logger.logf("[:] PEDIDOS CARGADOS! | '%d' por atender! & '%d' ya atendidos!%n", pedidos.size() - cantAtendidos.value, cantAtendidos.value);
+        G4DUtility.Logger.logf("[:] PEDIDOS CARGADOS! | '%d' por atender! & '%d' ya atendidos!%n", pedidos.size() - cantAtendidos.value, cantAtendidos.value);
         // Vuelos
         List<VueloEntity> vuelosEntity = vueloService.findAllByDateTimeRange(INICIO_PLANIFICACION, FIN_PLANIFICACION, ESCENARIO);
         vuelosEntity.forEach(entity -> {
             Vuelo vuelo = vueloAdapter.toAlgorithm(entity);
             vuelos.add(vuelo);
         });
-        G4D.Logger.logf("[:] VUELOS CARGADOS! | '%d' vuelos!%n", vuelos.size());
+        G4DUtility.Logger.logf("[:] VUELOS CARGADOS! | '%d' vuelos!%n", vuelos.size());
         // Rutas
         List<RutaEntity> rutasEntity = rutaService.findAllByDateTimeRange(INICIO_PLANIFICACION, FIN_PLANIFICACION, ESCENARIO);
         rutasEntity.forEach(entity -> {
             Ruta ruta = rutaAdapter.toAlgorithm(entity);
             rutas.add(ruta);
         });
-        G4D.Logger.logf("[:] RUTAS CARGADAS! | '%d' rutas!%n", rutas.size());
-        G4D.Logger.logln("[<] DATOS CARGADOS!");
+        G4DUtility.Logger.logf("[:] RUTAS CARGADAS! | '%d' rutas!%n", rutas.size());
+        G4DUtility.Logger.logln("[<] DATOS CARGADOS!");
         PUNTOS_REPLANIFICACION = new ArrayList<>();
     }
 }

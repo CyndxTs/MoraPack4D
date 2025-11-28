@@ -11,9 +11,9 @@ import com.pucp.dp1.grupo4d.morapack.model.dto.DTO;
 import com.pucp.dp1.grupo4d.morapack.model.dto.request.ListRequest;
 import com.pucp.dp1.grupo4d.morapack.model.dto.response.ListResponse;
 import com.pucp.dp1.grupo4d.morapack.model.entity.RutaEntity;
-import com.pucp.dp1.grupo4d.morapack.model.enums.TipoEscenario;
+import com.pucp.dp1.grupo4d.morapack.model.enumeration.TipoEscenario;
 import com.pucp.dp1.grupo4d.morapack.repository.RutaRepository;
-import com.pucp.dp1.grupo4d.morapack.util.G4D;
+import com.pucp.dp1.grupo4d.morapack.util.G4DUtility;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -67,23 +67,17 @@ public class RutaService {
     }
 
     public List<RutaEntity> findAllByDateTimeRange(LocalDateTime fechaHoraInicio, LocalDateTime fechaHoraFin, String tipoEscenario) {
-        TipoEscenario escenario = G4D.toAdmissibleValue(tipoEscenario, TipoEscenario.class);
-        if (escenario == null) {
-            return new ArrayList<>();
-        } else return rutaRepository.findAllByDateTimeRange(fechaHoraInicio, fechaHoraFin, escenario);
+        TipoEscenario escenario = G4DUtility.Convertor.toAdmissible(tipoEscenario, TipoEscenario.class);
+        return rutaRepository.findAllByDateTimeRange(fechaHoraInicio, fechaHoraFin, escenario);
     }
     
-    public ListResponse listar(ListRequest request) {
+    public ListResponse listar(ListRequest request) throws Exception {
         try {
-            int page = G4D.toAdmissibleValue(request.getPage(), 0);
-            int size = G4D.toAdmissibleValue(request.getSize(), 10);
-            Pageable pageable = PageRequest.of(page, size,  Sort.by(Sort.Order.asc("fechaHoraSalidaUTC"), Sort.Order.asc("fechaHoraLlegadaUTC")));
+            Pageable pageable = G4DUtility.Convertor.toAdmissible(request.getPagina(), request.getTamanio(), Sort.Order.asc("fechaHoraSalidaUTC"), Sort.Order.asc("fechaHoraLlegadaUTC"));
             List<DTO> dtos = new ArrayList<>();
             List<RutaEntity> entities = this.findAll(pageable);
             entities.forEach(entity -> dtos.add(rutaMapper.toDTO(entity)));
-            return new ListResponse(true, "Rutas listadas correctamente!", dtos);
-        } catch (Exception e) {
-            return new ListResponse(false, "ERROR - LISTADO: " + e.getMessage());
+            return new ListResponse(true, String.format("Rutas listadas correctamente! ('%d')", dtos.size()), dtos);
         } finally {
             clearPools();
         }

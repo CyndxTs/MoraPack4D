@@ -13,7 +13,7 @@ import com.pucp.dp1.grupo4d.morapack.model.entity.RutaEntity;
 import com.pucp.dp1.grupo4d.morapack.model.entity.AeropuertoEntity;
 import com.pucp.dp1.grupo4d.morapack.model.entity.VueloEntity;
 import com.pucp.dp1.grupo4d.morapack.service.model.RutaService;
-import com.pucp.dp1.grupo4d.morapack.util.G4D;
+import com.pucp.dp1.grupo4d.morapack.util.G4DUtility;
 import org.springframework.stereotype.Component;
 import java.util.*;
 
@@ -70,9 +70,9 @@ public class RutaAdapter {
         entity.setDuracion(algorithm.getDuracion());
         entity.setDistancia(algorithm.getDistancia());
         entity.setFechaHoraSalidaUTC(algorithm.getFechaHoraSalida());
-        entity.setFechaHoraSalidaLocal(G4D.toLocal(algorithm.getFechaHoraSalida(), algorithm.getOrigen().getHusoHorario()));
+        entity.setFechaHoraSalidaLocal(G4DUtility.Convertor.toLocal(algorithm.getFechaHoraSalida(), algorithm.getOrigen().getHusoHorario()));
         entity.setFechaHoraLlegadaUTC(algorithm.getFechaHoraLlegada());
-        entity.setFechaHoraLlegadaLocal(G4D.toLocal(algorithm.getFechaHoraLlegada(), algorithm.getDestino().getHusoHorario()));
+        entity.setFechaHoraLlegadaLocal(G4DUtility.Convertor.toLocal(algorithm.getFechaHoraLlegada(), algorithm.getDestino().getHusoHorario()));
         entity.setTipo(algorithm.getTipo());
         AeropuertoEntity origenEntity = aeropuertoAdapter.toEntity(algorithm.getOrigen());
         entity.setOrigen(origenEntity);

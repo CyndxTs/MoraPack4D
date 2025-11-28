@@ -14,14 +14,15 @@ import com.pucp.dp1.grupo4d.morapack.model.dto.request.ListRequest;
 import com.pucp.dp1.grupo4d.morapack.model.dto.response.GenericResponse;
 import com.pucp.dp1.grupo4d.morapack.model.dto.response.ListResponse;
 import com.pucp.dp1.grupo4d.morapack.model.entity.AdministradorEntity;
-import com.pucp.dp1.grupo4d.morapack.model.enums.EstadoUsuario;
+import com.pucp.dp1.grupo4d.morapack.model.enumeration.EstadoUsuario;
+import com.pucp.dp1.grupo4d.morapack.model.exception.G4DException;
 import com.pucp.dp1.grupo4d.morapack.repository.AdministradorRepository;
-import com.pucp.dp1.grupo4d.morapack.util.G4D;
+import com.pucp.dp1.grupo4d.morapack.util.G4DUtility;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import java.io.FileNotFoundException;
 import java.util.*;
 
 @Service
@@ -29,7 +30,7 @@ public class AdministradorService {
 
     private final AdministradorRepository administradorRepository;
     private final UsuarioMapper usuarioMapper;
-    private final HashMap<String, AdministradorEntity> administradores = new HashMap<>();
+    private final List<AdministradorEntity> administradores = new ArrayList<>();
 
     public AdministradorService(AdministradorRepository administradorRepository, UsuarioMapper usuarioMapper) {
         this.administradorRepository = administradorRepository;
@@ -76,67 +77,64 @@ public class AdministradorService {
         return administradorRepository.findByCorreo(correo).isPresent();
     }
 
-    public ListResponse listar(ListRequest request) {
+    public String obtenerNuevoCodigo() {
+        OptionalInt maxCodigo;
+        if(!administradores.isEmpty()) {
+            maxCodigo = administradores.stream().mapToInt(entity -> Integer.parseInt(entity.getCodigo().substring(5))).max();
+        } else maxCodigo = this.findAll().stream().mapToInt(entity -> Integer.parseInt(entity.getCodigo().substring(5))).max();
+        return String.format("ADMIN%02d", maxCodigo.orElse(0) + 1);
+    }
+
+    public ListResponse listar(ListRequest request) throws Exception {
         try {
-            int page = G4D.toAdmissibleValue(request.getPage(), 0);
-            int size = G4D.toAdmissibleValue(request.getSize(), 10);
-            Pageable pageable = PageRequest.of(page, size, Sort.by("codigo").ascending());
+            Pageable pageable = G4DUtility.Convertor.toAdmissible(request.getPagina(), request.getTamanio(), Sort.Order.asc("codigo"));
             List<DTO> dtos = new ArrayList<>();
             List<AdministradorEntity> entities = this.findAll(pageable);
             entities.forEach(entity -> dtos.add(usuarioMapper.toDTO(entity)));
-            return new ListResponse(true, "Administradores listados correctamente!", dtos);
-        } catch (Exception e) {
-            return new ListResponse(false, "ERROR - LISTADO: " + e.getMessage());
+            return new ListResponse(true, String.format("Administradores listados correctamente! ('%d')", dtos.size()), dtos);
         } finally {
             clearPools();
         }
     }
 
-    public ListResponse filtrar(FilterRequest<UsuarioDTO> request) {
+    public ListResponse filtrar(FilterRequest<UsuarioDTO> request) throws Exception {
         try {
-            int page = G4D.toAdmissibleValue(request.getPage(), 0);
-            int size = G4D.toAdmissibleValue(request.getSize(), 10);
-            Pageable pageable = PageRequest.of(page, size, Sort.by("codigo").ascending());
-            UsuarioDTO model = request.getFilterModel();
-            String nombre = G4D.toAdmissibleValue(model.getNombre());
-            String correo = G4D.toAdmissibleValue(model.getCorreo());
-            EstadoUsuario estado = G4D.toAdmissibleValue(model.getEstado(), EstadoUsuario.class);
+            Pageable pageable = G4DUtility.Convertor.toAdmissible(request.getPagina(), request.getTamanio(), Sort.Order.asc("codigo"));
+            UsuarioDTO modelo = request.getModelo();
+            String nombre = G4DUtility.Convertor.toAdmissible(modelo.getNombre());
+            String correo = G4DUtility.Convertor.toAdmissible(modelo.getCorreo());
+            EstadoUsuario estado = G4DUtility.Convertor.toAdmissible(modelo.getEstado(), EstadoUsuario.class);
             List<DTO> dtos = new ArrayList<>();
             List<AdministradorEntity> entities = administradorRepository.filterBy(nombre, correo, estado, pageable).getContent();
             entities.forEach(entity -> dtos.add(usuarioMapper.toDTO(entity)));
-            return new ListResponse(true, "Administradores filtrados correctamente!", dtos);
-        } catch (Exception e) {
-            return new ListResponse(false, "ERROR - FILTRADO: " + e.getMessage());
+            return new ListResponse(true, String.format("Administradores filtrados correctamente! ('%d')", dtos.size()), dtos);
         } finally {
             clearPools();
         }
     }
 
-    public GenericResponse importar(MultipartFile archivo) {
+    public GenericResponse importar(MultipartFile archivo) throws Exception {
         try {
-            G4D.Logger.logf("Cargando administradores desde '%s'..%n", archivo.getName());
-            Scanner archivoSC = new Scanner(archivo.getInputStream(), G4D.getFileCharset(archivo));
+            System.out.printf("Importando administradores desde '%s'..%n", archivo.getName());
+            Scanner archivoSC = new Scanner(archivo.getInputStream(), G4DUtility.Reader.getFileCharset(archivo));
             while (archivoSC.hasNextLine()) {
                 String linea = archivoSC.nextLine().trim();
                 Scanner lineaSC = new Scanner(linea);
                 lineaSC.useDelimiter("\\s{2,}");
                 AdministradorEntity administrador = new AdministradorEntity();
-                administrador.setCodigo(lineaSC.next());
+                administrador.setCodigo(this.obtenerNuevoCodigo());
                 administrador.setNombre(lineaSC.next());
                 administrador.setCorreo(lineaSC.next());
-                administrador.setContrasenia(lineaSC.next());
-                administradores.put(administrador.getCodigo(), administrador);
+                administrador.setContrasenia("12345678");
+                administradores.add(administrador);
                 lineaSC.close();
             }
             archivoSC.close();
-            administradores.values().forEach(this::save);
-            G4D.Logger.logf("[<] ADMINISTRADORES CARGADOS! ('%d')%n", administradores.size());
-            return new GenericResponse(true, "Administradores importados correctamente!");
-        } catch (NoSuchElementException e) {
-            G4D.Logger.logf_err("[X] FORMATO DE ARCHIVO INVALIDO! ('%s')%n", archivo.getName());
-            return new  GenericResponse(false, "ERROR - IMPORTACIÓN: " + e.getMessage());
-        } catch (Exception e) {
-            return new  GenericResponse(false, "ERROR - IMPORTACIÓN: " + e.getMessage());
+            administradores.forEach(this::save);
+            System.out.printf("[<] ADMINISTRADORES IMPORTADOS! ('%d')%n", administradores.size());
+            return new GenericResponse(true, String.format("Administradores importados correctamente! ('%d')", administradores.size()));
+        } catch (NoSuchElementException | FileNotFoundException e) {
+            throw new G4DException(String.format("El archivo '%s' no sigue el formato esperado o está vacío.", archivo.getName()));
         } finally {
             clearPools();
         }

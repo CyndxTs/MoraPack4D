@@ -12,9 +12,8 @@ import com.pucp.dp1.grupo4d.morapack.model.dto.request.ListRequest;
 import com.pucp.dp1.grupo4d.morapack.model.dto.response.ListResponse;
 import com.pucp.dp1.grupo4d.morapack.model.entity.SegmentacionEntity;
 import com.pucp.dp1.grupo4d.morapack.repository.SegmentacionRepository;
-import com.pucp.dp1.grupo4d.morapack.util.G4D;
+import com.pucp.dp1.grupo4d.morapack.util.G4DUtility;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import java.util.*;
@@ -62,17 +61,13 @@ public class SegmentacionService {
         return segmentacionRepository.findByCodigo(codigo).isPresent();
     }
 
-    public ListResponse listar(ListRequest request) {
+    public ListResponse listar(ListRequest request) throws Exception {
         try {
-            int page = G4D.toAdmissibleValue(request.getPage(), 0);
-            int size = G4D.toAdmissibleValue(request.getSize(), 10);
-            Pageable pageable = PageRequest.of(page, size, Sort.by("codigo").ascending());
+            Pageable pageable = G4DUtility.Convertor.toAdmissible(request.getPagina(), request.getTamanio(), Sort.Order.asc("fechaHoraAplicacionUTC"));
             List<DTO> dtos = new ArrayList<>();
             List<SegmentacionEntity> entities = this.findAll(pageable);
             entities.forEach(entity -> dtos.add(segmentacionMapper.toDTO(entity)));
-            return new ListResponse(true, "Segmentaciones listadas correctamente!", dtos);
-        } catch (Exception e) {
-            return new ListResponse(false, "ERROR - LISTADO: " + e.getMessage());
+            return new ListResponse(true, String.format("Segmentaciones listadas correctamente! ('%d')", dtos.size()), dtos);
         } finally {
             clearPools();
         }

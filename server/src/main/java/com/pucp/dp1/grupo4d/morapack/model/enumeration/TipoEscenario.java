@@ -4,7 +4,7 @@
  >> File:       TipoEscenario.java
  [**/
 
-package com.pucp.dp1.grupo4d.morapack.model.enums;
+package com.pucp.dp1.grupo4d.morapack.model.enumeration;
 
 public enum TipoEscenario {
     OPERACION,

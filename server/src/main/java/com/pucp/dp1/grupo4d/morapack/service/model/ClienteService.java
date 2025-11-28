@@ -14,15 +14,16 @@ import com.pucp.dp1.grupo4d.morapack.model.dto.request.ListRequest;
 import com.pucp.dp1.grupo4d.morapack.model.dto.response.GenericResponse;
 import com.pucp.dp1.grupo4d.morapack.model.dto.response.ListResponse;
 import com.pucp.dp1.grupo4d.morapack.model.entity.ClienteEntity;
-import com.pucp.dp1.grupo4d.morapack.model.enums.EstadoUsuario;
-import com.pucp.dp1.grupo4d.morapack.model.enums.TipoEscenario;
+import com.pucp.dp1.grupo4d.morapack.model.enumeration.EstadoUsuario;
+import com.pucp.dp1.grupo4d.morapack.model.enumeration.TipoEscenario;
+import com.pucp.dp1.grupo4d.morapack.model.exception.G4DException;
 import com.pucp.dp1.grupo4d.morapack.repository.ClienteRepository;
-import com.pucp.dp1.grupo4d.morapack.util.G4D;
-import org.springframework.data.domain.PageRequest;
+import com.pucp.dp1.grupo4d.morapack.util.G4DUtility;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import java.io.FileNotFoundException;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -31,7 +32,7 @@ public class ClienteService {
 
     private final ClienteRepository clienteRepository;
     private final UsuarioMapper usuarioMapper;
-    private final HashMap<String, ClienteEntity> clientes = new HashMap<>();
+    private final List<ClienteEntity> clientes = new ArrayList<>();
 
     public ClienteService(ClienteRepository clienteRepository, UsuarioMapper usuarioMapper) {
         this.clienteRepository = clienteRepository;
@@ -79,26 +80,24 @@ public class ClienteService {
     }
 
     public List<ClienteEntity> findAllByDateTimeRange(LocalDateTime fechaHoraInicio, LocalDateTime fechaHoraFin, String tipoEscenario) {
-        TipoEscenario escenario = G4D.toAdmissibleValue(tipoEscenario, TipoEscenario.class);
-        if (escenario == null) {
-            return new ArrayList<>();
-        } else return clienteRepository.findAllByDateTimeRange(fechaHoraInicio, fechaHoraFin, escenario);
+        TipoEscenario escenario = G4DUtility.Convertor.toAdmissible(tipoEscenario, TipoEscenario.class);
+        return clienteRepository.findAllByDateTimeRange(fechaHoraInicio, fechaHoraFin, escenario);
     }
 
     public ClienteEntity obtenerPorCodigo(String codigo) {
-        ClienteEntity cliente = clientes.get(codigo);
+        ClienteEntity cliente = clientes.stream().filter(entity -> entity.getCodigo().equals(codigo)).findFirst().orElse(null);
         if (cliente == null) {
             cliente = this.findByCodigo(codigo).orElse(null);
             if (cliente == null) {
                 cliente = new ClienteEntity();
                 cliente.setCodigo(codigo);
-                cliente.setNombre(G4D.Generator.getUniqueName());
-                String correo = G4D.Generator.getUniqueEmail();
+                cliente.setNombre(G4DUtility.Generator.getUniqueName());
+                String correo = G4DUtility.Generator.getUniqueEmail();
                 boolean existeCorreo = this.existsByCorreo(correo);
                 if(existeCorreo) {
                     String newCorreo = "";
                     while (existeCorreo) {
-                        newCorreo = G4D.Generator.addRandomInteger(correo, correo.indexOf('@'));
+                        newCorreo = G4DUtility.Generator.addRandomInteger(correo, correo.indexOf('@'));
                         existeCorreo = this.existsByCorreo(newCorreo);
                     }
                     cliente.setCorreo(newCorreo);
@@ -106,72 +105,69 @@ public class ClienteService {
                 cliente.setContrasenia("12345678");
                 this.save(cliente);
             }
-            clientes.put(codigo, cliente);
+            clientes.add(cliente);
         }
         return cliente;
     }
 
-    public ListResponse listar(ListRequest request) {
+    public String obtenerNuevoCodigo() {
+        OptionalInt maxCodigo;
+        if (!clientes.isEmpty()) {
+            maxCodigo = clientes.stream().mapToInt(entity -> Integer.parseInt(entity.getCodigo())).max();
+        } else maxCodigo = this.findAll().stream().mapToInt(entity -> Integer.parseInt(entity.getCodigo())).max();
+        return String.format("%7d", maxCodigo.orElse(0) + 1);
+    }
+
+    public ListResponse listar(ListRequest request) throws Exception {
         try {
-            int page = G4D.toAdmissibleValue(request.getPage(), 0);
-            int size = G4D.toAdmissibleValue(request.getSize(), 10);
-            Pageable pageable = PageRequest.of(page, size, Sort.by("codigo").ascending());
+            Pageable pageable = G4DUtility.Convertor.toAdmissible(request.getPagina(), request.getTamanio(), Sort.Order.asc("codigo"));
             List<DTO> dtos = new ArrayList<>();
             List<ClienteEntity> entities = this.findAll(pageable);
             entities.forEach(entity -> dtos.add(usuarioMapper.toDTO(entity)));
-            return new ListResponse(true, "Clientes listados correctamente!", dtos);
-        } catch (Exception e) {
-            return new ListResponse(false, "ERROR - LISTADO: " + e.getMessage());
+            return new ListResponse(true, String.format("Clientes listados correctamente! ('%d')", dtos.size()), dtos);
         } finally {
             clearPools();
         }
     }
 
-    public ListResponse filtrar(FilterRequest<UsuarioDTO> request) {
+    public ListResponse filtrar(FilterRequest<UsuarioDTO> request) throws Exception {
         try {
-            int page = G4D.toAdmissibleValue(request.getPage(), 0);
-            int size = G4D.toAdmissibleValue(request.getSize(), 10);
-            Pageable pageable = PageRequest.of(page, size, Sort.by("codigo").ascending());
-            UsuarioDTO model = request.getFilterModel();
-            String nombre = G4D.toAdmissibleValue(model.getNombre());
-            String correo = G4D.toAdmissibleValue(model.getCorreo());
-            EstadoUsuario estado = G4D.toAdmissibleValue(model.getEstado(), EstadoUsuario.class);
+            Pageable pageable = G4DUtility.Convertor.toAdmissible(request.getPagina(), request.getTamanio(), Sort.Order.asc("codigo"));
+            UsuarioDTO modelo = request.getModelo();
+            String nombre = G4DUtility.Convertor.toAdmissible(modelo.getNombre());
+            String correo = G4DUtility.Convertor.toAdmissible(modelo.getCorreo());
+            EstadoUsuario estado = G4DUtility.Convertor.toAdmissible(modelo.getEstado(), EstadoUsuario.class);
             List<DTO> dtos = new ArrayList<>();
             List<ClienteEntity> entities = clienteRepository.filterBy(nombre, correo, estado, pageable).getContent();
             entities.forEach(entity -> dtos.add(usuarioMapper.toDTO(entity)));
-            return new ListResponse(true, "Clientes filtrados correctamente!", dtos);
-        } catch (Exception e) {
-            return new ListResponse(false, "ERROR - FILTRADO: " + e.getMessage());
+            return new ListResponse(true, String.format("Clientes filtrados correctamente! ('%d')", dtos.size()), dtos);
         } finally {
             clearPools();
         }
     }
 
-    public GenericResponse importar(MultipartFile archivo) {
+    public GenericResponse importar(MultipartFile archivo) throws Exception {
         try {
-            G4D.Logger.logf("Cargando clientes desde '%s'..%n", archivo.getName());
-            Scanner archivoSC = new Scanner(archivo.getInputStream(), G4D.getFileCharset(archivo));
+            System.out.printf("Importando clientes desde '%s'..%n", archivo.getName());
+            Scanner archivoSC = new Scanner(archivo.getInputStream(), G4DUtility.Reader.getFileCharset(archivo));
             while (archivoSC.hasNextLine()) {
                 String linea = archivoSC.nextLine().trim();
                 Scanner lineaSC = new Scanner(linea);
                 lineaSC.useDelimiter("\\s{2,}");
                 ClienteEntity cliente = new ClienteEntity();
-                cliente.setCodigo(lineaSC.next());
+                cliente.setCodigo(this.obtenerNuevoCodigo());
                 cliente.setNombre(lineaSC.next());
                 cliente.setCorreo(lineaSC.next());
-                cliente.setContrasenia(lineaSC.next());
-                clientes.put(cliente.getCodigo(), cliente);
+                cliente.setContrasenia("12345678");
+                clientes.add(cliente);
                 lineaSC.close();
             }
             archivoSC.close();
-            clientes.values().forEach(this::save);
-            G4D.Logger.logf("[<] CLIENTES CARGADOS! ('%d')%n", clientes.size());
-            return new  GenericResponse(true, "Clientes importados correctamente!");
-        } catch (NoSuchElementException e) {
-            G4D.Logger.logf_err("[X] FORMATO DE ARCHIVO INVALIDO! ('%s')%n", archivo.getName());
-            return new  GenericResponse(false, "ERROR - IMPORTACIÓN: " + e.getMessage());
-        } catch (Exception e) {
-            return new  GenericResponse(false, "ERROR - IMPORTACIÓN: " + e.getMessage());
+            clientes.forEach(this::save);
+            System.out.printf("[<] CLIENTES IMPORTADOS! ('%d')%n", clientes.size());
+            return new  GenericResponse(true, String.format("Clientes importados correctamente! ('%d')", clientes.size()));
+        } catch (NoSuchElementException | FileNotFoundException e) {
+            throw new G4DException(String.format("El archivo '%s' no sigue el formato esperado o está vacío.", archivo.getName()));
         } finally {
             clearPools();
         }

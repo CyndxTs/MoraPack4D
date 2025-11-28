@@ -9,7 +9,6 @@ package com.pucp.dp1.grupo4d.morapack.mapper;
 import com.pucp.dp1.grupo4d.morapack.model.algorithm.Lote;
 import com.pucp.dp1.grupo4d.morapack.model.dto.LoteDTO;
 import com.pucp.dp1.grupo4d.morapack.model.entity.LoteEntity;
-import com.pucp.dp1.grupo4d.morapack.model.enums.EstadoLote;
 import org.springframework.stereotype.Component;
 import java.util.HashMap;
 import java.util.Map;

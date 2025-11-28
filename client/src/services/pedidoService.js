@@ -9,7 +9,7 @@ export const listarPedidos = async (page,size) => {
       params: { page, size },
     });
 
-    return response.data; // ListResponse con { success, message, dtos }
+    return response.data; // ListResponse con { success, mensaje, dtos }
   } catch (error) {
     console.error("Error al listar pedidos:", error);
     throw error;

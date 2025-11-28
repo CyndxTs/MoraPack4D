@@ -14,22 +14,24 @@ import com.pucp.dp1.grupo4d.morapack.mapper.*;
 import com.pucp.dp1.grupo4d.morapack.model.algorithm.*;
 import com.pucp.dp1.grupo4d.morapack.model.dto.*;
 import com.pucp.dp1.grupo4d.morapack.model.dto.request.ExportationRequest;
-import com.pucp.dp1.grupo4d.morapack.model.dto.request.OperationRequest;
+import com.pucp.dp1.grupo4d.morapack.model.dto.request.ReplanificationRequest;
 import com.pucp.dp1.grupo4d.morapack.model.dto.request.SimulationRequest;
-import com.pucp.dp1.grupo4d.morapack.model.dto.response.ProcessStatusResponse;
+import com.pucp.dp1.grupo4d.morapack.model.dto.response.StatusResponse;
 import com.pucp.dp1.grupo4d.morapack.model.dto.response.SolutionResponse;
 import com.pucp.dp1.grupo4d.morapack.model.entity.*;
-import com.pucp.dp1.grupo4d.morapack.model.enums.EstadoProceso;
-import com.pucp.dp1.grupo4d.morapack.model.enums.TipoEscenario;
+import com.pucp.dp1.grupo4d.morapack.model.enumeration.EstadoProceso;
+import com.pucp.dp1.grupo4d.morapack.model.enumeration.TipoEscenario;
+import com.pucp.dp1.grupo4d.morapack.model.exception.G4DException;
 import com.pucp.dp1.grupo4d.morapack.service.model.*;
-import com.pucp.dp1.grupo4d.morapack.util.G4D;
-import jakarta.transaction.Transactional;
+import com.pucp.dp1.grupo4d.morapack.util.G4DUtility;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -39,12 +41,6 @@ import java.util.concurrent.Future;
 
 @Service
 public class G4DService {
-
-    @Autowired
-    private SimpMessagingTemplate messagingTemplate;
-
-    @Autowired
-    private PlatformTransactionManager transactionManager;
 
     @Autowired
     private PedidoService pedidoService;
@@ -71,9 +67,6 @@ public class G4DService {
     private PlanAdapter planAdapter;
 
     @Autowired
-    private LoteService loteService;
-
-    @Autowired
     private LoteAdapter loteAdapter;
 
     @Autowired
@@ -83,9 +76,6 @@ public class G4DService {
     private RutaAdapter rutaAdapter;
 
     @Autowired
-    private AdministradorService administradorService;
-
-    @Autowired
     private VueloAdapter vueloAdapter;
 
     @Autowired
@@ -93,9 +83,6 @@ public class G4DService {
 
     @Autowired
     private RegistroAdapter registroAdapter;
-
-    @Autowired
-    private ParametrosService parametrosService;
 
     @Autowired
     private ParametrosMapper parametrosMapper;
@@ -115,121 +102,129 @@ public class G4DService {
     @Autowired
     private SegmentacionAdapter segmentacionAdapter;
 
+    @Autowired
+    private SimpMessagingTemplate messagingTemplate;
+
+    @Autowired
+    private PlatformTransactionManager transactionManager;
+
     private final ExecutorService executorService = Executors.newCachedThreadPool();
     private Future<?> simulationTask = null;
     private Future<?> operationTask = null;
     private Future<?> exportationTask = null;
+    private Long segundosEstimadosDeReplanificacion = null;
 
-    public ProcessStatusResponse iniciarSimulacion(SimulationRequest request) {
-        try {
-            if(simulationTask != null) {
-                return new ProcessStatusResponse(false, "Ya hay una simulación en proceso!", EstadoProceso.INICIADO);
-            }
-            simulationTask = executorService.submit(() -> {
-                TransactionTemplate tx = new TransactionTemplate(transactionManager);
-                tx.execute(status -> {
-                    TipoEscenario escenario = TipoEscenario.SIMULACION;
-                    LocalDateTime inicioDeSimulacion = G4D.toDateTime(request.getFechaHoraInicio());
-                    LocalDateTime finDeSimulacion = G4D.toAdmissibleValue(request.getFechaHoraFin(), LocalDateTime.MAX);
-                    ParametrosDTO parametros = request.getParametros();
-                    Double multiplicadorTemporal = request.getMultiplicadorTemporal();
-                    Double saltoTemporalEnHoras = G4D.toAdmissibleValue(request.getTamanioDeSaltoTemporal(), 2.0);
-                    LocalDateTime inicioDePlanificacion = inicioDeSimulacion;
-                    LocalDateTime umbralDeReplanificacion = inicioDeSimulacion;
-                    long saltoTemporalEnMinutos = (long) (60*saltoTemporalEnHoras);
-                    double horasPlanificadas = 0.0, horasTranscurridas = 0.0;
-                    while(inicioDePlanificacion.isBefore(finDeSimulacion)) {
-                        LocalDateTime finDePlanificacion = inicioDePlanificacion.plusMinutes(saltoTemporalEnMinutos);
-                        Long desfaseTemporal = (long) (60*(Math.min(horasPlanificadas, Math.max(parametros.getMaxDiasEntregaIntracontinental(), parametros.getMaxDiasEntregaIntercontinental()))));
-                        SolutionResponse solutionResponse = planificar(escenario, parametros, desfaseTemporal, inicioDePlanificacion, finDePlanificacion, umbralDeReplanificacion, null);
-                        if(solutionResponse.getSuccess()) {
-                            messagingTemplate.convertAndSend("/topic/simulator", solutionResponse);
-                        } else {
-                            messagingTemplate.convertAndSend("/topic/simulator-status", new ProcessStatusResponse(true, "COLAPSO!", EstadoProceso.COLAPSADO));
-                            break;
-                        }
-                        horasPlanificadas += saltoTemporalEnHoras;
-                        horasTranscurridas += saltoTemporalEnHoras;
-                        inicioDePlanificacion = finDePlanificacion;
-                        umbralDeReplanificacion = umbralDeReplanificacion.plusMinutes((long) (60 * horasTranscurridas));
-                    }
-                    messagingTemplate.convertAndSend("/topic/simulator-status", new ProcessStatusResponse(true, "Simulación correctamente finalizada!", EstadoProceso.FINALIZADO));
-                    return null;
-                });
-            });
-            return new ProcessStatusResponse(true, "Simulación iniciada!", EstadoProceso.INICIADO);
-        } catch (Exception e) {
-            return new ProcessStatusResponse(false, "ERROR - SIMULACION: " + e.getMessage());
+    public StatusResponse iniciarSimulacion(SimulationRequest request) throws  Exception {
+        if(simulationTask != null) {
+            throw new G4DException("Ya hay una simulación en proceso!");
         }
-    }
-
-    public ProcessStatusResponse detenerSimulacion() {
-        try {
-            if(simulationTask == null) {
-                return new ProcessStatusResponse(false, "No hay ninguna simulación en proceso!", EstadoProceso.INACTIVO);
-            }
-            simulationTask.cancel(true);
-            simulationTask = null;
-            return new ProcessStatusResponse(true, "Simulación detenida!", EstadoProceso.DETENIDO);
-        } catch (Exception e) {
-            return new ProcessStatusResponse(false, "ERROR - DETENIMIENTO: " + e.getMessage());
-        }
-    }
-
-    public ProcessStatusResponse replanificarOperacion(OperationRequest request) {
-        try {
-            if(operationTask != null) {
-                return new ProcessStatusResponse(false, "Ya hay una replanificación en proceso!", EstadoProceso.INICIADO);
-            }
-            operationTask = executorService.submit(() -> {
-                TransactionTemplate tx = new TransactionTemplate(transactionManager);
-                tx.execute(status -> {
-                    TipoEscenario escenario = TipoEscenario.OPERACION;
-                    LocalDateTime fechaHoraActual = G4D.toAdmissibleValue(request.getFechaHoraActual(), (LocalDateTime) null);
-                    ParametrosDTO parametros = request.getParametros();
-                    Long desfaseTemporal = 60L*(Math.max(parametros.getMaxDiasEntregaIntracontinental(), parametros.getMaxDiasEntregaIntercontinental()));
-                    LocalDateTime finDePlanificacion = G4D.toAdmissibleValue(request.getFechaHoraActual(), (LocalDateTime) null);
-                    SolutionResponse solutionResponse = planificar(escenario, parametros, desfaseTemporal, null, finDePlanificacion, fechaHoraActual, fechaHoraActual);
-                    if(solutionResponse.getSuccess()) {
-                        messagingTemplate.convertAndSend("/topic/operator", solutionResponse);
+        simulationTask = executorService.submit(() -> {
+            TransactionTemplate tx = new TransactionTemplate(transactionManager);
+            tx.execute(status -> {
+                TipoEscenario escenario = TipoEscenario.SIMULACION;
+                LocalDateTime inicioDeSimulacion = G4DUtility.Convertor.toDateTime(request.getFechaHoraInicio());
+                LocalDateTime inicioDePlanificacion = inicioDeSimulacion;
+                LocalDateTime umbralDeReplanificacion = inicioDeSimulacion;
+                LocalDateTime finDeSimulacion = G4DUtility.Convertor.toAdmissible(request.getFechaHoraFin(), LocalDateTime.MAX);
+                ParametrosDTO parametros = request.getParametros();
+                int maxDesfaseTemporalEnDias = Math.max(parametros.getMaxDiasEntregaIntracontinental(), parametros.getMaxDiasEntregaIntercontinental());
+                Double multiplicadorTemporal = G4DUtility.Convertor.toAdmissible(request.getMultiplicadorTemporal(), 600.0);
+                Double saltoTemporalEnHoras = G4DUtility.Convertor.toAdmissible(request.getTamanioDeSaltoTemporal(), 2.0);
+                long saltoTemporalEnMinutos = (long) (60*saltoTemporalEnHoras);
+                double horasPlanificadas = 0.0;
+                boolean esPrimeraIteracion = true;
+                while(inicioDePlanificacion.isBefore(finDeSimulacion) && !Thread.currentThread().isInterrupted()) {
+                    LocalDateTime finDePlanificacion = inicioDePlanificacion.plusMinutes(saltoTemporalEnMinutos);
+                    Instant start = Instant.now();
+                    SolutionResponse solutionResponse = planificar(escenario, parametros, inicioDePlanificacion, finDePlanificacion, umbralDeReplanificacion, umbralDeReplanificacion);
+                    if(solutionResponse.getExito()) {
+                        messagingTemplate.convertAndSend("/topic/simulator", solutionResponse);
                     } else {
-                        messagingTemplate.convertAndSend("/topic/operator-status", new ProcessStatusResponse(true, "COLAPSO!", EstadoProceso.COLAPSADO));
+                        messagingTemplate.convertAndSend("/topic/simulator-status", new StatusResponse(true, "COLAPSO!", EstadoProceso.COLAPSADO));
+                        break;
                     }
-                    messagingTemplate.convertAndSend("/topic/operator-status", new ProcessStatusResponse(true, "Operación correctamente planificada!", EstadoProceso.FINALIZADO));
-                    return null;
-                });
+                    if(esPrimeraIteracion) {
+                        messagingTemplate.convertAndSend("/topic/simulator-status", new StatusResponse(true, "Simulación iniciada!", EstadoProceso.INICIADO));
+                        esPrimeraIteracion = false;
+                    }
+                    Instant end = Instant.now();
+                    long segundosSimulados = (long) (Duration.between(start, end).toMillis()*multiplicadorTemporal/500);
+                    umbralDeReplanificacion = umbralDeReplanificacion.plusSeconds(segundosSimulados);
+                    horasPlanificadas += saltoTemporalEnHoras;
+                    long desfaseTemporal = (long) (60*(Math.min(horasPlanificadas, 24.0*maxDesfaseTemporalEnDias)));
+                    inicioDePlanificacion = finDePlanificacion.minusMinutes(desfaseTemporal);
+                }
+                messagingTemplate.convertAndSend("/topic/simulator-status", new StatusResponse(true, "Simulación correctamente finalizada!", EstadoProceso.FINALIZADO));
+                limpiarPools();
+                return null;
             });
-            return new ProcessStatusResponse(true, "Replanificación iniciada!", EstadoProceso.INICIADO);
-        } catch (Exception e) {
-            return new ProcessStatusResponse(false, "ERROR - REPLANIFICACIÓN: " + e.getMessage());
-        }
+        });
+        return new StatusResponse(true, "Simulación puesta en marcha!", EstadoProceso.POR_INICIAR);
     }
 
-    public ProcessStatusResponse exportarSolucion(ExportationRequest request) {
-        try {
-            if(exportationTask != null) {
-                return new ProcessStatusResponse(false, "Ya hay una exportación en proceso!", EstadoProceso.INICIADO);
-            }
-            exportationTask = executorService.submit(() -> {
-                TransactionTemplate tx = new TransactionTemplate(transactionManager);
-                tx.execute(status -> {
-                    messagingTemplate.convertAndSend("/topic/generator-status", new ProcessStatusResponse(true, "Exportación correctamente finalizada!", EstadoProceso.FINALIZADO));
-                    return null;
-                });
-            });
-            return new ProcessStatusResponse(true, "Exportación iniciada!", EstadoProceso.INICIADO);
-        } catch (Exception e) {
-            return new ProcessStatusResponse(false, "ERROR - EXPORTACIÓN: " + e.getMessage());
+    public StatusResponse detenerSimulacion() throws Exception {
+        if(simulationTask == null) {
+            throw new G4DException("No hay ninguna simulación en proceso!");
         }
+        simulationTask.cancel(true);
+        simulationTask = null;
+        limpiarPools();
+        return new StatusResponse(true, "Simulación detenida!", EstadoProceso.DETENIDO);
     }
 
-    private SolutionResponse planificar(TipoEscenario escenario, ParametrosDTO parametros, Long desfaseTemporal, LocalDateTime inicioDePlanificacion, LocalDateTime finDePlanificacion, LocalDateTime umbralDeReplanificacion, LocalDateTime fechaHoraActual) {
+    public StatusResponse replanificarOperacion(ReplanificationRequest request) throws Exception{
+        if(operationTask != null) {
+            throw new G4DException("Ya hay una replanificación en proceso!");
+        }
+        operationTask = executorService.submit(() -> {
+            TransactionTemplate tx = new TransactionTemplate(transactionManager);
+            tx.execute(status -> {
+                TipoEscenario escenario = TipoEscenario.OPERACION;
+                ParametrosDTO parametros = request.getParametros();
+                long desfaseTemporal = 60L*(Math.max(parametros.getMaxDiasEntregaIntracontinental(), parametros.getMaxDiasEntregaIntercontinental()));
+                LocalDateTime fechaHoraActual = G4DUtility.Convertor.toAdmissible(request.getFechaHoraActual(), (LocalDateTime) null);
+                LocalDateTime inicioPlanificacion = fechaHoraActual.minusMinutes(desfaseTemporal);
+                LocalDateTime umbralDeReplanificacion = (this.segundosEstimadosDeReplanificacion != null) ? fechaHoraActual.plusSeconds(this.segundosEstimadosDeReplanificacion) : fechaHoraActual;
+                LocalDateTime instanteDeProcesamiento = (this.segundosEstimadosDeReplanificacion != null) ? fechaHoraActual.plusSeconds(this.segundosEstimadosDeReplanificacion): fechaHoraActual.plusMinutes(5L);
+                Instant start = Instant.now();
+                SolutionResponse solutionResponse = planificar(escenario, parametros, inicioPlanificacion, fechaHoraActual, umbralDeReplanificacion, instanteDeProcesamiento);
+                if(solutionResponse.getExito()) {
+                    messagingTemplate.convertAndSend("/topic/operator", solutionResponse);
+                } else {
+                    messagingTemplate.convertAndSend("/topic/operator-status", new StatusResponse(true, "COLAPSO!", EstadoProceso.COLAPSADO));
+                }
+                Instant end = Instant.now();
+                long segundosTranscurridos = Duration.between(start, end).toMillis()/1000;
+                this.segundosEstimadosDeReplanificacion = (this.segundosEstimadosDeReplanificacion != null) ? Math.min(this.segundosEstimadosDeReplanificacion, segundosTranscurridos) : segundosTranscurridos;
+                messagingTemplate.convertAndSend("/topic/operator-status", new StatusResponse(true, "Operación correctamente replanificada!", EstadoProceso.FINALIZADO));
+                limpiarPools();
+                return null;
+            });
+        });
+        return new StatusResponse(true, "Replanificación Iniciada!", EstadoProceso.INICIADO);
+    }
+
+    public StatusResponse exportarSolucion(ExportationRequest request) throws Exception {
+        if(exportationTask != null) {
+            throw new G4DException("Ya hay una exportación en proceso!");
+        }
+        exportationTask = executorService.submit(() -> {
+            TransactionTemplate tx = new TransactionTemplate(transactionManager);
+            tx.execute(status -> {
+                messagingTemplate.convertAndSend("/topic/generator-status", new StatusResponse(true, "Exportación correctamente finalizada!", EstadoProceso.FINALIZADO));
+                return null;
+            });
+        });
+        return new StatusResponse(true, "Exportación iniciada!", EstadoProceso.INICIADO);
+    }
+
+    private SolutionResponse planificar(TipoEscenario escenario, ParametrosDTO parametros, LocalDateTime inicioDePlanificacion, LocalDateTime finDePlanificacion, LocalDateTime umbralDeReplanificacion, LocalDateTime instanteDeProcesamiento) {
         try {
             boolean esSimulacion = escenario.equals(TipoEscenario.SIMULACION);
+            Problematica.INICIO_PLANIFICACION = inicioDePlanificacion;
             Problematica.FIN_PLANIFICACION = finDePlanificacion;
-            Problematica.INICIO_PLANIFICACION = (inicioDePlanificacion != null) ? inicioDePlanificacion.minusMinutes(desfaseTemporal) : finDePlanificacion.minusMinutes(desfaseTemporal);
             Problematica.UMBRAL_REPLANIFICACION = umbralDeReplanificacion;
-            Problematica.TIEMPO_ACTUAL = fechaHoraActual;
+            Problematica.INSTANTE_DE_PROCESAMIENTO = instanteDeProcesamiento;
             Problematica.ESCENARIO = escenario.toString().toUpperCase();
             parametrosMapper.toAlgorithm(parametros);
             Problematica problematica = new Problematica();
@@ -251,8 +246,6 @@ public class G4DService {
                 almacenarSolucion(solucion);
             }
             return devolverSolucion(solucion);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
         } finally {
             limpiarPools();
         }
@@ -326,15 +319,23 @@ public class G4DService {
     }
 
     private SolutionResponse devolverSolucion(Solucion solucion) {
-        List<PedidoDTO> pedidosDTO = new ArrayList<>();
-        solucion.getPedidosAtendidos().forEach(p -> pedidosDTO.add(pedidoMapper.toDTO(p)));
-        List<AeropuertoDTO> aeropuertosDTO = new ArrayList<>();
-        solucion.getAeropuertosTransitados().forEach(a ->  aeropuertosDTO.add(aeropuertoMapper.toDTO(a)));
-        List<VueloDTO> vuelosDTO = new ArrayList<>();
-        solucion.getVuelosEnTransito().forEach(v -> vuelosDTO.add(vueloMapper.toDTO(v)));
-        List<RutaDTO> rutasDTO = new ArrayList<>();
-        solucion.getRutasEnOperacion().forEach(r -> rutasDTO.add(rutaMapper.toDTO(r)));
-        return new SolutionResponse(true, "Planificación correctamente concluida!", pedidosDTO, aeropuertosDTO, vuelosDTO, rutasDTO);
+        SolucionDTO solucionDTO = new SolucionDTO();
+        solucionDTO.setRatioPromedioDeUtilizacionTemporal(solucion.getRatioPromedioDeUtilizacionTemporal());
+        solucionDTO.setRatioPromedioDeDesviacionEspacial(solucion.getRatioPromedioDeDesviacionEspacial());
+        solucionDTO.setRatioPromedioDeDisposicionOperacional(solucion.getRatioPromedioDeDisposicionOperacional());
+        List<PedidoDTO> pedidosAtendidos = new ArrayList<>();
+        solucion.getPedidosAtendidos().forEach(p -> pedidosAtendidos.add(pedidoMapper.toDTO(p)));
+        solucionDTO.setPedidosAtendidos(pedidosAtendidos);
+        List<AeropuertoDTO> aeropuertosTransitados = new ArrayList<>();
+        solucion.getAeropuertosTransitados().forEach(a ->  aeropuertosTransitados.add(aeropuertoMapper.toDTO(a)));
+        solucionDTO.setAeropuertosTransitados(aeropuertosTransitados);
+        List<VueloDTO> vuelosEnTransito = new ArrayList<>();
+        solucion.getVuelosEnTransito().forEach(v -> vuelosEnTransito.add(vueloMapper.toDTO(v)));
+        solucionDTO.setVuelosEnTransito(vuelosEnTransito);
+        List<RutaDTO> rutasEnOperacion = new ArrayList<>();
+        solucion.getRutasEnOperacion().forEach(r -> rutasEnOperacion.add(rutaMapper.toDTO(r)));
+        solucionDTO.setRutasEnOperacion(rutasEnOperacion);
+        return new SolutionResponse(true, "Planificación correctamente concluida!", solucionDTO);
     }
 
     private void limpiarPools() {

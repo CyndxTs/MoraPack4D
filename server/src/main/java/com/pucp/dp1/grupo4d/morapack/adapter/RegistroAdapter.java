@@ -8,13 +8,11 @@ package com.pucp.dp1.grupo4d.morapack.adapter;
 
 import com.pucp.dp1.grupo4d.morapack.model.algorithm.Lote;
 import com.pucp.dp1.grupo4d.morapack.model.algorithm.Registro;
-import com.pucp.dp1.grupo4d.morapack.model.dto.RegistroDTO;
 import com.pucp.dp1.grupo4d.morapack.model.entity.LoteEntity;
 import com.pucp.dp1.grupo4d.morapack.model.entity.RegistroEntity;
 import com.pucp.dp1.grupo4d.morapack.service.model.LoteService;
 import com.pucp.dp1.grupo4d.morapack.service.model.RegistroService;
-import com.pucp.dp1.grupo4d.morapack.util.G4D;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.pucp.dp1.grupo4d.morapack.util.G4DUtility;
 import org.springframework.stereotype.Component;
 import java.util.HashMap;
 import java.util.Map;
@@ -60,9 +58,9 @@ public class RegistroAdapter {
         }
         entity.setSigueVigente(algorithm.getSigueVigente());
         entity.setFechaHoraIngresoUTC(algorithm.getFechaHoraIngreso());
-        entity.setFechaHoraIngresoLocal(G4D.toLocal(algorithm.getFechaHoraIngreso(), entity.getAeropuerto().getHusoHorario()));
+        entity.setFechaHoraIngresoLocal(G4DUtility.Convertor.toLocal(algorithm.getFechaHoraIngreso(), entity.getAeropuerto().getHusoHorario()));
         entity.setFechaHoraEgresoUTC(algorithm.getFechaHoraEgreso());
-        entity.setFechaHoraEgresoLocal(G4D.toLocal(algorithm.getFechaHoraEgreso(), entity.getAeropuerto().getHusoHorario()));
+        entity.setFechaHoraEgresoLocal(G4DUtility.Convertor.toLocal(algorithm.getFechaHoraEgreso(), entity.getAeropuerto().getHusoHorario()));
         String codLote = algorithm.getLote().getCodigo();
         LoteEntity loteEntity = loteService.findByCodigo(codLote).orElse(null);
         entity.setLote(loteEntity);

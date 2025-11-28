@@ -6,14 +6,14 @@
 
 package com.pucp.dp1.grupo4d.morapack.model.algorithm;
 
-import com.pucp.dp1.grupo4d.morapack.util.G4D;
+import com.pucp.dp1.grupo4d.morapack.util.G4DUtility;
 
 public class Cliente {
     private String codigo;
     private String nombre;
 
     public Cliente() {
-        this.codigo = G4D.Generator.getUniqueString("CLI");
+        this.codigo = G4DUtility.Generator.getUniqueString("CLI");
     }
 
     public Cliente replicar() {

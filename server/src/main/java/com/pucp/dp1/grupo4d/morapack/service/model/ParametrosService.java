@@ -84,9 +84,7 @@ public class ParametrosService {
             List<DTO> dtos = new ArrayList<>();
             List<ParametrosEntity> entities = this.findAll();
             entities.forEach(entity -> dtos.add(parametrosMapper.toDTO(entity)));
-            return new ListResponse(true, "Parametros listados correctamente!", dtos);
-        } catch (Exception e) {
-            return new ListResponse(false, "ERROR - LISTADO: " + e.getMessage());
+            return new ListResponse(true, String.format("Parametros listados correctamente! ('%d')", dtos.size()), dtos);
         } finally {
             clearPools();
         }
@@ -94,12 +92,12 @@ public class ParametrosService {
 
     public GenericResponse importar(ImportRequest<ParametrosDTO> request) {
         try {
+            System.out.println("Importando parametros..");
             ParametrosDTO dto = request.getDto();
             ParametrosEntity parametros = parametrosMapper.toEntity(dto);
             this.save(parametros);
+            System.out.println("[<] PARAMETROS IMPORTADOS!");
             return new GenericResponse(true, "Parametros importados correctamente!");
-        } catch (Exception e) {
-            return new GenericResponse(false, "ERROR - IMPORTACIÓN: " + e.getMessage());
         } finally {
             clearPools();
         }
