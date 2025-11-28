@@ -113,6 +113,7 @@ public class G4DService {
     private Future<?> operationTask = null;
     private Future<?> exportationTask = null;
     private Long segundosEstimadosDeReplanificacion = null;
+    private Problematica problematica = null;
 
     public StatusResponse iniciarSimulacion(SimulationRequest request) throws  Exception {
         if(simulationTask != null) {
@@ -127,6 +128,7 @@ public class G4DService {
                 LocalDateTime umbralDeReplanificacion = inicioDeSimulacion;
                 LocalDateTime finDeSimulacion = G4DUtility.Convertor.toAdmissible(request.getFechaHoraFin(), LocalDateTime.MAX);
                 ParametrosDTO parametros = request.getParametros();
+                parametrosMapper.toAlgorithm(parametros);
                 int maxDesfaseTemporalEnDias = Math.max(parametros.getMaxDiasEntregaIntracontinental(), parametros.getMaxDiasEntregaIntercontinental());
                 Double multiplicadorTemporal = G4DUtility.Convertor.toAdmissible(request.getMultiplicadorTemporal(), 600.0);
                 Double saltoTemporalEnHoras = G4DUtility.Convertor.toAdmissible(request.getTamanioDeSaltoTemporal(), 2.0);
@@ -136,7 +138,7 @@ public class G4DService {
                 while(inicioDePlanificacion.isBefore(finDeSimulacion) && !Thread.currentThread().isInterrupted()) {
                     LocalDateTime finDePlanificacion = inicioDePlanificacion.plusMinutes(saltoTemporalEnMinutos);
                     Instant start = Instant.now();
-                    SolutionResponse solutionResponse = planificar(escenario, parametros, inicioDePlanificacion, finDePlanificacion, umbralDeReplanificacion, umbralDeReplanificacion);
+                    SolutionResponse solutionResponse = planificar(false, escenario, inicioDePlanificacion, finDePlanificacion, umbralDeReplanificacion, umbralDeReplanificacion);
                     if(solutionResponse.getExito()) {
                         messagingTemplate.convertAndSend("/topic/simulator", solutionResponse);
                     } else {
@@ -181,13 +183,14 @@ public class G4DService {
             tx.execute(status -> {
                 TipoEscenario escenario = TipoEscenario.OPERACION;
                 ParametrosDTO parametros = request.getParametros();
+                parametrosMapper.toAlgorithm(parametros);
                 long desfaseTemporal = 60L*(Math.max(parametros.getMaxDiasEntregaIntracontinental(), parametros.getMaxDiasEntregaIntercontinental()));
                 LocalDateTime fechaHoraActual = G4DUtility.Convertor.toAdmissible(request.getFechaHoraActual(), (LocalDateTime) null);
                 LocalDateTime inicioPlanificacion = fechaHoraActual.minusMinutes(desfaseTemporal);
                 LocalDateTime umbralDeReplanificacion = (this.segundosEstimadosDeReplanificacion != null) ? fechaHoraActual.plusSeconds(this.segundosEstimadosDeReplanificacion) : fechaHoraActual;
                 LocalDateTime instanteDeProcesamiento = (this.segundosEstimadosDeReplanificacion != null) ? fechaHoraActual.plusSeconds(this.segundosEstimadosDeReplanificacion): fechaHoraActual.plusMinutes(5L);
                 Instant start = Instant.now();
-                SolutionResponse solutionResponse = planificar(escenario, parametros, inicioPlanificacion, fechaHoraActual, umbralDeReplanificacion, instanteDeProcesamiento);
+                SolutionResponse solutionResponse = planificar(true, escenario, inicioPlanificacion, fechaHoraActual, umbralDeReplanificacion, instanteDeProcesamiento);
                 if(solutionResponse.getExito()) {
                     messagingTemplate.convertAndSend("/topic/operator", solutionResponse);
                 } else {
@@ -218,7 +221,7 @@ public class G4DService {
         return new StatusResponse(true, "Exportación iniciada!", EstadoProceso.INICIADO);
     }
 
-    private SolutionResponse planificar(TipoEscenario escenario, ParametrosDTO parametros, LocalDateTime inicioDePlanificacion, LocalDateTime finDePlanificacion, LocalDateTime umbralDeReplanificacion, LocalDateTime instanteDeProcesamiento) {
+    private SolutionResponse planificar(Boolean renovarProblematica, TipoEscenario escenario, LocalDateTime inicioDePlanificacion, LocalDateTime finDePlanificacion, LocalDateTime umbralDeReplanificacion, LocalDateTime instanteDeProcesamiento) {
         try {
             boolean esSimulacion = escenario.equals(TipoEscenario.SIMULACION);
             Problematica.INICIO_PLANIFICACION = inicioDePlanificacion;
@@ -226,8 +229,12 @@ public class G4DService {
             Problematica.UMBRAL_REPLANIFICACION = umbralDeReplanificacion;
             Problematica.INSTANTE_DE_PROCESAMIENTO = instanteDeProcesamiento;
             Problematica.ESCENARIO = escenario.toString().toUpperCase();
-            parametrosMapper.toAlgorithm(parametros);
             Problematica problematica = new Problematica();
+            if(!renovarProblematica && this.problematica != null) {
+                problematica.origenes = this.problematica.origenes;
+                problematica.destinos = this.problematica.destinos;
+                problematica.planes = this.problematica.planes;
+            }
             problematica.cargarDatos(
                     aeropuertoService, aeropuertoAdapter,
                     clienteService, usuarioAdapter,

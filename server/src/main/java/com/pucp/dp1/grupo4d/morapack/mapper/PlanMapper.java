@@ -14,6 +14,7 @@ import com.pucp.dp1.grupo4d.morapack.model.dto.PlanDTO;
 import com.pucp.dp1.grupo4d.morapack.model.entity.AeropuertoEntity;
 import com.pucp.dp1.grupo4d.morapack.model.entity.EventoEntity;
 import com.pucp.dp1.grupo4d.morapack.model.entity.PlanEntity;
+import com.pucp.dp1.grupo4d.morapack.model.exception.G4DException;
 import com.pucp.dp1.grupo4d.morapack.service.model.AeropuertoService;
 import com.pucp.dp1.grupo4d.morapack.util.G4DUtility;
 import org.springframework.stereotype.Component;
@@ -108,8 +109,8 @@ public class PlanMapper {
                 entity.setHoraLlegadaUTC(G4DUtility.Convertor.toTime(dto.getHoraLlegada()));
                 entity.setHoraLlegadaLocal(G4DUtility.Convertor.toLocal(entity.getHoraLlegadaUTC(), destino.getHusoHorario()));
                 return entity;
-            } else throw new Exception(String.format("El destino del plan es inválido. ('%s')", codDestino));
-        } else throw new Exception(String.format("El origen del plan es inválido. ('%s')", codOrigen));
+            } else throw new G4DException(String.format("El destino ('%s') del plan es inválido.", codDestino));
+        } else throw new G4DException(String.format("El origen ('%s') del plan es inválido.", codOrigen));
     }
 
     public void clearPools() {

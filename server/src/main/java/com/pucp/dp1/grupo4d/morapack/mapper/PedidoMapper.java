@@ -12,6 +12,7 @@ import com.pucp.dp1.grupo4d.morapack.model.dto.PedidoDTO;
 import com.pucp.dp1.grupo4d.morapack.model.dto.SegmentacionDTO;
 import com.pucp.dp1.grupo4d.morapack.model.entity.*;
 import com.pucp.dp1.grupo4d.morapack.model.enumeration.TipoEscenario;
+import com.pucp.dp1.grupo4d.morapack.model.exception.G4DException;
 import com.pucp.dp1.grupo4d.morapack.service.model.AeropuertoService;
 import com.pucp.dp1.grupo4d.morapack.service.model.ClienteService;
 import com.pucp.dp1.grupo4d.morapack.util.G4DUtility;
@@ -115,7 +116,7 @@ public class PedidoMapper {
             entity.setFechaHoraExpiracionLocal(entity.getFechaHoraExpiracionUTC() != null ? G4DUtility.Convertor.toLocal(entity.getFechaHoraExpiracionUTC(), destino.getHusoHorario()) : null);
             entity.setFueAtendido(dto.getFueAtendido() != null ? dto.getFueAtendido() : false);
             return entity;
-        } else throw new Exception(String.format("El destino del pedido es inválido. ('%s')", codDestino));
+        } else throw new G4DException(String.format("El destino ('%s') del pedido es inválido.", codDestino));
     }
 
     public void clearPools() {
