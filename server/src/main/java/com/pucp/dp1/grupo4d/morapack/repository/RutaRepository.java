@@ -21,30 +21,20 @@ public interface RutaRepository extends JpaRepository<RutaEntity, Integer> {
     Optional<RutaEntity> findByCodigo(String codigo);
 
     // Listar todas las rutas pertenecientes a pedidos dentro de de rango temporal
-    @Query("""
-        SELECT DISTINCT r
-        FROM RutaEntity r
-        JOIN r.lotes l
-        JOIN l.segmentacion s
-        JOIN s.pedido p
-        WHERE (p.fechaHoraGeneracionUTC BETWEEN :fechaHoraInicio AND :fechaHoraFin) AND p.tipoEscenario = :tipoEscenario
-    """)
+    @Query(
+        value = """
+        SELECT DISTINCT r.*
+        FROM ruta r
+        JOIN lote l ON l.id_ruta = r.id
+        JOIN segmentacion s ON s.id = l.id_segmentacion
+        JOIN pedido p ON p.id = s.id_pedido
+        WHERE (p.fh_generacion_utc BETWEEN :fechaHoraInicio AND :fechaHoraFin) AND (p.tipo_escenario = :tipoEscenario)
+        """,
+        nativeQuery = true
+    )
     List<RutaEntity> findAllByDateTimeRange(
             @Param("fechaHoraInicio") LocalDateTime fechaHoraInicio,
             @Param("fechaHoraFin") LocalDateTime fechaHoraFin,
-            @Param("TipoDePedidos") TipoEscenario tipoEscenario
-    );
-
-    @Query("""
-        SELECT DISTINCT r
-        FROM RutaEntity r
-        JOIN r.lotes l
-        JOIN l.segmentacion s
-        JOIN s.pedido p
-        WHERE (:fechaHoraGeneracion IS NULL OR p.fechaHoraGeneracionUTC >= :fechaHoraGeneracion) AND p.tipoEscenario = :tipoEscenario
-    """)
-    List<RutaEntity> findAllSinceDateTime(
-            @Param("fechaHoraInicio") LocalDateTime fechaHoraInicio,
-            @Param("TipoDePedidos") String tipoEscenario
+            @Param("tipoEscenario") TipoEscenario tipoEscenario
     );
 }

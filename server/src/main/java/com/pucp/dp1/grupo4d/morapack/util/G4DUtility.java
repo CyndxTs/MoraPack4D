@@ -328,7 +328,7 @@ public class G4DUtility {
             if (!isAdmissible(size)) {
                 throw new G4DException(String.format("El tamaño de página '%d' es inválido.", size));
             }
-            return PageRequest.of(page - 1, size, Sort.by(orders));
+            return PageRequest.of(page, size, Sort.by(orders));
         }
         // Validar admisibilidad de 'String'
         public static boolean isAdmissible(String str) {

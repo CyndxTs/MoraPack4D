@@ -52,24 +52,17 @@ public interface PedidoRepository extends JpaRepository<PedidoEntity, Integer> {
     );
 
     // Listar todos los pedidos dentro de rango temporal
-    @Query("""
-        SELECT p
-        FROM PedidoEntity p
-        WHERE (p.fechaHoraGeneracionUTC BETWEEN :fechaHoraInicio AND :fechaHoraFin) AND p.tipoEscenario = :tipoEscenario
-    """)
+    @Query(
+        value = """
+        SELECT p.*
+        FROM pedido p
+        WHERE (p.fh_generacion_utc BETWEEN :fechaHoraInicio AND :fechaHoraFin) AND (p.tipo_escenario = :tipoEscenario)
+        """,
+        nativeQuery = true
+    )
     List<PedidoEntity> findAllByDateTimeRange(
             @Param("fechaHoraInicio") LocalDateTime fechaHoraInicio,
             @Param("fechaHoraFin") LocalDateTime fechaHoraFin,
-            @Param("tipoEscenario")  String tipoEscenario
-    );
-
-    @Query("""
-        SELECT p
-        FROM PedidoEntity p
-        WHERE (:fechaHoraGeneracion IS NULL OR p.fechaHoraGeneracionUTC >= :fechaHoraGeneracion) AND p.tipoEscenario = :tipoEscenario
-    """)
-    List<PedidoEntity> findAllSinceDateTime(
-            @Param("fechaHoraInicio") LocalDateTime fechaHoraInicio,
-            @Param("tipoEscenario")  String tipoEscenario
+            @Param("tipoEscenario") TipoEscenario tipoEscenario
     );
 }

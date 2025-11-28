@@ -31,7 +31,7 @@ public class AeropuertoController {
     @GetMapping
     public ResponseEntity<ListResponse> listar() {
         try {
-            ListRequest request = new ListRequest(1, 30);
+            ListRequest request = new ListRequest(0, 30);
             ListResponse response = aeropuertoService.listar(request);
             return ResponseEntity.ok(response);
         } catch (G4DException e) {

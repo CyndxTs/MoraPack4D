@@ -80,7 +80,7 @@ public class PedidoService {
 
     public List<PedidoEntity> findAllByDateTimeRange(LocalDateTime fechaHoraInicio, LocalDateTime fechaHoraFin, String tipoEscenario) {
         TipoEscenario escenario = G4DUtility.Convertor.toAdmissible(tipoEscenario, TipoEscenario.class);
-        return pedidoRepository.findAllByDateTimeRange(fechaHoraInicio, fechaHoraFin, tipoEscenario);
+        return pedidoRepository.findAllByDateTimeRange(fechaHoraInicio, fechaHoraFin, escenario);
     }
 
     public List<PedidoEntity> findAllByDestino(AeropuertoEntity destino) {

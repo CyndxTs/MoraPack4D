@@ -52,12 +52,12 @@ public class RegistroEntity {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         RegistroEntity that = (RegistroEntity) o;
-        return Objects.equals(codigo, that.codigo);
+        return id != null && id.equals(that.id);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(codigo);
+        return Objects.hash(id);
     }
 
     public Integer getId() { return id; }

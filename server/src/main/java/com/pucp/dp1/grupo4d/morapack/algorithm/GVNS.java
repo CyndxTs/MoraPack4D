@@ -600,7 +600,7 @@ public class GVNS {
             // Carga de restricciones por replanificación
             pedido.cargarRestriccionesDeReplanificacion(segmentacionModificable, secuenciasIntocables);
             // Validación de aptitud
-            G4DUtility.Logger.logf("- Validando aptitud del pedido #%d de '%d'..", posPedido+1, G4DUtility.Logger.Stats.totalPed);
+            G4DUtility.Logger.logf("- Validando aptitud del pedido #%d de '%d'..", posPedido+1, pedidos.size());
             if (segmentacionModificable.size() < ele + 1) {
                 G4DUtility.Logger.logln(" [NO APTO]");
                 G4DUtility.Logger.delete_upper_line();
@@ -712,7 +712,7 @@ public class GVNS {
         Set<Ruta> rutasEnOperacion = solucion.getRutasEnOperacion();
         // Fusión de rutas de pedidos
         for (int posPedido = 0; posPedido < pedidos.size(); posPedido++) {
-            G4DUtility.Logger.logf("- Evaluando rutas del pedido #%d de '%d'..%n", posPedido+1, G4DUtility.Logger.Stats.totalPed);
+            G4DUtility.Logger.logf("- Evaluando rutas del pedido #%d de '%d'..%n", posPedido+1, pedidos.size());
             Pedido pedido = pedidos.get(posPedido);
             Map<Ruta, Lote> segmentacion = pedido.obtenerSegementacionVigente().getLotesPorRuta();
             Map<Ruta, Lote> segmentacionModificable = new HashMap<>();
@@ -852,7 +852,7 @@ public class GVNS {
             Map<Ruta, List<Aeropuerto>> secuenciasIntocables = new HashMap<>();
             pedido.cargarRestriccionesDeReplanificacion(segmentacionModificable, secuenciasIntocables);
             // Validación de aptitud
-            G4DUtility.Logger.logf("- Validando aptitud del pedido #%d de '%d'..", posPedido+1, G4DUtility.Logger.Stats.totalPed);
+            G4DUtility.Logger.logf("- Validando aptitud del pedido #%d de '%d'..", posPedido+1, pedidos.size());
             if (segmentacionModificable.size() < ele) {
                 G4DUtility.Logger.logln(" [NO APTO]");
                 G4DUtility.Logger.delete_upper_line();
@@ -1041,7 +1041,7 @@ public class GVNS {
             // Carga de secuencias intocables por replanificación
             pedido.cargarRestriccionesDeReplanificacion(segmentacionModificable, secuenciasIntocables);
             // Validación por aptitud de pedido para compactar
-            G4DUtility.Logger.logf("- Validando aptitud del pedido #%d de '%d'..", posPedido+1, G4DUtility.Logger.Stats.totalPed);
+            G4DUtility.Logger.logf("- Validando aptitud del pedido #%d de '%d'..", posPedido+1, pedidos.size());
             if (segmentacionModificable.size() < ele + 1) {
                 G4DUtility.Logger.logln(" [NO APTO]");
                 G4DUtility.Logger.delete_upper_line();
@@ -1094,7 +1094,7 @@ public class GVNS {
                     .filter(r -> !r.getFechaHoraSalida().isBefore(pedido.getFechaHoraGeneracion()) && !r.getFechaHoraLlegada().isAfter(pedido.getFechaHoraExpiracion()))
                     .collect(Collectors.toList());
             Collections.shuffle(rutasFin);
-            G4DUtility.Logger.logf("- Evaluando ruta aleatoria del pedido #%d de '%d'..%n", posPedido+1, G4DUtility.Logger.Stats.totalPed);
+            G4DUtility.Logger.logf("- Evaluando ruta aleatoria del pedido #%d de '%d'..%n", posPedido+1, pedidos.size());
             List<List<Ruta>> combinaciones = G4DUtility.Calculator.getCrossedCombinations(rutasIni, rutasFin, 1, 1);
             int cantCombinaciones = Math.min(ele, combinaciones.size());
             // Validación por existencia de rutas para fusionar
@@ -1181,7 +1181,7 @@ public class GVNS {
             // Carga de restricciones por replanificacion
             pedido.cargarRestriccionesDeReplanificacion(segmentacionModificable, secuenciasIntocables);
             // Validación por aptitud de pedido para realocar
-            G4DUtility.Logger.logf("- Validando aptitud del pedido #%d de '%d'..", posPedido+1, G4DUtility.Logger.Stats.totalPed);
+            G4DUtility.Logger.logf("- Validando aptitud del pedido #%d de '%d'..", posPedido+1, pedidos.size());
             if (segmentacion.size() < ele) {
                 G4DUtility.Logger.logln("[NO APTO]");
                 G4DUtility.Logger.delete_upper_line();

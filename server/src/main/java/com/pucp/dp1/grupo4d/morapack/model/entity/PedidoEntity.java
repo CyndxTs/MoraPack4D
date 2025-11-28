@@ -71,12 +71,12 @@ public class PedidoEntity {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         PedidoEntity that = (PedidoEntity) o;
-        return Objects.equals(codigo, that.codigo);
+        return id != null && Objects.equals(id, that.id);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(codigo);
+        return Objects.hash(id);
     }
 
     public Integer getId() { return id; }

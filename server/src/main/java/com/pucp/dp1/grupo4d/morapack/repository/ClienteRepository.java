@@ -42,15 +42,18 @@ public interface ClienteRepository extends JpaRepository<ClienteEntity, Integer>
     );
 
     // Listar todos los clientes con pedidos dentro de rango temporal
-    @Query("""
-        SELECT DISTINCT c
-        FROM ClienteEntity c
-        JOIN c.pedidos p
-        WHERE (p.fechaHoraGeneracionUTC BETWEEN :fechaHoraInicio AND :fechaHoraFin) AND p.tipoEscenario = :tipoEscenario
-    """)
+    @Query(
+        value = """
+        SELECT DISTINCT c.*
+        FROM cliente c
+        INNER JOIN pedido p ON p.id_cliente = c.id
+        WHERE (p.fh_generacion_utc BETWEEN :fechaHoraInicio AND :fechaHoraFin) AND (p.tipo_escenario = :tipoEscenario)
+        """,
+        nativeQuery = true
+    )
     List<ClienteEntity> findAllByDateTimeRange(
             @Param("fechaHoraInicio") LocalDateTime fechaHoraInicio,
             @Param("fechaHoraFin") LocalDateTime fechaHoraFin,
-            @Param("tipoDePedidos") TipoEscenario tipoEscenario
+            @Param("tipoEscenario") TipoEscenario tipoEscenario
     );
 }

@@ -84,61 +84,66 @@ public class Problematica {
                             RutaService rutaService, RutaAdapter rutaAdapter,
                             VueloService vueloService, VueloAdapter vueloAdapter ) {
         G4DUtility.Logger.logln(">> Cargando desde base de datos..");
-        // Puntos de replanificación
-        PUNTOS_REPLANIFICACION = new ArrayList<>();
-        // Aeropuertos
-        List<AeropuertoEntity> aeropuertosEntity = aeropuertoService.findAll();
-        aeropuertosEntity.forEach(entity -> {
-            Aeropuerto aeropuerto = aeropuertoAdapter.toAlgorithm(entity);
-            if (CODIGOS_DE_ORIGENES.contains(aeropuerto.getCodigo())) {
-                origenes.add(aeropuerto);
-            } else {
-                destinos.add(aeropuerto);
-            }
-        });
-        G4DUtility.Logger.logf("[:] AEROPUERTOS CARGADOS! | '%d' origenes! & '%d' destinos!%n", origenes.size(), destinos.size());
-        // Planes
-        List<PlanEntity> planesEntity = planService.findAll();
-        planesEntity.forEach(entity -> {
-            Plan plan = planAdapter.toAlgorithm(entity);
-            planes.add(plan);
-        });
-        G4DUtility.Logger.logf("[:] PLANES DE VUELO CARGADOS! | '%d' planes!%n", planes.size());
-        // Clientes
-        List<ClienteEntity> clientesEntity = clienteService.findAllByDateTimeRange(INICIO_PLANIFICACION, FIN_PLANIFICACION, ESCENARIO);
-        clientesEntity.forEach(entity -> {
-            Cliente cliente = usuarioAdapter.toAlgorithm(entity);
-            clientes.add(cliente);
-        });
-        G4DUtility.Logger.logf("[:] CLIENTES CARGADOS! | '%d' clientes!%n", clientes.size());
-        // Pedidos
-        G4DUtility.IntegerWrapper cantAtendidos = new G4DUtility.IntegerWrapper();
-        List<PedidoEntity> pedidosEntity = pedidoService.findAllByDateTimeRange(INICIO_PLANIFICACION, FIN_PLANIFICACION, ESCENARIO);
-        pedidosEntity.forEach(entity -> {
-            if(entity.getFueAtendido()) {
-                cantAtendidos.increment();
-            }
-            if(entity.getFechaHoraProcesamientoUTC() == null) {
-                entity.setFechaHoraGeneracionUTC(INSTANTE_DE_PROCESAMIENTO);
-            }
-            Pedido pedido = pedidoAdapter.toAlgorithm(entity);
-            pedidos.add(pedido);
-        });
-        G4DUtility.Logger.logf("[:] PEDIDOS CARGADOS! | '%d' por atender! & '%d' ya atendidos!%n", pedidos.size() - cantAtendidos.value, cantAtendidos.value);
-        // Vuelos
-        List<VueloEntity> vuelosEntity = vueloService.findAllByDateTimeRange(INICIO_PLANIFICACION, FIN_PLANIFICACION, ESCENARIO);
-        vuelosEntity.forEach(entity -> {
-            Vuelo vuelo = vueloAdapter.toAlgorithm(entity);
-            vuelos.add(vuelo);
-        });
-        G4DUtility.Logger.logf("[:] VUELOS CARGADOS! | '%d' vuelos!%n", vuelos.size());
-        // Rutas
-        List<RutaEntity> rutasEntity = rutaService.findAllByDateTimeRange(INICIO_PLANIFICACION, FIN_PLANIFICACION, ESCENARIO);
-        rutasEntity.forEach(entity -> {
-            Ruta ruta = rutaAdapter.toAlgorithm(entity);
-            rutas.add(ruta);
-        });
-        G4DUtility.Logger.logf("[:] RUTAS CARGADAS! | '%d' rutas!%n", rutas.size());
-        G4DUtility.Logger.logln("[<] DATOS CARGADOS!");
+        try {
+            // Puntos de replanificación
+            PUNTOS_REPLANIFICACION = new ArrayList<>();
+            // Aeropuertos
+            List<AeropuertoEntity> aeropuertosEntity = aeropuertoService.findAll();
+            aeropuertosEntity.forEach(entity -> {
+                Aeropuerto aeropuerto = aeropuertoAdapter.toAlgorithm(entity);
+                if (CODIGOS_DE_ORIGENES.contains(aeropuerto.getCodigo())) {
+                    origenes.add(aeropuerto);
+                } else {
+                    destinos.add(aeropuerto);
+                }
+            });
+            G4DUtility.Logger.logf("[:] AEROPUERTOS CARGADOS! | '%d' origenes! & '%d' destinos!%n", origenes.size(), destinos.size());
+            // Planes
+            List<PlanEntity> planesEntity = planService.findAll();
+            planesEntity.forEach(entity -> {
+                Plan plan = planAdapter.toAlgorithm(entity);
+                planes.add(plan);
+            });
+            G4DUtility.Logger.logf("[:] PLANES DE VUELO CARGADOS! | '%d' planes!%n", planes.size());
+            // Clientes
+            List<ClienteEntity> clientesEntity = clienteService.findAllByDateTimeRange(INICIO_PLANIFICACION, FIN_PLANIFICACION, ESCENARIO);
+            clientesEntity.forEach(entity -> {
+                Cliente cliente = usuarioAdapter.toAlgorithm(entity);
+                clientes.add(cliente);
+            });
+            G4DUtility.Logger.logf("[:] CLIENTES CARGADOS! | '%d' clientes!%n", clientes.size());
+            // Pedidos
+            G4DUtility.IntegerWrapper cantAtendidos = new G4DUtility.IntegerWrapper();
+            List<PedidoEntity> pedidosEntity = pedidoService.findAllByDateTimeRange(INICIO_PLANIFICACION, FIN_PLANIFICACION, ESCENARIO);
+            pedidosEntity.forEach(entity -> {
+                if(entity.getFueAtendido()) {
+                    cantAtendidos.increment();
+                }
+                if(entity.getFechaHoraProcesamientoUTC() == null) {
+                    entity.setFechaHoraProcesamientoUTC(INSTANTE_DE_PROCESAMIENTO);
+                }
+                Pedido pedido = pedidoAdapter.toAlgorithm(entity);
+                pedidos.add(pedido);
+            });
+            G4DUtility.Logger.logf("[:] PEDIDOS CARGADOS! | '%d' por atender! & '%d' ya atendidos!%n", pedidos.size() - cantAtendidos.value, cantAtendidos.value);
+            // Vuelos
+            List<VueloEntity> vuelosEntity = vueloService.findAllByDateTimeRange(INICIO_PLANIFICACION, FIN_PLANIFICACION, ESCENARIO);
+            vuelosEntity.forEach(entity -> {
+                Vuelo vuelo = vueloAdapter.toAlgorithm(entity);
+                vuelos.add(vuelo);
+            });
+            G4DUtility.Logger.logf("[:] VUELOS CARGADOS! | '%d' vuelos!%n", vuelos.size());
+            // Rutas
+            List<RutaEntity> rutasEntity = rutaService.findAllByDateTimeRange(INICIO_PLANIFICACION, FIN_PLANIFICACION, ESCENARIO);
+            rutasEntity.forEach(entity -> {
+                Ruta ruta = rutaAdapter.toAlgorithm(entity);
+                rutas.add(ruta);
+            });
+            G4DUtility.Logger.logf("[:] RUTAS CARGADAS! | '%d' rutas!%n", rutas.size());
+            G4DUtility.Logger.logln("[<] DATOS CARGADOS!");
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException(e);
+        }
     }
 }

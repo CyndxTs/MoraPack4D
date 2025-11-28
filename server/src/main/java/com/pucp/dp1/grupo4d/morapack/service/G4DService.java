@@ -113,7 +113,6 @@ public class G4DService {
     private Future<?> operationTask = null;
     private Future<?> exportationTask = null;
     private Long segundosEstimadosDeReplanificacion = null;
-    private Problematica problematica = null;
 
     public StatusResponse iniciarSimulacion(SimulationRequest request) throws  Exception {
         if(simulationTask != null) {
@@ -138,7 +137,7 @@ public class G4DService {
                 while(inicioDePlanificacion.isBefore(finDeSimulacion) && !Thread.currentThread().isInterrupted()) {
                     LocalDateTime finDePlanificacion = inicioDePlanificacion.plusMinutes(saltoTemporalEnMinutos);
                     Instant start = Instant.now();
-                    SolutionResponse solutionResponse = planificar(false, escenario, inicioDePlanificacion, finDePlanificacion, umbralDeReplanificacion, umbralDeReplanificacion);
+                    SolutionResponse solutionResponse = planificar(escenario, inicioDePlanificacion, finDePlanificacion, umbralDeReplanificacion, umbralDeReplanificacion);
                     if(solutionResponse.getExito()) {
                         messagingTemplate.convertAndSend("/topic/simulator", solutionResponse);
                     } else {
@@ -156,8 +155,10 @@ public class G4DService {
                     long desfaseTemporal = (long) (60*(Math.min(horasPlanificadas, 24.0*maxDesfaseTemporalEnDias)));
                     inicioDePlanificacion = finDePlanificacion.minusMinutes(desfaseTemporal);
                 }
-                messagingTemplate.convertAndSend("/topic/simulator-status", new StatusResponse(true, "Simulación correctamente finalizada!", EstadoProceso.FINALIZADO));
-                limpiarPools();
+                if(!Thread.currentThread().isInterrupted()) {
+                    messagingTemplate.convertAndSend("/topic/simulator-status", new StatusResponse(true, "Simulación correctamente finalizada!", EstadoProceso.FINALIZADO));
+                    limpiarPools();
+                }
                 return null;
             });
         });
@@ -190,7 +191,7 @@ public class G4DService {
                 LocalDateTime umbralDeReplanificacion = (this.segundosEstimadosDeReplanificacion != null) ? fechaHoraActual.plusSeconds(this.segundosEstimadosDeReplanificacion) : fechaHoraActual;
                 LocalDateTime instanteDeProcesamiento = (this.segundosEstimadosDeReplanificacion != null) ? fechaHoraActual.plusSeconds(this.segundosEstimadosDeReplanificacion): fechaHoraActual.plusMinutes(5L);
                 Instant start = Instant.now();
-                SolutionResponse solutionResponse = planificar(true, escenario, inicioPlanificacion, fechaHoraActual, umbralDeReplanificacion, instanteDeProcesamiento);
+                SolutionResponse solutionResponse = planificar(escenario, inicioPlanificacion, fechaHoraActual, umbralDeReplanificacion, instanteDeProcesamiento);
                 if(solutionResponse.getExito()) {
                     messagingTemplate.convertAndSend("/topic/operator", solutionResponse);
                 } else {
@@ -199,8 +200,10 @@ public class G4DService {
                 Instant end = Instant.now();
                 long segundosTranscurridos = Duration.between(start, end).toMillis()/1000;
                 this.segundosEstimadosDeReplanificacion = (this.segundosEstimadosDeReplanificacion != null) ? Math.min(this.segundosEstimadosDeReplanificacion, segundosTranscurridos) : segundosTranscurridos;
-                messagingTemplate.convertAndSend("/topic/operator-status", new StatusResponse(true, "Operación correctamente replanificada!", EstadoProceso.FINALIZADO));
-                limpiarPools();
+                if(!Thread.currentThread().isInterrupted()) {
+                    messagingTemplate.convertAndSend("/topic/operator-status", new StatusResponse(true, "Operación correctamente replanificada!", EstadoProceso.FINALIZADO));
+                    limpiarPools();
+                }
                 return null;
             });
         });
@@ -221,20 +224,15 @@ public class G4DService {
         return new StatusResponse(true, "Exportación iniciada!", EstadoProceso.INICIADO);
     }
 
-    private SolutionResponse planificar(Boolean renovarProblematica, TipoEscenario escenario, LocalDateTime inicioDePlanificacion, LocalDateTime finDePlanificacion, LocalDateTime umbralDeReplanificacion, LocalDateTime instanteDeProcesamiento) {
+    private SolutionResponse planificar(TipoEscenario tipoEscenario, LocalDateTime inicioDePlanificacion, LocalDateTime finDePlanificacion, LocalDateTime umbralDeReplanificacion, LocalDateTime instanteDeProcesamiento) {
         try {
-            boolean esSimulacion = escenario.equals(TipoEscenario.SIMULACION);
+            boolean esSimulacion = tipoEscenario.equals(TipoEscenario.SIMULACION);
             Problematica.INICIO_PLANIFICACION = inicioDePlanificacion;
             Problematica.FIN_PLANIFICACION = finDePlanificacion;
             Problematica.UMBRAL_REPLANIFICACION = umbralDeReplanificacion;
             Problematica.INSTANTE_DE_PROCESAMIENTO = instanteDeProcesamiento;
-            Problematica.ESCENARIO = escenario.toString().toUpperCase();
+            Problematica.ESCENARIO = tipoEscenario.toString().toUpperCase();
             Problematica problematica = new Problematica();
-            if(!renovarProblematica && this.problematica != null) {
-                problematica.origenes = this.problematica.origenes;
-                problematica.destinos = this.problematica.destinos;
-                problematica.planes = this.problematica.planes;
-            }
             problematica.cargarDatos(
                     aeropuertoService, aeropuertoAdapter,
                     clienteService, usuarioAdapter,

@@ -45,14 +45,14 @@ public class ClienteEntity extends UsuarioEntity{
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (!(o instanceof ClienteEntity)) return false;
         ClienteEntity that = (ClienteEntity) o;
-        return Objects.equals(codigo, that.codigo);
+        return id != null && id.equals(that.id);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(codigo);
+        return Objects.hash(id);
     }
 
     public Integer getId() { return id; }
