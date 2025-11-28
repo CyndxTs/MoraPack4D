@@ -73,7 +73,7 @@ public class PlanService {
     public ListResponse listar(ListRequest request) {
         try {
             int page = G4D.toAdmissibleValue(request.getPage(), 0);
-            int size = G4D.toAdmissibleValue(request.getPage(), 10);
+            int size = G4D.toAdmissibleValue(request.getSize(), 10);
             Pageable pageable = PageRequest.of(page, size,  Sort.by(Sort.Order.asc("horaSalidaUTC"), Sort.Order.asc("horaLlegadaUTC")));
             List<DTO> dtos = new ArrayList<>();
             List<PlanEntity> entities = this.findAll(pageable);

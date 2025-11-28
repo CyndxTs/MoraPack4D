@@ -11,6 +11,7 @@ import com.pucp.dp1.grupo4d.morapack.model.dto.DTO;
 import com.pucp.dp1.grupo4d.morapack.model.dto.request.ListRequest;
 import com.pucp.dp1.grupo4d.morapack.model.dto.response.ListResponse;
 import com.pucp.dp1.grupo4d.morapack.model.entity.VueloEntity;
+import com.pucp.dp1.grupo4d.morapack.model.enums.TipoEscenario;
 import com.pucp.dp1.grupo4d.morapack.repository.VueloRepository;
 import com.pucp.dp1.grupo4d.morapack.util.G4D;
 import org.springframework.data.domain.PageRequest;
@@ -66,17 +67,16 @@ public class VueloService {
     }
 
     public List<VueloEntity> findAllByDateTimeRange(LocalDateTime fechaHoraInicio, LocalDateTime fechaHoraFin, String tipoEscenario) {
-        return  vueloRepository.findAllByDateTimeRange(fechaHoraInicio, fechaHoraFin, tipoEscenario);
-    }
-
-    public List<VueloEntity> findAllSinceDateTime(LocalDateTime fechaHoraInicio, String tipoEscenario) {
-        return  vueloRepository.findAllSinceDateTime(fechaHoraInicio, tipoEscenario);
+        TipoEscenario escenario = G4D.toAdmissibleValue(tipoEscenario, TipoEscenario.class);
+        if (escenario == null) {
+            return new ArrayList<>();
+        } else return vueloRepository.findAllByDateTimeRange(fechaHoraInicio, fechaHoraFin, escenario);
     }
 
     public ListResponse listar(ListRequest request) {
         try {
             int page = G4D.toAdmissibleValue(request.getPage(), 0);
-            int size = G4D.toAdmissibleValue(request.getPage(), 10);
+            int size = G4D.toAdmissibleValue(request.getSize(), 10);
             Pageable pageable = PageRequest.of(page, size,  Sort.by(Sort.Order.asc("fechaHoraSalidaUTC"), Sort.Order.asc("fechaHoraLlegadaUTC")));
             List<DTO> dtos = new ArrayList<>();
             List<VueloEntity> entities = this.findAll(pageable);

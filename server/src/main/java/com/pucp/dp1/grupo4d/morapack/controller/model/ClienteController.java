@@ -42,8 +42,8 @@ public class ClienteController {
         }
     }
 
-    @GetMapping("/listar")
-    public ResponseEntity<ListResponse> listar(ListRequest request) {
+    @PostMapping("/listar")
+    public ResponseEntity<ListResponse> listar(@RequestBody ListRequest request) {
         try {
             ListResponse response = clienteService.listar(request);
             if (response.getSuccess()) {
@@ -56,7 +56,7 @@ public class ClienteController {
         }
     }
 
-    @GetMapping("/filtrar")
+    @PostMapping("/filtrar")
     public ResponseEntity<ListResponse> filtrar(@RequestBody FilterRequest<UsuarioDTO> request) {
         try {
             ListResponse response = clienteService.filtrar(request);

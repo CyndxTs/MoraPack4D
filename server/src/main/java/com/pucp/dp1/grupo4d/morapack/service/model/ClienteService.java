@@ -15,6 +15,7 @@ import com.pucp.dp1.grupo4d.morapack.model.dto.response.GenericResponse;
 import com.pucp.dp1.grupo4d.morapack.model.dto.response.ListResponse;
 import com.pucp.dp1.grupo4d.morapack.model.entity.ClienteEntity;
 import com.pucp.dp1.grupo4d.morapack.model.enums.EstadoUsuario;
+import com.pucp.dp1.grupo4d.morapack.model.enums.TipoEscenario;
 import com.pucp.dp1.grupo4d.morapack.repository.ClienteRepository;
 import com.pucp.dp1.grupo4d.morapack.util.G4D;
 import org.springframework.data.domain.PageRequest;
@@ -78,7 +79,10 @@ public class ClienteService {
     }
 
     public List<ClienteEntity> findAllByDateTimeRange(LocalDateTime fechaHoraInicio, LocalDateTime fechaHoraFin, String tipoEscenario) {
-        return  clienteRepository.findAllByDateTimeRange(fechaHoraInicio, fechaHoraFin, tipoEscenario);
+        TipoEscenario escenario = G4D.toAdmissibleValue(tipoEscenario, TipoEscenario.class);
+        if (escenario == null) {
+            return new ArrayList<>();
+        } else return clienteRepository.findAllByDateTimeRange(fechaHoraInicio, fechaHoraFin, escenario);
     }
 
     public ClienteEntity obtenerPorCodigo(String codigo) {
@@ -110,7 +114,7 @@ public class ClienteService {
     public ListResponse listar(ListRequest request) {
         try {
             int page = G4D.toAdmissibleValue(request.getPage(), 0);
-            int size = G4D.toAdmissibleValue(request.getPage(), 10);
+            int size = G4D.toAdmissibleValue(request.getSize(), 10);
             Pageable pageable = PageRequest.of(page, size, Sort.by("codigo").ascending());
             List<DTO> dtos = new ArrayList<>();
             List<ClienteEntity> entities = this.findAll(pageable);
@@ -126,7 +130,7 @@ public class ClienteService {
     public ListResponse filtrar(FilterRequest<UsuarioDTO> request) {
         try {
             int page = G4D.toAdmissibleValue(request.getPage(), 0);
-            int size = G4D.toAdmissibleValue(request.getPage(), 10);
+            int size = G4D.toAdmissibleValue(request.getSize(), 10);
             Pageable pageable = PageRequest.of(page, size, Sort.by("codigo").ascending());
             UsuarioDTO model = request.getFilterModel();
             String nombre = G4D.toAdmissibleValue(model.getNombre());

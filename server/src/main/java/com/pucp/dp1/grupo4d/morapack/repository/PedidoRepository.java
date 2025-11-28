@@ -8,6 +8,7 @@ package com.pucp.dp1.grupo4d.morapack.repository;
 
 import com.pucp.dp1.grupo4d.morapack.model.entity.AeropuertoEntity;
 import com.pucp.dp1.grupo4d.morapack.model.entity.PedidoEntity;
+import com.pucp.dp1.grupo4d.morapack.model.enums.TipoEscenario;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -33,7 +34,7 @@ public interface PedidoRepository extends JpaRepository<PedidoEntity, Integer> {
       AND (:fechaHoraExpiracion IS NULL OR (p.fechaHoraExpiracionUTC IS NOT NULL AND p.fechaHoraExpiracionUTC >= :fechaHoraExpiracion))
     """)
     Page<PedidoEntity> filterBy(
-            @Param("tipoEscenario") String tipoEscenario,
+            @Param("tipoEscenario") TipoEscenario tipoEscenario,
             @Param("codCliente") String codCliente,
             @Param("fueAtendido") Boolean fueAtendido,
             @Param("fechaHoraGeneracion") LocalDateTime fechaHoraGeneracion,

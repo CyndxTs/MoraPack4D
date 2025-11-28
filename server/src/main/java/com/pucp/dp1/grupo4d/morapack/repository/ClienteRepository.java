@@ -9,6 +9,7 @@ package com.pucp.dp1.grupo4d.morapack.repository;
 import com.pucp.dp1.grupo4d.morapack.model.entity.ClienteEntity;
 import com.pucp.dp1.grupo4d.morapack.model.enums.EstadoUsuario;
 
+import com.pucp.dp1.grupo4d.morapack.model.enums.TipoEscenario;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -50,6 +51,6 @@ public interface ClienteRepository extends JpaRepository<ClienteEntity, Integer>
     List<ClienteEntity> findAllByDateTimeRange(
             @Param("fechaHoraInicio") LocalDateTime fechaHoraInicio,
             @Param("fechaHoraFin") LocalDateTime fechaHoraFin,
-            @Param("tipoDePedidos") String tipoEscenario
+            @Param("tipoDePedidos") TipoEscenario tipoEscenario
     );
 }

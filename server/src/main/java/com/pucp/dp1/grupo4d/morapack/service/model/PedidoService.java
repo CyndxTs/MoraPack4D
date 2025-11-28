@@ -80,11 +80,10 @@ public class PedidoService {
     }
 
     public List<PedidoEntity> findAllByDateTimeRange(LocalDateTime fechaHoraInicio, LocalDateTime fechaHoraFin, String tipoEscenario) {
-        return  pedidoRepository.findAllByDateTimeRange(fechaHoraInicio, fechaHoraFin, tipoEscenario);
-    }
-
-    public List<PedidoEntity> findAllSinceDateTime(LocalDateTime fechaHoraInicio, String tipoEscenario) {
-        return  pedidoRepository.findAllSinceDateTime(fechaHoraInicio, tipoEscenario);
+        TipoEscenario escenario = G4D.toAdmissibleValue(tipoEscenario, TipoEscenario.class);
+        if (escenario == null) {
+            return new ArrayList<>();
+        } else return pedidoRepository.findAllByDateTimeRange(fechaHoraInicio, fechaHoraFin, tipoEscenario);
     }
 
     public List<PedidoEntity> findAllByDestino(AeropuertoEntity destino) {
@@ -101,7 +100,7 @@ public class PedidoService {
     public ListResponse listar(ListRequest request) {
         try {
             int page = G4D.toAdmissibleValue(request.getPage(), 0);
-            int size = G4D.toAdmissibleValue(request.getPage(), 10);
+            int size = G4D.toAdmissibleValue(request.getSize(), 10);
             Pageable pageable = PageRequest.of(page, size, Sort.by("codigo").ascending());
             List<DTO> dtos = new ArrayList<>();
             List<PedidoEntity> entities = this.findAll(pageable);
@@ -117,10 +116,10 @@ public class PedidoService {
     public ListResponse filtrar(FilterRequest<PedidoDTO> request) {
         try {
             int page = G4D.toAdmissibleValue(request.getPage(), 0);
-            int size = G4D.toAdmissibleValue(request.getPage(), 10);
+            int size = G4D.toAdmissibleValue(request.getSize(), 10);
             Pageable pageable = PageRequest.of(page, size, Sort.by("codigo").ascending());
             PedidoDTO model = request.getFilterModel();
-            String tipoEscenario = G4D.toAdmissibleValue(model.getTipoEscenario());
+            TipoEscenario tipoEscenario = G4D.toAdmissibleValue(model.getTipoEscenario(),  TipoEscenario.class);
             String codCliente = G4D.toAdmissibleValue(model.getCodCliente());
             Boolean fueAtendido = model.getFueAtendido();
             LocalDateTime fechaHoraGeneracion = G4D.toAdmissibleValue(model.getFechaHoraGeneracion(), (LocalDateTime) null);

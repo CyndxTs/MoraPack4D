@@ -45,8 +45,8 @@ public class PedidoController {
         }
     }
 
-    @GetMapping("/listar")
-    public ResponseEntity<ListResponse> listar(ListRequest request) {
+    @PostMapping("/listar")
+    public ResponseEntity<ListResponse> listar(@RequestBody ListRequest request) {
         try {
             ListResponse response = pedidoService.listar(request);
             if (response.getSuccess()) {
@@ -59,7 +59,7 @@ public class PedidoController {
         }
     }
 
-    @GetMapping("/filtrar")
+    @PostMapping("/filtrar")
     public ResponseEntity<ListResponse> filtrar(@RequestBody FilterRequest<PedidoDTO> request) {
         try {
             ListResponse response = pedidoService.filtrar(request);

@@ -83,7 +83,7 @@ export function Checkbox({ label, value, checked, onChange }) {
 
 export function Radio({ name, value, checked, onChange, label,disabled }) {
   return (
-    <label className={`radio ${disabled ? "radio-disabled" : ""}`}>
+    <label className={`radio-item ${disabled ? "radio-disabled" : ""}`}>
       <input
         type="radio"
         name={name}

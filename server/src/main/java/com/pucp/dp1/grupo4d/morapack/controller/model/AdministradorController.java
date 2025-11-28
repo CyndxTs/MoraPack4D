@@ -41,7 +41,7 @@ public class AdministradorController {
         }
     }
 
-    @GetMapping("/listar")
+    @PostMapping("/listar")
     public ResponseEntity<ListResponse> listar(@RequestBody ListRequest request) {
         try {
             ListResponse response = administradorService.listar(request);
@@ -55,7 +55,7 @@ public class AdministradorController {
         }
     }
 
-    @GetMapping("/filtrar")
+    @PostMapping("/filtrar")
     public ResponseEntity<ListResponse> filtrar(@RequestBody FilterRequest<UsuarioDTO> request) {
         try {
             ListResponse response = administradorService.filtrar(request);
