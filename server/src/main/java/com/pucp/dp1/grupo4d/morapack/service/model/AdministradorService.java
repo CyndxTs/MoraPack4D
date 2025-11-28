@@ -79,7 +79,7 @@ public class AdministradorService {
     public ListResponse listar(ListRequest request) {
         try {
             int page = G4D.toAdmissibleValue(request.getPage(), 0);
-            int size = G4D.toAdmissibleValue(request.getPage(), 10);
+            int size = G4D.toAdmissibleValue(request.getSize(), 10);
             Pageable pageable = PageRequest.of(page, size, Sort.by("codigo").ascending());
             List<DTO> dtos = new ArrayList<>();
             List<AdministradorEntity> entities = this.findAll(pageable);
@@ -95,7 +95,7 @@ public class AdministradorService {
     public ListResponse filtrar(FilterRequest<UsuarioDTO> request) {
         try {
             int page = G4D.toAdmissibleValue(request.getPage(), 0);
-            int size = G4D.toAdmissibleValue(request.getPage(), 10);
+            int size = G4D.toAdmissibleValue(request.getSize(), 10);
             Pageable pageable = PageRequest.of(page, size, Sort.by("codigo").ascending());
             UsuarioDTO model = request.getFilterModel();
             String nombre = G4D.toAdmissibleValue(model.getNombre());

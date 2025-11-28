@@ -117,7 +117,7 @@ public class PedidoService {
     public ListResponse filtrar(FilterRequest<PedidoDTO> request) {
         try {
             int page = G4D.toAdmissibleValue(request.getPage(), 0);
-            int size = G4D.toAdmissibleValue(request.getPage(), 10);
+            int size = G4D.toAdmissibleValue(request.getSize(), 10);
             Pageable pageable = PageRequest.of(page, size, Sort.by("codigo").ascending());
             PedidoDTO model = request.getFilterModel();
             String tipoEscenario = G4D.toAdmissibleValue(model.getTipoEscenario());

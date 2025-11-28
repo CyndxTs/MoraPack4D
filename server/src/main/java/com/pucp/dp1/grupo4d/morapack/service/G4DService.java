@@ -16,7 +16,6 @@ import com.pucp.dp1.grupo4d.morapack.model.dto.*;
 import com.pucp.dp1.grupo4d.morapack.model.dto.request.ExportationRequest;
 import com.pucp.dp1.grupo4d.morapack.model.dto.request.OperationRequest;
 import com.pucp.dp1.grupo4d.morapack.model.dto.request.SimulationRequest;
-import com.pucp.dp1.grupo4d.morapack.model.dto.response.GenericResponse;
 import com.pucp.dp1.grupo4d.morapack.model.dto.response.ProcessStatusResponse;
 import com.pucp.dp1.grupo4d.morapack.model.dto.response.SolutionResponse;
 import com.pucp.dp1.grupo4d.morapack.model.entity.*;

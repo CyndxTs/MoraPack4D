@@ -39,8 +39,8 @@ public class EventoController {
         }
     }
 
-    @GetMapping("/listar")
-    public ResponseEntity<ListResponse> listar(ListRequest request) {
+    @PostMapping("/listar")
+    public ResponseEntity<ListResponse> listar(@RequestBody ListRequest request) {
         try {
             ListResponse response = eventoService.listar(request);
             if (response.getSuccess()) {

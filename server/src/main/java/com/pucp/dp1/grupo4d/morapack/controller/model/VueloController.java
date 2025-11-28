@@ -38,8 +38,8 @@ public class VueloController {
         }
     }
 
-    @GetMapping("/listar")
-    public ResponseEntity<ListResponse> listar(ListRequest request) {
+    @PostMapping("/listar")
+    public ResponseEntity<ListResponse> listar(@RequestBody ListRequest request) {
         try {
             ListResponse response = vueloService.listar(request);
             if (response.getSuccess()) {

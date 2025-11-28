@@ -44,8 +44,8 @@ public class AeropuertoController {
         }
     }
 
-    @GetMapping("/listar")
-    public ResponseEntity<ListResponse> listar(ListRequest request) {
+    @PostMapping("/listar")
+    public ResponseEntity<ListResponse> listar(@RequestBody ListRequest request) {
         try {
             ListResponse response = aeropuertoService.listar(request);
             if (response.getSuccess()) {
@@ -58,7 +58,7 @@ public class AeropuertoController {
         }
     }
 
-    @GetMapping("/filtrar")
+    @PostMapping("/filtrar")
     public ResponseEntity<ListResponse> filtrar(@RequestBody FilterRequest<AeropuertoDTO> request) {
         try {
             ListResponse response = aeropuertoService.filtrar(request);
