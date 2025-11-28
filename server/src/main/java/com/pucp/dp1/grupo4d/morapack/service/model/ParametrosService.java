@@ -84,7 +84,7 @@ public class ParametrosService {
             List<DTO> dtos = new ArrayList<>();
             List<ParametrosEntity> entities = this.findAll();
             entities.forEach(entity -> dtos.add(parametrosMapper.toDTO(entity)));
-            return new ListResponse(true, String.format("Parametros listados correctamente! ('%d')", dtos.size()), dtos);
+            return new ListResponse(true, "Parametros listados correctamente!", dtos);
         } finally {
             clearPools();
         }

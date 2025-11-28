@@ -21,8 +21,17 @@ import java.util.Optional;
 
 @Repository
 public interface PedidoRepository extends JpaRepository<PedidoEntity, Integer> {
-    Optional<PedidoEntity> findByCodigo(String codigo);
     List<PedidoEntity> findAllByDestino(AeropuertoEntity destino);
+
+    @Query("""
+    SELECT p
+    FROM PedidoEntity p
+    WHERE p.codigo = :codigo
+      AND p.tipoEscenario = :tipoEscenario
+    """)
+    Optional<PedidoEntity> findByCodigoEscenario(
+            @Param("codigo") String codigo,
+            @Param("tipoEscenario") TipoEscenario tipoEscenario);
 
     @Query("""
     SELECT p

@@ -130,7 +130,7 @@ public class AdministradorService {
                 lineaSC.close();
             }
             archivoSC.close();
-            administradores.forEach(this::save);
+            administradores.stream().filter(entity -> !this.existsByCorreo(entity.getCorreo())).forEach(this::save);
             System.out.printf("[<] ADMINISTRADORES IMPORTADOS! ('%d')%n", administradores.size());
             return new GenericResponse(true, String.format("Administradores importados correctamente! ('%d')", administradores.size()));
         } catch (NoSuchElementException | FileNotFoundException e) {

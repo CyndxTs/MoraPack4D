@@ -84,6 +84,8 @@ public class Problematica {
                             RutaService rutaService, RutaAdapter rutaAdapter,
                             VueloService vueloService, VueloAdapter vueloAdapter ) {
         G4DUtility.Logger.logln(">> Cargando desde base de datos..");
+        // Puntos de replanificación
+        PUNTOS_REPLANIFICACION = new ArrayList<>();
         // Aeropuertos
         List<AeropuertoEntity> aeropuertosEntity = aeropuertoService.findAll();
         aeropuertosEntity.forEach(entity -> {
@@ -138,6 +140,5 @@ public class Problematica {
         });
         G4DUtility.Logger.logf("[:] RUTAS CARGADAS! | '%d' rutas!%n", rutas.size());
         G4DUtility.Logger.logln("[<] DATOS CARGADOS!");
-        PUNTOS_REPLANIFICACION = new ArrayList<>();
     }
 }

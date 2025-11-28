@@ -170,7 +170,7 @@ public class AeropuertoService {
                 lineaSC.close();
             }
             archivoSC.close();
-            aeropuertos.forEach(this::save);
+            aeropuertos.stream().filter(entity -> !this.existsByCodigo(entity.getCodigo())).forEach(this::save);
             System.out.printf("[<] AEROPUERTOS IMPORTADOS! ('%d')%n", aeropuertos.size());
             return new GenericResponse(true, String.format("Aeropuertos importados correctamente! ('%d')",  aeropuertos.size()));
         } catch (NoSuchElementException | FileNotFoundException e) {

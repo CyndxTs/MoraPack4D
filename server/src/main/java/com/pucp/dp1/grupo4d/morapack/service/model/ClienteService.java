@@ -115,7 +115,7 @@ public class ClienteService {
         if (!clientes.isEmpty()) {
             maxCodigo = clientes.stream().mapToInt(entity -> Integer.parseInt(entity.getCodigo())).max();
         } else maxCodigo = this.findAll().stream().mapToInt(entity -> Integer.parseInt(entity.getCodigo())).max();
-        return String.format("%7d", maxCodigo.orElse(0) + 1);
+        return String.format("%07d", maxCodigo.orElse(0) + 1);
     }
 
     public ListResponse listar(ListRequest request) throws Exception {
@@ -163,7 +163,7 @@ public class ClienteService {
                 lineaSC.close();
             }
             archivoSC.close();
-            clientes.forEach(this::save);
+            clientes.stream().filter(entity -> !this.existsByCorreo(entity.getCorreo())).forEach(this::save);
             System.out.printf("[<] CLIENTES IMPORTADOS! ('%d')%n", clientes.size());
             return new  GenericResponse(true, String.format("Clientes importados correctamente! ('%d')", clientes.size()));
         } catch (NoSuchElementException | FileNotFoundException e) {

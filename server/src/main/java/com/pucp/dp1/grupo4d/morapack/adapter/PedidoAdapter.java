@@ -6,6 +6,7 @@
 
 package com.pucp.dp1.grupo4d.morapack.adapter;
 
+import com.pucp.dp1.grupo4d.morapack.algorithm.Problematica;
 import com.pucp.dp1.grupo4d.morapack.model.algorithm.*;
 import com.pucp.dp1.grupo4d.morapack.model.entity.*;
 import com.pucp.dp1.grupo4d.morapack.service.model.PedidoService;
@@ -64,7 +65,7 @@ public class PedidoAdapter {
         if(poolEntity.containsKey(algorithm.getCodigo())) {
             return poolEntity.get(algorithm.getCodigo());
         }
-        PedidoEntity entity = pedidoService.findByCodigo(algorithm.getCodigo()).orElse(null);
+        PedidoEntity entity = pedidoService.findByCodigoEscenario(algorithm.getCodigo(), Problematica.ESCENARIO).orElse(null);
         if (entity == null) {
             return null;
         }

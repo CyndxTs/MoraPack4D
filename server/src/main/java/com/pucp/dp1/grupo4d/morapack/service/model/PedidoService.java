@@ -68,12 +68,14 @@ public class PedidoService {
         return pedidoRepository.existsById(id);
     }
 
-    public Optional<PedidoEntity> findByCodigo(String codigo) {
-        return pedidoRepository.findByCodigo(codigo);
+    public Optional<PedidoEntity> findByCodigoEscenario(String codigo, String tipoEscenario) {
+        TipoEscenario escenario = G4DUtility.Convertor.toAdmissible(tipoEscenario, TipoEscenario.class);
+        return pedidoRepository.findByCodigoEscenario(codigo, escenario);
     }
 
-    public boolean existsByCodigo(String codigo) {
-        return pedidoRepository.findByCodigo(codigo).isPresent();
+    public boolean existsByCodigoEscenario(String codigo, String tipoEscenario) {
+        TipoEscenario escenario = G4DUtility.Convertor.toAdmissible(tipoEscenario, TipoEscenario.class);
+        return pedidoRepository.findByCodigoEscenario(codigo, escenario).isPresent();
     }
 
     public List<PedidoEntity> findAllByDateTimeRange(LocalDateTime fechaHoraInicio, LocalDateTime fechaHoraFin, String tipoEscenario) {
@@ -190,7 +192,7 @@ public class PedidoService {
                 numLinea++;
             }
             archivoSC.close();
-            pedidos.forEach(this::save);
+            pedidos.stream().filter(entity -> !this.existsByCodigoEscenario(entity.getCodigo(), escenario.toString())).forEach(this::save);
             System.out.printf("[<] PEDIDOS IMPORTADOS! ('%d')%n", pedidos.size());
             return new GenericResponse(true, String.format("Pedidos importados correctamente! ('%d')", pedidos.size()));
         } catch (NoSuchElementException | FileNotFoundException e) {
