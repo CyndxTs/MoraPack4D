@@ -11,10 +11,8 @@ import com.pucp.dp1.grupo4d.morapack.model.dto.DTO;
 import com.pucp.dp1.grupo4d.morapack.model.dto.request.ListRequest;
 import com.pucp.dp1.grupo4d.morapack.model.dto.response.ListResponse;
 import com.pucp.dp1.grupo4d.morapack.model.entity.RutaEntity;
-import com.pucp.dp1.grupo4d.morapack.model.enumeration.TipoEscenario;
 import com.pucp.dp1.grupo4d.morapack.repository.RutaRepository;
 import com.pucp.dp1.grupo4d.morapack.util.G4DUtility;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
@@ -67,11 +65,10 @@ public class RutaService {
     }
 
     public List<RutaEntity> findAllByDateTimeRange(LocalDateTime fechaHoraInicio, LocalDateTime fechaHoraFin, String tipoEscenario) {
-        TipoEscenario escenario = G4DUtility.Convertor.toAdmissible(tipoEscenario, TipoEscenario.class);
-        return rutaRepository.findAllByDateTimeRange(fechaHoraInicio, fechaHoraFin, escenario);
+        return rutaRepository.findAllByDateTimeRange(G4DUtility.Convertor.toDatabaseString(fechaHoraInicio), G4DUtility.Convertor.toDatabaseString(fechaHoraFin), tipoEscenario);
     }
     
-    public ListResponse listar(ListRequest request) throws Exception {
+    public ListResponse listar(ListRequest request) {
         try {
             Pageable pageable = G4DUtility.Convertor.toAdmissible(request.getPagina(), request.getTamanio(), Sort.Order.asc("fechaHoraSalidaUTC"), Sort.Order.asc("fechaHoraLlegadaUTC"));
             List<DTO> dtos = new ArrayList<>();

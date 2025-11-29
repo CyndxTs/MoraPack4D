@@ -22,7 +22,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.*;
 
 @Service
@@ -71,7 +71,7 @@ public class PlanService {
         return planRepository.findByCodigo(codigo).isPresent();
     }
 
-    public ListResponse listar(ListRequest request) throws Exception {
+    public ListResponse listar(ListRequest request) {
         try {
             Pageable pageable = G4DUtility.Convertor.toAdmissible(request.getPagina(), request.getTamanio(), Sort.Order.asc("horaSalidaUTC"), Sort.Order.asc("horaLlegadaUTC"));
             List<DTO> dtos = new ArrayList<>();
@@ -83,7 +83,7 @@ public class PlanService {
         }
     }
 
-    public GenericResponse importar(ImportRequest<PlanDTO> request) throws Exception {
+    public GenericResponse importar(ImportRequest<PlanDTO> request) {
         try {
             System.out.println("Importando plan..");
             PlanDTO dto = request.getDto();
@@ -96,7 +96,7 @@ public class PlanService {
         }
     }
 
-    public GenericResponse importar(MultipartFile archivo) throws Exception {
+    public GenericResponse importar(MultipartFile archivo) {
         try {
             System.out.printf("Importando planes de vuelo desde '%s'..%n", archivo.getName());
             Scanner archivoSC = new Scanner(archivo.getInputStream(), G4DUtility.Reader.getFileCharset(archivo));
@@ -136,8 +136,10 @@ public class PlanService {
             planes.forEach(this::save);
             System.out.printf("[<] PLANES DE VUELO IMPORTADOS! ('%d')%n", planes.size());
             return new GenericResponse(true, "Planes importados correctamente!");
-        } catch (NoSuchElementException | FileNotFoundException e) {
-            throw new G4DException(String.format("El archivo '%s' no sigue el formato esperado o está vacío.", archivo.getName()));
+        } catch (NoSuchElementException e) {
+            throw new G4DException(String.format("El archivo '%s' no sigue el formato esperado.", archivo.getName()));
+        } catch (IOException e) {
+            throw new G4DException(String.format("No se pudo cargar el archivo '%s'.", archivo.getName()));
         } finally {
             clearPools();
         }

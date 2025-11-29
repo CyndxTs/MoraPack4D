@@ -23,7 +23,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -80,8 +80,7 @@ public class ClienteService {
     }
 
     public List<ClienteEntity> findAllByDateTimeRange(LocalDateTime fechaHoraInicio, LocalDateTime fechaHoraFin, String tipoEscenario) {
-        TipoEscenario escenario = G4DUtility.Convertor.toAdmissible(tipoEscenario, TipoEscenario.class);
-        return clienteRepository.findAllByDateTimeRange(fechaHoraInicio, fechaHoraFin, escenario);
+        return clienteRepository.findAllByDateTimeRange(G4DUtility.Convertor.toDatabaseString(fechaHoraInicio), G4DUtility.Convertor.toDatabaseString(fechaHoraFin), tipoEscenario);
     }
 
     public ClienteEntity obtenerPorCodigo(String codigo) {
@@ -118,7 +117,7 @@ public class ClienteService {
         return String.format("%07d", maxCodigo.orElse(0) + 1);
     }
 
-    public ListResponse listar(ListRequest request) throws Exception {
+    public ListResponse listar(ListRequest request) {
         try {
             Pageable pageable = G4DUtility.Convertor.toAdmissible(request.getPagina(), request.getTamanio(), Sort.Order.asc("codigo"));
             List<DTO> dtos = new ArrayList<>();
@@ -130,13 +129,13 @@ public class ClienteService {
         }
     }
 
-    public ListResponse filtrar(FilterRequest<UsuarioDTO> request) throws Exception {
+    public ListResponse filtrar(FilterRequest<UsuarioDTO> request) {
         try {
             Pageable pageable = G4DUtility.Convertor.toAdmissible(request.getPagina(), request.getTamanio(), Sort.Order.asc("codigo"));
             UsuarioDTO modelo = request.getModelo();
             String nombre = G4DUtility.Convertor.toAdmissible(modelo.getNombre());
             String correo = G4DUtility.Convertor.toAdmissible(modelo.getCorreo());
-            EstadoUsuario estado = G4DUtility.Convertor.toAdmissible(modelo.getEstado(), EstadoUsuario.class);
+            String estado = G4DUtility.Convertor.toAdmissibleEnumString(modelo.getEstado(), EstadoUsuario.class);
             List<DTO> dtos = new ArrayList<>();
             List<ClienteEntity> entities = clienteRepository.filterBy(nombre, correo, estado, pageable).getContent();
             entities.forEach(entity -> dtos.add(usuarioMapper.toDTO(entity)));
@@ -146,7 +145,7 @@ public class ClienteService {
         }
     }
 
-    public GenericResponse importar(MultipartFile archivo) throws Exception {
+    public GenericResponse importar(MultipartFile archivo) {
         try {
             System.out.printf("Importando clientes desde '%s'..%n", archivo.getName());
             Scanner archivoSC = new Scanner(archivo.getInputStream(), G4DUtility.Reader.getFileCharset(archivo));
@@ -166,8 +165,10 @@ public class ClienteService {
             clientes.stream().filter(entity -> !this.existsByCorreo(entity.getCorreo())).forEach(this::save);
             System.out.printf("[<] CLIENTES IMPORTADOS! ('%d')%n", clientes.size());
             return new  GenericResponse(true, String.format("Clientes importados correctamente! ('%d')", clientes.size()));
-        } catch (NoSuchElementException | FileNotFoundException e) {
-            throw new G4DException(String.format("El archivo '%s' no sigue el formato esperado o está vacío.", archivo.getName()));
+        } catch (NoSuchElementException e) {
+            throw new G4DException(String.format("El archivo '%s' no sigue el formato esperado.", archivo.getName()));
+        } catch (IOException e) {
+            throw new G4DException(String.format("No se pudo cargar el archivo '%s'.", archivo.getName()));
         } finally {
             clearPools();
         }

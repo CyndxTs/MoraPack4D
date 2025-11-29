@@ -63,7 +63,7 @@ public class LoteService {
         return loteRepository.findByCodigo(codigo).isPresent();
     }
 
-    public ListResponse listar(ListRequest request) throws Exception {
+    public ListResponse listar(ListRequest request) {
         try {
             Pageable pageable = G4DUtility.Convertor.toAdmissible(request.getPagina(), request.getTamanio(), Sort.Order.desc("id"));
             List<DTO> dtos = new ArrayList<>();

@@ -62,7 +62,7 @@ public class EventoService {
         return eventoRepository.findByCodigo(codigo).isPresent();
     }
 
-    public ListResponse listar(ListRequest request) throws Exception {
+    public ListResponse listar(ListRequest request) {
         try {
             Pageable pageable = G4DUtility.Convertor.toAdmissible(request.getPagina(), request.getTamanio(), Sort.Order.desc("fechaHoraInicio"), Sort.Order.desc("fechaHoraFin"));
             List<DTO> dtos = new ArrayList<>();

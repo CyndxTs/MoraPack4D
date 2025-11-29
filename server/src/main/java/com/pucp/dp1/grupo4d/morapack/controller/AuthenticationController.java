@@ -27,8 +27,8 @@ public class AuthenticationController {
         this.authenticactionService = authenticactionService;
     }
 
-    @PostMapping("/signin")
-    public ResponseEntity<AuthenticationResponse> signin(@RequestBody SignInRequest request) {
+    @PostMapping("/sign-in")
+    public ResponseEntity<AuthenticationResponse> signIn(@RequestBody SignInRequest request) {
         try {
             AuthenticationResponse response = authenticactionService.signIn(request);
             return ResponseEntity.ok(response);
@@ -40,8 +40,8 @@ public class AuthenticationController {
         }
     }
 
-    @PostMapping("/signup")
-    public ResponseEntity<AuthenticationResponse> signup(@RequestBody SignUpRequest request) {
+    @PostMapping("/sign-up")
+    public ResponseEntity<AuthenticationResponse> signUp(@RequestBody SignUpRequest request) {
         try {
             AuthenticationResponse response = authenticactionService.signUp(request);
             return ResponseEntity.ok(response);
@@ -53,8 +53,8 @@ public class AuthenticationController {
         }
     }
 
-    @PostMapping("/signout")
-    public ResponseEntity<AuthenticationResponse> signout(@RequestBody SignOutRequest request) {
+    @PostMapping("/sign-out")
+    public ResponseEntity<AuthenticationResponse> signOut(@RequestBody SignOutRequest request) {
         try {
             AuthenticationResponse response = authenticactionService.signOut(request);
             return ResponseEntity.ok(response);
