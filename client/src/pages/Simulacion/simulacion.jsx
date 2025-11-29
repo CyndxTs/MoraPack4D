@@ -1,12 +1,34 @@
 import React, { useState, useEffect, useRef } from "react";
 import "./simulacion.scss";
-import {Dropdown,Legend,Notification,SidebarActions,ButtonAdd,DateTimeInline,Dropdown2,Input,LoadingOverlay,}from "../../components/UI/ui";
+import {
+  Dropdown,
+  Legend,
+  Notification,
+  SidebarActions,
+  ButtonAdd,
+  DateTimeInline,
+  Dropdown2,
+  Input,
+  LoadingOverlay,
+} from "../../components/UI/ui";
 import hideIcon from "../../assets/icons/hide-sidebar.png";
 import run from "../../assets/icons/run.svg";
 import { listarParametros } from "../../services/parametrosService";
 import { listarAeropuertos } from "../../services/aeropuertoService";
-import {connectSimulatorWS,sendSimulationRequest,sendStopSimulation,disconnectWS,} from "../../services/planificarService";
-import {MapContainer,TileLayer,Marker,Popup,Polyline,useMapEvent,} from "react-leaflet";
+import {
+  connectSimulatorWS,
+  sendSimulationRequest,
+  sendStopSimulation,
+  disconnectWS,
+} from "../../services/planificarService";
+import {
+  MapContainer,
+  TileLayer,
+  Marker,
+  Popup,
+  Polyline,
+  useMapEvent,
+} from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import planeIconImg from "../../assets/icons/planeMora.svg";
@@ -31,8 +53,10 @@ export default function Simulacion() {
     if (v === "" || v === null || v === undefined) return null;
     return Number(v);
   };
-  const [maxDiasEntregaIntercontinental, setMaxDiasEntregaIntercontinental] =useState();
-  const [maxDiasEntregaIntracontinental, setMaxDiasEntregaIntracontinental] = useState();
+  const [maxDiasEntregaIntercontinental, setMaxDiasEntregaIntercontinental] =
+    useState();
+  const [maxDiasEntregaIntracontinental, setMaxDiasEntregaIntracontinental] =
+    useState();
   const [maxHorasRecojo, setMaxHorasRecojo] = useState();
   const [minHorasEstancia, setMinHorasEstancia] = useState();
   const [maxHorasEstancia, setMaxHorasEstancia] = useState();
@@ -51,7 +75,7 @@ export default function Simulacion() {
   );
   // Reloj de simulación (ms) y velocidad: 600 = 1s real -> 10 minutos simulados (1h en 6s)
   const [simNowMs, setSimNowMs] = useState(() => Date.now());
-  const SIM_SPEED = 600; 
+  const SIM_SPEED = 600;
   // Refs internas para el avance suave
   const lastRealMsRef = useRef(null);
   // Helpers de tiempo (trabajamos en UTC porque tu JSON está en UTC)
@@ -99,7 +123,7 @@ export default function Simulacion() {
     let timer;
     if (timerRunning) {
       timer = setInterval(() => setSeconds((s) => s + 1), 1000);
-    } 
+    }
     return () => clearInterval(timer);
   }, [timerRunning]);
 
@@ -168,7 +192,6 @@ export default function Simulacion() {
     );
   }, [simNowMs, timerActive]);
 
-
   const formatTime = (sec) => {
     const m = Math.floor(sec / 60)
       .toString()
@@ -215,9 +238,17 @@ export default function Simulacion() {
     // NOTA: inputs siguen bloqueados hasta stop
   };
 
-  const handleStop = () => {
-    // Avisar al backend que detenga la simulación
-    sendStopSimulation();
+  const handleStop = async () => {
+    try {
+      const res = await sendStopSimulation(); // 👈 HTTP /api/simulation-stop
+      if (res && res.message) {
+        showNotification("info", res.message);
+      } else {
+        showNotification("info", "Solicitud de detención enviada");
+      }
+    } catch (err) {
+      showNotification("danger", err.message || "Error al detener simulación");
+    }
 
     setTimerRunning(false);
     setTimerActive(false);
@@ -374,7 +405,7 @@ export default function Simulacion() {
         /** @type {ParametrosDTO} */
         const p = parametrosResponse.dtos[0];
         setParametrosCompletos(p);
-        const a = await listarAeropuertos();        
+        const a = await listarAeropuertos();
         setAeropuertos(a.dtos ?? []);
         // === SOLO LOS 5 PARAMETROS A MOSTRAR EN EL POPUP ===
         setMaxDiasEntregaIntercontinental(p.maxDiasEntregaIntercontinental);
@@ -471,38 +502,48 @@ export default function Simulacion() {
 
   useEffect(() => {
     connectSimulatorWS(
-      (solution) => {
-        // Mensajes de /topic/simulator  → SolutionResponse
-        console.log("SolutionResponse recibido por WS:", solution);
-
-        if (solution.success) {
-          buildSimulationFromSolution(solution);
-        } else {
-          showNotification("danger", solution.message || "Error en simulación");
-        }
-      },
-      (status) => {
-        // Mensajes de /topic/simulator-status → ProcessStatusResponse
-        console.log("Status simulador:", status);
-
-        if (!status.success) {
-          showNotification("danger", status.message || "Error simulación");
+      (payload) => {
+        console.log("SolutionPayload recibido por WS:", payload);
+        const solucion = payload.solucion || payload;
+        if (!solucion) {
+          console.warn("Payload de simulación sin 'solucion'");
           return;
         }
+        buildSimulationFromSolution(solucion);
+      },
+      (status) => {
+        console.log("Status simulador:", status);
 
-        // Puedes usar status.estadoProceso (INICIADO, FINALIZADO, COLAPSADO, etc.)
-        if (status.estadoProceso === "INICIADO") {
-          showNotification("info", status.message || "Simulación iniciada");
-        } else if (status.estadoProceso === "FINALIZADO") {
-          showNotification(
-            "success",
-            status.message || "Simulación finalizada"
-          );
-        } else if (status.estadoProceso === "COLAPSADO") {
-          showNotification("danger", status.message || "COLAPSO en simulación");
+        // StatusPayload del back: { estadoEjecucion, estadoFinalizacion } o similar
+        const estadoEjecucion =
+          typeof status === "string" ? status : status.estadoEjecucion;
+        const estadoFinalizacion =
+          typeof status === "string" ? null : status.estadoFinalizacion;
+
+        if (!estadoEjecucion) return;
+
+        if (estadoEjecucion === "POR_INICIAR") {
+          showNotification("info", "Simulación por iniciar...");
+        } else if (estadoEjecucion === "INICIADO") {
+          showNotification("info", "Simulación iniciada");
+        } else if (estadoEjecucion === "POR_DETENER") {
+          showNotification("info", "Deteniendo simulación...");
+        } else if (estadoEjecucion === "DETENIDO") {
+          if (estadoFinalizacion === "EXITOSO") {
+            showNotification("success", "Simulación finalizada exitosamente");
+          } else if (estadoFinalizacion === "FORZADO") {
+            showNotification("info", "Simulación detenida por el usuario");
+          } else if (estadoFinalizacion === "COLAPSO") {
+            showNotification("danger", "COLAPSO logístico en simulación");
+          } else if (estadoFinalizacion === "ERRONEO") {
+            showNotification("danger", "Error en la simulación");
+          } else {
+            showNotification("info", "Simulación detenida");
+          }
         }
       }
     );
+
     return () => {
       disconnectWS();
     };
@@ -517,7 +558,7 @@ export default function Simulacion() {
         setLoading(false);
         return;
       }
-      const p = parametrosCompletos;
+
       /** @type {SimulationRequest} */
       const body = {
         fechaHoraInicio: `${fechaI}T${horaI}:00`,
@@ -529,19 +570,25 @@ export default function Simulacion() {
           minHorasEstancia,
           maxHorasEstancia,
           codOrigenes,
-
         },
         multiplicadorTemporal,
         tamanioDeSaltoTemporal,
       };
 
-      console.log("SimulationRequest enviado por WS:", body);
+      console.log("SimulationRequest enviado por HTTP:", body);
       setInputDate(fechaI);
       setInputTime(horaI);
-      sendSimulationRequest(body); // 👈 va por WebSocket
+
+      const res = await sendSimulationRequest(body); // 👈 ahora va por /api/simulation-init
+      if (res && res.message) {
+        showNotification("info", res.message);
+      } else {
+        showNotification("info", "Simulación en iniciación");
+      }
+
       closeModal();
     } catch (err) {
-      showNotification("danger", err.message);
+      showNotification("danger", err.message || "Error al iniciar simulación");
     } finally {
       setLoading(false);
     }

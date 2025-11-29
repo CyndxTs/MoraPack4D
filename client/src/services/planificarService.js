@@ -1,9 +1,14 @@
 // src/services/planificarService.js
 import { Client } from "@stomp/stompjs";
+import axios from "axios"; // 👈 nuevo  
 /**
  * @typedef {import("../types/simulationRequest/SimulationRequest").SimulationRequest} SimulationRequest
  */
-
+/**
+ * @typedef {import("../types/simulationResponse/SolutionPayload").SolutionPayload} SolutionPayload
+ */
+const API_SIM_INIT = "/api/simulation-init";
+const API_SIM_STOP = "/api/simulation-stop";
 const SOCKET_URL =
   (window.location.protocol === "https:" ? "wss://" : "ws://") +
   window.location.host +
@@ -12,7 +17,7 @@ const SOCKET_URL =
 let client = null;
 
 /**
- * @param {(solution: any) => void} onSolution         // SolutionResponse de /topic/simulator
+ * @param {SolutionPayload} onSolution         // SolutionResponse de /topic/simulator
  * @param {(status: any) => void} onStatus             // ProcessStatusResponse de /topic/simulator-status
  */
 export function connectSimulatorWS(onSolution, onStatus) {
@@ -21,17 +26,15 @@ export function connectSimulatorWS(onSolution, onStatus) {
   client = new Client({
     brokerURL: SOCKET_URL,
     reconnectDelay: 5000,
-    debug: () => {}, // pon console.log si quieres ver tráfico
+    debug: () => {},
     onConnect: () => {
       console.log("STOMP conectado a", SOCKET_URL);
 
-      // Soluciones de planificación
       client.subscribe("/topic/simulator", (message) => {
-        const solution = JSON.parse(message.body);
-        onSolution(solution);
+        const payload = JSON.parse(message.body);
+        onSolution(payload);
       });
 
-      // Estados del proceso (INICIADO, COLAPSADO, FINALIZADO, etc.)
       client.subscribe("/topic/simulator-status", (message) => {
         const status = JSON.parse(message.body);
         onStatus(status);
@@ -46,32 +49,32 @@ export function connectSimulatorWS(onSolution, onStatus) {
 }
 
 /**
- * Enviar SimulationRequest para iniciar la simulación
+ * Iniciar simulación por HTTP
  * @param {SimulationRequest} request
  */
-export function sendSimulationRequest(request) {
-  if (!client || !client.connected) {
-    console.error("STOMP no conectado; no se puede enviar SimulationRequest");
-    return;
+export async function sendSimulationRequest(request) {
+  try {
+    const { data } = await axios.post(API_SIM_INIT, request);
+    return data; // GenericResponse
+  } catch (error) {
+    if (error.response && error.response.data) {
+      throw new Error(error.response.data.message || "Error al iniciar simulación");
+    }
+    throw new Error("No se pudo conectar con el servidor de simulación");
   }
-
-  client.publish({
-    destination: "/app/simulator-init", // 👈 nuevo mapping
-    body: JSON.stringify(request),
-  });
 }
 
-/** Pedir al back que detenga la simulación */
-export function sendStopSimulation() {
-  if (!client || !client.connected) {
-    console.error("STOMP no conectado; no se puede enviar stop");
-    return;
+/** Pedir al back que detenga la simulación por HTTP */
+export async function sendStopSimulation() {
+  try {
+    const { data } = await axios.post(API_SIM_STOP);
+    return data; // GenericResponse
+  } catch (error) {
+    if (error.response && error.response.data) {
+      throw new Error(error.response.data.message || "Error al detener simulación");
+    }
+    throw new Error("No se pudo conectar con el servidor de simulación");
   }
-
-  client.publish({
-    destination: "/app/simulator-stop",
-    body: "", // no necesita body
-  });
 }
 
 export function disconnectWS() {
