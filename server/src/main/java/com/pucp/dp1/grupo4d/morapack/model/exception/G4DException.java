@@ -6,7 +6,7 @@
 
 package com.pucp.dp1.grupo4d.morapack.model.exception;
 
-public class G4DException extends Exception {
+public class G4DException extends RuntimeException {
 
     public G4DException(String message) {
         super(message);

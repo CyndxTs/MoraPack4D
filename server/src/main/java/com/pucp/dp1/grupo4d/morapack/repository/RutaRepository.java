@@ -8,6 +8,7 @@ package com.pucp.dp1.grupo4d.morapack.repository;
 
 import com.pucp.dp1.grupo4d.morapack.model.entity.RutaEntity;
 import com.pucp.dp1.grupo4d.morapack.model.enumeration.TipoEscenario;
+import com.pucp.dp1.grupo4d.morapack.model.enumeration.TipoRuta;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -23,18 +24,19 @@ public interface RutaRepository extends JpaRepository<RutaEntity, Integer> {
     // Listar todas las rutas pertenecientes a pedidos dentro de de rango temporal
     @Query(
         value = """
-        SELECT DISTINCT r.*
-        FROM ruta r
-        JOIN lote l ON l.id_ruta = r.id
-        JOIN segmentacion s ON s.id = l.id_segmentacion
-        JOIN pedido p ON p.id = s.id_pedido
-        WHERE (p.fh_generacion_utc BETWEEN :fechaHoraInicio AND :fechaHoraFin) AND (p.tipo_escenario = :tipoEscenario)
-        """,
+            SELECT DISTINCT r.*
+            FROM ruta r
+            JOIN lote l ON l.id_ruta = r.id
+            JOIN segmentacion s ON s.id = l.id_segmentacion
+            JOIN pedido p ON p.id = s.id_pedido
+            WHERE (p.fh_generacion_utc BETWEEN :fechaHoraInicio AND :fechaHoraFin)
+              AND (p.tipo_escenario = :tipoEscenario)
+            """,
         nativeQuery = true
     )
     List<RutaEntity> findAllByDateTimeRange(
-            @Param("fechaHoraInicio") LocalDateTime fechaHoraInicio,
-            @Param("fechaHoraFin") LocalDateTime fechaHoraFin,
-            @Param("tipoEscenario") TipoEscenario tipoEscenario
+            @Param("fechaHoraInicio") String fechaHoraInicio,
+            @Param("fechaHoraFin") String fechaHoraFin,
+            @Param("tipoEscenario") String tipoEscenario
     );
 }

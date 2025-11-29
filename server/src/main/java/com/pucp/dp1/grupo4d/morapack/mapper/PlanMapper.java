@@ -88,7 +88,7 @@ public class PlanMapper {
         return planDTO;
     }
 
-    public PlanEntity toEntity(PlanDTO dto) throws Exception{
+    public PlanEntity toEntity(PlanDTO dto) {
         if(poolDTO.containsKey(dto.getCodigo())) {
             return null;
         }

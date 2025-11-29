@@ -22,17 +22,27 @@ public interface AdministradorRepository extends JpaRepository<AdministradorEnti
     Optional<AdministradorEntity> findByCorreo(String correo);
 
     // Filtrar pagina de administradores por sus atributos
-    @Query("""
-    SELECT a 
-    FROM AdministradorEntity a
-    WHERE (:nombre IS NULL OR LOWER(a.nombre) LIKE LOWER(CONCAT('%', :nombre, '%')))
-      AND (:correo IS NULL OR LOWER(a.correo) LIKE LOWER(CONCAT('%', :correo, '%')))
-      AND (:estado IS NULL OR a.estado = :estado)
-    """)
+    @Query(
+        value = """
+            SELECT *
+            FROM ADMINISTRADOR a
+            WHERE (:nombre IS NULL OR LOWER(a.nombre) LIKE LOWER(CONCAT('%', :nombre, '%')))
+              AND (:correo IS NULL OR LOWER(a.correo) LIKE LOWER(CONCAT('%', :correo, '%')))
+              AND (:estado IS NULL OR a.estado = :estado)
+            """,
+        countQuery = """
+            SELECT COUNT(*)
+            FROM ADMINISTRADOR a
+            WHERE (:nombre IS NULL OR LOWER(a.nombre) LIKE LOWER(CONCAT('%', :nombre, '%')))
+              AND (:correo IS NULL OR LOWER(a.correo) LIKE LOWER(CONCAT('%', :correo, '%')))
+              AND (:estado IS NULL OR a.estado = :estado)
+            """,
+        nativeQuery = true
+    )
     Page<AdministradorEntity> filterBy(
             @Param("nombre") String nombre,
             @Param("correo") String correo,
-            @Param("estado") EstadoUsuario estado,
+            @Param("estado") String estado,
             Pageable pageable
     );
 }

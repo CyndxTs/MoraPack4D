@@ -1,15 +1,14 @@
 /**]
  >> Project:    MoraPack
  >> Author:     Grupo 4D
- >> File:       EstadoProceso.java
+ >> File:       EstadoEjecucion.java
  [**/
 
 package com.pucp.dp1.grupo4d.morapack.model.enumeration;
 
-public enum EstadoProceso {
+public enum EstadoEjecucion {
+    POR_DETENER,
     DETENIDO,
     POR_INICIAR,
     INICIADO,
-    COLAPSADO,
-    FINALIZADO
 }

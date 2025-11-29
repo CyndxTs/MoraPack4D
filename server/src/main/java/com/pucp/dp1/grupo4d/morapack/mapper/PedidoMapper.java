@@ -94,7 +94,7 @@ public class PedidoMapper {
         return dto;
     }
 
-    public PedidoEntity toEntity(PedidoDTO dto) throws Exception {
+    public PedidoEntity toEntity(PedidoDTO dto) {
         if(poolDTO.containsKey(dto.getCodigo())) {
             return null;
         }

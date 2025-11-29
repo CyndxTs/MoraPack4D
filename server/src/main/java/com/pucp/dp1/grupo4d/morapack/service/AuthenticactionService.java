@@ -34,7 +34,7 @@ public class AuthenticactionService {
         this.usuarioMapper = usuarioMapper;
     }
 
-    public AuthenticationResponse signIn(SignInRequest request) throws Exception{
+    public AuthenticationResponse signIn(SignInRequest request) {
         try {
             String correo = G4DUtility.Convertor.toAdmissible(request.getCorreo(), "");
             String contrasenia = G4DUtility.Convertor.toAdmissible(request.getContrasenia(), "");
@@ -76,7 +76,7 @@ public class AuthenticactionService {
         }
     }
 
-    public AuthenticationResponse signUp(SignUpRequest request) throws Exception {
+    public AuthenticationResponse signUp(SignUpRequest request) {
         try {
             String nombre = G4DUtility.Convertor.toAdmissible(request.getNombre(), "");
             String correo = G4DUtility.Convertor.toAdmissible(request.getCorreo(), "");
@@ -122,7 +122,7 @@ public class AuthenticactionService {
         };
     }
 
-    public AuthenticationResponse signOut(SignOutRequest request) throws Exception {
+    public AuthenticationResponse signOut(SignOutRequest request) {
         try {
             String correo = G4DUtility.Convertor.toAdmissible(request.getCorreo(), "");
             TipoUsuario tipoUsuario = G4DUtility.Convertor.toAdmissible(request.getTipoUsuario(), TipoUsuario.class);
@@ -158,6 +158,8 @@ public class AuthenticactionService {
     }
 
     private void limpiarPools() {
+        clienteService.clearPools();
+        administradorService.clearPools();
         usuarioMapper.clearPools();
     }
 }

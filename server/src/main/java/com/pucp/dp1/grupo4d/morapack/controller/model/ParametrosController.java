@@ -25,23 +25,13 @@ public class ParametrosController {
 
     @GetMapping
     public ResponseEntity<ListResponse> listar() {
-        try {
-            ListResponse response = parametrosService.listar();
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.internalServerError().body(new ListResponse(false, "ERROR INTERNO: " + e.getMessage()));
-        }
+        ListResponse response = parametrosService.listar();
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping("/importar")
     public ResponseEntity<GenericResponse> importar(@RequestBody ImportRequest<ParametrosDTO> request) {
-        try {
-            GenericResponse response = parametrosService.importar(request);
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.internalServerError().body(new GenericResponse(false, "ERROR INTERNO: " + e.getMessage()));
-        }
+        GenericResponse response = parametrosService.importar(request);
+        return ResponseEntity.ok(response);
     }
 }

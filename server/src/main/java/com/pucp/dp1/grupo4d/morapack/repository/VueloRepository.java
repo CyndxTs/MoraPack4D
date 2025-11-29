@@ -35,8 +35,8 @@ public interface VueloRepository extends JpaRepository<VueloEntity, Integer> {
         nativeQuery = true
     )
     List<VueloEntity> findAllByDateTimeRange(
-            @Param("fechaHoraInicio") LocalDateTime fechaHoraInicio,
-            @Param("fechaHoraFin") LocalDateTime fechaHoraFin,
-            @Param("tipoEscenario") TipoEscenario tipoEscenario
+            @Param("fechaHoraInicio") String fechaHoraInicio,
+            @Param("fechaHoraFin") String fechaHoraFin,
+            @Param("tipoEscenario") String tipoEscenario
     );
 }

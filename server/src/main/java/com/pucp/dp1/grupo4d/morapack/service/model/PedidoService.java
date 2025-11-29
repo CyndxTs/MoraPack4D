@@ -23,7 +23,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.*;
@@ -69,18 +69,15 @@ public class PedidoService {
     }
 
     public Optional<PedidoEntity> findByCodigoEscenario(String codigo, String tipoEscenario) {
-        TipoEscenario escenario = G4DUtility.Convertor.toAdmissible(tipoEscenario, TipoEscenario.class);
-        return pedidoRepository.findByCodigoEscenario(codigo, escenario);
+        return pedidoRepository.findByCodigoEscenario(codigo, tipoEscenario);
     }
 
     public boolean existsByCodigoEscenario(String codigo, String tipoEscenario) {
-        TipoEscenario escenario = G4DUtility.Convertor.toAdmissible(tipoEscenario, TipoEscenario.class);
-        return pedidoRepository.findByCodigoEscenario(codigo, escenario).isPresent();
+        return pedidoRepository.findByCodigoEscenario(codigo, tipoEscenario).isPresent();
     }
 
     public List<PedidoEntity> findAllByDateTimeRange(LocalDateTime fechaHoraInicio, LocalDateTime fechaHoraFin, String tipoEscenario) {
-        TipoEscenario escenario = G4DUtility.Convertor.toAdmissible(tipoEscenario, TipoEscenario.class);
-        return pedidoRepository.findAllByDateTimeRange(fechaHoraInicio, fechaHoraFin, escenario);
+        return pedidoRepository.findAllByDateTimeRange(G4DUtility.Convertor.toDatabaseString(fechaHoraInicio), G4DUtility.Convertor.toDatabaseString(fechaHoraFin), tipoEscenario);
     }
 
     public List<PedidoEntity> findAllByDestino(AeropuertoEntity destino) {
@@ -98,7 +95,7 @@ public class PedidoService {
         return String.format("%s%09d", destino.getCodigo(), maxCodigo.orElse(0) + 1);
     }
 
-    public ListResponse listar(ListRequest request) throws Exception{
+    public ListResponse listar(ListRequest request) {
         try {
             Pageable pageable = G4DUtility.Convertor.toAdmissible(request.getPagina(), request.getTamanio(), Sort.Order.asc("codigo"));
             List<DTO> dtos = new ArrayList<>();
@@ -110,15 +107,15 @@ public class PedidoService {
         }
     }
 
-    public ListResponse filtrar(FilterRequest<PedidoDTO> request) throws Exception {
+    public ListResponse filtrar(FilterRequest<PedidoDTO> request) {
         try {
             Pageable pageable = G4DUtility.Convertor.toAdmissible(request.getPagina(), request.getTamanio(), Sort.Order.asc("codigo"));
             PedidoDTO modelo = request.getModelo();
-            TipoEscenario tipoEscenario = G4DUtility.Convertor.toAdmissible(modelo.getTipoEscenario(),  TipoEscenario.class);
+            String tipoEscenario = G4DUtility.Convertor.toAdmissibleEnumString(modelo.getTipoEscenario(),  TipoEscenario.class);
             String codCliente = G4DUtility.Convertor.toAdmissible(modelo.getCodCliente());
             Boolean fueAtendido = modelo.getFueAtendido();
-            LocalDateTime fechaHoraGeneracion = G4DUtility.Convertor.toAdmissible(modelo.getFechaHoraGeneracion(), (LocalDateTime) null);
-            LocalDateTime fechaHoraExpiracion = G4DUtility.Convertor.toAdmissible(modelo.getFechaHoraExpiracion(), (LocalDateTime) null);
+            String fechaHoraGeneracion = G4DUtility.Convertor.toAdmissibleDateTimeString(modelo.getFechaHoraGeneracion());
+            String fechaHoraExpiracion = G4DUtility.Convertor.toAdmissibleDateTimeString(modelo.getFechaHoraExpiracion());
             List<DTO> dtos = new ArrayList<>();
             List<PedidoEntity> entities = pedidoRepository.filterBy(tipoEscenario, codCliente, fueAtendido, fechaHoraGeneracion, fechaHoraExpiracion, pageable).getContent();
             entities.forEach(entity -> dtos.add(pedidoMapper.toDTO(entity)));
@@ -128,7 +125,7 @@ public class PedidoService {
         }
     }
 
-    public GenericResponse importar(ImportRequest<PedidoDTO> request) throws Exception{
+    public GenericResponse importar(ImportRequest<PedidoDTO> request) {
         try {
             System.out.println("Importando pedido..");
             PedidoDTO dto = request.getDto();
@@ -142,7 +139,7 @@ public class PedidoService {
         }
     }
 
-    public GenericResponse importar(MultipartFile archivo, ImportFileRequest request) throws Exception {
+    public GenericResponse importar(MultipartFile archivo, ImportFileRequest request) {
         try {
             G4DUtility.Logger.logf("Importando pedidos desde '%s'..%n",archivo.getName());
             LocalDateTime fechaHoraInicio = G4DUtility.Convertor.toAdmissible(request.getFechaHoraInicio(), LocalDateTime.MIN);
@@ -151,8 +148,8 @@ public class PedidoService {
                 throw new G4DException("Rango de tiempo inválido.");
             }
             Scanner archivoSC = new Scanner(archivo.getInputStream(), G4DUtility.Reader.getFileCharset(archivo));
-            TipoEscenario escenario = G4DUtility.Convertor.toAdmissible(request.getTipoEscenario(), TipoEscenario.class);
-            boolean tieneNumeroDePedido = escenario.equals(TipoEscenario.SIMULACION);
+            TipoEscenario tipoEscenario = G4DUtility.Convertor.toAdmissible(request.getTipoEscenario(), TipoEscenario.class);
+            boolean tieneNumeroDePedido = tipoEscenario.equals(TipoEscenario.SIMULACION);
             int numLinea = 1;
             while (archivoSC.hasNextLine()) {
                 String linea = archivoSC.nextLine().trim();
@@ -184,7 +181,7 @@ public class PedidoService {
                         pedido.setCliente(cliente);
                         pedido.setFechaHoraGeneracionLocal(fechaHoraGeneracionLocal);
                         pedido.setFechaHoraGeneracionUTC(fechaHoraGeneracionUTC);
-                        pedido.setTipoEscenario(escenario);
+                        pedido.setTipoEscenario(tipoEscenario);
                         pedidos.add(pedido);
                     }
                 } else throw new G4DException(String.format("El destino '%s' del pedido de la linea #%d es inválido.", codDestino, numLinea));
@@ -192,11 +189,13 @@ public class PedidoService {
                 numLinea++;
             }
             archivoSC.close();
-            pedidos.stream().filter(entity -> !this.existsByCodigoEscenario(entity.getCodigo(), escenario.toString())).forEach(this::save);
+            pedidos.stream().filter(entity -> !this.existsByCodigoEscenario(entity.getCodigo(), tipoEscenario.toString())).forEach(this::save);
             System.out.printf("[<] PEDIDOS IMPORTADOS! ('%d')%n", pedidos.size());
             return new GenericResponse(true, String.format("Pedidos importados correctamente! ('%d')", pedidos.size()));
-        } catch (NoSuchElementException | FileNotFoundException e) {
-            throw new G4DException(String.format("El archivo '%s' no sigue el formato esperado o está vacío.", archivo.getName()));
+        } catch (NoSuchElementException e) {
+            throw new G4DException(String.format("El archivo '%s' no sigue el formato esperado.", archivo.getName()));
+        } catch (IOException e) {
+            throw new G4DException(String.format("No se pudo cargar el archivo '%s'.", archivo.getName()));
         } finally {
             clearPools();
         }

@@ -224,6 +224,22 @@ public class G4DUtility {
                 return null;
             }
         }
+        // Obtener 'DatabaseString' a partir de 'DateTime'
+        public static String toDatabaseString(LocalDateTime dt) {
+            try {
+                return dt.format(dtf_db);
+            } catch (Exception e) {
+                return null;
+            }
+        }
+        // Obtener 'DatabaseString' a partir de 'Time'
+        public static String toDatabaseString(LocalTime t) {
+            try {
+                return t.format(tf_db);
+            } catch (Exception e) {
+                return null;
+            }
+        }
         // Obtener 'DateTimeRange' a partir de 2 'Time' con referencia a 'DateTime'
         public static LocalDateTime[] toDateTimeRange(LocalTime t_departure, LocalTime t_arrival, LocalDateTime dt_ref) {
             LocalDateTime departure = toDateTime(t_departure, dt_ref);
@@ -321,7 +337,7 @@ public class G4DUtility {
             return t.plusHours(Long.valueOf(gmt));
         }
         // Obtener 'AdmissiblePageable' de atributos
-        public static Pageable toAdmissible(Integer page, Integer size, Sort.Order... orders) throws Exception {
+        public static Pageable toAdmissible(Integer page, Integer size, Sort.Order... orders) {
             if (!isAdmissible(page)) {
                 throw new G4DException(String.format("El número de página '%d' es inválido.", page));
             }
@@ -361,7 +377,15 @@ public class G4DUtility {
         // Obtener 'AdmissibleEnum' de 'EnumString'
         public static <E extends Enum<E>> E toAdmissible(String es, Class<E> enumType) {
             try {
-                return Enum.valueOf(enumType, toAdmissible(es));
+                return Enum.valueOf(enumType, es);
+            } catch (Exception e) {
+                return null;
+            }
+        }
+        // Obtener 'AdmissibleEnumString' de 'EnumString'
+        public static <E extends Enum<E>> String toAdmissibleEnumString(String es, Class<E> enumType) {
+            try {
+                return Enum.valueOf(enumType, es).toString();
             } catch (Exception e) {
                 return null;
             }
@@ -372,6 +396,14 @@ public class G4DUtility {
                 return toDateTime(dts);
             } catch (Exception e) {
                 return defaultValue;
+            }
+        }
+        // Obtener 'AdmissibleDateTimeString' de 'DateTimeString'
+        public static String toAdmissibleDateTimeString(String dts) {
+            try {
+                return toDatabaseString(toDateTime(dts));
+            } catch (Exception e) {
+                return null;
             }
         }
         // Obtener 'AdmissibleDate' de 'DateString'
@@ -388,6 +420,14 @@ public class G4DUtility {
                 return toTime(ts);
             } catch (Exception e) {
                 return defaultValue;
+            }
+        }
+        // Obtener 'AdmissibleTimeString' de 'TimeString'
+        public static String toAdmissibleTimeString(String ts) {
+            try {
+                return toDatabaseString(toTime(ts));
+            } catch (Exception e) {
+                return null;
             }
         }
     }

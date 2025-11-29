@@ -22,7 +22,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.*;
 
 @Service
@@ -85,7 +85,7 @@ public class AdministradorService {
         return String.format("ADMIN%02d", maxCodigo.orElse(0) + 1);
     }
 
-    public ListResponse listar(ListRequest request) throws Exception {
+    public ListResponse listar(ListRequest request) {
         try {
             Pageable pageable = G4DUtility.Convertor.toAdmissible(request.getPagina(), request.getTamanio(), Sort.Order.asc("codigo"));
             List<DTO> dtos = new ArrayList<>();
@@ -97,13 +97,13 @@ public class AdministradorService {
         }
     }
 
-    public ListResponse filtrar(FilterRequest<UsuarioDTO> request) throws Exception {
+    public ListResponse filtrar(FilterRequest<UsuarioDTO> request) {
         try {
             Pageable pageable = G4DUtility.Convertor.toAdmissible(request.getPagina(), request.getTamanio(), Sort.Order.asc("codigo"));
             UsuarioDTO modelo = request.getModelo();
             String nombre = G4DUtility.Convertor.toAdmissible(modelo.getNombre());
             String correo = G4DUtility.Convertor.toAdmissible(modelo.getCorreo());
-            EstadoUsuario estado = G4DUtility.Convertor.toAdmissible(modelo.getEstado(), EstadoUsuario.class);
+            String estado = G4DUtility.Convertor.toAdmissibleEnumString(modelo.getEstado(), EstadoUsuario.class);
             List<DTO> dtos = new ArrayList<>();
             List<AdministradorEntity> entities = administradorRepository.filterBy(nombre, correo, estado, pageable).getContent();
             entities.forEach(entity -> dtos.add(usuarioMapper.toDTO(entity)));
@@ -113,7 +113,7 @@ public class AdministradorService {
         }
     }
 
-    public GenericResponse importar(MultipartFile archivo) throws Exception {
+    public GenericResponse importar(MultipartFile archivo) {
         try {
             System.out.printf("Importando administradores desde '%s'..%n", archivo.getName());
             Scanner archivoSC = new Scanner(archivo.getInputStream(), G4DUtility.Reader.getFileCharset(archivo));
@@ -133,9 +133,11 @@ public class AdministradorService {
             administradores.stream().filter(entity -> !this.existsByCorreo(entity.getCorreo())).forEach(this::save);
             System.out.printf("[<] ADMINISTRADORES IMPORTADOS! ('%d')%n", administradores.size());
             return new GenericResponse(true, String.format("Administradores importados correctamente! ('%d')", administradores.size()));
-        } catch (NoSuchElementException | FileNotFoundException e) {
-            throw new G4DException(String.format("El archivo '%s' no sigue el formato esperado o está vacío.", archivo.getName()));
-        } finally {
+        } catch (NoSuchElementException e) {
+            throw new G4DException(String.format("El archivo '%s' no sigue el formato esperado.", archivo.getName()));
+        } catch (IOException e) {
+            throw new G4DException(String.format("No se pudo cargar el archivo '%s'.", archivo.getName()));
+        }  finally {
             clearPools();
         }
     }

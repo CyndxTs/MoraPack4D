@@ -23,13 +23,29 @@ public interface AeropuertoRepository extends JpaRepository<AeropuertoEntity, In
     List<AeropuertoEntity> findByEsSede(Boolean esSede);
 
     // Filtrar pagina de aeropuertos por sus atributos
-    @Query("SELECT a FROM AeropuertoEntity a " +
-            "WHERE (:codigo IS NULL OR LOWER(a.codigo) LIKE LOWER(CONCAT('%', :codigo, '%'))) " +
-            "AND (:alias IS NULL OR LOWER(a.alias) LIKE LOWER(CONCAT('%', :alias, '%'))) " +
-            "AND (:continente IS NULL OR LOWER(a.continente) LIKE LOWER(CONCAT('%', :continente, '%'))) " +
-            "AND (:pais IS NULL OR LOWER(a.pais) LIKE LOWER(CONCAT('%', :pais, '%'))) " +
-            "AND (:ciudad IS NULL OR LOWER(a.ciudad) LIKE LOWER(CONCAT('%', :ciudad, '%'))) " +
-            "AND (:esSede IS NULL OR a.esSede = :esSede)")
+    @Query(
+        value = """
+            SELECT *
+            FROM AEROPUERTO a
+            WHERE (:codigo IS NULL OR LOWER(a.codigo) LIKE LOWER(CONCAT('%', :codigo, '%')))
+              AND (:alias IS NULL OR LOWER(a.alias) LIKE LOWER(CONCAT('%', :alias, '%')))
+              AND (:continente IS NULL OR LOWER(a.continente) LIKE LOWER(CONCAT('%', :continente, '%')))
+              AND (:pais IS NULL OR LOWER(a.pais) LIKE LOWER(CONCAT('%', :pais, '%')))
+              AND (:ciudad IS NULL OR LOWER(a.ciudad) LIKE LOWER(CONCAT('%', :ciudad, '%')))
+              AND (:esSede IS NULL OR a.es_sede = :esSede)
+            """,
+        countQuery = """
+            SELECT COUNT(*)
+            FROM AEROPUERTO a
+            WHERE (:codigo IS NULL OR LOWER(a.codigo) LIKE LOWER(CONCAT('%', :codigo, '%')))
+              AND (:alias IS NULL OR LOWER(a.alias) LIKE LOWER(CONCAT('%', :alias, '%')))
+              AND (:continente IS NULL OR LOWER(a.continente) LIKE LOWER(CONCAT('%', :continente, '%')))
+              AND (:pais IS NULL OR LOWER(a.pais) LIKE LOWER(CONCAT('%', :pais, '%')))
+              AND (:ciudad IS NULL OR LOWER(a.ciudad) LIKE LOWER(CONCAT('%', :ciudad, '%')))
+              AND (:esSede IS NULL OR a.es_sede = :esSede)
+            """,
+        nativeQuery = true
+    )
     Page<AeropuertoEntity> filterBy(
             @Param("codigo") String codigo,
             @Param("alias") String alias,
