@@ -48,6 +48,18 @@ public class Pedido {
         return pedido;
     }
 
+    public void reasignar(Pedido pedido) {
+        this.codigo = pedido.codigo;
+        this.cantidadSolicitada = pedido.cantidadSolicitada;
+        this.fueAtendido = pedido.fueAtendido;
+        this.fechaHoraGeneracion = pedido.fechaHoraGeneracion;
+        this.fechaHoraProcesamiento = pedido.fechaHoraProcesamiento;
+        this.fechaHoraExpiracion = pedido.fechaHoraExpiracion;
+        this.cliente = pedido.cliente;
+        this.destino = pedido.destino;
+        this.segmentaciones = new ArrayList<>(pedido.segmentaciones);
+    }
+
     public void cargarRestriccionesDeReplanificacion(Map<Ruta, Lote> segmentacionModificable, Map<Ruta, List<Aeropuerto>> secuenciasIntocables) {
         Map<Ruta, Lote> segmentacion = this.obtenerSegementacionVigente().getLotesPorRuta();
         for (Map.Entry<Ruta, Lote> entry : segmentacion.entrySet()) {

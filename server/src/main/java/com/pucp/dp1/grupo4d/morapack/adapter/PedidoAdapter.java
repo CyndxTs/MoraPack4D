@@ -22,9 +22,9 @@ public class PedidoAdapter {
     private final AeropuertoAdapter aeropuertoAdapter;
     private final RutaAdapter rutaAdapter;
     private final LoteAdapter loteAdapter;
+    private final SegmentacionAdapter segmentacionAdapter;
     private final Map<String, Pedido> poolAlgorithm = new HashMap<>();
     private final Map<String, PedidoEntity> poolEntity = new HashMap<>();
-    private final SegmentacionAdapter segmentacionAdapter;
 
     public PedidoAdapter(UsuarioAdapter usuarioAdapter, AeropuertoAdapter aeropuertoAdapter, RutaAdapter rutaAdapter, LoteAdapter loteAdapter, PedidoService pedidoService, SegmentacionAdapter segmentacionAdapter) {
         this.usuarioAdapter = usuarioAdapter;
@@ -76,6 +76,12 @@ public class PedidoAdapter {
         entity.setFueAtendido(algorithm.getFueAtendido());
         poolEntity.put(entity.getCodigo(), entity);
         return entity;
+    }
+
+    public void trascendReference(Pedido algorithm) {
+        if(poolAlgorithm.containsKey(algorithm.getCodigo())) {
+            poolAlgorithm.get(algorithm.getCodigo()).reasignar(algorithm);
+        }
     }
 
     public void clearPools() {
