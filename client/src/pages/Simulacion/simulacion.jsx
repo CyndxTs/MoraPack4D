@@ -38,6 +38,7 @@ export default function Simulacion() {
   const [maxHorasEstancia, setMaxHorasEstancia] = useState();
   const [multiplicadorTemporal, setMultiplicadorTemporal] = useState();
   const [tamanioDeSaltoTemporal, setTamanioDeSaltoTemporal] = useState();
+  const [parametrosCompletos, setParametrosCompletos] = useState(null);
 
   //Aeropuertos
   const [airports, setAirports] = useState(null);
@@ -372,6 +373,7 @@ export default function Simulacion() {
         const parametrosResponse = await listarParametros();
         /** @type {ParametrosDTO} */
         const p = parametrosResponse.dtos[0];
+        setParametrosCompletos(p);
         const a = await listarAeropuertos();        
         setAeropuertos(a.dtos ?? []);
         // === SOLO LOS 5 PARAMETROS A MOSTRAR EN EL POPUP ===
@@ -515,7 +517,7 @@ export default function Simulacion() {
         setLoading(false);
         return;
       }
-
+      const p = parametrosCompletos;
       /** @type {SimulationRequest} */
       const body = {
         fechaHoraInicio: `${fechaI}T${horaI}:00`,
@@ -527,6 +529,7 @@ export default function Simulacion() {
           minHorasEstancia,
           maxHorasEstancia,
           codOrigenes,
+
         },
         multiplicadorTemporal,
         tamanioDeSaltoTemporal,
