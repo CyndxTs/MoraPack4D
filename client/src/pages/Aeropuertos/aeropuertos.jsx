@@ -34,22 +34,6 @@ export default function Aeropuertos() {
     setTimeout(() => setNotification(null), 5000);
   };
 
-  useEffect(() => {
-    const fetchAeropuertos = async () => {
-      try {
-        const data = await listarAeropuertos(0,30);
-        setAeropuertos(data.dtos || []);
-        setAeropuertosOriginales(data.dtos || []);
-      } catch (err) {
-        console.error(err);
-        showNotification("danger", "Error al cargar aeropuertos");
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchAeropuertos();
-  }, []);
-
   const headers = [
     { label: "Código", key: "codigo" },
     { label: "Ciudad", key: "ciudad" },
@@ -101,8 +85,7 @@ export default function Aeropuertos() {
         showNotification("success", "Aeropuerto agregado correctamente");
       }
 
-      const data = await listarAeropuertos(0,30);
-      setAeropuertos(data.dtos || []);
+      fetchAeropuertos(1);
       setIsModalOpen(false);
       setArchivo(null);
       setCodigo("");
@@ -187,10 +170,34 @@ export default function Aeropuertos() {
 
   // --- Paginación ---
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 20;
-  const indexOfLast = currentPage * itemsPerPage;
-  const indexOfFirst = indexOfLast - itemsPerPage;
-  const currentAeropuertos = aeropuertos.slice(indexOfFirst, indexOfLast);
+  const itemsPerPage = 10;
+  const [hasMorePages, setHasMorePages] = useState(false);
+
+  useEffect(() => {
+    fetchAeropuertos(1); // página 1 visual → backend página 0
+  }, []);
+
+  const fetchAeropuertos = async (paginaVisual) => {
+    try {
+      setLoading(true);
+
+      const backendPage = paginaVisual - 1; // visual 1 → backend 0
+
+      const data = await listarAeropuertos(backendPage, itemsPerPage);
+
+      const lista = data.dtos || [];
+
+      setAeropuertos(lista);
+      setCurrentPage(paginaVisual);
+
+      // Si devuelve menos de 10, ya no hay más páginas
+      setHasMorePages(lista.length === itemsPerPage);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="page">
@@ -286,13 +293,12 @@ export default function Aeropuertos() {
           <>
             <Table
               headers={headers}
-              data={currentAeropuertos}
+              data={aeropuertos}
             />
             <Pagination
-              totalItems={aeropuertos.length}
-              itemsPerPage={itemsPerPage}
               currentPage={currentPage}
-              onPageChange={setCurrentPage}
+              onPageChange={fetchAeropuertos}
+              hasMorePages={hasMorePages}
             />
           </>
         )}
@@ -314,29 +320,6 @@ export default function Aeropuertos() {
                 <RemoveFileButton onClick={() => setArchivo(null)} />
               )}
             </div>
-
-
-            {/*<div className="modal-body">
-              <label htmlFor="codigoModal">Código</label>
-              <Input id="codigoModal" placeholder="Escribe el código" value={codigo} onChange={(e) => setCodigo(e.target.value)} disabled={!!archivo}/>
-
-              <label htmlFor="ciudadModal">Ciudad</label>
-              <Input id="ciudadModal" placeholder="Escribe la ciudad" value={ciudad} onChange={(e) => setCiudad(e.target.value)} disabled={!!archivo}/>
-
-              <label htmlFor="paisModal">País</label>
-              <Input id="paisModal" placeholder="Escribe el pais" value={pais} onChange={(e) => setPais(e.target.value)} disabled={!!archivo}/>
-
-              <label htmlFor="continenteModal">Continente</label>
-              <Input id="continenteModal" placeholder="Escribe el continente" value={continente} onChange={(e) => setContinente(e.target.value)} disabled={!!archivo}/>
-
-              <label htmlFor="capacidadModal">Capacidad</label>
-              <Input id="capacidadModal" placeholder="Escribe la capacidad" value={capacidad} onChange={(e) => setCapacidad(e.target.value)} disabled={!!archivo}/>
-
-
-              <label htmlFor="husoHorarioModal">Huso horario</label>
-              <Input id="husoHorarioModal" placeholder="Escribe el huso horario" value={husoHorario} onChange={(e) => setHusoHorario(e.target.value)} disabled={!!archivo}/>
-
-            </div>*/}
 
             <div className="modal-footer">
               <button className="btn red" onClick={() => setIsModalOpen(false)}>Cancelar</button>

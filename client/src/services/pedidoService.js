@@ -3,11 +3,11 @@ import axios from "axios";
 const API_URL = "/api/pedidos";
 
 // Listar solo los aeropuertos básicos
-export const listarPedidos = async (page,size) => {
+export const listarPedidos = async (pagina, tamanio) => {
   try {
-    const response = await axios.get(`${API_URL}/listar`, {
-      params: { page, size },
-    });
+    const response = await axios.post(`${API_URL}/listar`, 
+      { pagina, tamanio }
+    );
 
     return response.data; // ListResponse con { success, mensaje, dtos }
   } catch (error) {

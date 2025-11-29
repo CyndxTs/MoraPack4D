@@ -28,24 +28,6 @@ export default function Clientes() {
     setTimeout(() => setNotification(null), 5000);
   };
 
-  useEffect(() => {
-    const fetchClientes = async () => {
-      try {
-        const data = await listarClientes(0,300);
-        setClientes(data.dtos || []);
-        setClientesOriginales(data.dtos || []);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchClientes();
-  }, []);
-
-
-
   const headers = [
     { label: "Código", key: "codigo" },
     { label: "Nombre completo", key: "nombre" },
@@ -62,13 +44,35 @@ export default function Clientes() {
 
   // --- Paginación ---
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 20;
+  const itemsPerPage = 10;
+  const [hasMorePages, setHasMorePages] = useState(false);
 
-  // Calcular los clientes visibles en esta página
-  const indexOfLast = currentPage * itemsPerPage;
-  const indexOfFirst = indexOfLast - itemsPerPage;
-  const currentClientes = clientes.slice(indexOfFirst, indexOfLast);
-  
+  useEffect(() => {
+    fetchClientes(1); // página 1 visual → backend página 0
+  }, []);
+
+  const fetchClientes = async (paginaVisual) => {
+    try {
+      setLoading(true);
+
+      const backendPage = paginaVisual - 1; // visual 1 → backend 0
+
+      const data = await listarClientes(backendPage, itemsPerPage);
+
+      const lista = data.dtos || [];
+
+      setClientes(lista);
+      setCurrentPage(paginaVisual);
+
+      // Si devuelve menos de 10, ya no hay más páginas
+      setHasMorePages(lista.length === itemsPerPage);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+ 
   // Manejo de archivo
   const handleFileChange = (e) => {
     if (e.target.files.length > 0) {
@@ -145,8 +149,7 @@ export default function Clientes() {
         showNotification("success", "Cliente agregado correctamente");
       }
 
-      const data = await listarClientes(0, 300);
-      setClientes(data.dtos || []);
+      fetchClientes(1);
       setIsModalOpen(false);
       setArchivo(null);
       setNombre("");
@@ -262,12 +265,11 @@ export default function Clientes() {
           <LoadingOverlay text="Cargando clientes..." />
         ) : (
           <>
-            <Table headers={headers} data={currentClientes} statusColors={estadoColors}/>
+            <Table headers={headers} data={clientes} statusColors={estadoColors}/>
             <Pagination
-              totalItems={clientes.length}
-              itemsPerPage={itemsPerPage}
               currentPage={currentPage}
-              onPageChange={setCurrentPage}
+              onPageChange={fetchClientes}
+              hasMorePages={hasMorePages}
             />
           </>
         )}
@@ -296,26 +298,6 @@ export default function Clientes() {
                 <RemoveFileButton onClick={() => setArchivo(null)} />
               )}
             </div>
-
-            {/*<div className="modal-body">
-              <label htmlFor="nombreModal">Nombre</label>
-              <Input
-                id="nombreModal"
-                placeholder="Escribe el nombre"
-                value={nombre}
-                onChange={(e) => setNombre(e.target.value)}
-                disabled={!!archivo}
-              />
-
-              <label htmlFor="correoModal">Correo</label>
-              <Input
-                id="correoModal"
-                placeholder="Escribe el correo electrónico"
-                value={correo}
-                onChange={(e) => setCorreo(e.target.value)}
-                disabled={!!archivo}
-              />
-            </div>*/}
 
             <div className="modal-footer">
               <button

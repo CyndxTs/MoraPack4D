@@ -371,43 +371,33 @@ export function Table({ headers = [], data = [], statusColors = {} }) {
 }
 
 //          PAGINACIÓN REUTILIZABLE
-export function Pagination({ totalItems, itemsPerPage, currentPage, onPageChange }) {
-  const totalPages = Math.ceil(totalItems / itemsPerPage);
-
-  if (totalPages <= 1) return null;
+export function Pagination({ currentPage, onPageChange, hasMorePages }) {
 
   const handleClick = (page) => {
-    if (page >= 1 && page <= totalPages) {
-      onPageChange(page);
-    }
+    if (page < 1) return;
+    if (page > currentPage + 1) return;
+    onPageChange(page);
   };
 
-  // ----- GENERAR LISTA LIMITADA -----
-  const getVisiblePages = () => {
-    if (totalPages <= 5) {
-      return [...Array(totalPages)].map((_, i) => i + 1);
-    }
+  const pages = [];
 
-    if (currentPage <= 3) {
-      return [1, 2, 3, 4, "dots", totalPages];
-    }
+  // Siempre mostrar 1
+  if (currentPage > 2) pages.push(1);
 
-    if (currentPage >= totalPages - 2) {
-      return [1, "dots", totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
-    }
+  // Dots:
+  if (currentPage > 3) pages.push("dots");
 
-    return [
-      1,
-      "dots",
-      currentPage - 1,
-      currentPage,
-      currentPage + 1,
-      "dots",
-      totalPages,
-    ];
-  };
+  // Página anterior
+  if (currentPage > 1) pages.push(currentPage - 1);
 
-  const pages = getVisiblePages();
+  // Página actual
+  pages.push(currentPage);
+
+  // Página siguiente
+  if (hasMorePages) pages.push(currentPage + 1);
+
+  // Dots a la derecha
+  if (hasMorePages && currentPage > 1) pages.push("dots");
 
   return (
     <div className="pagination">
@@ -419,12 +409,12 @@ export function Pagination({ totalItems, itemsPerPage, currentPage, onPageChange
         ⟨
       </button>
 
-      {pages.map((p, index) =>
+      {pages.map((p, i) =>
         p === "dots" ? (
-          <span key={`dots-${index}`} className="page-dots">…</span>
+          <span key={`dots-${i}`} className="page-dots">…</span>
         ) : (
           <button
-            key={p}
+            key={`page-${p}-${i}`}
             className={`page-btn ${currentPage === p ? "active" : ""}`}
             onClick={() => handleClick(p)}
           >
@@ -433,16 +423,18 @@ export function Pagination({ totalItems, itemsPerPage, currentPage, onPageChange
         )
       )}
 
+
       <button
         className="page-btn"
         onClick={() => handleClick(currentPage + 1)}
-        disabled={currentPage === totalPages}
+        disabled={!hasMorePages}
       >
         ⟩
       </button>
     </div>
   );
 }
+
 
 
 

@@ -36,23 +36,6 @@ export default function Planes() {
     setNotification({ type, message });
     setTimeout(() => setNotification(null), 5000);
   };
-
-  useEffect(() => {
-    const fetchPlanes = async () => {
-      try {
-        const data = await listarPlanes(0,3000);
-        setPlanes(data.dtos || []);
-        setPlanesOriginales(data.dtos || []);
-      } catch (err) {
-        console.error(err);
-        showNotification("danger", "Error al cargar planes de vuelos");
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchPlanes();
-  }, []);
-
   
   // Columnas nuevas para vuelos
   const headers = [
@@ -107,8 +90,7 @@ export default function Planes() {
       }
 
       // Recargar lista
-      const data = await listarPlanes(0,3000);
-      setPlanes(data.dtos || []);
+      fetchPlanes(1);
 
       // Reset form & modal
       setIsModalOpen(false);
@@ -167,10 +149,34 @@ export default function Planes() {
 
   // --- Paginación ---
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 20;
-  const indexOfLast = currentPage * itemsPerPage;
-  const indexOfFirst = indexOfLast - itemsPerPage;
-  const currentPlanes = planes.slice(indexOfFirst, indexOfLast);
+  const itemsPerPage = 10;
+  const [hasMorePages, setHasMorePages] = useState(false);
+
+  useEffect(() => {
+    fetchPlanes(1); // página 1 visual → backend página 0
+  }, []);
+
+  const fetchPlanes = async (paginaVisual) => {
+    try {
+      setLoading(true);
+
+      const backendPage = paginaVisual - 1; // visual 1 → backend 0
+
+      const data = await listarPlanes(backendPage, itemsPerPage);
+
+      const lista = data.dtos || [];
+
+      setPlanes(lista);
+      setCurrentPage(paginaVisual);
+
+      // Si devuelve menos de 10, ya no hay más páginas
+      setHasMorePages(lista.length === itemsPerPage);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="page">
@@ -242,13 +248,12 @@ export default function Planes() {
           <>
             <Table
               headers={headers}
-              data={currentPlanes}
+              data={planes}
             />
             <Pagination
-              totalItems={planes.length}
-              itemsPerPage={itemsPerPage}
               currentPage={currentPage}
-              onPageChange={setCurrentPage}
+              onPageChange={fetchPlanes}
+              hasMorePages={hasMorePages}
             />
           </>
         )}
@@ -271,26 +276,6 @@ export default function Planes() {
                 <RemoveFileButton onClick={() => setArchivo(null)} />
               )}
             </div>
-
-            {/*<div className="modal-body">
-              <label>Código</label>
-              <Input placeholder="Escribe el código" value={codigo} onChange={(e) => setCodigo(e.target.value)} disabled={!!archivo}/>
-
-              <label>Hora salida UTC</label>
-              <Input placeholder="Escribe la hora de salida UTC" value={horaSalida} onChange={(e) => setHoraSalida(e.target.value)} disabled={!!archivo}/>
-
-              <label>Hora llegada UTC</label>
-              <Input placeholder="Escribe la hora de llegada UTC" value={horaLlegada} onChange={(e) => setHoraLlegada(e.target.value)} disabled={!!archivo}/>
-
-              <label>Capacidad</label>
-              <Input placeholder="Escribe la capacidad" value={capacidad} onChange={(e) => setCapacidad(e.target.value)} disabled={!!archivo}/>
-
-              <label>Aeropuerto origen</label>
-              <Input placeholder="Escribe el aeropuerto origen" value={origen} onChange={(e) => setOrigen(e.target.value)} disabled={!!archivo}/>
-
-              <label>Aeropuerto destino</label>
-              <Input placeholder="Escribe el aeropuerto destino" value={destino} onChange={(e) => setDestino(e.target.value)} disabled={!!archivo}/>
-            </div>*/}
 
             <div className="modal-footer">
               <button className="btn red" onClick={() => setIsModalOpen(false)}>Cancelar</button>

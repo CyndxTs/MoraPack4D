@@ -2,11 +2,11 @@ import axios from "axios";
 
 const API_URL = "/api/planes";
 
-export const listarPlanes = async (page,size) => {
+export const listarPlanes = async (pagina,tamanio) => {
   try {
-    const response = await axios.get(`${API_URL}/listar`, {
-      params: { page, size },
-    });
+    const response = await axios.post(`${API_URL}/listar`,
+      { pagina, tamanio }
+    );
 
     return response.data; // ListResponse con { success, mensaje, dtos }
   } catch (error) {

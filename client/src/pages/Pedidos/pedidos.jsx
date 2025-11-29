@@ -14,7 +14,7 @@ import { listarPedidos, importarPedido, importarPedidos } from "../../services/p
 
 export default function Pedidos() {
 
-  const { loadingData, pedidos, clientes, aeropuertos, setPedidos } = useAppData();
+  const { clientes, aeropuertos } = useAppData();
 
   const [collapsed, setCollapsed] = useState(false);
 
@@ -41,18 +41,17 @@ export default function Pedidos() {
   const [tipoEscenario, setTipoEscenario] = useState("");
 
   // Tabla y filtros
-  const [pedidosOriginales, setPedidosOriginales] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
   const [notification, setNotification] = useState(null);
+
+  const [pedidos,setPedidos]=useState([]);
+  const [pedidosOriginales,setPedidosOriginales]=useState([]);
 
   // =============================
   // CARGA INICIAL DESDE CONTEXTO
   // =============================
-  useEffect(() => {
-    if (!loadingData) {
-      setPedidosOriginales(pedidos);
-    }
-  }, [loadingData, pedidos]);
+
 
   // =============================
   // NOTIFICACIONES
@@ -164,9 +163,7 @@ export default function Pedidos() {
       }
 
       // Recargar tabla DESDE BACKEND
-      const nuevos = await listarPedidos(0,10000);
-      setPedidos(nuevos.dtos || []);
-      setPedidosOriginales(nuevos.dtos || []);
+      await fetchPedidos(1);
 
       setIsModalOpen(false);
       setArchivo(null);
@@ -182,41 +179,47 @@ export default function Pedidos() {
   // FILTROS
   // =============================
   const handleFilter = () => {
-    let lista = [...pedidosOriginales];
 
-    if (codigoFiltro.trim()) {
-      lista = lista.filter(p =>
-        p.codigo.toLowerCase().includes(codigoFiltro.toLowerCase())
-      );
-    }
-
-    if (ordenFecha) {
-      lista.sort((a, b) => {
-        const fa = new Date(a.fechaHoraGeneracion);
-        const fb = new Date(b.fechaHoraGeneracion);
-        return ordenFecha === "ascendente" ? fa - fb : fb - fa;
-      });
-    }
-
-    setPedidos(lista);
-    setCurrentPage(1);
   };
 
   const handleCleanFilters = () => {
-    setCodigoFiltro("");
-    setOrdenFecha("");
-    setPedidos(pedidosOriginales);
-    setCurrentPage(1);
+
+
+    showNotification("info", "Filtros limpiados");
   };
 
   // =============================
   // PAGINACIÓN
   // =============================
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 20;
-  const indexOfLast = currentPage * itemsPerPage;
-  const indexOfFirst = indexOfLast - itemsPerPage;
-  const currentPedidos = pedidos.slice(indexOfFirst, indexOfLast);
+  const itemsPerPage = 10;
+  const [hasMorePages, setHasMorePages] = useState(false);
+
+  useEffect(() => {
+    fetchPedidos(1); // página 1 visual → backend página 0
+  }, []);
+
+  const fetchPedidos = async (paginaVisual) => {
+    try {
+      setLoading(true);
+
+      const backendPage = paginaVisual - 1; // visual 1 → backend 0
+
+      const data = await listarPedidos(backendPage, itemsPerPage);
+
+      const lista = data.dtos || [];
+
+      setPedidos(lista);
+      setCurrentPage(paginaVisual);
+
+      // Si devuelve menos de 10, ya no hay más páginas
+      setHasMorePages(lista.length === itemsPerPage);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // =============================
   // RENDER
@@ -224,12 +227,10 @@ export default function Pedidos() {
   return (
     <div className="page">
 
-      {(processing) && (
-        <LoadingOverlay text="Procesando pedidos..." />
-      )}
-
-      {loadingData && (
-        <LoadingOverlay text="Cargando pedidos..." />
+      {(loading || processing) && (
+        <LoadingOverlay
+          text={processing ? "Procesando pedidos..." : "Cargando pedidos..."}
+        />
       )}
 
       {notification && (
@@ -310,13 +311,12 @@ export default function Pedidos() {
           />
         </div>
 
-        <Table headers={headers} data={currentPedidos} />
+        <Table headers={headers} data={pedidos} />
 
         <Pagination
-          totalItems={pedidos.length}
-          itemsPerPage={itemsPerPage}
           currentPage={currentPage}
-          onPageChange={setCurrentPage}
+          onPageChange={fetchPedidos}
+          hasMorePages={hasMorePages}
         />
       </section>
 
