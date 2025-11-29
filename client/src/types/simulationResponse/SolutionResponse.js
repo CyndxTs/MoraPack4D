@@ -12,6 +12,9 @@
  * @property {string} token
  * @property {boolean} success
  * @property {string} message
+ * @property {number} [ratioPromedioDeUtilizacionTemporal]
+ * @property {number} [ratioPromedioDeDesviacionEspacial]
+ * @property {number} [ratioPromedioDeDisposicionOperacional]
  * @property {PedidoDTO[]} pedidosAtendidos
  * @property {AeropuertoDTO[]} aeropuertosTransitados
  * @property {VueloDTO[]} vuelosEnTransito

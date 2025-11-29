@@ -372,9 +372,9 @@ export default function Pedidos() {
                 />
                 <Radio
                   name="tipoEscenario"
-                  label="SIMLULACION"
-                  value="SIMLULACION"
-                  checked={tipoEscenario === "SIMLULACION"}
+                  label="SIMULACION"
+                  value="SIMULACION"
+                  checked={tipoEscenario === "SIMULACION"}
                   onChange={(e) => setTipoEscenario(e.target.value)}
                 />
 
