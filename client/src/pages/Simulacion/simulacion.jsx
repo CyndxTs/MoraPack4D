@@ -64,6 +64,10 @@ export default function Simulacion() {
   const [tamanioDeSaltoTemporal, setTamanioDeSaltoTemporal] = useState();
   const [parametrosCompletos, setParametrosCompletos] = useState(null);
 
+  const [estadoEjecucionSim, setEstadoEjecucionSim] = useState("POR_INICIAR");
+  const [showLoadingSim, setShowLoadingSim] = useState(false);
+
+
   //Aeropuertos
   const [airports, setAirports] = useState(null);
   // Inputs de inicio de simulación (no se auto-actualizan)
@@ -522,7 +526,15 @@ export default function Simulacion() {
 
         if (!estadoEjecucion) return;
 
+        setEstadoEjecucionSim(estadoEjecucion);
         if (estadoEjecucion === "POR_INICIAR") {
+          setShowLoadingSim(true); // mostrar overlay
+        } else {
+          setShowLoadingSim(false); // ocultar overlay
+        }
+
+        if (estadoEjecucion === "POR_INICIAR") {
+          setShowLoadingSim(true);
           showNotification("info", "Simulación por iniciar...");
         } else if (estadoEjecucion === "INICIADO") {
           showNotification("info", "Simulación iniciada");
@@ -548,6 +560,14 @@ export default function Simulacion() {
       disconnectWS();
     };
   }, []);
+
+  useEffect(() => {
+    if (!showLoadingSim && estadoEjecucionSim !== "POR_INICIAR") {
+      // Ya no está cargando → iniciar simulación una sola vez
+      handleStart();
+    }
+  }, [showLoadingSim, estadoEjecucionSim]);
+
 
   const handlePlanear = async () => {
     try {
@@ -627,7 +647,9 @@ export default function Simulacion() {
   return (
     <div className="page">
       {/* Overlay de carga de simulación */}
-      {loading && <LoadingOverlay text="Cargando simulación..." />}
+      {showLoadingSim && (
+        <LoadingOverlay text="Cargando Simulación..." />
+      )}
 
       {notification && (
         <Notification
@@ -695,7 +717,19 @@ export default function Simulacion() {
         <div className="control-bar">
           <span className="control-label">Controles:</span>
 
-          <button
+
+          {estadoEjecucionSim !== "POR_INICIAR" && (
+            <>
+              <button
+                className={`btn ${btnState.stop.color}`}
+                onClick={handleStop}
+                disabled={btnState.stop.disabled}
+              >
+                Detener
+              </button>
+            </>
+          )}
+          {/*<button
             className={`btn ${btnState.start.color}`}
             onClick={handleStart}
             disabled={btnState.start.disabled}
@@ -721,7 +755,7 @@ export default function Simulacion() {
             disabled={btnState.stop.disabled}
           >
             Detener
-          </button>
+          </button>*/}
 
           <span className="info-label">Fecha:</span>
           <span className="value">{toISODate(simNowMs)}</span>
