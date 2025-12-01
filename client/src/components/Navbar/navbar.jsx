@@ -12,7 +12,8 @@ const Navbar = () => {
           <li><Link to="/">Inicio</Link></li>
           <li><Link to="/clientes">Clientes</Link></li>
           <li><Link to="/aeropuertos">Aeropuertos</Link></li>
-          <li><Link to="/planes">Planes de vuelos</Link></li>
+          <li><Link to="/planes">Planes</Link></li>
+          <li><Link to="/pedidos">Pedidos</Link></li>
         </ul>
       </div>
 
@@ -27,7 +28,6 @@ const Navbar = () => {
             </Link>
           </div>
           <ul className="menu menu-main">
-            <li><Link to="/pedidos">Pedidos</Link></li>
             <li><Link to="/planificacion">Operación Diaria</Link></li>
             <li><Link to="/simulacion">Simulación Semanal</Link></li>
             <li><Link to="/reportes">Reportes</Link></li>

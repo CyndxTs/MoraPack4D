@@ -1,22 +1,27 @@
 
 .sidebar {
     background-color: var(--color-light-grey);
-    width: 250px; /* ancho normal */
-    transition: width 0.3s ease;
+    flex: 0 0 20%;          /* Sidebar ocupa SIEMPRE el 20% */
+    min-width: 250px;       /* Ancho mínimo cuando NO está colapsado */
+    max-width: 250px;       /* Opcional: para no crecer demasiado */
+    transition: all 0.3s ease;
     overflow: hidden;
     display: flex;
     flex-direction: column;
 }
 
 .sidebar.collapsed {
-    width: 50px; /* ancho reducido cuando se colapsa */
+    flex: 0 0 50px;         /* Ancho fijo cuando se colapsa */
+    min-width: 50px;
+    max-width: 50px;
 }
 
 .contenido {
-    flex: 4; /* ocupa 3 partes (ajustable) */
+    flex: 1;                /* Ocupa el resto del espacio (aprox 80%) */
     padding: 20px;
     display: flex;
-    flex-direction: column;  
+    flex-direction: column;
+    overflow: auto;
 }
 
 /* Grupos de filtros */

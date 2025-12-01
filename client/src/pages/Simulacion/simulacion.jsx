@@ -721,7 +721,7 @@ export default function Simulacion() {
           {estadoEjecucionSim !== "POR_INICIAR" && (
             <>
               <button
-                className={`btn ${btnState.stop.color}`}
+                className={`btn ${btnSt/ate.stop.color}`}
                 onClick={handleStop}
                 disabled={btnState.stop.disabled}
               >

@@ -5,6 +5,10 @@ import router from './router'
 import './styles/main.scss'
 import { DataProvider } from './dataProvider'
 
+import { initOperationManager } from './services/operationManager';
+
+initOperationManager({ wsEndpoint: '/ws' });
+
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <DataProvider>

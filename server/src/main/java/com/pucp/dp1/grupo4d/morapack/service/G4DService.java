@@ -182,7 +182,7 @@ public class G4DService {
             throw new G4DException("Ya hay una replanificación en proceso!");
         }
         operationTask = self.getObject().replanificar(request).whenComplete((r, ex) -> operationTask = null);
-        WebSocketService.enviar("/topic/operator-status", EstadoEjecucion.INICIADO);
+        WebSocketService.enviar("/topic/operator-status", new StatusPayload(EstadoEjecucion.INICIADO));
         return new GenericResponse(true, "Replanificación Iniciada!");
     }
 

@@ -21,3 +21,26 @@ export const listarParametros = async () => {
     throw error;
   }
 };
+
+/**
+ * Importa un conjunto de parámetros al backend.
+ * POST /api/parametros/importar
+ *
+ * @param {ParametrosDTO} dto
+ * @returns {Promise<GenericResponse>}
+ */
+export const importarParametros = async (dto) => {
+  try {
+    const payload = { dto };
+
+    const response = await axios.post(`${API_URL}/importar`, payload);
+
+    /** @type {GenericResponse} */
+    const data = response.data;
+
+    return data;
+  } catch (error) {
+    console.error("Error al importar parámetros:", error);
+    throw error;
+  }
+};

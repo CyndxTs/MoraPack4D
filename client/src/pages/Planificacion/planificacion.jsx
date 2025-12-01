@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useRef } from "react";
 import "./planificacion.scss";
-import { RemoveFileButton, ButtonAdd, Input, Table, SidebarActions, LoadingOverlay, Legend, Notification, Radio, DateTimeInline, Dropdown, Dropdown2, Dropdown3 } from "../../components/UI/ui";
+import { RemoveFileButton, ButtonAdd, Input, Table, SidebarActions, LoadingOverlay, Legend, Notification, Radio, DateTimeInline, Dropdown, Dropdown2, Dropdown3, RangeSelector, TriPieSelector } from "../../components/UI/ui";
 import plus from "../../assets/icons/plus.svg";
 import run from "../../assets/icons/run.svg";
 import config from "../../assets/icons/config.svg";
 import hideIcon from "../../assets/icons/hide-sidebar.png";
-import { listarPedidos, importarPedido, importarPedidos } from "../../services/pedidoService";
-import { listarParametros } from "../../services/parametrosService";
 import { useAppData } from "../../dataProvider";
+import { listarPedidos, importarPedido, importarPedidos } from "../../services/pedidoService";
+import { listarParametros, importarParametros  } from "../../services/parametrosService";
 import { MapContainer, TileLayer, Marker, Popup, Polyline, useMapEvent  } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from "leaflet";
@@ -15,7 +15,6 @@ import L from "leaflet";
 import planeIconImg from "../../assets/icons/planeMora.svg";
 
 export default function Planificacion() {
-  const { loadingData, pedidos, pedidosOriginales, clientes, aeropuertos, rutas, vuelos, flights, setPedidos, setPedidosOriginales, setFlights } = useAppData();
   // ----------------------------------------
   // UI / layout state
   // ----------------------------------------
@@ -75,9 +74,9 @@ export default function Planificacion() {
   // ----------------------------------------
   // Aeropuertos / Vuelos (simulación)
   // ----------------------------------------
-  const [airports, setAirports] = useState(null);
-
+  const { clientes, aeropuertos } = useAppData();
   const [rawFlights, setRawFlights] = useState([]);
+
 
   // ----------------------------------------
   // Simulación: reloj, velocidad y timers
@@ -142,11 +141,44 @@ export default function Planificacion() {
     return `${hh}:${mm}:${ss}`;
   };
 
-  function unirFechaHora(fechaDateInput, horaHHmm) {
-    if (!fechaDateInput || !horaHHmm) return null;
+  function unirFechaHoraUTC(f, h) {
+    if (!f || !h) return null;
 
-    return `${fechaDateInput} ${horaHHmm}:00`; 
+    // Construir fecha base: "yyyy-MM-dd HH:mm:00"
+    const base = new Date(`${f}T${h}:00`);
+
+    // Sumar 5 horas
+    base.setHours(base.getHours() + 5);
+
+    // Formatear nuevamente a yyyy-MM-dd HH:mm:ss
+    const yyyy = base.getFullYear();
+    const MM = String(base.getMonth() + 1).padStart(2, "0");
+    const dd = String(base.getDate()).padStart(2, "0");
+
+    const HH = String(base.getHours()).padStart(2, "0");
+    const mm = String(base.getMinutes()).padStart(2, "0");
+    const ss = String(base.getSeconds()).padStart(2, "0");
+
+    return `${yyyy}-${MM}-${dd} ${HH}:${mm}:${ss}`;
   }
+
+  function obtenerFechaHoraActual() {
+    const ahora = new Date();
+
+    const yyyy = ahora.getFullYear();
+    const MM = String(ahora.getMonth() + 1).padStart(2, "0");
+    const dd = String(ahora.getDate()).padStart(2, "0");
+
+    const HH = String(ahora.getHours()).padStart(2, "0");
+    const mm = String(ahora.getMinutes()).padStart(2, "0");
+
+    const fecha = `${yyyy}-${MM}-${dd}`; // yyyy-MM-dd
+    const hora = `${HH}:${mm}`;          // HH:mm
+
+    return { fecha, hora };
+  }
+
+  const { fecha, hora } = obtenerFechaHoraActual();
 
   const handleFileChange = (e) => {
     if (e.target.files.length > 0) setArchivo(e.target.files[0]);
@@ -178,10 +210,7 @@ export default function Planificacion() {
 
   // ----------------------------------------
   // Pedidos
-  // ----------------------------------------
-  
-  const [fecha, setFecha] = useState("");   
-  const [hora, setHora] = useState("");    
+  // ----------------------------------------   
   const [cantidad, setCantidad] = useState("");
   const [selectedCliente, setSelectedCliente] = useState(null);
   const [selectedDestino, setSelectedDestino] = useState(null);
@@ -192,21 +221,28 @@ export default function Planificacion() {
   const [fechaArchivoFechaF, setFechaArchivoFechaF] = useState("");
   const [fechaArchivoHoraF, setFechaArchivoHoraF] = useState("");
 
-  
+  const isSimulacion = tipoEscenario === "SIMULACION";
+  const isOperacion = tipoEscenario === "OPERACION";
+  const hayArchivo = !!archivo;
 
   const handleAdd = async () => {
     try {
       setProcessing(true);
 
+      if (isSimulacion && !hayArchivo) {
+        showNotification("warning", "Para escenarios de simulación debes subir un archivo.");
+        return;
+      }
+
       // --- CASO 1: ARCHIVO ---
-      if (archivo) {
+      if (hayArchivo) {
         /*if (archivo.name !== "Pedidos.txt") {
           showNotification("warning", "El archivo debe llamarse 'Pedidos.txt'.");
           return;
         }*/
 
-        const fechaInicio = unirFechaHora(fechaArchivoFechaI, fechaArchivoHoraI);
-        const fechaFin = unirFechaHora(fechaArchivoFechaF, fechaArchivoHoraF);
+        const fechaInicio = unirFechaHoraUTC(fechaArchivoFechaI, fechaArchivoHoraI);
+        const fechaFin = unirFechaHoraUTC(fechaArchivoFechaF, fechaArchivoHoraF);
         
         console.log(archivo);
         console.log(fechaInicio);
@@ -214,27 +250,29 @@ export default function Planificacion() {
 
         const req = {
           tipoEscenario: tipoEscenario,
-          fechaHoraInicio: unirFechaHora(fechaArchivoFechaI, fechaArchivoHoraI),
-          fechaHoraFin: unirFechaHora(fechaArchivoFechaF, fechaArchivoHoraF)
+          fechaHoraInicio: unirFechaHoraUTC(fechaArchivoFechaI, fechaArchivoHoraI),
+          fechaHoraFin: unirFechaHoraUTC(fechaArchivoFechaF, fechaArchivoHoraF)
         };
 
         console.log(req);
+
         const respuesta = await importarPedidos(archivo, req);
-        if (respuesta.success) {
-          showNotification("success", respuesta.message || "Pedidos importados correctamente");
+        console.log(respuesta);
+        if (respuesta.exito) {
+          showNotification("success", respuesta.mensaje || "Pedidos importados correctamente");
         } else {
-          showNotification("danger", respuesta.message || "Ocurrió un error al importar los pedidos");
+          showNotification("danger", respuesta.mensaje || "Ocurrió un error al importar los pedidos");
         }
       }
 
       // --- CASO 2: MANUAL ---
-      else {
+      else if (isOperacion && !hayArchivo) {
         if (!selectedCliente || !selectedDestino || !fecha || !hora || !cantidad) {
           showNotification("warning", "Completa todos los campos del pedido manual.");
           return;
         }
 
-        const fechaGeneracion = unirFechaHora(fecha, hora);
+        const fechaGeneracion = unirFechaHoraUTC(fecha, hora);
 
         const dto = {
           codigo: null,
@@ -269,19 +307,69 @@ export default function Planificacion() {
     }
   };
 
-  function generarCodigoPedido() {
-    if (!selectedCliente || !selectedDestino || !fecha || !hora || !cantidad)
-      return "";
+  const handleCantidadChange = (e) => {
+    const value = e.target.value;
 
-    return (
-      "XXXXXXXX" +
-      "-" + formatearFechaInput(fecha) +
-      "-" + formatearHoraeInput(hora) +
-      "-" + cantidad.padStart(3, "0") +
-      "-" + selectedDestino.codigo +
-      "-" + selectedCliente.codigo.padStart(7, "0")
-    );
-  }
+    // Solo números
+    if (!/^\d*$/.test(value)) return;
+
+    // Evitar más de 3 dígitos
+    if (value.length > 3) return;
+
+    // Convertir a número para validar rango
+    const num = Number(value);
+
+    // Si está vacío → permitir porque el usuario está editando
+    if (value === "") {
+      setCantidad("");
+      return;
+    }
+
+    // Rango 1–999
+    if (num >= 1 && num <= 999) {
+      setCantidad(value);
+    }
+  };
+
+  // ----------------------------------------
+  // PARAMETROS
+  // ----------------------------------------
+  const handleGuardarParametros = async () => {
+    const dto = {
+      maxDiasEntregaIntracontinental,
+      maxDiasEntregaIntercontinental,
+      maxHorasRecojo,
+      minHorasEstancia,
+      maxHorasEstancia,
+      codOrigenes,
+      dMin,
+      iMax,
+      eleMin,
+      eleMax,
+      kMin,
+      kMax,
+      tMax,
+      maxIntentos,
+      factorDeUmbralDeAberracion,
+      factorDeUtilizacionTemporal,
+      factorDeDesviacionEspacial,
+      factorDeDisposicionOperacional,
+    };
+
+    try {
+      console.log("ENVIANDO: ");
+      console.log(dto);
+      const res = await importarParametros(dto);
+      showNotification("success", "Parámetros guardados correctamente");
+
+      // Puedes cerrar modal aquí si quieres
+      closeModal();
+
+    } catch (error) {
+      showNotification("danger", "Error al guardar los parámetros");
+    }
+  };
+
 
   // ----------------------------------------
   // Icons (leaflet divIcons)
@@ -362,115 +450,6 @@ export default function Planificacion() {
     return date.getTime() - 5 * 3600000;
   }
 
-  function createFlights(vuelos, aeropuertos) {
-    return vuelos.map(v => {
-      const startMs = parseFechaHoraLocalPeru(v.fechaHoraSalida);
-      const endMs   = parseFechaHoraLocalPeru(v.fechaHoraLlegada);
-
-      const origen = aeropuertos.find(a => a.codigo === v.plan.codOrigen);
-      const destino = aeropuertos.find(a => a.codigo === v.plan.codDestino);
-
-      // ❗ Si falta alguno o no tiene lat/lng → vuelo sin path (no se dibuja)
-      if (!origen || !destino ||
-          origen.latitudDEC == null || origen.longitudDEC == null ||
-          destino.latitudDEC == null || destino.longitudDEC == null) {
-
-        return {
-          code: v.codigo,
-          startMs,
-          endMs,
-          originName: origen?.ciudad ?? "N/A",
-          destinationName: destino?.ciudad ?? "N/A",
-          startTime: v.fechaHoraSalida,
-          endTime: v.fechaHoraLlegada,
-          capacity: 0,
-          origen,
-          destino,
-          path: [],        // <-- vacío
-          progress: 0,
-          visible: false,
-          arrived: false,
-          position: null   // <-- no hay posición inicial
-        };
-      }
-
-      // Si hay coordenadas, sí generamos path
-      const path = generateGeodesicPath(
-        origen.latitudDEC,
-        origen.longitudDEC,
-        destino.latitudDEC,
-        destino.longitudDEC
-      );
-
-      return {
-        code: v.codigo,
-        startMs,
-        endMs,
-        originName: origen.ciudad,
-        destinationName: destino.ciudad,
-        startTime: v.fechaHoraSalida,
-        endTime: v.fechaHoraLlegada,
-        capacity: 0,
-        origen,
-        destino,
-        path,
-        progress: 0,
-        visible: false,
-        arrived: false,
-        position: path[0]
-      };
-    });
-  }
-
-
-  useEffect(() => {
-    if (!vuelos || vuelos.length === 0 || !aeropuertos) return;
-    const f = createFlights(vuelos, aeropuertos);
-    setFlights(f);
-  }, [vuelos, aeropuertos]);
-
-  useEffect(() => {
-    const now = controlNowMs;
-
-    setFlights(prev =>
-      prev.map(f => {
-
-        if (!f || !f.path || f.path.length === 0) return f;
-        
-        if (now < f.startMs) {
-          return { ...f, visible: false, progress: 0, arrived: false, position: f.path[0] };
-        }
-
-        if (now >= f.endMs) {
-          return {
-            ...f,
-            visible: false,
-            progress: 1,
-            arrived: true,
-            position: f.path[f.path.length - 1]
-          };
-        }
-
-        const total = Math.max(f.endMs - f.startMs, 60 * 1000);
-        const frac = Math.min((controlNowMs - f.startMs) / total, 1);
-        const idx = Math.floor(frac * (f.path.length - 1));
-        const pos = f.path[idx];
-        const next = f.path[Math.min(idx + 1, f.path.length - 1)];
-        const rotation = computeBearingRotation(pos, next);
-
-        return {
-          ...f,
-          visible: true,
-          progress: frac,
-          arrived: false,
-          position: pos,
-          rotation,
-        };
-      })
-    );
-  }, [controlNowMs]);
-
-
   // ----------------------------------------
   // Generación de path geodésico (utilidad)
   // ----------------------------------------
@@ -527,10 +506,10 @@ export default function Planificacion() {
   // Modal: cargar parámetros y aeropuertos al abrir
   // ----------------------------------------
   useEffect(() => {
-    const fetchParametrosYAeropuertos = async () => {
+    const fetchParametros = async () => {
       try {
         const p = (await listarParametros()).dtos[0];
-
+        console.log(p);
         setParametros(p);
 
         // setear parámetros desde BD
@@ -562,7 +541,7 @@ export default function Planificacion() {
     };
 
     if (isModalOpen && !loadedOnOpen) {
-      fetchParametrosYAeropuertos();
+      fetchParametros();
       setLoadedOnOpen(true);
     }
   }, [isModalOpen, loadedOnOpen]);
@@ -643,44 +622,27 @@ export default function Planificacion() {
               />
               <ButtonAdd icon={plus} label="Agreg. pedido" 
                 onClick={() => {
-                  const now = new Date();
-                  const yyyy = now.getUTCFullYear();
-                  const mm = String(now.getUTCMonth() + 1).padStart(2, "0");
-                  const dd = String(now.getUTCDate()).padStart(2, "0");
-                  const HH = String(now.getUTCHours()).padStart(2, "0");
-                  const MM = String(now.getUTCMinutes()).padStart(2, "0");
-
-                  setFecha(`${yyyy}-${mm}-${dd}`);   // input type="date" usa YYYY-MM-DD
-                  setHora(`${HH}:${MM}`); 
                   setIsModalPedidoOpen(true);
                 }}
               />
               <ButtonAdd icon={config} label="Config. parám." onClick={() => openModal(true)} />
-            </div>
-
-            <span className="sidebar-subtitle">Filtros</span>
-            <div className="filter-group">
-              <span className="sidebar-subtitle-strong">Proximamente...</span>
-              <Dropdown
-                placeholder="Seleccionar..."
-                options={[
-                  { label: "Ejemplo 1", value: "ejemplo1" },
-                  { label: "Ejemplo 2", value: "ejemplo2" }
-                ]}
-                onSelect={(val) => setCodigoVuelo(val)}
+              <ButtonAdd
+                icon={run}
+                label={"Detener replanificación"}
               />
             </div>
 
             <span className="sidebar-subtitle">Leyenda</span>
             <Legend
               items={[
-                { label: "50% Capacidad", status: "en-curso" },
-                { label: "75% Capacidad", status: "finalizado" },
-                { label: "100% Capacidad", status: "cancelado" }
+                { label: "0% Capacidad", status: "zero" },
+                { label: "01 - 49% Capacidad", status: "level1" },
+                { label: "50 - 74% Capacidad", status: "level2" },
+                { label: "75 - 99% Capacidad", status: "level3" },
+                { label: "100% Capacidad", status: "complete" }
               ]}
             />
 
-            <SidebarActions onFilter={handleFilter} onClean={handleCleanFilters} />
           </div>
         )}
       </aside>
@@ -700,92 +662,30 @@ export default function Planificacion() {
               attribution='&copy; <a href="https://carto.com/">Carto</a>'
             />
 
-            {/* Marcadores de aeropuertos (usando tu lista aeropuertos) */}
-            {aeropuertos
-              .filter(aero =>
-                aero.latitudDEC !== null &&
-                aero.longitudDEC !== null &&
-                !isNaN(aero.latitudDEC) &&
-                !isNaN(aero.longitudDEC)
-              )
-              .map((aero) => (
+            {/* Mostrar solo aeropuertos */}
+            {aeropuertos &&
+              Object.values(aeropuertos).map((ap, i) => (
                 <Marker
-                  key={aero.codigo}
-                  position={[aero.latitudDEC, aero.longitudDEC]}
+                  key={i}
+                  position={[(ap.latitud), (ap.longitud)]}
                   icon={airportIcon}
-                  eventHandlers={{
-                    click: () =>
-                      setSelectedItem(
-                        `Aeropuerto ${aero.ciudad} (${aero.codigo}) - ${aero.pais}`
-                      )
-                  }}
                 >
-                <Popup>
-                  <b>{aero.ciudad}</b><br />
-                  Código: {aero.codigo}<br />
-                  Ciudad: {aero.ciudad}<br />
-                  País: {aero.pais}<br />
-                  Capacidad: {aero.capacidad}/{aero.capacidad}<br />
-                </Popup>
-              </Marker>
-            ))}
-
-            {/* Aviones y rutas */}
-            {flights.map((flight) => {
-              if (!flight || !flight.path || !Array.isArray(flight.path)) return null;
-
-              // COLOR DEL AVIÓN
-              const filterCss = flight.arrived
-                ? "invert(35%) sepia(82%) saturate(1595%) hue-rotate(185deg) brightness(94%) contrast(92%)"
-                : "invert(62%) sepia(86%) saturate(421%) hue-rotate(356deg) brightness(94%) contrast(92%)";
-
-              return (
-              <React.Fragment key={flight.code}>
-
-                {/* Línea del vuelo (solo si está en vuelo) */}
-                {controlNowMs >= flight.startMs &&
-                  controlNowMs < flight.endMs && (
-                    <Polyline
-                      positions={flight.path.slice(
-                        Math.floor(flight.path.length * flight.progress)
-                      )}
-                      color="#DC3545"
-                      weight={3}
-                      opacity={0.5}
-                      dashArray="6, 10"
-                    />
-                )}
-
-                {/* Avión rotado según bearing, solo si está visible y no llegó */}
-                {!flight.arrived && flight.visible && (
-                  <Marker
-                    position={[flight.position.lat, flight.position.lng]}
-                    icon={createPlaneIcon(filterCss, flight.rotation || 0)}
-                    eventHandlers={{
-                      click: () =>
-                        setSelectedItem(
-                          `Vuelo ${flight.code}: ${flight.originName} → ${flight.destinationName}
-                          | Salida: ${flight.startTime} | Llegada: ${flight.endTime}`
-                        )
-                    }}
-                  >
-                    <Popup>
-                      <b>{flight.code}</b><br />
-                      {flight.originName} → {flight.destinationName}<br />
-                      Salida: {flight.startTime}<br />
-                      Llegada: {flight.endTime}<br />
-                      Capacidad: {flight.capacity} pax<br />
-                      Progreso: {(flight.progress * 100).toFixed(1)}%<br />
-                      Estado: {flight.arrived ? "Finalizado" : "En curso"}
-                    </Popup>
-                  </Marker>
-                )}
-              </React.Fragment>
-            );
-          })}
-
-            <ClickHandler onMapClick={() => setSelectedItem(null)} />
+                  <Popup>
+                    <b>{ap.alias}</b>
+                    <br />
+                    Código: {ap.codigo}
+                    <br />
+                    Ciudad: {ap.ciudad}
+                    <br />
+                    País: {ap.pais}
+                    <br />
+                    Capacidad: {ap.capacidad} unidades
+                    <br />
+                  </Popup>
+                </Marker>
+              ))}
           </MapContainer>
+
 
 
           {/* PANEL INFORMATIVO */}
@@ -819,12 +719,6 @@ export default function Planificacion() {
 
                 <div className={`parametros-container ${reparametrizar ? "open" : "closed"}`}>
 
-                  <label>Fecha y hora de inicio (UTC)</label>
-                  <DateTimeInline dateValue={fechaI} timeValue={horaI} onDateChange={(e) => setFechaI(e.target.value)} onTimeChange={(e) => setHoraI(e.target.value)} />
-
-                  <label>Fecha y hora de fin (UTC)</label>
-                  <DateTimeInline dateValue={fechaF} timeValue={horaF} onDateChange={(e) => setFechaF(e.target.value)} onTimeChange={(e) => setHoraF(e.target.value)} />
-
                   <label>Ciudades sede</label>
                   <div className="selected-codes">
                     {codOrigenes.map((cod) => (
@@ -846,55 +740,209 @@ export default function Planificacion() {
                   />
 
                   <label>Max días entrega intercontinental</label>
-                  <Input label="Max días entrega intercontinental" type="number" value={maxDiasEntregaIntercontinental} onChange={(e) => setMaxDiasEntregaIntercontinental(parseNumber(e.target.value))} />
+                  <RangeSelector 
+                    min={1}
+                    max={3}
+                    step={1}
+                    value={maxDiasEntregaIntercontinental}
+                    onChange={(num) => setMaxDiasEntregaIntercontinental(parseNumber(num))}
+                  />
 
                   <label>Max días entrega intracontinental</label>
-                  <Input label="Max días entrega intracontinental" type="number" value={maxDiasEntregaIntracontinental} onChange={(e) => setMaxDiasEntregaIntracontinental(parseNumber(e.target.value))} />
+                  <RangeSelector 
+                    min={1}
+                    max={3}
+                    step={1}
+                    value={maxDiasEntregaIntracontinental}
+                    onChange={(num) => setMaxDiasEntregaIntracontinental(parseNumber(num))}
+                  />
 
                   <label>Max horas recojo</label>
-                  <Input label="Max horas recojo" type="number" value={maxHorasRecojo} onChange={(e) => setMaxHorasRecojo(parseNumber(e.target.value))} />
+                  <RangeSelector 
+                    min={1}
+                    max={3}
+                    step={1}
+                    value={maxHorasRecojo}
+                    onChange={(num) => setMaxHorasRecojo(parseNumber(num))}
+                  />
 
                   <label>Min horas estancia</label>
-                  <Input label="Min horas estancia" type="number" value={minHorasEstancia} onChange={(e) => setMinHorasEstancia(parseNumber(e.target.value))} />
+                  <RangeSelector 
+                    min={1}
+                    max={12}
+                    step={1}
+                    value={minHorasEstancia}
+                    onChange={(num) => {
+                      const n = parseNumber(num);
+
+                      setMinHorasEstancia(n);
+
+                      // Asegurar que min < max
+                      if (n >= maxHorasEstancia) {
+                        setMaxHorasEstancia(n + 1 <= 12 ? n + 1 : 12);
+                      }
+                    }}
+                  />
 
                   <label>Max horas estancia</label>
-                  <Input label="Max horas estancia" type="number" value={maxHorasEstancia} onChange={(e) => setMaxHorasEstancia(parseNumber(e.target.value))} />
+                  <RangeSelector 
+                    min={1}
+                    max={12}
+                    step={1}
+                    value={maxHorasEstancia}
+                    onChange={(num) => {
+                      const n = parseNumber(num);
+
+                      setMaxHorasEstancia(n);
+
+                      // Asegurar que max > min
+                      if (n <= minHorasEstancia) {
+                        setMinHorasEstancia(n - 1 >= 1 ? n - 1 : 1);
+                      }
+                    }}
+                  />
+
 
                   <label>dMin</label>
-                  <Input label="dMin" type="number" value={dMin} onChange={(e) => setDMin(parseNumber(e.target.value))} />
+                  <RangeSelector 
+                    min={0.001}
+                    max={0.010}
+                    step={0.001}
+                    value={dMin}
+                    onChange={(num) => setDMin(parseNumber(num))}
+                  />
 
                   <label>iMax</label>
-                  <Input label="iMax" type="number" value={iMax} onChange={(e) => setIMax(parseNumber(e.target.value))} />
+                  <RangeSelector 
+                    min={1}
+                    max={3}
+                    step={1}
+                    value={iMax}
+                    onChange={(num) => setIMax(parseNumber(num))}
+                  />
 
                   <label>eleMin</label>
-                  <Input label="eleMin" type="number" value={eleMin} onChange={(e) => setEleMin(parseNumber(e.target.value))} />
+                  <RangeSelector 
+                    min={1}
+                    max={2}
+                    step={1}
+                    value={eleMin}
+                    onChange={(num) => {
+                      const n = parseNumber(num);
+
+                      // Si eleMin = 1 → eleMax puede ser 2 o 3 (NO tocar)
+                      // Si eleMin = 2 → eleMax DEBE ser 3
+                      if (n === 2 && eleMax !== 3) {
+                        setEleMax(3);
+                      }
+
+                      setEleMin(n);
+                    }}
+                  />
 
                   <label>eleMax</label>
-                  <Input label="eleMax" type="number" value={eleMax} onChange={(e) => setEleMax(parseNumber(e.target.value))} />
+                  <RangeSelector 
+                    min={2}
+                    max={3}
+                    step={1}
+                    value={eleMax}
+                    onChange={(num) => {
+                      const n = parseNumber(num);
+
+                      // Si eleMax = 2 → eleMin DEBE ser 1
+                      if (n === 2 && eleMin !== 1) {
+                        setEleMin(1);
+                      }
+
+                      // Si eleMax = 3 → eleMin puede ser 1 o 2 (NO tocar)
+                      setEleMax(n);
+                    }}
+                  />
 
                   <label>kMin</label>
-                  <Input label="kMin" type="number" value={kMin} onChange={(e) => setKMin(parseNumber(e.target.value))} />
+                  <RangeSelector 
+                    min={1}
+                    max={10}
+                    step={1}
+                    value={kMin}
+                    onChange={(num) => {
+                      const n = parseNumber(num);
+
+                      setKMin(n);
+
+                      // Garantizar kMin < kMax
+                      if (n >= kMax) {
+                        const newMax = Math.min(n + 1, 11);
+                        setKMax(newMax);
+                      }
+                    }}
+                  />
 
                   <label>kMax</label>
-                  <Input label="kMax" type="number" value={kMax} onChange={(e) => setKMax(parseNumber(e.target.value))} />
+                  <RangeSelector 
+                    min={2}
+                    max={11}
+                    step={1}
+                    value={kMax}
+                    onChange={(num) => {
+                      const n = parseNumber(num);
+
+                      setKMax(n);
+
+                      // Garantizar kMin < kMax
+                      if (n <= kMin) {
+                        const newMin = Math.max(n - 1, 1);
+                        setKMin(newMin);
+                      }
+                    }}
+                  />
 
                   <label>tMax</label>
-                  <Input label="tMax" type="number" value={tMax} onChange={(e) => setTMax(parseNumber(e.target.value))} />
+                  <RangeSelector 
+                    min={15}
+                    max={60}
+                    step={15}
+                    value={tMax}
+                    onChange={(num) => setTMax(parseNumber(num))}
+                  />
 
                   <label>Max intentos</label>
-                  <Input label="Max intentos" type="number" value={maxIntentos} onChange={(e) => setMaxIntentos(parseNumber(e.target.value))} />
+                  <RangeSelector 
+                    min={1}
+                    max={10}
+                    step={1}
+                    value={maxIntentos}
+                    onChange={(num) => setMaxIntentos(parseNumber(num))}
+                  />
 
                   <label>Factor de Umbral de Aberración</label>
-                  <Input label="Factor de Umbral de Aberración" type="number" value={factorDeUmbralDeAberracion} onChange={(e) => setFactorDeUmbralDeAberracion(parseNumber(e.target.value))} />
+                  <RangeSelector 
+                    min={1.015}
+                    max={1.075}
+                    step={0.015}
+                    value={factorDeUmbralDeAberracion}
+                    onChange={(num) => setFactorDeUmbralDeAberracion(parseNumber(num))}
+                  />
 
-                  <label>Factor de Utilización Temporal</label>
-                  <Input label="Factor de Utilización Temporal" type="number" value={factorDeUtilizacionTemporal} onChange={(e) => setFactorDeUtilizacionTemporal(parseNumber(e.target.value))} />
+                  <label>Factores</label>
+                  <TriPieSelector
+                    labels={[
+                      "Factor de Utilización Temporal",
+                      "Factor de Desviación Espacial",
+                      "Factor de Disposición Operacional"
+                    ]}
+                    valores={[
+                      factorDeUtilizacionTemporal,
+                      factorDeDesviacionEspacial,
+                      factorDeDisposicionOperacional
+                    ]}
+                    setters={[
+                      setFactorDeUtilizacionTemporal,
+                      setFactorDeDesviacionEspacial,
+                      setFactorDeDisposicionOperacional
+                    ]}
+                  />
 
-                  <label>Factor de Desviación Espacial</label>
-                  <Input label="Factor de Desviación Espacial" type="number" value={factorDeDesviacionEspacial} onChange={(e) => setFactorDeDesviacionEspacial(parseNumber(e.target.value))} />
-
-                  <label>Factor de Disposición Operacional</label>
-                  <Input label="Factor de Disposición Operacional" type="number" value={factorDeDisposicionOperacional} onChange={(e) => setFactorDeDisposicionOperacional(parseNumber(e.target.value))} />
                 </div>
 
             </div>
@@ -903,7 +951,7 @@ export default function Planificacion() {
               <button className="btn red" onClick={closeModal}>
                 Cancelar
               </button>
-              <button className="btn green" onClick={openModal}>
+              <button className="btn green" onClick={handleGuardarParametros}>
                 Guardar
               </button>
             </div>
@@ -920,7 +968,7 @@ export default function Planificacion() {
             <div className="modal-header">
               <h3 className="modal-title">Agregar pedido</h3>
               <label htmlFor="fileInput" className="file-label">Agregar archivo</label>
-              <input type="file" id="fileInput" className="file-input" onChange={handleFileChange} disabled={generarCodigoPedido() !== ""}/>
+              <input type="file" id="fileInput" className="file-input" onChange={handleFileChange}/>
             </div>
 
             <div className="file-name">
@@ -931,26 +979,7 @@ export default function Planificacion() {
             </div>
             
             <div className="modal-body">
-              {archivo && (
-              <>
-                <label>Fecha y hora de inicio (UTC)</label>
-                <DateTimeInline
-                  dateValue={fechaArchivoFechaI}
-                  timeValue={fechaArchivoHoraI}
-                  onDateChange={(e) => setFechaArchivoFechaI(e.target.value)}
-                  onTimeChange={(e) => setFechaArchivoHoraI(e.target.value)}
-                />
-                <label>Fecha y hora de fin (UTC)</label>
-                <DateTimeInline
-                  dateValue={fechaArchivoFechaF}
-                  timeValue={fechaArchivoHoraF}
-                  onDateChange={(e) => setFechaArchivoFechaF(e.target.value)}
-                  onTimeChange={(e) => setFechaArchivoHoraF(e.target.value)}
-                />
-              </>
-              )}
-
-              <label>Tipo de escenario</label>
+              <span className="sidebar-subtitle">Tipo de escenario</span>
                 <Radio
                   name="tipoEscenario"
                   label="OPERACION"
@@ -958,64 +987,62 @@ export default function Planificacion() {
                   checked={tipoEscenario === "OPERACION"}
                   onChange={(e) => setTipoEscenario(e.target.value)}
                 />
-                <Radio
-                  name="tipoEscenario"
-                  label="SIMLULACION"
-                  value="SIMLULACION"
-                  checked={tipoEscenario === "SIMLULACION"}
-                  onChange={(e) => setTipoEscenario(e.target.value)}
-                />
 
-              <label>Fecha y hora de generación (UTC)</label>
-              <DateTimeInline
-                dateValue={fecha}
-                timeValue={hora}
-                onDateChange={(e) => setFecha(e.target.value)}
-                onTimeChange={(e) => setHora(e.target.value)}
-                disabled={!!archivo}
-              />
+              {hayArchivo && (
+                <>
+                  <span className="sidebar-subtitle">Parámetros de lectura</span>
+                  <label>Fecha y hora inicio (UTC)</label>
+                  <DateTimeInline
+                    dateValue={fechaArchivoFechaI}
+                    timeValue={fechaArchivoHoraI}
+                    onDateChange={(e) => setFechaArchivoFechaI(e.target.value)}
+                    onTimeChange={(e) => setFechaArchivoHoraI(e.target.value)}
+                  />
 
-              {/* CANTIDAD */}
-              <label>Cantidad</label>
-              <Input
-                placeholder="006"
-                value={cantidad}
-                onChange={(e) => setCantidad(e.target.value)}
-                disabled={!!archivo}
-              />
+                  <label>Fecha y hora fin (UTC)</label>
+                  <DateTimeInline
+                    dateValue={fechaArchivoFechaF}
+                    timeValue={fechaArchivoHoraF}
+                    onDateChange={(e) => setFechaArchivoFechaF(e.target.value)}
+                    onTimeChange={(e) => setFechaArchivoHoraF(e.target.value)}
+                  />
+                </>
+              )}
 
-              {/* DESTINO */}
-              <label>Destino</label>
-              <Dropdown3
-                placeholder="Seleccionar aeropuerto..."
-                options={aeropuertos.map(a => ({
-                  label: `${a.codigo} - ${a.ciudad} - ${a.pais}`,
-                  value: a
-                }))}
-                value={selectedDestino}
-                onSelect={(item) => setSelectedDestino(item)}
-                disabled={!!archivo}
-              />
+              {isOperacion && !hayArchivo && (
+                <>
+                  <span className="sidebar-subtitle">Datos del pedido</span>
+                  <label>Cantidad</label>
+                  <Input
+                    value={cantidad}
+                    onChange={handleCantidadChange}
+                    maxLength={3}
+                  />
 
-              {/* CLIENTE */}
-              <label>Cliente</label>
-              <Dropdown3
-                placeholder="Seleccionar cliente..."
-                options={clientes.map(c => ({
-                  label: `${c.codigo} - ${c.nombre}`,
-                  value: c
-                }))}
-                value={selectedCliente}
-                onSelect={(item) => setSelectedCliente(item)}
-                disabled={!!archivo}
-              />
+                  <label>Destino</label>
+                  <Dropdown3
+                    placeholder="Seleccionar aeropuerto..."
+                    options={aeropuertos.map(a => ({
+                      label: `${a.codigo} - ${a.ciudad} - ${a.pais}`,
+                      value: a
+                    }))}
+                    value={selectedDestino}
+                    onSelect={(a) => setSelectedDestino(a)}
+                  />
 
-              {/* MOSTRAR RESULTADO */}
-              <label>Código generado</label>
-              <Input
-                value={generarCodigoPedido()}
-                disabled
-              />
+                  <label>Cliente</label>
+                  <Dropdown3
+                    placeholder="Seleccionar cliente..."
+                    options={clientes.map(c => ({
+                      label: `${c.codigo} - ${c.nombre}`,
+                      value: c
+                    }))}
+                    value={selectedCliente}
+                    onSelect={(c) => setSelectedCliente(c)}
+                  />
+                </>
+              )}
+
             </div>
 
             <div className="modal-footer">

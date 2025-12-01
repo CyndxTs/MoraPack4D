@@ -1,5 +1,5 @@
 // src/components/ui/ui.jsx
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import "./ui.scss";
 import StatusBadge from "../Status/status";
 
@@ -69,6 +69,248 @@ export function DateTimeInline({ dateValue, timeValue, onDateChange, onTimeChang
     </div>
   );
 }
+
+
+export function RangeSelector({ min, max, step, value, onChange }) {
+  const sliderRef = useRef(null);
+
+  const isDecimal = String(min).includes(".") || String(max).includes(".") || String(step).includes(".");
+  const decimals = isDecimal ? 3 : 0;
+
+  const format = (n) => (isDecimal ? Number(n).toFixed(3) : String(Math.round(n)));
+
+  const safeValue = typeof value === "number" ? value : min;
+
+  const [inputValue, setInputValue] = useState(format(safeValue));
+
+  // Valores válidos (normalizados)
+  const values = [];
+  for (let v = min; v <= max + 1e-9; v += step) {
+    values.push(Number(v.toFixed(decimals)));
+  }
+
+  // Sync externo → input
+  useEffect(() => {
+    setInputValue(format(value ?? min));
+  }, [value, min]);
+
+  const handleSelectValue = (v) => {
+    onChange(v);
+    setInputValue(format(v));
+  };
+
+  // ---------------------------------------------------
+  // INPUT CHANGE
+  // ---------------------------------------------------
+  const handleInputChange = (e) => {
+    let text = e.target.value;
+
+    // Validación según si usa decimales
+    if (isDecimal) {
+      if (!/^\d*\.?\d*$/.test(text)) return;
+    } else {
+      if (!/^\d*$/.test(text)) return;
+    }
+
+    setInputValue(text);
+
+    if (text === "" || text === ".") return;
+
+    let num = Number(text);
+    if (isNaN(num)) return;
+
+    if (num < min || num > max) return;
+
+    const closest = values.reduce((a, b) =>
+      Math.abs(b - num) < Math.abs(a - num) ? b : a
+    );
+
+    onChange(closest);
+  };
+
+  // ---------------------------------------------------
+  // BLUR → normaliza y ajusta formato
+  // ---------------------------------------------------
+  const handleBlur = () => {
+    if (inputValue === "" || inputValue === ".") {
+      setInputValue(format(safeValue));
+      return;
+    }
+
+    let num = Number(inputValue);
+
+    if (num < min) num = min;
+    if (num > max) num = max;
+
+    const closest = values.reduce((a, b) =>
+      Math.abs(b - num) < Math.abs(a - num) ? b : a
+    );
+
+    setInputValue(format(closest));
+    onChange(closest);
+  };
+
+  return (
+    <div className="range-row">
+      <input
+        type="text"
+        className="range-input"
+        value={inputValue}
+        onChange={handleInputChange}
+        onBlur={handleBlur}
+        disabled
+      />
+
+      <div className="range-slider" ref={sliderRef}>
+        <div
+          className="range-track-fill"
+          style={{
+            width: `${((safeValue - min) / (max - min)) * 100}%`
+          }}
+        />
+
+        {values.map((v, i) => (
+          <div
+            key={i}
+            className={`range-point ${v <= safeValue ? "active" : ""}`}
+            style={{ left: `${((v - min) / (max - min)) * 100}%` }}
+            onClick={() => handleSelectValue(v)}
+          >
+            <div className="dot" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+
+export function TriPieSelector({ 
+  labels,
+  valores,
+  setters
+}) {
+  const allowedValues = [1000, 2000, 3000, 4000, 5000];
+  const total = 10000;
+
+  const adjustValues = (index, newValue) => {
+    const newVals = [...valores];
+    newVals[index] = newValue;
+
+    const remaining = total - newValue;
+    const otherIdx = [0, 1, 2].filter(i => i !== index);
+
+    let combinations = [];
+
+    for (let v1 of allowedValues) {
+      for (let v2 of allowedValues) {
+        if (v1 + v2 === remaining) {
+          combinations.push([v1, v2]);
+        }
+      }
+    }
+
+    if (combinations.length === 0) return;
+
+    combinations.sort((a, b) => {
+      const diffA = Math.abs(a[0] - valores[otherIdx[0]]) +
+                    Math.abs(a[1] - valores[otherIdx[1]]);
+      const diffB = Math.abs(b[0] - valores[otherIdx[0]]) +
+                    Math.abs(b[1] - valores[otherIdx[1]]);
+      return diffA - diffB;
+    });
+
+    newVals[otherIdx[0]] = combinations[0][0];
+    newVals[otherIdx[1]] = combinations[0][1];
+
+    setters[0](newVals[0]);
+    setters[1](newVals[1]);
+    setters[2](newVals[2]);
+  };
+
+  const angles = valores.map(v => (v / total) * 360);
+
+  const buildArcPath = (startAngle, endAngle) => {
+    const rad = deg => (deg * Math.PI) / 180;
+    const r = 80;
+    const x0 = 100 + r * Math.cos(rad(startAngle));
+    const y0 = 100 + r * Math.sin(rad(startAngle));
+    const x1 = 100 + r * Math.cos(rad(endAngle));
+    const y1 = 100 + r * Math.sin(rad(endAngle));
+
+    const largeArc = endAngle - startAngle > 180 ? 1 : 0;
+    return `M100,100 L${x0},${y0} A${r},${r} 0 ${largeArc} 1 ${x1},${y1} Z`;
+  };
+
+  const colors = ["#3b82f6", "#10b981", "#f59e0b"];
+  let cumulative = 0;
+
+  return (
+    <>
+      {/* TÍTULO/INDICACIÓN */}
+      <div style={{ textAlign: "left", width: "100%", marginBottom: "1px" }}>
+        <em className="tri-pie-instruction-title">
+          Haz clic en un sector para cambiar su valor
+        </em>
+      </div>
+
+      <div className="tri-pie-container">
+        
+        {/* COLUMNA IZQUIERDA */}
+        <div className="tri-pie-left">
+          <div className="tri-pie-inputs">
+            {labels.map((lbl, i) => (
+              <div key={i} className="tri-pie-input-group">
+                <label className="tri-pie-label">{lbl}</label>
+                <input
+                  type="text"
+                  className="custom-tri-pie-input" 
+                  value={valores[i]}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* COLUMNA DERECHA - PIE */}
+        <div className="tri-pie-right">
+
+          <svg width="200" height="200">
+            {angles.map((ang, i) => {
+              const start = cumulative;
+              const end = cumulative + ang;
+              cumulative = end;
+
+              return (
+                <path
+                  key={i}
+                  d={buildArcPath(start, end)}
+                  fill={colors[i]}
+                  stroke="#fff"
+                  strokeWidth="1"
+                  style={{ cursor: "pointer" }}
+                  onClick={() => {
+                    const curr = valores[i];
+                    const idx = allowedValues.indexOf(curr);
+                    const next = allowedValues[(idx + 1) % allowedValues.length];
+                    adjustValues(i, next);
+                  }}
+                >
+                  {/* TOOLTIP */}
+                  <title>{labels[i]}</title>
+                </path>
+              );
+            })}
+          </svg>
+
+        </div>
+      </div>
+    </>
+  );
+}
+
+
+
 
 
 export function Checkbox({ label, value, checked, onChange }) {
@@ -221,70 +463,107 @@ export function Dropdown2({ options = [], value = [], onChange, placeholder = "S
   );
 }
 
+
 export function Dropdown3({
   options = [],
   onSelect,
   placeholder = "Seleccionar...",
   value,
-  disabled = false   // agregamos disabled
+  disabled = false
 }) {
   const [open, setOpen] = useState(false);
+  const [inputValue, setInputValue] = useState(""); 
   const [selected, setSelected] = useState("");
 
-  // Sync value externo
+  const dropdownRef = useRef(null); // 👈 REFERENCIA AL DROPDOWN
+
+  // Sincronizar valor externo
   useEffect(() => {
     if (!value) {
       setSelected("");
+      setInputValue("");
     } else {
       const opt = options.find((o) => o.value === value);
-      setSelected(opt ? opt.label : "");
+      const label = opt ? opt.label : "";
+      setSelected(label);
+      setInputValue(label);
     }
   }, [value, options]);
 
-  const finalOptions = [{ label: placeholder, value: "" }, ...options];
+  // 🔍 Filtrar opciones
+  const filteredOptions = options.filter((opt) =>
+    opt.label.toLowerCase().includes(inputValue.toLowerCase())
+  );
 
   const handleSelect = (opt) => {
-    if (disabled) return;  // evita seleccionar si está deshabilitado
-    setSelected(opt.value === "" ? "" : opt.label);
+    if (disabled) return;
+    setSelected(opt.label);
+    setInputValue(opt.label);
     onSelect && onSelect(opt.value);
     setOpen(false);
   };
 
+  const handleInputClick = () => {
+    if (!disabled) setOpen(true);
+  };
+
+  // 👇 CERRAR CUANDO SE HACE CLIC AFUERA
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
   return (
     <div
+      ref={dropdownRef} // 👈 APLICAR EL REF
       className={`custom-dropdown ${open ? "open" : ""} ${disabled ? "disabled" : ""}`}
     >
-      <div
-        className="selected"
+      {/* Input editable */}
+      <input
+        type="text"
+        className="selected-input"
+        placeholder={placeholder}
+        value={inputValue}
+        disabled={disabled}
+        onClick={handleInputClick}
+        onChange={(e) => {
+          setInputValue(e.target.value);
+          setOpen(true);
+        }}
         style={{
           color: disabled
-            ? "gray"                       //  color gris si está disabled
+            ? "gray"
             : selected
             ? "var(--color-negro)"
             : "var(--color-light-grey)"
         }}
-        onClick={() => !disabled && setOpen(!open)}   //  bloquea clic
-      >
-        {selected || placeholder}
-      </div>
+      />
 
-      {open && !disabled && (                       //  bloquea menú
+      {/* Opciones */}
+      {open && !disabled && (
         <ul className="options">
-          {finalOptions.map((opt, i) => (
-            <li
-              key={i}
-              className={opt.value === "" ? "placeholder-option" : ""}
-              onClick={() => handleSelect(opt)}
-            >
-              {opt.label}
-            </li>
-          ))}
+          {filteredOptions.length === 0 ? (
+            <li className="no-results">Sin resultados</li>
+          ) : (
+            filteredOptions.map((opt, idx) => (
+              <li key={idx} onClick={() => handleSelect(opt)}>
+                {opt.label}
+              </li>
+            ))
+          )}
         </ul>
       )}
     </div>
   );
 }
-
 
 
 export function Table({ headers = [], data = [], statusColors = {} }) {
@@ -294,7 +573,6 @@ export function Table({ headers = [], data = [], statusColors = {} }) {
         <thead>
           <tr>
             {headers.map((h, i) => {
-              // detecta si la columna es numérica basado en alguna fila
               const someValue = data[0]?.[h.key];
               const isNumericCol =
                 typeof someValue === "number" ||
@@ -314,12 +592,12 @@ export function Table({ headers = [], data = [], statusColors = {} }) {
           </tr>
         </thead>
 
-
         <tbody>
           {data.length ? (
             data.map((row, i) => (
               <tr key={i}>
                 {headers.map((h, j) => {
+
                   // Columna de acciones
                   if (h.key === "acciones") {
                     return (
@@ -333,8 +611,8 @@ export function Table({ headers = [], data = [], statusColors = {} }) {
                     );
                   }
 
-                  // Columna de estado (rectángulo de color)
-                  if (h.key === "estado") {
+                  // Cualquier columna que deba usar StatusBadge
+                  if (h.useStatusColors) {
                     return (
                       <td key={j}>
                         <StatusBadge value={row[h.key]} colorMap={statusColors} />
@@ -344,14 +622,19 @@ export function Table({ headers = [], data = [], statusColors = {} }) {
 
                   // Celdas normales
                   const value = row[h.key];
-
                   const isNumeric =
                     typeof value === "number" ||
                     (!isNaN(value) && value !== null && value !== "");
 
                   return (
                     <td key={j} className={isNumeric ? "numeric" : ""}>
-                      {value ?? ""}
+                      {(() => {
+                        // Booleanos → SI / NO
+                        if (value === true || value === 1) return "SI";
+                        if (value === false || value === 0) return "NO";
+
+                        return value ?? "";
+                      })()}
                     </td>
                   );
                 })}
@@ -369,6 +652,7 @@ export function Table({ headers = [], data = [], statusColors = {} }) {
     </div>
   );
 }
+
 
 //          PAGINACIÓN REUTILIZABLE
 export function Pagination({ currentPage, onPageChange, hasMorePages }) {
@@ -434,9 +718,6 @@ export function Pagination({ currentPage, onPageChange, hasMorePages }) {
     </div>
   );
 }
-
-
-
 
 export function Legend({ items }) {
   return (

@@ -11,6 +11,7 @@ import hideIcon from '../../assets/icons/hide-sidebar.png';
 
 import { useAppData } from "../../dataProvider";
 import { listarPedidos, importarPedido, importarPedidos } from "../../services/pedidoService";
+import { notifyNewOrder, onEvent } from "../../services/operationManager";
 
 export default function Pedidos() {
 
@@ -26,8 +27,6 @@ export default function Pedidos() {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Pedido manual
-  const [fecha, setFecha] = useState("");
-  const [hora, setHora] = useState("");
   const [cantidad, setCantidad] = useState("");
   const [selectedCliente, setSelectedCliente] = useState(null);
   const [selectedDestino, setSelectedDestino] = useState(null);
@@ -64,49 +63,82 @@ export default function Pedidos() {
   // =============================
   // HEADERS
   // =============================
+  const statusColors = {
+    SIMULACION: "#0B6623",   // verde oscuro
+    OPERACION: "#B5651D",    // naranja marrón
+  };
+
   const headers = [
     { label: "Código", key: "codigo" },
+    { label: "Tipo de escenario", key: "tipoEscenario", useStatusColors: true },
     { label: "Cliente", key: "codCliente" },
     { label: "Fecha de generación (UTC)", key: "fechaHoraGeneracion" },
+    { label: "¿Está planificado?", key: "fueAtendido" },
     { label: "Fecha de expiración (UTC)", key: "fechaHoraExpiracion" },
     { label: "Destino", key: "codDestino" },
-    { label: "Cantidad solicitada", key: "cantidadSolicitada" }
+    { label: "Cantidad solicitada", key: "cantidadSolicitada" },
   ];
 
   // =============================
   // HELPERS
   // =============================
-  function unirFechaHora(f, h) {
+  function unirFechaHoraUTC(f, h) {
     if (!f || !h) return null;
-    return `${f}T${h}:00`;
+
+    // Construir fecha base: "yyyy-MM-dd HH:mm:00"
+    const base = new Date(`${f}T${h}:00`);
+
+    // Sumar 5 horas
+    base.setHours(base.getHours() + 5);
+
+    // Formatear nuevamente a yyyy-MM-dd HH:mm:ss
+    const yyyy = base.getFullYear();
+    const MM = String(base.getMonth() + 1).padStart(2, "0");
+    const dd = String(base.getDate()).padStart(2, "0");
+
+    const HH = String(base.getHours()).padStart(2, "0");
+    const mm = String(base.getMinutes()).padStart(2, "0");
+    const ss = String(base.getSeconds()).padStart(2, "0");
+
+    return `${yyyy}-${MM}-${dd} ${HH}:${mm}:${ss}`;
   }
 
-  const formatearFechaInput = (f) => f.replace(/-/g, "");
-  const formatearHoraInput = (h) => h.replace(/:/g, "-");
+  function obtenerFechaHoraActual() {
+    const ahora = new Date();
 
-  function generarCodigoPedido() {
-    if (!selectedCliente || !selectedDestino || !fecha || !hora || !cantidad)
-      return "";
+    const yyyy = ahora.getFullYear();
+    const MM = String(ahora.getMonth() + 1).padStart(2, "0");
+    const dd = String(ahora.getDate()).padStart(2, "0");
 
-    return (
-      "XXXXXXXX" +
-      "-" + formatearFechaInput(fecha) +
-      "-" + formatearHoraInput(hora) +
-      "-" + cantidad.padStart(3, "0") +
-      "-" + selectedDestino.codigo +
-      "-" + selectedCliente.codigo.padStart(7, "0")
-    );
+    const HH = String(ahora.getHours()).padStart(2, "0");
+    const mm = String(ahora.getMinutes()).padStart(2, "0");
+
+    const fecha = `${yyyy}-${MM}-${dd}`; // yyyy-MM-dd
+    const hora = `${HH}:${mm}`;          // HH:mm
+
+    return { fecha, hora };
   }
+
+  const { fecha, hora } = obtenerFechaHoraActual();
 
   // =============================
   // AGREGAR
   // =============================
+  const isSimulacion = tipoEscenario === "SIMULACION";
+  const isOperacion = tipoEscenario === "OPERACION";
+  const hayArchivo = !!archivo;
+
   const handleAdd = async () => {
     try {
       setProcessing(true);
 
+      if (isSimulacion && !hayArchivo) {
+        showNotification("warning", "Para escenarios de simulación debes subir un archivo.");
+        return;
+      }
+
       // --- ARCHIVO ---
-      if (archivo) {
+      if (hayArchivo) {
         /*if (archivo.name !== "Pedidos.txt") {
           showNotification("warning", "El archivo debe llamarse 'Pedidos.txt'.");
           return;
@@ -117,34 +149,39 @@ export default function Pedidos() {
         console.log(fechaArchivoFechaF);
         console.log(fechaArchivoHoraF);
 
-        console.log("Final Inicio:", unirFechaHora(fechaArchivoFechaI, fechaArchivoHoraI));
-        console.log("Final Fin:", unirFechaHora(fechaArchivoFechaF, fechaArchivoHoraF));
+        console.log("Final Inicio:", unirFechaHoraUTC(fechaArchivoFechaI, fechaArchivoHoraI));
+        console.log("Final Fin:", unirFechaHoraUTC(fechaArchivoFechaF, fechaArchivoHoraF));
 
         const req = {
           tipoEscenario: tipoEscenario,
-          fechaHoraInicio: unirFechaHora(fechaArchivoFechaI, fechaArchivoHoraI),
-          fechaHoraFin: unirFechaHora(fechaArchivoFechaF, fechaArchivoHoraF)
+          fechaHoraInicio: unirFechaHoraUTC(fechaArchivoFechaI, fechaArchivoHoraI),
+          fechaHoraFin: unirFechaHoraUTC(fechaArchivoFechaF, fechaArchivoHoraF)
         };
 
         console.log(archivo);
         console.log(req);
 
         const respuesta = await importarPedidos(archivo, req);
-        if (respuesta.success) {
-          showNotification("success", respuesta.message || "Pedidos importados correctamente");
+        console.log(respuesta);
+
+        if (respuesta.exito && tipoEscenario === "OPERACION") {
+          notifyNewOrder();
+        }
+        if (respuesta.exito) {
+          showNotification("success", respuesta.mensaje || "Pedidos importados correctamente");
         } else {
-          showNotification("danger", respuesta.message || "Ocurrió un error al importar los pedidos");
+          showNotification("danger", respuesta.mensaje || "Ocurrió un error al importar los pedidos");
         }
       } 
 
       // --- MANUAL ---
-      else {
+      else if (isOperacion && !hayArchivo) {
         if (!selectedCliente || !selectedDestino || !fecha || !hora || !cantidad) {
           showNotification("warning", "Completa todos los campos del pedido manual.");
           return;
         }
 
-        const fechaGeneracion = unirFechaHora(fecha, hora);
+        const fechaGeneracion = unirFechaHoraUTC(fecha, hora);
 
         const dto = {
           codigo: null,
@@ -158,7 +195,7 @@ export default function Pedidos() {
 
         console.log(dto);
         await importarPedido(dto);
-
+        notifyNewOrder();
         showNotification("success", "Pedido manual registrado correctamente");
       }
 
@@ -174,6 +211,70 @@ export default function Pedidos() {
       setProcessing(false);
     }
   };
+
+  useEffect(() => {
+    const stop = onEvent((msg) => {
+      if (!msg) return;
+
+      if (msg.type === "info") {
+        showNotification("info", msg.message);
+      }
+      if (msg.type === "error") {
+        showNotification("danger", msg.message);
+      }
+      if (msg.type === "replanificacion-iniciada") {
+        showNotification("info", "Replanificación iniciada.");
+      }
+      if (msg.type === "replanificacion-terminada") {
+        showNotification("success", "Replanificación finalizada.");
+      }
+
+      // Mensajes del backend
+      if (msg.type === "operator-status") {
+        const { estado, finalizacion } = msg.payload;
+        
+        if (estado === "INICIADO") {
+          showNotification("info", "El backend está replanificando...");
+        }
+
+        if (estado === "DETENIDO" && finalizacion === "EXITOSO") {
+          showNotification("success", "La replanificación terminó con éxito.");
+        }
+
+        if (estado === "DETENIDO" && finalizacion === "ERRONEO") {
+          showNotification("danger", "Error en la replanificación.");
+        }
+      }
+    });
+
+    return () => stop();
+  }, []);
+
+
+  const handleCantidadChange = (e) => {
+    const value = e.target.value;
+
+    // Solo números
+    if (!/^\d*$/.test(value)) return;
+
+    // Evitar más de 3 dígitos
+    if (value.length > 3) return;
+
+    // Convertir a número para validar rango
+    const num = Number(value);
+
+    // Si está vacío → permitir porque el usuario está editando
+    if (value === "") {
+      setCantidad("");
+      return;
+    }
+
+    // Rango 1–999
+    if (num >= 1 && num <= 999) {
+      setCantidad(value);
+    }
+  };
+
 
   // =============================
   // FILTROS
@@ -296,22 +397,12 @@ export default function Pedidos() {
             icon={plus}
             label="Agregar pedido"
             onClick={() => {
-              const now = new Date();
-              const yyyy = now.getUTCFullYear();
-              const mm = String(now.getUTCMonth() + 1).padStart(2, "0");
-              const dd = String(now.getUTCDate()).padStart(2, "0");
-              const HH = String(now.getUTCHours()).padStart(2, "0");
-              const MM = String(now.getUTCMinutes()).padStart(2, "0");
-
-              setFecha(`${yyyy}-${mm}-${dd}`);
-              setHora(`${HH}:${MM}`);
-
               setIsModalOpen(true);
             }}
           />
         </div>
 
-        <Table headers={headers} data={pedidos} />
+        <Table headers={headers} data={pedidos} statusColors={statusColors}/>
 
         <Pagination
           currentPage={currentPage}
@@ -332,7 +423,6 @@ export default function Pedidos() {
                 id="fileInput"
                 className="file-input"
                 onChange={(e) => setArchivo(e.target.files[0])}
-                disabled={generarCodigoPedido() !== ""}
               />
             </div>
 
@@ -342,8 +432,26 @@ export default function Pedidos() {
             </div>
 
             <div className="modal-body">
-              {archivo && (
+              <span className="sidebar-subtitle">Tipo de escenario</span>
+                <Radio
+                  name="tipoEscenario"
+                  label="OPERACION"
+                  value="OPERACION"
+                  checked={tipoEscenario === "OPERACION"}
+                  onChange={(e) => setTipoEscenario(e.target.value)}
+                />
+                <Radio
+                  name="tipoEscenario"
+                  label="SIMULACION"
+                  value="SIMULACION"
+                  checked={tipoEscenario === "SIMULACION"}
+                  onChange={(e) => setTipoEscenario(e.target.value)}
+                />
+
+
+              {hayArchivo && (
                 <>
+                  <span className="sidebar-subtitle">Parámetros de lectura</span>
                   <label>Fecha y hora inicio (UTC)</label>
                   <DateTimeInline
                     dateValue={fechaArchivoFechaI}
@@ -362,64 +470,41 @@ export default function Pedidos() {
                 </>
               )}
 
-              <label>Tipo de escenario</label>
-                <Radio
-                  name="tipoEscenario"
-                  label="OPERACION"
-                  value="OPERACION"
-                  checked={tipoEscenario === "OPERACION"}
-                  onChange={(e) => setTipoEscenario(e.target.value)}
-                />
-                <Radio
-                  name="tipoEscenario"
-                  label="SIMULACION"
-                  value="SIMULACION"
-                  checked={tipoEscenario === "SIMULACION"}
-                  onChange={(e) => setTipoEscenario(e.target.value)}
-                />
 
-              <label>Fecha y hora generación (UTC)</label>
-              <DateTimeInline
-                dateValue={fecha}
-                timeValue={hora}
-                onDateChange={(e) => setFecha(e.target.value)}
-                onTimeChange={(e) => setHora(e.target.value)}
-                disabled={!!archivo}
-              />
+              {isOperacion && !hayArchivo && (
+                <>
+                  <span className="sidebar-subtitle">Datos del pedido</span>
+                  <label>Cantidad</label>
+                  <Input
+                    value={cantidad}
+                    onChange={handleCantidadChange}
+                    maxLength={3}
+                  />
 
-              <label>Cantidad</label>
-              <Input
-                value={cantidad}
-                onChange={(e) => setCantidad(e.target.value)}
-                disabled={!!archivo}
-              />
+                  <label>Destino</label>
+                  <Dropdown3
+                    placeholder="Seleccionar aeropuerto..."
+                    options={aeropuertos.map(a => ({
+                      label: `${a.codigo} - ${a.ciudad} - ${a.pais}`,
+                      value: a
+                    }))}
+                    value={selectedDestino}
+                    onSelect={(a) => setSelectedDestino(a)}
+                  />
 
-              <label>Destino</label>
-              <Dropdown3
-                placeholder="Seleccionar aeropuerto..."
-                options={aeropuertos.map(a => ({
-                  label: `${a.codigo} - ${a.ciudad} - ${a.pais}`,
-                  value: a
-                }))}
-                value={selectedDestino}
-                onSelect={(a) => setSelectedDestino(a)}
-                disabled={!!archivo}
-              />
+                  <label>Cliente</label>
+                  <Dropdown3
+                    placeholder="Seleccionar cliente..."
+                    options={clientes.map(c => ({
+                      label: `${c.codigo} - ${c.nombre}`,
+                      value: c
+                    }))}
+                    value={selectedCliente}
+                    onSelect={(c) => setSelectedCliente(c)}
+                  />
+                </>
+              )}
 
-              <label>Cliente</label>
-              <Dropdown3
-                placeholder="Seleccionar cliente..."
-                options={clientes.map(c => ({
-                  label: `${c.codigo} - ${c.nombre}`,
-                  value: c
-                }))}
-                value={selectedCliente}
-                onSelect={(c) => setSelectedCliente(c)}
-                disabled={!!archivo}
-              />
-
-              <label>Código generado</label>
-              <Input value={generarCodigoPedido()} disabled />
             </div>
 
             <div className="modal-footer">

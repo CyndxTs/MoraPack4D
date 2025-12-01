@@ -60,6 +60,7 @@
   color: #555;
 }
 
+/* === Input Fecha y Hora === */
 //FECHA Y HORA
 .datetime-inline {
   display: flex;
@@ -71,7 +72,130 @@
   }
 }
 
+/* === Input Rango === */
+.range-input {
+    height: 36px;
+    width: 20%;
+    padding: 0 12px;
+    font-size: 16px;
+    line-height: 1.4;
+    border: 1px solid var(--color-grey);
+    border-radius: 8px;
+    background-color: var(--color-blanco);
+    color: var(--color-negro);
+    outline: none;
+    transition: border-color 0.3s ease;
+    font-family: inherit;
+}
 
+.range-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    width: 100%;
+}
+
+/* Línea base SIEMPRE visible */
+.range-slider {
+    position: relative;
+    height: 6px;
+    background-color: var(--color-light-grey); /* celeste visible */
+    border-radius: 4px;
+    flex: 1;
+    max-width: 75%;
+}
+
+/* Línea seleccionada */
+.range-track-fill {
+    height: 100%;
+    background-color: var(--color-dark-blue);
+    border-radius: 4px;
+    position: absolute;
+    left: 0;
+    top: 0;
+    pointer-events: none;
+}
+
+/* Puntos */
+.range-point {
+    position: absolute;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    cursor: pointer;
+}
+
+.range-point .dot {
+    width: 12px;
+    height: 12px;
+    background-color: var(--color-light-grey);
+    border-radius: 50%;
+    transition: background-color 0.2s ease;
+}
+
+/* Puntos activos */
+.range-point.active .dot {
+    background-color: var(--color-dark-blue);
+}
+
+
+/* === TRI-PIE === */
+/* === TITULO / INDICACIÓN === */
+.tri-pie-instruction-title {
+  font-size: 12px;
+  font-style: italic;
+  color: #444;
+}
+
+/* === CONTENEDOR GENERAL === */
+.tri-pie-container {
+  display: flex;
+  gap: 40px;
+  align-items: flex-start;
+}
+
+/* === INPUTS (columna izquierda) === */
+.tri-pie-left {
+  display: flex;
+  flex-direction: column;
+  min-width: 50%;
+}
+
+.tri-pie-right {
+  display: flex;
+  flex-direction: column;
+  align-self: center;
+}
+
+.tri-pie-inputs {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.custom-tri-pie-input {
+    height: 36px;
+    width: 44%;
+    padding: 0 12px;
+    font-size: 16px;
+    line-height: 1.4;
+    border: 1px solid var(--color-grey);
+    border-radius: 8px;
+    background-color: var(--color-blanco);
+    color: var(--color-negro);
+    outline: none;
+    transition: border-color 0.3s ease;
+    font-family: inherit;
+}
+
+.tri-pie-input-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.tri-pie-label {
+  font-weight: bold;
+  margin-bottom: 4px;
+}
 
 /* === Boton Agregar === */
 .content-header {
@@ -358,6 +482,37 @@
   pointer-events: none; /* 👈 bloquea cualquier interacción */
 }
 
+/* INPUT con los mismos estilos del dropdown */
+.custom-dropdown .selected-input {
+  width: 100%;
+  height: 36px;
+  padding: 8px 32px 8px 12px; /* igual que .selected */
+  border: none;              /* QUITAR borde interno */
+  outline: none;
+  background: transparent;   /* usa el fondo del contenedor */
+  border-radius: 8px;
+  font-size: 16px;
+  line-height: 1.4;
+  font-weight: 400;
+  font-family: inherit;
+  color: var(--color-negro); /* texto siempre negro al escribir */
+  cursor: pointer;
+}
+
+/* Cuando está abierto → mantiene estilos */
+.custom-dropdown.open .selected-input {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+/* Estilo de “Sin resultados” */
+.custom-dropdown .no-results {
+  padding: 8px 12px;
+  color: var(--color-grey);
+  font-style: italic;
+  cursor: default;
+}
+
 
 /* === Tabla === */
 .table-container {
@@ -488,17 +643,31 @@
 }
 
 /* Colores solo para el avión */
-.legend-icon.en-curso {
-  filter: invert(62%) sepia(86%) saturate(421%) hue-rotate(356deg) brightness(94%) contrast(92%);
+.legend-icon.zero {
+  /* #8E24AA */
+  filter: invert(29%) sepia(91%) saturate(7485%) hue-rotate(273deg) brightness(85%) contrast(108%);
 }
 
-.legend-icon.finalizado {
-  filter: invert(35%) sepia(82%) saturate(1595%) hue-rotate(185deg) brightness(94%) contrast(92%);
+.legend-icon.level1 {
+  /* #1E885E */
+  filter: invert(35%) sepia(82%) saturate(1595%) hue-rotate(185deg) brightness(94%) contrast(92%); 
 }
 
-.legend-icon.cancelado {
-  filter: invert(28%) sepia(78%) saturate(1946%) hue-rotate(337deg) brightness(92%) contrast(92%);
+.legend-icon.level2 {
+  /* #1E885E */
+  filter: invert(42%) sepia(29%) saturate(2094%) hue-rotate(118deg) brightness(92%) contrast(85%);
 }
+
+.legend-icon.level3 {
+  /* #FDD835 */
+  filter: invert(62%) sepia(86%) saturate(421%) hue-rotate(356deg) brightness(94%) contrast(92%); 
+}
+
+.legend-icon.complete {
+  /* #E53935 */
+  filter: invert(36%) sepia(83%) saturate(4100%) hue-rotate(345deg) brightness(91%) contrast(96%);
+}
+
 
 /* === Modal === */
 .modal {
@@ -525,7 +694,7 @@
   animation: fadeIn 0.3s ease;
 
   /* === Scroll automático si se excede la altura === */
-  max-height: 80vh;
+  max-height: 60vh;
   overflow-y: auto;
 }
 
