@@ -14,6 +14,7 @@ import {
 import hideIcon from "../../assets/icons/hide-sidebar.png";
 import run from "../../assets/icons/run.svg";
 import stopIcon from "../../assets/icons/stop.svg";
+import airportIconImg from "../../assets/icons/airport.svg";
 import { listarParametros } from "../../services/parametrosService";
 import { listarAeropuertos } from "../../services/aeropuertoService";
 import {
@@ -286,12 +287,12 @@ export default function Simulacion() {
       iconAnchor: [11, 8],
     });
 
-  const airportIcon = L.divIcon({
-    html: `<div class="airport-marker"></div>`,
-    className: "airport-icon", // 👈 agregamos una clase propia
-    iconSize: [18, 18],
-    iconAnchor: [9, 9],
-  });
+const airportIcon = L.icon({
+  iconUrl: airportIconImg,
+  iconSize: [24, 24],   // tamaño del svg en el mapa
+  iconAnchor: [12, 12], // punto que “toca” el mapa (centro del ícono)
+  popupAnchor: [0, -12] // dónde aparece el popup respecto al icono
+});
   //
 
   // Detener cronómetro cuando todos los vuelos hayan llegado
@@ -916,28 +917,38 @@ export default function Simulacion() {
                           positions={flight.path.slice(
                             Math.floor(flight.path.length * flight.progress)
                           )}
-                          color="#DC3545"
+                          color="#eb6774ff"
                           weight={3}
                           opacity={0.5}
                           dashArray="6, 10"
+                          interactive={false} 
                         />
                       )}
 
                     {!flight.arrived && (
                       <Marker
-                        position={flight.position}
-                        icon={createColoredIcon(
-                          filterCss,
-                          flight.rotation || 0
-                        )}
-                        eventHandlers={{
-                          click: () =>
-                            setSelectedItem(
-                              `Vuelo ${flight.code}: ${flight.origin.country} → ${flight.destination.country}
-        | Salida: ${flight.startTime} | Llegada: ${flight.endTime}`
-                            ),
-                        }}
-                      >
+  position={flight.position}
+  icon={createColoredIcon(
+    filterCss,
+    flight.rotation || 0
+  )}
+  riseOnHover={true}
+  zIndexOffset={1000}
+  eventHandlers={{
+    click: (e) => {
+      // 1) Abrir explícitamente el popup de este marker
+      if (e.target && e.target.openPopup) {
+        e.target.openPopup();
+      }
+
+      // 2) Actualizar el panel de abajo
+      setSelectedItem(
+        `Vuelo ${flight.code}: ${flight.origin.city} (${flight.origin.code}) → ${flight.destination.city} (${flight.destination.code}) | Salida: ${flight.startTime} | Llegada: ${flight.endTime}`
+      );
+    },
+  }}
+>
+
                         <Popup>
                           <b>{flight.code}</b>
                           <br />
