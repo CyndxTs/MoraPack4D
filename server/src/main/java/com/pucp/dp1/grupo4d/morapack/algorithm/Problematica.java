@@ -21,12 +21,13 @@ public class Problematica {
     public static Double MAX_HORAS_RECOJO;
     public static Double MIN_HORAS_ESTANCIA;
     public static Double MAX_HORAS_ESTANCIA;
+    public static Double PROBABILIDAD_REPLANIFICACION;
+    public static List<String> CODIGOS_ORIGENES;
+    public static String ESCENARIO;
     public static LocalDateTime INICIO_PLANIFICACION;
     public static LocalDateTime FIN_PLANIFICACION;
     public static LocalDateTime UMBRAL_REPLANIFICACION;
-    public static LocalDateTime INSTANTE_DE_PROCESAMIENTO;
-    public static String ESCENARIO;
-    public static List<String> CODIGOS_DE_ORIGENES;
+    public static LocalDateTime INSTANTE_PROCESAMIENTO;
     public static List<PuntoDeReplanificacion> PUNTOS_REPLANIFICACION;
     public List<Aeropuerto> origenes;
     public List<Aeropuerto> destinos;
@@ -83,7 +84,7 @@ public class Problematica {
         List<AeropuertoEntity> aeropuertosEntity = aeropuertoService.findAll();
         aeropuertosEntity.forEach(entity -> {
             Aeropuerto aeropuerto = aeropuertoAdapter.toAlgorithm(entity);
-            if (CODIGOS_DE_ORIGENES.contains(aeropuerto.getCodigo())) {
+            if (CODIGOS_ORIGENES.contains(aeropuerto.getCodigo())) {
                 origenes.add(aeropuerto);
             } else {
                 destinos.add(aeropuerto);
@@ -122,7 +123,7 @@ public class Problematica {
             if(pedidos.stream().noneMatch(p -> p.getCodigo().equals(entity.getCodigo()))) {
                 Pedido pedido = pedidoAdapter.toAlgorithm(entity);
                 if(pedido.getFechaHoraProcesamiento() == null) {
-                    pedido.setFechaHoraProcesamiento(INSTANTE_DE_PROCESAMIENTO);
+                    pedido.setFechaHoraProcesamiento(INSTANTE_PROCESAMIENTO);
                 }
                 pedidos.add(pedido);
             } else cantAtendidos.increment();

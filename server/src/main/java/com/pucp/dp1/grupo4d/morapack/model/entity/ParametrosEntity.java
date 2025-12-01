@@ -19,11 +19,12 @@ public class ParametrosEntity {
     @Id
     private Integer id = 1;
 
+    @Column(name = "max_dias_entrega_intracontinental", nullable = false)
+    private Integer maxDiasEntregaIntracontinental = 2;
+
     @Column(name = "max_dias_entrega_intercontinental", nullable = false)
     private Integer maxDiasEntregaIntercontinental = 3;
 
-    @Column(name = "max_dias_entrega_intracontinental", nullable = false)
-    private Integer maxDiasEntregaIntracontinental = 2;
 
     @Column(name = "max_horas_recojo", nullable = false)
     private Double maxHorasRecojo = 2.0;
@@ -34,8 +35,11 @@ public class ParametrosEntity {
     @Column(name = "min_horas_estancia", nullable = false)
     private Double minHorasEstancia = 1.0;
 
+    @Column(name = "probabilidad_replanificacion", nullable = false)
+    private Double probabilidadReplanificacion = 0.350;
+
     @Column(name = "d_min", nullable = false)
-    private Double dMin = 0.001;
+    private Double dMin = 0.005;
 
     @Column(name = "i_max", nullable = false)
     private Integer iMax = 3;
@@ -50,13 +54,13 @@ public class ParametrosEntity {
     private Integer kMin = 3;
 
     @Column(name = "k_max", nullable = false)
-    private Integer kMax = 4;
+    private Integer kMax = 5;
+
+    @Column(name = "n_max", nullable = false)
+    private Integer nMax = 6;
 
     @Column(name = "t_max", nullable = false)
-    private Integer tMax = 60;
-
-    @Column(name = "max_intentos", nullable = false)
-    private Integer maxIntentos = 5;
+    private Integer tMax = 7;
 
     @Column(name = "f_ua", nullable = false)
     private Double factorDeUmbralDeAberracion = 1.015;
@@ -90,16 +94,18 @@ public class ParametrosEntity {
 
     public Integer getId() { return id; }
     public void setId(Integer id) { this.id = id; }
-    public Integer getMaxDiasEntregaIntercontinental() { return maxDiasEntregaIntercontinental; }
-    public void setMaxDiasEntregaIntercontinental(Integer maxDiasEntregaIntercontinental) { this.maxDiasEntregaIntercontinental = maxDiasEntregaIntercontinental; }
     public Integer getMaxDiasEntregaIntracontinental() { return maxDiasEntregaIntracontinental; }
     public void setMaxDiasEntregaIntracontinental(Integer maxDiasEntregaIntracontinental) { this.maxDiasEntregaIntracontinental = maxDiasEntregaIntracontinental; }
+    public Integer getMaxDiasEntregaIntercontinental() { return maxDiasEntregaIntercontinental; }
+    public void setMaxDiasEntregaIntercontinental(Integer maxDiasEntregaIntercontinental) { this.maxDiasEntregaIntercontinental = maxDiasEntregaIntercontinental; }
     public Double getMaxHorasRecojo() { return maxHorasRecojo; }
     public void setMaxHorasRecojo(Double maxHorasRecojo) { this.maxHorasRecojo = maxHorasRecojo; }
     public Double getMaxHorasEstancia() { return maxHorasEstancia; }
     public void setMaxHorasEstancia(Double maxHorasEstancia) { this.maxHorasEstancia = maxHorasEstancia; }
     public Double getMinHorasEstancia() { return minHorasEstancia; }
     public void setMinHorasEstancia(Double minHorasEstancia) { this.minHorasEstancia = minHorasEstancia; }
+    public Double getProbabilidadReplanificacion() { return probabilidadReplanificacion; }
+    public void setProbabilidadReplanificacion(Double probabilidadReplanificacion) { this.probabilidadReplanificacion = probabilidadReplanificacion; }
     public Double getDMin() { return dMin; }
     public void setDMin(Double dMin) { this.dMin = dMin; }
     public Integer getIMax() { return iMax; }
@@ -112,10 +118,10 @@ public class ParametrosEntity {
     public void setKMin(Integer kMin) { this.kMin = kMin; }
     public Integer getKMax() { return kMax; }
     public void setKMax(Integer kMax) { this.kMax = kMax; }
+    public Integer getNMax() { return nMax; }
+    public void setNMax(Integer nMax) { this.nMax = nMax; }
     public Integer getTMax() { return tMax; }
     public void setTMax(Integer tMax) { this.tMax = tMax; }
-    public Integer getMaxIntentos() { return maxIntentos; }
-    public void setMaxIntentos(Integer maxIntentos) { this.maxIntentos = maxIntentos; }
     public Double getFactorDeUmbralDeAberracion() { return factorDeUmbralDeAberracion; }
     public void setFactorDeUmbralDeAberracion(Double factorDeUmbralDeAberracion) { this.factorDeUmbralDeAberracion = factorDeUmbralDeAberracion; }
     public Double getFactorDeUtilizacionTemporal() { return factorDeUtilizacionTemporal; }

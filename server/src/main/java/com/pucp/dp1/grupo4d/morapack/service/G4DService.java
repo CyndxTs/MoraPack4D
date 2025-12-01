@@ -257,7 +257,7 @@ public class G4DService {
         Problematica.INICIO_PLANIFICACION = inicioDePlanificacion;
         Problematica.FIN_PLANIFICACION = finDePlanificacion;
         Problematica.UMBRAL_REPLANIFICACION = umbralDeReplanificacion;
-        Problematica.INSTANTE_DE_PROCESAMIENTO = instanteDeProcesamiento;
+        Problematica.INSTANTE_PROCESAMIENTO = instanteDeProcesamiento;
         Problematica.ESCENARIO = tipoEscenario.toString().toUpperCase();
         Problematica problematica;
         if(esSimulacion) {

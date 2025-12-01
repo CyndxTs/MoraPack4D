@@ -18,6 +18,7 @@ public class ParametrosDTO implements DTO {
     private Double maxHorasRecojo;
     private Double minHorasEstancia;
     private Double maxHorasEstancia;
+    private Double probabilidadReplanificacion;
     private List<String> codOrigenes = new ArrayList<>();
 
     @JsonProperty("dMin")
@@ -35,10 +36,12 @@ public class ParametrosDTO implements DTO {
     @JsonProperty("kMax")
     private Integer kMax;
 
+    @JsonProperty("nMax")
+    private Integer nMax;
+
     @JsonProperty("tMax")
     private Integer tMax;
 
-    private Integer maxIntentos;
     private Double factorDeUmbralDeAberracion;
     private Double factorDeUtilizacionTemporal;
     private Double factorDeDesviacionEspacial;

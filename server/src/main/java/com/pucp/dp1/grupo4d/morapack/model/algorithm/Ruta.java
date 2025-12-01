@@ -217,7 +217,7 @@ public class Ruta {
             Aeropuerto origen  = vuelo.getPlan().getOrigen();
             if (origen.equals(aeropuerto)) {
                 eliminar = true;
-                if(!Problematica.CODIGOS_DE_ORIGENES.contains(aeropuerto.getCodigo())) {
+                if(!Problematica.CODIGOS_ORIGENES.contains(aeropuerto.getCodigo())) {
                     origen.actualizarEstanciaHaciaTiempoMaximoHabitable(lote);
                 }
             }

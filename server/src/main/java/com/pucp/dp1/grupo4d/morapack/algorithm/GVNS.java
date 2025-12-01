@@ -34,8 +34,8 @@ public class GVNS {
     public static Integer L_MAX;                        // Nivel máximo de búsqueda local
     public static Integer K_MIN;                        // Nivel mínimo de perturbación
     public static Integer K_MAX;                        // Nivel máximo de perturbación
-    public static Integer T_MAX;                        // Tiempo máximo esperado de exploración global
     public static Integer N_MAX;                        // Número de máximo de intentos por nivel de perturbación
+    public static Integer T_MAX;                        // Tiempo máximo esperado de exploración global
     private Solucion solucion;
 
     public GVNS() {
@@ -171,7 +171,7 @@ public class GVNS {
                         List<Vuelo> vuelos = ruta.getVuelos();
                         Vuelo vueloPorReplanificar = vuelos.stream().filter(v -> planesProblematicos.contains(v.getPlan()) && v.getFechaHoraSalida().isAfter(Problematica.UMBRAL_REPLANIFICACION)).findFirst().orElse(null);
                         //
-                        if(vueloPorReplanificar == null && random.nextDouble() < 0.35) {
+                        if(vueloPorReplanificar == null && random.nextDouble() < Problematica.PROBABILIDAD_REPLANIFICACION) {
                             Vuelo vAux = vuelos.stream().filter(v -> v.getFechaHoraSalida().isAfter(Problematica.UMBRAL_REPLANIFICACION)).findFirst().orElse(null);
                             if(vAux != null) {
                                 int posAux = vuelos.indexOf(vAux);
@@ -211,7 +211,7 @@ public class GVNS {
                         }
                     }
                     case OPERATIVA -> {
-                        if(random.nextDouble() < 0.35) {
+                        if(random.nextDouble() < Problematica.PROBABILIDAD_REPLANIFICACION) {
                             List<Vuelo> vuelos = ruta.getVuelos();
                             Vuelo vAux = vuelos.stream().filter(v -> v.getFechaHoraSalida().isAfter(Problematica.UMBRAL_REPLANIFICACION)).findFirst().orElse(null);
                             if(vAux != null) {
@@ -503,7 +503,7 @@ public class GVNS {
                                                           .filter(r -> r.getEstado().equals(EstadoRuta.OPERATIVA))
                                                           .filter(r -> {
                                                               if(aConexion == null) {
-                                                                  return Problematica.CODIGOS_DE_ORIGENES.contains(r.getOrigen().getCodigo());
+                                                                  return Problematica.CODIGOS_ORIGENES.contains(r.getOrigen().getCodigo());
                                                               }
                                                               List<Aeropuerto> sa = r.obtenerSecuenciaDeAeropuertos();
                                                               int posConexion = sa.indexOf(aConexion);
