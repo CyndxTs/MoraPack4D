@@ -8,41 +8,42 @@ const Navbar = () => {
   return (
     <nav id="top-nav">
       <div className="container nav-container">
-        {/* Logo a la izquierda */}
+
+        {/* Logo */}
         <div id="logo">
           <Link to="/">
             <img src={logo} alt="Logo MoraPack" className="img-fluid" />
           </Link>
         </div>
 
-        {/* Menú completo */}
+        {/* Menú */}
         <ul className="menu menu-top">
+
           <li>
             <Link to="/">Inicio</Link>
           </li>
-          <li>
-            <Link to="/clientes">Clientes</Link>
-          </li>
-          <li>
-            <Link to="/aeropuertos">Aeropuertos</Link>
-          </li>
-          <li>
-            <Link to="/planes">Planes de vuelos</Link>
+
+          {/* === GRUPO 1: Catálogo === */}
+          <li className="dropdown">
+            <span className="dropdown-label">Logística</span>
+            <ul className="dropdown-menu">
+              <li><Link to="/clientes">Clientes</Link></li>
+              <li><Link to="/aeropuertos">Aeropuertos</Link></li>
+              <li><Link to="/planes">Planes</Link></li>
+              <li><Link to="/pedidos">Pedidos</Link></li>
+            </ul>
           </li>
 
-          {/* pequeño espacio extra, pero SIN empujarlo a la derecha */}
-          <li className="separator">
-            <Link to="/pedidos">Pedidos</Link>
+          {/* === GRUPO 2: Escenarios === */}
+          <li className="dropdown">
+            <span className="dropdown-label">Escenarios</span>
+            <ul className="dropdown-menu">
+              <li><Link to="/planificacion">Operación Diaria</Link></li>
+              <li><Link to="/simulacion">Simulación</Link></li>
+              <li><Link to="/reportes">Reportes</Link></li>
+            </ul>
           </li>
-          <li>
-            <Link to="/planificacion">Operación Diaria</Link>
-          </li>
-          <li>
-            <Link to="/simulacion">Simulación Semanal</Link>
-          </li>
-          <li>
-            <Link to="/reportes">Reportes</Link>
-          </li>
+
         </ul>
       </div>
     </nav>

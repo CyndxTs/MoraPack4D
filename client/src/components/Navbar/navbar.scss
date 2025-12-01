@@ -1,11 +1,10 @@
-/* === NAVBAR (único) === */
 #top-nav {
   background-color: var(--color-dark-blue);
+
 
   .nav-container {
     display: flex;
     align-items: center;
-    flex-wrap: nowrap;
   }
 
   #logo {
@@ -13,44 +12,77 @@
     margin-right: 24px;
 
     img {
-      display: block;
       width: 100%;
+      display: block;
     }
   }
 
   .menu-top {
     list-style: none;
+    display: flex;
+    gap: 0px;
     margin: 0;
     padding: 0;
-    display: flex;
     align-items: center;
-    flex-wrap: nowrap;
-    gap: 16px;    // separación uniforme entre items
   }
 
   .menu-top li {
-    margin: 0;
+    height: 100%;                 /* <-- estira cada item */
+    display: flex;
+    align-items: center;          /* centra el texto */
   }
 
-  .menu-top li.separator {
-    margin-left: 32px;
-  }
-
-  .menu-top li a {
-    display: block;
-    padding: 8px 12px;
+  .menu-top li a,
+  .dropdown-label {
+    padding: 8px 32px;
     color: var(--color-gold);
     text-transform: uppercase;
-    font-size: 0.75rem;
+    font-size: 1rem;
     font-weight: 700;
     letter-spacing: -0.5px;
-    white-space: nowrap;   // para que no se partan en 2 líneas
-    transition: all 0.3s ease;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: 0.3s;
+    height: 7vh; 
+    padding: 0 32px; 
+    align-items: center;
+    display: flex;
 
     &:hover {
-      text-decoration: none;
       background-color: var(--color-gold);
       color: var(--color-dark-blue);
+      text-decoration: none;
+    }
+  }
+
+  /* === DROPDOWNS === */
+  .dropdown {
+    position: relative;
+
+    .dropdown-menu {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      background-color: var(--color-dark-blue);
+      list-style: none;
+      padding: 8px 0;
+      margin: 0;
+      min-width: 180px;
+      display: none;
+      flex-direction: column;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+      z-index: 999;
+      
+      li a {
+        display: block;
+        padding: 21px 12px;
+        width: 100%;
+      }
+    }
+
+    /* aparecer al pasar el mouse */
+    &:hover .dropdown-menu {
+      display: flex;
     }
   }
 }
