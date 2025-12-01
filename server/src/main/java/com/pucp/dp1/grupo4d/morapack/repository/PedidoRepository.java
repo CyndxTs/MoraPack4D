@@ -14,6 +14,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -73,14 +75,13 @@ public interface PedidoRepository extends JpaRepository<PedidoEntity, Integer> {
         value = """
             SELECT p.*
             FROM pedido p
-            WHERE p.fh_generacion_utc BETWEEN :fechaHoraInicio AND :fechaHoraFin
-              AND p.tipo_escenario = :tipoEscenario
+            WHERE (p.fh_generacion_utc BETWEEN :fechaHoraInicio AND :fechaHoraFin) AND p.tipo_escenario = :tipoEscenario
             """,
         nativeQuery = true
     )
     List<PedidoEntity> findAllByDateTimeRange(
-            @Param("fechaHoraInicio") String fechaHoraInicio,
-            @Param("fechaHoraFin") String fechaHoraFin,
+            @Param("fechaHoraInicio") LocalDateTime fechaHoraInicio,
+            @Param("fechaHoraFin") LocalDateTime fechaHoraFin,
             @Param("tipoEscenario") String tipoEscenario
     );
 }

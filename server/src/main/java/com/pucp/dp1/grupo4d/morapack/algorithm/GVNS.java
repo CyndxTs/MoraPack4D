@@ -144,10 +144,13 @@ public class GVNS {
             break;
         }
         // Validación por inexistencia de solución
-        if(!haySolucion) {
-            G4DUtility.Logger.logf_err("ERROR: No fue posible enrutar todos los pedidos en '%d' iteraciones.%n", I_MAX);
-            this.solucion = null;
-        } else problematica.reasignar(pAux);
+        if(!problematica.pedidos.isEmpty()) {
+            if(!haySolucion) {
+                G4DUtility.Logger.logf_err("ERROR: No fue posible enrutar todos los pedidos en '%d' iteraciones.%n", I_MAX);
+                solucion.setFitness(-9999.99);
+                this.solucion = null;
+            } else problematica.reasignar(pAux);
+        } else solucion.setFitness(-9999.99);
     }
 
     private void prepararReplanificacion(List<Pedido> pedidos, List<Plan> planes) {
@@ -190,9 +193,9 @@ public class GVNS {
                             } else if(posVueloPorReplanficar == 1) {
                                 vuelosFijos.add(vuelos.getFirst());
                             }
+                            Aeropuerto aeropuertoDeConexion = vueloPorReplanificar.getPlan().getOrigen();
                             lote.setEstado(EstadoLote.POR_REPLANIFICAR);
-                            Aeropuerto origenDeConexion = vueloPorReplanificar.getPlan().getOrigen();
-                            ruta.eliminarRegistroDeLoteDeProductosDesdeAeropuerto(lote, origenDeConexion, true);
+                            ruta.eliminarRegistroDeLoteDeProductosDesdeAeropuerto(lote, aeropuertoDeConexion, true);
                             LocalDateTime umbralDeConexion;
                             if(!vuelosFijos.isEmpty()) {
                                 umbralDeConexion = (vuelosFijos.getLast().getFechaHoraLlegada().isAfter(Problematica.UMBRAL_REPLANIFICACION)) ? vuelosFijos.getLast().getFechaHoraLlegada() : Problematica.UMBRAL_REPLANIFICACION;
@@ -203,7 +206,8 @@ public class GVNS {
                             if(!huboReplanificacionAleatoria) {
                                 ruta.setEstado(EstadoRuta.DESHABILITADA);
                             } else ruta.setEstado(EstadoRuta.OPERATIVA);
-                            pdr.setRuta(ruta);
+                            pdr.setRutaInicial(ruta);
+                            pdr.setAeropuertoDeConexion(aeropuertoDeConexion);
                             pdr.setUmbralDeConexion(umbralDeConexion);
                             pdr.setVuelosFijos(vuelosFijos);
                             pdr.getLotes().add(lote);
@@ -224,9 +228,9 @@ public class GVNS {
                                 } else if(posVueloPorReplanficar == 1) {
                                     vuelosFijos.add(vuelos.getFirst());
                                 }
+                                Aeropuerto aeropuertoDeConexion = vueloPorReplanificar.getPlan().getOrigen();
                                 lote.setEstado(EstadoLote.POR_REPLANIFICAR);
-                                Aeropuerto origenDeConexion = vueloPorReplanificar.getPlan().getOrigen();
-                                ruta.eliminarRegistroDeLoteDeProductosDesdeAeropuerto(lote, origenDeConexion, true);
+                                ruta.eliminarRegistroDeLoteDeProductosDesdeAeropuerto(lote, aeropuertoDeConexion, true);
                                 LocalDateTime umbralDeConexion;
                                 if(!vuelosFijos.isEmpty()) {
                                     umbralDeConexion = (vuelosFijos.getLast().getFechaHoraLlegada().isAfter(Problematica.UMBRAL_REPLANIFICACION)) ? vuelosFijos.getLast().getFechaHoraLlegada() : Problematica.UMBRAL_REPLANIFICACION;
@@ -234,7 +238,8 @@ public class GVNS {
                                     umbralDeConexion = (pedido.getFechaHoraProcesamiento().isAfter(Problematica.UMBRAL_REPLANIFICACION)) ? pedido.getFechaHoraProcesamiento() : Problematica.UMBRAL_REPLANIFICACION;
                                 }
                                 PuntoDeReplanificacion pdr = new PuntoDeReplanificacion();
-                                pdr.setRuta(ruta);
+                                pdr.setRutaInicial(ruta);
+                                pdr.setAeropuertoDeConexion(aeropuertoDeConexion);
                                 pdr.setUmbralDeConexion(umbralDeConexion);
                                 pdr.setVuelosFijos(vuelosFijos);
                                 pdr.getLotes().add(lote);
@@ -243,10 +248,10 @@ public class GVNS {
                         }
                     }
                     case DESHABILITADA -> {
-                        PuntoDeReplanificacion pdr = Problematica.PUNTOS_REPLANIFICACION.stream().filter(p -> ruta.equals(p.getRuta())).findFirst().orElse(null);
+                        PuntoDeReplanificacion pdr = Problematica.PUNTOS_REPLANIFICACION.stream().filter(p -> ruta.equals(p.getRutaInicial())).findFirst().orElse(null);
                         if(pdr != null) {
                             lote.setEstado(EstadoLote.POR_REPLANIFICAR);
-                            ruta.eliminarRegistroDeLoteDeProductosDesdeAeropuerto(lote, pdr.getVuelosFijos().getLast().getPlan().getOrigen(), true);
+                            ruta.eliminarRegistroDeLoteDeProductosDesdeAeropuerto(lote, pdr.getAeropuertoDeConexion(), true);
                             pdr.getLotes().add(lote);
                         }
                     }
@@ -438,10 +443,10 @@ public class GVNS {
             int restantePorReplanificar = lotePorReplanificar.getTamanio();
             PuntoDeReplanificacion pdr = Problematica.PUNTOS_REPLANIFICACION.stream().filter(p -> p.getLotes().contains(lotePorReplanificar)).findFirst().orElse(null);
             List<Vuelo> vuelosFijos = pdr.getVuelosFijos();
-            Aeropuerto aConexion = (!vuelosFijos.isEmpty()) ? vuelosFijos.getLast().getPlan().getDestino() : null;
+            Aeropuerto aeropuertoDeConexion = pdr.getAeropuertoDeConexion();
             LocalDateTime umbralDeConexion = pdr.getUmbralDeConexion();
-            if(aConexion != null) {
-                Registro registro = aConexion.obtenerRegistroDeLoteDeProductos(lotePorReplanificar);
+            if(aeropuertoDeConexion != null) {
+                Registro registro = aeropuertoDeConexion.obtenerRegistroDeLoteDeProductos(lotePorReplanificar);
                 if(registro != null) {
                     registro.setFechaHoraEgreso(null);
                     registro.setSigueVigente(false);
@@ -449,24 +454,24 @@ public class GVNS {
             }
             while(restantePorReplanificar > 0) {
                 // Búsqueda de ruta reutilizable
-                Ruta ruta = buscarRutaVoraz(vuelosFijos, aConexion, umbralDeConexion, pedido.getFechaHoraGeneracion(), destino, rutasAsignadas);
+                Ruta ruta = buscarRutaVoraz(vuelosFijos, aeropuertoDeConexion, umbralDeConexion, pedido.getFechaHoraGeneracion(), destino, rutasAsignadas);
                 if(ruta == null) {
                     // Construcción de nueva ruta
-                    ruta = construirRutaVoraz(vuelosFijos, aConexion, umbralDeConexion, pedido.getFechaHoraGeneracion(), origenes, destino, planes, vuelosActivados);
+                    ruta = construirRutaVoraz(vuelosFijos, aeropuertoDeConexion, umbralDeConexion, pedido.getFechaHoraGeneracion(), origenes, destino, planes, vuelosActivados);
                     if(ruta == null) {
                         return false;
                     }
                 }
                 // Segmentación de pedido respecto a disponibilidad de ruta
-                int rCapDisp = ruta.obtenerCapacidadDisponibleDesdeAeropuerto(aConexion);
+                int rCapDisp = ruta.obtenerCapacidadDisponibleDesdeAeropuerto(aeropuertoDeConexion);
                 int cantEnrutables = Math.min(rCapDisp, restantePorReplanificar);
                 G4DUtility.Logger.logf("Enrutando %d productos..", cantEnrutables);
                 if(cantEnrutables == 0) {
-                    System.out.println("hola mundo");
+                    System.out.println("Why? Whyyyyyy? oh that's why..");
                 }
                 // Producción y registro de segmento de pedido
                 Lote lote = ruta.getOrigen().generarLoteDeProductos(cantEnrutables);
-                ruta.registraLoteDeProductosDesdeAeropuerto(lote, aConexion, vuelosActivados, rutasAsignadas);
+                ruta.registraLoteDeProductosDesdeAeropuerto(lote, aeropuertoDeConexion, vuelosActivados, rutasAsignadas);
                 if(nuevaSegmentacion.containsKey(ruta)) {
                     Lote lotePorConsolidar = nuevaSegmentacion.get(ruta);
                     lotePorConsolidar.setEstado(EstadoLote.REPLANIFICADO);
@@ -496,48 +501,38 @@ public class GVNS {
         return true;
     }
 
-    private Ruta buscarRutaVoraz(List<Vuelo> vuelosFijos, Aeropuerto aConexion, LocalDateTime umbralDeConexion, LocalDateTime fechaHoraGeneracion,
-                                 Aeropuerto destino, Set<Ruta> rutasAsignadas) {
+    private Ruta buscarRutaVoraz(List<Vuelo> vuelosFijos, Aeropuerto aeropuertoDeConexion, LocalDateTime umbralDeConexion,
+                                 LocalDateTime fechaHoraGeneracion, Aeropuerto destino, Set<Ruta> rutasAsignadas) {
         // Búsqueda de ruta reutilizable
         List<Ruta> rutasPosibles = rutasAsignadas.stream().filter(r -> r.getDestino().equals(destino))
                                                           .filter(r -> r.getEstado().equals(EstadoRuta.OPERATIVA))
                                                           .filter(r -> {
-                                                              if(aConexion == null) {
+                                                              if(aeropuertoDeConexion == null) {
                                                                   return Problematica.CODIGOS_ORIGENES.contains(r.getOrigen().getCodigo());
                                                               }
                                                               List<Aeropuerto> sa = r.obtenerSecuenciaDeAeropuertos();
-                                                              int posConexion = sa.indexOf(aConexion);
+                                                              int posConexion = sa.indexOf(aeropuertoDeConexion);
                                                               if(posConexion == -1) return false;
                                                               if(posConexion >= sa.size() - 1) return false;
                                                               Vuelo vueloDesdeConexion = r.getVuelos().get(posConexion);
                                                               return vueloDesdeConexion.getFechaHoraSalida().isAfter(umbralDeConexion);
                                                           }).toList();
-        for(Ruta rPosible : rutasPosibles) {
-            Ruta ruta = rPosible;
+        for(Ruta ruta : rutasPosibles) {
+            boolean esValida = true;
             for(int i = 0; i < vuelosFijos.size(); i++) {
                 if(!vuelosFijos.get(i).equals(ruta.getVuelos().get(i))) {
-                    ruta = new Ruta();
-                    ruta.reasignar(rPosible);
-                    ruta.setVuelos(new ArrayList<>(vuelosFijos));
-                    int posVueloDesdeConexion = rPosible.obtenerSecuenciaDeAeropuertos().indexOf(aConexion);
-                    if(posVueloDesdeConexion < ruta.getVuelos().size() - 1 ) {
-                        ruta.getVuelos().addAll(rPosible.getVuelos().subList(posVueloDesdeConexion, rPosible.getVuelos().size()));
-                    } else if(posVueloDesdeConexion == ruta.getVuelos().size() - 1) {
-                        ruta.getVuelos().add(rPosible.getVuelos().getLast());
-                    }
-                    ruta.setOrigen(ruta.getVuelos().getFirst().getPlan().getOrigen());
-                    ruta.instanciarHorarios();
-                    ruta.setDuracion();
-                    ruta.setDistancia();
+                    esValida = false;
                     break;
                 }
             }
-            Aeropuerto origen = ruta.getOrigen();
-            TipoRuta tipoRuta = (origen.getContinente().compareTo(destino.getContinente()) == 0) ? TipoRuta.INTRACONTINENTAL : TipoRuta.INTERCONTINENTAL;
-            LocalDateTime fechaHoraLimite = fechaHoraGeneracion.plusMinutes(tipoRuta.getMaxMinutosParaEntrega());
-            if(!ruta.esAlcanzable(umbralDeConexion, fechaHoraLimite)) continue;
-            ruta.setTipo(tipoRuta);
-            return ruta;
+            if(esValida) {
+                Aeropuerto origen = ruta.getOrigen();
+                TipoRuta tipoRuta = (origen.getContinente().compareTo(destino.getContinente()) == 0) ? TipoRuta.INTRACONTINENTAL : TipoRuta.INTERCONTINENTAL;
+                LocalDateTime fechaHoraLimite = fechaHoraGeneracion.plusMinutes(tipoRuta.getMaxMinutosParaEntrega());
+                if(!ruta.esAlcanzableDesdeAeropuerto(aeropuertoDeConexion, umbralDeConexion, fechaHoraLimite)) continue;
+                ruta.setTipo(tipoRuta);
+                return ruta;
+            }
         }
         return null;
     }
@@ -548,19 +543,18 @@ public class GVNS {
         // Declaración & inicialización de variables
         Ruta ruta = new Ruta();
         List<Aeropuerto> origenesDisponibles = new ArrayList<>(origenes);
-        while(!origenesDisponibles.isEmpty() || !vuelosFijos.isEmpty()) {
+        while(!origenesDisponibles.isEmpty()) {
             List<Vuelo> secuenciaDeVuelos = (!vuelosFijos.isEmpty()) ? new ArrayList<>(vuelosFijos) : new ArrayList<>();
             Set<Aeropuerto> aeropuertosVisitados = new HashSet<>();
             secuenciaDeVuelos.forEach(v -> aeropuertosVisitados.add(v.getPlan().getOrigen()));
             Aeropuerto inicial;
-            TipoRuta tipoRuta;
             if(aConexion != null) {
                 inicial = aConexion;
+            } else inicial = origenesDisponibles.get(random.nextInt(0, origenesDisponibles.size()));
+            TipoRuta tipoRuta;
+            if(!vuelosFijos.isEmpty()) {
                 tipoRuta = (vuelosFijos.getFirst().getPlan().getOrigen().getContinente().compareTo(destino.getContinente()) == 0) ? TipoRuta.INTRACONTINENTAL : TipoRuta.INTERCONTINENTAL;
-            } else {
-                inicial = origenesDisponibles.get(random.nextInt(0, origenesDisponibles.size()));
-                tipoRuta = (inicial.getContinente().compareTo(destino.getContinente()) == 0) ? TipoRuta.INTRACONTINENTAL : TipoRuta.INTERCONTINENTAL;
-            }
+            } else tipoRuta = (inicial.getContinente().compareTo(destino.getContinente()) == 0) ? TipoRuta.INTRACONTINENTAL : TipoRuta.INTERCONTINENTAL;
             LocalDateTime fechaHoraActual = umbralDeConexion;
             LocalDateTime fechaHoraLimite = fechaHoraGeneracion.plusMinutes(tipoRuta.getMaxMinutosParaEntrega());
             Aeropuerto actual = inicial;

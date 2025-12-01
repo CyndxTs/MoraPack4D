@@ -66,7 +66,7 @@ public class VueloService {
     }
 
     public List<VueloEntity> findAllByDateTimeRange(LocalDateTime fechaHoraInicio, LocalDateTime fechaHoraFin, String tipoEscenario) {
-        return vueloRepository.findAllByDateTimeRange(G4DUtility.Convertor.toDatabaseString(fechaHoraInicio), G4DUtility.Convertor.toDatabaseString(fechaHoraFin), tipoEscenario);
+        return vueloRepository.findAllByDateTimeRange(fechaHoraInicio, fechaHoraFin, tipoEscenario);
     }
 
     public ListResponse listar(ListRequest request) {

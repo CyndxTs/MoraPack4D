@@ -26,17 +26,17 @@ public interface VueloRepository extends JpaRepository<VueloEntity, Integer> {
         SELECT DISTINCT v.*
         FROM vuelo v
         JOIN ruta_por_vuelo rv ON rv.id_vuelo = v.id
-        JOIN ruta r ON r.id = rv.id_ruta
+        JOIN rutaInicial r ON r.id = rv.id_ruta
         JOIN lote l ON l.id_ruta = r.id
         JOIN segmentacion s ON s.id = l.id_segmentacion
         JOIN pedido p ON p.id = s.id_pedido
-        WHERE (p.fh_generacion_utc BETWEEN :fechaHoraInicio AND :fechaHoraFin) AND (p.tipo_escenario = :tipoEscenario)
+        WHERE (p.fh_generacion_utc BETWEEN :fechaHoraInicio AND :fechaHoraFin) AND p.tipo_escenario = :tipoEscenario
         """,
         nativeQuery = true
     )
     List<VueloEntity> findAllByDateTimeRange(
-            @Param("fechaHoraInicio") String fechaHoraInicio,
-            @Param("fechaHoraFin") String fechaHoraFin,
+            @Param("fechaHoraInicio") LocalDateTime fechaHoraInicio,
+            @Param("fechaHoraFin") LocalDateTime fechaHoraFin,
             @Param("tipoEscenario") String tipoEscenario
     );
 }

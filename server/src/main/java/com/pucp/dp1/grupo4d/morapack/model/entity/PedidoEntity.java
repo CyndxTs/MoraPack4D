@@ -28,22 +28,22 @@ public class PedidoEntity {
     @Column(name = "cantidad_solicitada", nullable = false)
     private Integer cantidadSolicitada;
 
-    @Column(name = "fh_generacion_local", nullable = false)
+    @Column(name = "fh_generacion_local", nullable = false, columnDefinition = "DATETIME")
     private LocalDateTime fechaHoraGeneracionLocal;
 
-    @Column(name = "fh_generacion_utc", nullable = false)
+    @Column(name = "fh_generacion_utc", nullable = false, columnDefinition = "DATETIME")
     private LocalDateTime fechaHoraGeneracionUTC;
 
-    @Column(name = "fh_procesamiento_local")
+    @Column(name = "fh_procesamiento_local", columnDefinition = "DATETIME")
     private LocalDateTime fechaHoraProcesamientoLocal;
 
-    @Column(name = "fh_procesamiento_utc")
+    @Column(name = "fh_procesamiento_utc", columnDefinition = "DATETIME")
     private LocalDateTime fechaHoraProcesamientoUTC;
 
-    @Column(name = "fh_expiracion_local")
+    @Column(name = "fh_expiracion_local", columnDefinition = "DATETIME")
     private LocalDateTime fechaHoraExpiracionLocal;
 
-    @Column(name = "fh_expiracion_utc")
+    @Column(name = "fh_expiracion_utc", columnDefinition = "DATETIME")
     private LocalDateTime fechaHoraExpiracionUTC;
 
     @Column(name = "fue_atendido", nullable = false)

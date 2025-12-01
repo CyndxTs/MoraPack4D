@@ -65,7 +65,7 @@ public class RutaService {
     }
 
     public List<RutaEntity> findAllByDateTimeRange(LocalDateTime fechaHoraInicio, LocalDateTime fechaHoraFin, String tipoEscenario) {
-        return rutaRepository.findAllByDateTimeRange(G4DUtility.Convertor.toDatabaseString(fechaHoraInicio), G4DUtility.Convertor.toDatabaseString(fechaHoraFin), tipoEscenario);
+        return rutaRepository.findAllByDateTimeRange(fechaHoraInicio, fechaHoraFin, tipoEscenario);
     }
     
     public ListResponse listar(ListRequest request) {

@@ -124,8 +124,8 @@ public class G4DService {
             long minutosPlanificados = 0L;
             double horasPlanificadas = 0.0;
             boolean esPrimeraIteracion = true;
-            while(!finDePlanificacion.isAfter(finDeSimulacion) && simulationTask != null) {
-                finDePlanificacion = finDePlanificacion.plusMinutes(saltoTemporalEnMinutos);
+            while(simulationTask != null) {
+                finDePlanificacion = (finDePlanificacion.plusMinutes(saltoTemporalEnMinutos).isAfter(finDeSimulacion)) ? finDeSimulacion : finDePlanificacion.plusMinutes(saltoTemporalEnMinutos);
                 Instant start = Instant.now();
                 SolucionDTO solucion = planificar(escenario, inicioDePlanificacion, finDePlanificacion, umbralDeReplanificacion, umbralDeReplanificacion);
                 if(solucion != null) {
@@ -145,7 +145,9 @@ public class G4DService {
                 horasPlanificadas += saltoTemporalEnHoras;
                 minutosPlanificados += saltoTemporalEnMinutos;
                 long desfaseTemporal = (long) (60*(Math.min(horasPlanificadas, 24.0*maxDesfaseTemporalEnDias)));
-                inicioDePlanificacion = inicioDeSimulacion.plusMinutes(minutosPlanificados).minusMinutes(desfaseTemporal);
+                if(inicioDePlanificacion.plusMinutes(saltoTemporalEnMinutos).isBefore(finDeSimulacion)) {
+                    inicioDePlanificacion = inicioDeSimulacion.plusMinutes(minutosPlanificados).minusMinutes(desfaseTemporal);
+                } else break;
             }
             if(simulationTask != null) {
                 WebSocketService.enviar("/topic/simulator-status", new StatusPayload(EstadoEjecucion.DETENIDO,  EstadoFinalizacion.EXITOSO));
@@ -182,7 +184,7 @@ public class G4DService {
             throw new G4DException("Ya hay una replanificación en proceso!");
         }
         operationTask = self.getObject().replanificar(request).whenComplete((r, ex) -> operationTask = null);
-        WebSocketService.enviar("/topic/operator-status", new StatusPayload(EstadoEjecucion.INICIADO));
+        WebSocketService.enviar("/topic/operator-status", EstadoEjecucion.INICIADO);
         return new GenericResponse(true, "Replanificación Iniciada!");
     }
 

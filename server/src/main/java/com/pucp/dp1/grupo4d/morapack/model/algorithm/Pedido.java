@@ -77,7 +77,7 @@ public class Pedido {
     }
 
     public List<Aeropuerto> obtenerSecuenciaInalterable(Ruta ruta, Lote lote) {
-        PuntoDeReplanificacion pdr = Problematica.PUNTOS_REPLANIFICACION.stream().filter(p -> ruta.equals(p.getRuta()) && p.getLotes().contains(lote)).findFirst().orElse(null);
+        PuntoDeReplanificacion pdr = Problematica.PUNTOS_REPLANIFICACION.stream().filter(p -> ruta.equals(p.getRutaInicial()) && p.getLotes().contains(lote)).findFirst().orElse(null);
         if (pdr == null) {
             return new ArrayList<>();
         }

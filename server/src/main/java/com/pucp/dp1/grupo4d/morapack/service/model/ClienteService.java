@@ -80,7 +80,7 @@ public class ClienteService {
     }
 
     public List<ClienteEntity> findAllByDateTimeRange(LocalDateTime fechaHoraInicio, LocalDateTime fechaHoraFin, String tipoEscenario) {
-        return clienteRepository.findAllByDateTimeRange(G4DUtility.Convertor.toDatabaseString(fechaHoraInicio), G4DUtility.Convertor.toDatabaseString(fechaHoraFin), tipoEscenario);
+        return clienteRepository.findAllByDateTimeRange(fechaHoraInicio, fechaHoraFin, tipoEscenario);
     }
 
     public ClienteEntity obtenerPorCodigo(String codigo) {

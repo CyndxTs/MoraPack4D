@@ -13,6 +13,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.List;
 
@@ -53,14 +54,13 @@ public interface ClienteRepository extends JpaRepository<ClienteEntity, Integer>
             SELECT DISTINCT c.*
             FROM cliente c
             INNER JOIN pedido p ON p.id_cliente = c.id
-            WHERE p.fh_generacion_utc BETWEEN :fechaHoraInicio AND :fechaHoraFin
-              AND p.tipo_escenario = :tipoEscenario
+            WHERE (p.fh_generacion_utc BETWEEN :fechaHoraInicio AND :fechaHoraFin) AND p.tipo_escenario = :tipoEscenario
             """,
         nativeQuery = true
     )
     List<ClienteEntity> findAllByDateTimeRange(
-            @Param("fechaHoraInicio") String fechaHoraInicio,
-            @Param("fechaHoraFin") String fechaHoraFin,
+            @Param("fechaHoraInicio") LocalDateTime fechaHoraInicio,
+            @Param("fechaHoraFin") LocalDateTime fechaHoraFin,
             @Param("tipoEscenario") String tipoEscenario
     );
 }

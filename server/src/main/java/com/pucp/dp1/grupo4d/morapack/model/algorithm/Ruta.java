@@ -142,6 +142,20 @@ public class Ruta {
         return this.obtenerCapacidadDisponible() >= 1;
     }
 
+    public Boolean esAlcanzableDesdeAeropuerto(Aeropuerto aeropuerto, LocalDateTime fechaHoraActual, LocalDateTime fechaHoraLimite) {
+        if(this.origen.equals(aeropuerto)) {
+            return this.esAlcanzable(fechaHoraActual, fechaHoraLimite);
+        }
+        for (Vuelo vuelo : this.vuelos) {
+            if (vuelo.getPlan().getOrigen().equals(aeropuerto)) {
+                if (vuelo.getFechaHoraSalida().isBefore(fechaHoraActual)) return false;
+                if (vuelo.getFechaHoraLlegada().isAfter(fechaHoraLimite)) return false;
+                return this.obtenerCapacidadDisponibleDesdeAeropuerto(aeropuerto) >= 1;
+            }
+        }
+        return false;
+    }
+
     public boolean respetaSecuenciasInalterables(List<Ruta> rutasOrig, Map<Ruta, List<Aeropuerto>> secuenciasIntocables) {
         List<Aeropuerto> sa = this.obtenerSecuenciaDeAeropuertos();
         return rutasOrig.stream().allMatch(rOrig -> {
