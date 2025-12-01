@@ -22,6 +22,7 @@ public class RutaDTO implements DTO {
     private Double distancia;
     private String fechaHoraSalida;
     private String fechaHoraLlegada;
+    private String estado;
     private String tipo;
     private String codOrigen;
     private String codDestino;

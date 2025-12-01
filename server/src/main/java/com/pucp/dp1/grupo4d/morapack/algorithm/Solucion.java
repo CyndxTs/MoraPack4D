@@ -7,6 +7,8 @@
 package com.pucp.dp1.grupo4d.morapack.algorithm;
 
 import com.pucp.dp1.grupo4d.morapack.model.algorithm.*;
+import com.pucp.dp1.grupo4d.morapack.model.enumeration.EstadoRuta;
+
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -160,9 +162,9 @@ public class Solucion {
         int totalRut = 0;
         double sumaRatios = 0.0;
         for (Ruta ruta : this.rutasEnOperacion) {
-            if(!ruta.getEstaOperativa()) continue;
+            if(ruta.getEstado().equals(EstadoRuta.DESHABILITADA)) continue;
             int rCapDisp = ruta.obtenerCapacidadDisponible();
-            double rCap = ((double)(ruta.obtenerCapacidadMinima()));
+            double rCap = ((double)(ruta.obtenerCapacidadMaxima()));
             if(rCapDisp == rCap) continue;
             sumaRatios +=  rCapDisp/rCap ;
             totalRut++;

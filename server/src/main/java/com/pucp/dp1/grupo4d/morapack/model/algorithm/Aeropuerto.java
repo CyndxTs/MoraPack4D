@@ -53,6 +53,10 @@ public class Aeropuerto {
         return lote;
     }
 
+    public Registro obtenerRegistroDeLoteDeProductos(Lote lote) {
+        return this.registros.stream().filter(Registro::getSigueVigente).filter(r -> r.getLote().equals(lote)).findFirst().orElse(null);
+    }
+
     public void registrarLoteDeProductos(Lote lote, LocalDateTime fechaHoraIngreso, LocalDateTime fechaHoraEgreso) {
         Registro registro = new Registro();
         registro.setFechaHoraIngreso(fechaHoraIngreso);
@@ -61,12 +65,14 @@ public class Aeropuerto {
         this.registros.add(registro);
     }
 
-    public Boolean eliminarRegistroDeLoteDeProductos(Lote lote, boolean softDelete) {
-        for(Registro registro : this.registros) {
-            if(registro.getLote().equals(lote) && registro.getSigueVigente()) {
-                if(softDelete) {
-                    registro.setSigueVigente(false);
-                } else this.registros.remove(registro);
+    public boolean eliminarRegistroDeLoteDeProductos(Lote lote, boolean softDelete) {
+        List<Registro> registrosVigentes = this.registros.stream().filter(Registro::getSigueVigente).toList();
+        for(Registro registro : registrosVigentes) {
+            if(registro.getLote().equals(lote)) {
+                registro.setSigueVigente(false);
+                if(!softDelete) {
+                    this.registros.remove(registro);
+                }
                 return true;
             }
         }
@@ -77,7 +83,8 @@ public class Aeropuerto {
         int disp = this.capacidad;
         Map<LocalDateTime, Integer> eventos = new TreeMap<>();
         Registro registroDeLote = null;
-        for(Registro registro : this.registros) {
+        List<Registro> registrosVigentes = this.registros.stream().filter(Registro::getSigueVigente).toList();
+        for(Registro registro : registrosVigentes) {
             if(!registro.getLote().equals(lote)) {
                 LocalDateTime rFechaHoraIngreso = registro.getFechaHoraIngreso(), rFechaHoraEgreso = registro.getFechaHoraEgreso();
                 int tamanio = registro.getLote().getTamanio();
@@ -106,7 +113,8 @@ public class Aeropuerto {
     public Integer obtenerCapacidadDisponible(LocalDateTime fechaHoraInicio, LocalDateTime fechaHoraFin) {
         int disp = this.capacidad, minDisp = this.capacidad;
         Map<LocalDateTime, Integer> eventos = new TreeMap<>();
-        for(Registro registro : this.registros) {
+        List<Registro> registrosVigentes = this.registros.stream().filter(Registro::getSigueVigente).toList();
+        for(Registro registro : registrosVigentes) {
             LocalDateTime rFechaHoraIngreso = registro.getFechaHoraIngreso(), rFechaHoraEgreso = registro.getFechaHoraEgreso();
             if(rFechaHoraIngreso.isBefore(fechaHoraFin) && rFechaHoraEgreso.isAfter(fechaHoraInicio)) {
                 int tamanio = registro.getLote().getTamanio();

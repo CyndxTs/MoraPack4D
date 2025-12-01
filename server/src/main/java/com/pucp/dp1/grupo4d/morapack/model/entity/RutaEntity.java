@@ -7,6 +7,7 @@
 package com.pucp.dp1.grupo4d.morapack.model.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.pucp.dp1.grupo4d.morapack.model.enumeration.EstadoRuta;
 import com.pucp.dp1.grupo4d.morapack.model.enumeration.TipoRuta;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
@@ -44,7 +45,11 @@ public class RutaEntity {
     private LocalDateTime fechaHoraLlegadaUTC;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(name = "estado", nullable = false)
+    private EstadoRuta estado;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "tipo", nullable = false)
     private TipoRuta tipo;
 
     @ManyToOne
@@ -97,6 +102,8 @@ public class RutaEntity {
     public void setFechaHoraLlegadaLocal(LocalDateTime fechaHoraLlegadaLocal) { this.fechaHoraLlegadaLocal = fechaHoraLlegadaLocal; }
     public LocalDateTime getFechaHoraLlegadaUTC() { return fechaHoraLlegadaUTC; }
     public void setFechaHoraLlegadaUTC(LocalDateTime fechaHoraLlegadaUTC) { this.fechaHoraLlegadaUTC = fechaHoraLlegadaUTC; }
+    public EstadoRuta getEstado() { return estado; }
+    public void setEstado(EstadoRuta estado) { this.estado = estado; }
     public TipoRuta getTipo() { return tipo; }
     public void setTipo(TipoRuta tipo) { this.tipo = tipo; }
     public AeropuertoEntity getOrigen() { return origen; }

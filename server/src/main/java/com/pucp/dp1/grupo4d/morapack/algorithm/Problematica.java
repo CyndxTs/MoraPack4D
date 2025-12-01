@@ -9,6 +9,7 @@ package com.pucp.dp1.grupo4d.morapack.algorithm;
 import com.pucp.dp1.grupo4d.morapack.adapter.*;
 import com.pucp.dp1.grupo4d.morapack.model.algorithm.*;
 import com.pucp.dp1.grupo4d.morapack.model.entity.*;
+import com.pucp.dp1.grupo4d.morapack.model.enumeration.EstadoRuta;
 import com.pucp.dp1.grupo4d.morapack.service.model.*;
 import com.pucp.dp1.grupo4d.morapack.util.G4DUtility;
 import java.time.LocalDateTime;
@@ -20,12 +21,13 @@ public class Problematica {
     public static Double MAX_HORAS_RECOJO;
     public static Double MIN_HORAS_ESTANCIA;
     public static Double MAX_HORAS_ESTANCIA;
+    public static Double PROBABILIDAD_REPLANIFICACION;
+    public static List<String> CODIGOS_ORIGENES;
+    public static String ESCENARIO;
     public static LocalDateTime INICIO_PLANIFICACION;
     public static LocalDateTime FIN_PLANIFICACION;
     public static LocalDateTime UMBRAL_REPLANIFICACION;
-    public static LocalDateTime INSTANTE_DE_PROCESAMIENTO;
-    public static String ESCENARIO;
-    public static List<String> CODIGOS_DE_ORIGENES;
+    public static LocalDateTime INSTANTE_PROCESAMIENTO;
     public static List<PuntoDeReplanificacion> PUNTOS_REPLANIFICACION;
     public List<Aeropuerto> origenes;
     public List<Aeropuerto> destinos;
@@ -82,7 +84,7 @@ public class Problematica {
         List<AeropuertoEntity> aeropuertosEntity = aeropuertoService.findAll();
         aeropuertosEntity.forEach(entity -> {
             Aeropuerto aeropuerto = aeropuertoAdapter.toAlgorithm(entity);
-            if (CODIGOS_DE_ORIGENES.contains(aeropuerto.getCodigo())) {
+            if (CODIGOS_ORIGENES.contains(aeropuerto.getCodigo())) {
                 origenes.add(aeropuerto);
             } else {
                 destinos.add(aeropuerto);
@@ -105,9 +107,8 @@ public class Problematica {
         System.out.println(">> Cargando clientes desde la base de datos..");
         List<ClienteEntity> clientesEntity = clienteService.findAllByDateTimeRange(INICIO_PLANIFICACION, FIN_PLANIFICACION, ESCENARIO);
         clientesEntity.forEach(entity -> {
-            Cliente cliente = usuarioAdapter.toAlgorithm(entity);
-            int posCli = clientes.indexOf(cliente);
-            if(posCli == -1) {
+            if(clientes.stream().noneMatch(c -> c.getCodigo().equals(entity.getCodigo()))) {
+                Cliente cliente = usuarioAdapter.toAlgorithm(entity);
                 clientes.add(cliente);
             }
         });
@@ -119,17 +120,13 @@ public class Problematica {
         G4DUtility.IntegerWrapper cantAtendidos = new G4DUtility.IntegerWrapper();
         List<PedidoEntity> pedidosEntity = pedidoService.findAllByDateTimeRange(INICIO_PLANIFICACION, FIN_PLANIFICACION, ESCENARIO);
         pedidosEntity.forEach(entity -> {
-            if(entity.getFueAtendido()) {
-                cantAtendidos.increment();
-            }
-            if(entity.getFechaHoraProcesamientoUTC() == null) {
-                entity.setFechaHoraProcesamientoUTC(INSTANTE_DE_PROCESAMIENTO);
-            }
-            Pedido pedido = pedidoAdapter.toAlgorithm(entity);
-            int posPed = pedidos.indexOf(pedido);
-            if(posPed == -1) {
+            if(pedidos.stream().noneMatch(p -> p.getCodigo().equals(entity.getCodigo()))) {
+                Pedido pedido = pedidoAdapter.toAlgorithm(entity);
+                if(pedido.getFechaHoraProcesamiento() == null) {
+                    pedido.setFechaHoraProcesamiento(INSTANTE_PROCESAMIENTO);
+                }
                 pedidos.add(pedido);
-            }
+            } else cantAtendidos.increment();
         });
         System.out.printf("[:] PEDIDOS CARGADOS! | '%d' por atender! & '%d' ya atendidos!%n", pedidos.size() - cantAtendidos.value, cantAtendidos.value);
     }
@@ -150,6 +147,9 @@ public class Problematica {
         List<RutaEntity> rutasEntity = rutaService.findAllByDateTimeRange(INICIO_PLANIFICACION, FIN_PLANIFICACION, ESCENARIO);
         rutasEntity.forEach(entity -> {
             Ruta ruta = rutaAdapter.toAlgorithm(entity);
+            if(ruta.getEstado().equals(EstadoRuta.OPERATIVA)) {
+                ruta.setEstado(EstadoRuta.REVISION_PENDIENTE);
+            }
             rutas.add(ruta);
         });
         System.out.printf("[:] RUTAS CARGADAS! | '%d' rutas!%n", rutas.size());

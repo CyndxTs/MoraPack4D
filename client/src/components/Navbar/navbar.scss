@@ -1,100 +1,56 @@
-/* === NAVBAR SUPERIOR === */
+/* === NAVBAR (único) === */
 #top-nav {
   background-color: var(--color-dark-blue);
+
+  .nav-container {
+    display: flex;
+    align-items: center;
+    flex-wrap: nowrap;
+  }
+
+  #logo {
+    max-width: 200px;
+    margin-right: 24px;
+
+    img {
+      display: block;
+      width: 100%;
+    }
+  }
+
   .menu-top {
     list-style: none;
     margin: 0;
     padding: 0;
     display: flex;
-
-    li a {
-      display: block;
-      padding: 8px 16px;
-      color: var(--color-gold);
-      transition: all 0.3s ease;
-
-      &:hover {
-        text-decoration: none;
-        background-color: var(--color-gold);
-        color: var(--color-dark-blue);
-      }
-    }
-  }
-}
-
-/* === HEADER PRINCIPAL === */
-#main-header {
-  background-color: var(--color-grey);
-  overflow: hidden;
-  transition: max-height 2s ease;
-  max-height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-
-  #header-collapsed {
-    position: absolute;
-    top: 0;
-    left: 50%;
-    transform: translateX(-50%);
-    line-height: 40px;
-    color: var(--color-blanco);
-    font-size: 18px;
-    transition: opacity 0.3s ease;
-  }
-
-  #header-content {
-    display: flex;
     align-items: center;
-    justify-content: space-between;
-    opacity: 0;
-    transition: opacity 0.4s ease;
-    width: 100%;
-
-    #logo {
-      max-width: 200px;
-
-      img {
-        display: block;
-        width: 100%;
-      }
-    }
-
-    .menu-main {
-      list-style: none;
-      margin: 0;
-      padding: 0;
-      display: flex;
-
-      li a {
-        display: block;
-        padding: 30px 40px;
-        text-transform: uppercase;
-        font-size: 0.8em;
-        font-weight: 700;
-        letter-spacing: -0.5px;
-        transition: all 0.3s ease;
-
-        &:hover {
-          text-decoration: none;
-          color: var(--color-blanco);
-          background-color: var(--color-dark-blue);
-        }
-      }
-    }
+    flex-wrap: nowrap;
+    gap: 16px;    // separación uniforme entre items
   }
 
-  &:hover {
-    max-height: 200px;
+  .menu-top li {
+    margin: 0;
+  }
 
-    #header-content {
-      opacity: 1;
-    }
+  .menu-top li.separator {
+    margin-left: 32px;
+  }
 
-    #header-collapsed {
-      opacity: 0;
-      pointer-events: none;
+  .menu-top li a {
+    display: block;
+    padding: 8px 12px;
+    color: var(--color-gold);
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    white-space: nowrap;   // para que no se partan en 2 líneas
+    transition: all 0.3s ease;
+
+    &:hover {
+      text-decoration: none;
+      background-color: var(--color-gold);
+      color: var(--color-dark-blue);
     }
   }
 }

@@ -84,7 +84,7 @@ public class Plan {
     }
 
     public Boolean esProblematico() {
-        List<Evento> eventosConsiderables = this.eventos.stream().filter(e -> !e.getFechaHoraInicio().isAfter(Problematica.FIN_PLANIFICACION) && !e.getFechaHoraFin().isBefore(Problematica.UMBRAL_REPLANIFICACION)).toList();
+        List<Evento> eventosConsiderables = this.eventos.stream().filter(e -> !e.getFechaHoraInicio().isAfter(Problematica.FIN_PLANIFICACION) && e.getFechaHoraFin().isAfter(Problematica.UMBRAL_REPLANIFICACION)).toList();
         return !eventosConsiderables.isEmpty();
     }
 
@@ -95,7 +95,7 @@ public class Plan {
         LocalDateTime vFechaHoraSalida = rango[0], vFechaHoraLlegada = rango[1];
         if(vFechaHoraSalida.isBefore(origFechaHoraMinEgreso) || vFechaHoraSalida.isAfter(origFechaHoraMaxEgreso) || vFechaHoraLlegada.isAfter(fechaHoraLimite)) return false;
         LocalDateTime destFechaHoraMaxEgreso = vFechaHoraLlegada.plusMinutes((long)(60*((!this.destino.equals(aDest)) ? Problematica.MAX_HORAS_ESTANCIA : Problematica.MAX_HORAS_RECOJO)));
-        int destCapDisp = this.destino.obtenerCapacidadDisponible(vFechaHoraLlegada,destFechaHoraMaxEgreso);
+        int destCapDisp = this.destino.obtenerCapacidadDisponible(vFechaHoraLlegada, destFechaHoraMaxEgreso);
         if(destCapDisp < 1) return false;
         Vuelo vuelo = obtenerVueloActivo(fechaHoraActual, vuelosActivos);
         if(vuelo != null && vuelo.getCapacidadDisponible() < 1) return false;

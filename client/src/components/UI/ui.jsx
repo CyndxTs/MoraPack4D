@@ -25,14 +25,29 @@ export function Button({ icon, label, onClick, type = "button" }) {
   );
 }
 
-export function ButtonAdd({ icon, label, onClick, type = "button" }) {
+export function ButtonAdd({
+  icon,
+  label,
+  onClick,
+  type = "button",
+  className = "",
+  disabled = false,
+  ...rest
+}) {
   return (
-    <button className="btnAdd-icon" type={type} onClick={onClick}>
+    <button
+      className={`btnAdd-icon ${className}`.trim()}
+      type={type}
+      onClick={onClick}
+      disabled={disabled}
+      {...rest}
+    >
       {icon && <img src={icon} alt="" />}
       <span>{label}</span>
     </button>
   );
 }
+
 
 export function Input({ placeholder, value, onChange, disabled = false }) {
   return (

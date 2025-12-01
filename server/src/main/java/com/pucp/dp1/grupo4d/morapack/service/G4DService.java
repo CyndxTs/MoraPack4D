@@ -124,7 +124,7 @@ public class G4DService {
             long minutosPlanificados = 0L;
             double horasPlanificadas = 0.0;
             boolean esPrimeraIteracion = true;
-            while(inicioDePlanificacion.isBefore(finDeSimulacion) && simulationTask != null) {
+            while(!finDePlanificacion.isAfter(finDeSimulacion) && simulationTask != null) {
                 finDePlanificacion = finDePlanificacion.plusMinutes(saltoTemporalEnMinutos);
                 Instant start = Instant.now();
                 SolucionDTO solucion = planificar(escenario, inicioDePlanificacion, finDePlanificacion, umbralDeReplanificacion, umbralDeReplanificacion);
@@ -145,7 +145,7 @@ public class G4DService {
                 horasPlanificadas += saltoTemporalEnHoras;
                 minutosPlanificados += saltoTemporalEnMinutos;
                 long desfaseTemporal = (long) (60*(Math.min(horasPlanificadas, 24.0*maxDesfaseTemporalEnDias)));
-                inicioDePlanificacion = inicioDePlanificacion.plusMinutes(minutosPlanificados).minusMinutes(desfaseTemporal);
+                inicioDePlanificacion = inicioDeSimulacion.plusMinutes(minutosPlanificados).minusMinutes(desfaseTemporal);
             }
             if(simulationTask != null) {
                 WebSocketService.enviar("/topic/simulator-status", new StatusPayload(EstadoEjecucion.DETENIDO,  EstadoFinalizacion.EXITOSO));
@@ -257,7 +257,7 @@ public class G4DService {
         Problematica.INICIO_PLANIFICACION = inicioDePlanificacion;
         Problematica.FIN_PLANIFICACION = finDePlanificacion;
         Problematica.UMBRAL_REPLANIFICACION = umbralDeReplanificacion;
-        Problematica.INSTANTE_DE_PROCESAMIENTO = instanteDeProcesamiento;
+        Problematica.INSTANTE_PROCESAMIENTO = instanteDeProcesamiento;
         Problematica.ESCENARIO = tipoEscenario.toString().toUpperCase();
         Problematica problematica;
         if(esSimulacion) {
