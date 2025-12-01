@@ -54,6 +54,7 @@ public class RutaAdapter {
             vuelos.add(vuelo);
         }
         algorithm.setVuelos(vuelos);
+        algorithm.setEstado(entity.getEstado());
         poolAlgorithm.put(algorithm.getCodigo(), algorithm);
         return algorithm;
     }
@@ -78,6 +79,7 @@ public class RutaAdapter {
         entity.setOrigen(origenEntity);
         AeropuertoEntity destinoEntity = aeropuertoAdapter.toEntity(algorithm.getDestino());
         entity.setDestino(destinoEntity);
+        entity.setEstado(algorithm.getEstado());
         poolEntity.put(entity.getCodigo(), entity);
         return entity;
     }

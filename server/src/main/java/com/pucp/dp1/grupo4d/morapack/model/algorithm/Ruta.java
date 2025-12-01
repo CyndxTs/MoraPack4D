@@ -197,14 +197,21 @@ public class Ruta {
     }
 
     public void eliminarRegistroDeLoteDeProductos(Lote lote) {
+        this.eliminarRegistroDeLoteDeProductos(lote, false);
+    }
+
+    public void eliminarRegistroDeLoteDeProductos(Lote lote, boolean softDelete) {
         for(Vuelo vuelo : this.vuelos) {
-            if(vuelo.getPlan().getDestino().eliminarRegistroDeLoteDeProductos(lote, false)) {
+            if(vuelo.getPlan().getDestino().eliminarRegistroDeLoteDeProductos(lote, softDelete)) {
                 vuelo.setCapacidadDisponible(vuelo.getCapacidadDisponible() + lote.getTamanio());
             }
         }
     }
 
     public void eliminarRegistroDeLoteDeProductosDesdeAeropuerto(Lote lote, Aeropuerto aeropuerto, boolean softDelete) {
+        if(aeropuerto == null) {
+            this.eliminarRegistroDeLoteDeProductos(lote, softDelete);
+        }
         boolean eliminar = false;
         for (Vuelo vuelo : this.vuelos) {
             Aeropuerto origen  = vuelo.getPlan().getOrigen();

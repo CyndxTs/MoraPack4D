@@ -44,6 +44,7 @@ public class RutaMapper {
         List<String> codVuelos = new ArrayList<>();
         vuelos.forEach(vuelo -> codVuelos.add(vuelo.getCodigo()));
         dto.setCodVuelos(codVuelos);
+        dto.setEstado(algorithm.getEstado().toString());
         poolDTO.put(algorithm.getCodigo(), dto);
         return dto;
     }
@@ -67,6 +68,7 @@ public class RutaMapper {
         List<String> codVuelos = new ArrayList<>();
         vuelosEntity.forEach(vueloEntity -> codVuelos.add(vueloEntity.getCodigo()));
         dto.setCodVuelos(codVuelos);
+        dto.setEstado(entity.getEstado().toString());
         poolDTO.put(entity.getCodigo(), dto);
         return dto;
     }

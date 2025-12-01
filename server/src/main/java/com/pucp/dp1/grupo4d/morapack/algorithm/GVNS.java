@@ -19,15 +19,12 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
+
 import com.pucp.dp1.grupo4d.morapack.model.algorithm.*;
 import com.pucp.dp1.grupo4d.morapack.model.enumeration.EstadoLote;
 import com.pucp.dp1.grupo4d.morapack.model.enumeration.EstadoRuta;
-import com.pucp.dp1.grupo4d.morapack.model.enumeration.TipoEvento;
 import com.pucp.dp1.grupo4d.morapack.model.enumeration.TipoRuta;
-import com.pucp.dp1.grupo4d.morapack.model.exception.G4DException;
 import com.pucp.dp1.grupo4d.morapack.util.G4DUtility;
-import org.springframework.cglib.core.Local;
 
 public class GVNS {
     private static final Random random = new Random();
@@ -38,7 +35,7 @@ public class GVNS {
     public static Integer K_MIN;                        // Nivel mínimo de perturbación
     public static Integer K_MAX;                        // Nivel máximo de perturbación
     public static Integer T_MAX;                        // Tiempo máximo esperado de exploración global
-    public static Integer MAX_INTENTOS;                 // Número de máximo de intentos por nivel de perturbación
+    public static Integer N_MAX;                        // Número de máximo de intentos por nivel de perturbación
     private Solucion solucion;
 
     public GVNS() {
@@ -174,7 +171,7 @@ public class GVNS {
                         List<Vuelo> vuelos = ruta.getVuelos();
                         Vuelo vueloPorReplanificar = vuelos.stream().filter(v -> planesProblematicos.contains(v.getPlan()) && v.getFechaHoraSalida().isAfter(Problematica.UMBRAL_REPLANIFICACION)).findFirst().orElse(null);
                         //
-                        if(vueloPorReplanificar == null && random.nextBoolean()) {
+                        if(vueloPorReplanificar == null && random.nextDouble() < 0.35) {
                             Vuelo vAux = vuelos.stream().filter(v -> v.getFechaHoraSalida().isAfter(Problematica.UMBRAL_REPLANIFICACION)).findFirst().orElse(null);
                             if(vAux != null) {
                                 int posAux = vuelos.indexOf(vAux);
@@ -214,7 +211,7 @@ public class GVNS {
                         }
                     }
                     case OPERATIVA -> {
-                        if(random.nextBoolean()) {
+                        if(random.nextDouble() < 0.35) {
                             List<Vuelo> vuelos = ruta.getVuelos();
                             Vuelo vAux = vuelos.stream().filter(v -> v.getFechaHoraSalida().isAfter(Problematica.UMBRAL_REPLANIFICACION)).findFirst().orElse(null);
                             if(vAux != null) {
@@ -1037,7 +1034,7 @@ public class GVNS {
                         if(!huboAlteracion) {
                             G4DUtility.Logger.logln(" | >> SIN ALTERACIÓN");
                         } else G4DUtility.Logger.logln(" | >> ABERRACIÓN");
-                        if (intentos >= MAX_INTENTOS) {
+                        if (intentos >= N_MAX) {
                             G4DUtility.Logger.log("LIMITE DE INTENTOS ALCANZADO.");
                             break;
                         }

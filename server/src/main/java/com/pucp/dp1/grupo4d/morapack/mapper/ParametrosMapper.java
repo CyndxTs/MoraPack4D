@@ -33,7 +33,7 @@ public class ParametrosMapper {
         GVNS.K_MIN = G4DUtility.Convertor.toAdmissible(dto.getKMin(), 3);
         GVNS.K_MAX = G4DUtility.Convertor.toAdmissible(dto.getKMax(), 5);
         GVNS.T_MAX = G4DUtility.Convertor.toAdmissible(dto.getTMax(), 7);
-        GVNS.MAX_INTENTOS = G4DUtility.Convertor.toAdmissible(dto.getMaxIntentos(), 12);
+        GVNS.N_MAX = G4DUtility.Convertor.toAdmissible(dto.getMaxIntentos(), 12);
         Solucion.f_UA = G4DUtility.Convertor.toAdmissible(dto.getFactorDeUmbralDeAberracion(), 1.015);
         Solucion.f_UT = G4DUtility.Convertor.toAdmissible(dto.getFactorDeUtilizacionTemporal(), 5000.0);
         Solucion.f_DE = G4DUtility.Convertor.toAdmissible(dto.getFactorDeDesviacionEspacial(), 2000.0);
@@ -55,7 +55,7 @@ public class ParametrosMapper {
         dto.setKMin(GVNS.K_MIN);
         dto.setKMax(GVNS.K_MAX);
         dto.setTMax(GVNS.T_MAX);
-        dto.setMaxIntentos(GVNS.MAX_INTENTOS);
+        dto.setMaxIntentos(GVNS.N_MAX);
         dto.setFactorDeUmbralDeAberracion(Solucion.f_UA);
         dto.setFactorDeUtilizacionTemporal(Solucion.f_UT);
         dto.setFactorDeDesviacionEspacial(Solucion.f_DE);

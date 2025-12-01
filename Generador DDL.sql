@@ -127,6 +127,7 @@ CREATE TABLE IF NOT EXISTS `morapack4d`.`RUTA` (
   `fh_llegada_local` DATETIME NOT NULL,
   `fh_llegada_utc` DATETIME NOT NULL,
   `tipo` ENUM('INTRACONTINENTAL', 'INTERCONTINENTAL') NOT NULL,
+  `estado` ENUM('REVISION_PENDIENTE', 'FINALIZADA', 'OPERATIVA', 'DESHABILITADA') NOT NULL DEFAULT 'OPERATIVA',
   `id_aeropuerto_origen` INT NOT NULL,
   `id_aeropuerto_destino` INT NOT NULL,
   PRIMARY KEY (`id`),
