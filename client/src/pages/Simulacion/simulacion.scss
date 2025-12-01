@@ -1,118 +1,471 @@
-/* CONTROLES SIMULACION */
+/* ===============================
+   CONTROLES SUPERIORES
+================================ */
 .control-bar {
   background: #fff;
-  padding: 16px;
+  padding: 12px 16px;
   display: flex;
-  justify-content: flex-start;   /* alineamos a la izquierda */
-  align-items: center;           
-  gap: 18px;                     /* espacio entre elementos */
-  flex-wrap: wrap;               /* para pantallas pequeñas */
-  border-bottom: 1px solid #ddd;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  border-radius: 12px;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.18);
+  border: 1px solid #ddd;
+  max-width: 440px;      
+}
+.control-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.control-row-main {
+  width: 100%;
+  flex-wrap: nowrap;      /* no se rompen los botones a otra línea (desktop) */
 }
 
-.control-label, .info-label {
-  font-weight: bold;
-  font-size: 14px; 
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Texto de Fecha / Hora / Tiempo */
+.control-label,
+.info-label {
+  font-weight: 700;
+  font-size: 14px;
 }
 
 .value {
   font-size: 14px;
-  margin-right: 12px;
+  margin-right: 8px;
 }
-
 .control-bar .custom-input {
-  width: 160px;                  /* ancho de inputs */
+  width: 160px;
   padding: 6px 10px;
   border: 1px solid #ccc;
   border-radius: 6px;
 }
 
-.btn {
-  height: 36px;
-  min-width: 100px;
-  padding: 0 12px;
-  border: none;
+/* ===============================
+   BOTONES GENERAR / DETENER
+   (ambos usan ButtonAdd)
+================================ */
+
+/* BOTONES ButtonAdd en la barra (Generar plan / Detener) */
+.control-bar .btnAdd-icon {
+  height: 40px;
+  padding: 0 16px;
   border-radius: 6px;
   font-size: 14px;
-  font-weight: bold;
-  color: #fff;
-  cursor: pointer;
-  transition: background 0.3s;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  /* ancho auto para ayudar a que quepan en fila */
+  width: auto;
 }
 
-.btn.blue { background-color: #007bff; }
-.btn.grey { background-color: #999; cursor: not-allowed; }
-.btn.red { background-color: #dc3545; }
+.control-bar .btnAdd-icon img {
+  width: 16px;
+  height: 16px;
+}
 
-.btn:hover:not(.grey) {
+/* Botón DETENER rojo */
+.control-bar .btnAdd-icon.btn-stop {
+  background-color: #dc3545 !important;
+  color: #fff !important;
+  border: none !important;
+}
+
+/* Estado deshabilitado de DETENER */
+.control-bar .btnAdd-icon.btn-stop:disabled {
+  background-color: #f3b3bc !important;
+  color: #fff !important;
+  cursor: not-allowed;
+  opacity: 0.85;
+}
+
+/* Hover solo si está habilitado */
+.control-bar .btnAdd-icon.btn-stop:not(:disabled):hover {
   filter: brightness(0.9);
 }
 
+
+/* ===============================
+   LEYENDA - ABAJO IZQUIERDA
+================================ */
+
+/* Contenedor de la leyenda flotando sobre el mapa */
+.map-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+/* contenedor de la leyenda flotando sobre el mapa */
+.map-wrapper .legend-overlay {
+  position: absolute;
+  left: 16px;
+  bottom: 16px;
+  z-index: 1000;
+}
+
+.legend-overlay {
+  position: absolute;
+  left: 16px;
+  bottom: 16px;
+  z-index: 1000;
+}
+
+/* Tarjeta de la leyenda */
+.legend-card {
+  background-color: #ffffff;
+  border-radius: 12px;
+  padding: 10px 14px;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.15);
+  border: 1px solid #e5e7eb;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 260px;
+}
+
+.legend-card-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.legend-card-info-icon {
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background-color: #2563eb;
+  color: #fff;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.legend-card-body {
+  display: flex;
+  flex-direction: column;     /* 🔥 filas verticales */
+  gap: 6px;
+  font-size: 12px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;        /* icono + texto en fila horizontal */
+  gap: 6px;
+}
+
+.legend-item span {
+  white-space: nowrap;
+}
+
+/* Iconos aviones */
+.legend-plane {
+  width: 16px;
+  height: 16px;
+}
+
+.legend-plane--green {
+  filter: invert(54%) sepia(81%) saturate(356%) hue-rotate(85deg)
+    brightness(94%) contrast(90%);
+}
+
+.legend-plane--yellow {
+  filter: invert(80%) sepia(72%) saturate(657%) hue-rotate(3deg)
+    brightness(101%) contrast(102%);
+}
+
+.legend-plane--red {
+  filter: invert(37%) sepia(79%) saturate(844%) hue-rotate(338deg)
+    brightness(94%) contrast(92%);
+}
+
+
+/* Leyenda responsiva */
+@media (max-width: 900px) {
+  .legend-card {
+    margin-left: 0;
+    width: 100%;
+    border-radius: 12px;
+    margin-top: 8px;
+  }
+
+  .legend-card-body {
+    flex-wrap: wrap;
+  }
+}
+
+/* Ajustes responsivos generales */
 @media (max-width: 900px) {
   .control-bar {
     justify-content: center;
     gap: 10px;
+    flex-wrap: wrap; /* en móviles sí puede saltar a dos filas */
   }
-  .control-bar .custom-input, .btn {
+
+  .control-bar .custom-input,
+  .btn {
     min-width: 120px;
   }
 }
 
-/* PANEL INFORMATIVO */
+/* ===============================
+   PANEL INFORMATIVO + MAPA
+================================ */
 .map-and-info {
+ display: flex;
+ flex-direction: column;
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  position: relative;
+  overflow-x: hidden;   /* por si algún hijo se pasa 1-2px, lo cortamos */
+}
+
+.map-and-info #map {
+  width: 100%;
+  min-height: 800px;
+}
+
+.info-panel {
+  width: 100%;
+  background-color: var(--color-dark-blue);
+  color: white;
+  border-top: 2px solid var(--color-dark-blue);
+  margin-top: 20px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  padding: 10px 20px;
+}
+
+.info-panel.expanded {
+  padding: 20px;
+}
+
+.info-content {
+  opacity: 0.8;
+  transition: opacity 0.3s ease;
+}
+
+.info-panel.expanded .info-content {
+  opacity: 1;
+}
+
+.placeholder {
+  opacity: 0.7;
+  font-style: italic;
+}
+
+
+
+/* ===============================
+   LAYOUT DEL SIDEBAR (ANCHO)
+================================ */
+
+/* si ya tienes .sidebar definido antes, esto lo hace un poco más ancho */
+.sidebar {
+  flex: 0 0 320px;
+  width: 320px;
+}
+
+.sidebar.collapsed {
+  flex: 0 0 48px;
+  width: 48px;
+}
+
+/* === PANEL IZQUIERDO: VUELOS ACTIVOS === */
+
+.sidebar-content--flights {
+  padding: 12px 18px 16px;
   display: flex;
   flex-direction: column;
+  gap: 10px;
+}
+
+.active-flights-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.active-flights-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #344767;
+}
+
+.active-flights-count {
+  min-width: 26px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 999px;
+  padding: 2px 8px;
+  background: #1a73e8;
+  color: #ffffff;
+}
+
+.active-flights-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: calc(100vh - 180px);
+  overflow-y: auto;
+  padding-right: 6px;
+}
+
+.no-flights-text {
+  font-size: 12px;
+  color: #6c757d;
+}
+
+/* Card de cada vuelo */
+
+.flight-card {
+  width: 100%; /* ocupa todo el ancho del panel */
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 14px;
+  padding: 12px 14px;
+  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.06);
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.flight-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.18);
+  border-color: #1a73e8;
+}
+
+.flight-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 6px;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.flight-route {
+  font-size: 13px;
+  font-weight: 600;
+  color: #111827;
+  line-height: 1.25;
+  word-break: break-word; /* ciudades largas parten en varias líneas */
+}
+
+.flight-arrow {
+  margin: 0 4px;
+}
+
+.flight-code {
+  font-size: 11px;
+  font-weight: 500;
+  color: #6b7280;
+  background: #f3f4f6;
+  border-radius: 999px;
+  padding: 2px 8px;
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.flight-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.flight-card-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  align-items: flex-start;
+}
+
+.flight-label {
+  color: #6b7280;
+}
+
+.flight-value {
+  color: #111827;
+  font-weight: 500;
+  text-align: right;
+  margin-left: 6px;
+  word-break: break-word; /* por si la fecha/hora es muy larga */
+}
+
+/* Barra de progreso */
+
+.flight-progress {
+  margin-top: 6px;
+  height: 4px;
+  border-radius: 999px;
+  background: #e5e7eb;
+  overflow: hidden;
+}
+
+.flight-progress-bar {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #22d3ee, #0ea5e9);
+  width: 0%;
+  transition: width 0.25s ease-out;
+}
+.page {
+  display: flex;
   width: 100%;
-  height: auto; /* ← importante: ya no forzamos altura total */
-  position: relative;
-
-  #map {
-    width: 100%;
-    min-height: 800px;
-    position: relative;
-  }
-
-  .info-panel {
-    width: 100%;
-    background-color: var(--color-dark-blue);
-    color: white;
-    border-top: 2px solid var(--color-dark-blue);
-    margin-top: 20px; /* mantiene espacio bajo el mapa */
-    overflow: hidden;
-    transition: all 0.3s ease;
-    padding: 0 20px;
-
-    /* Estado cerrado */
-    padding-top: 10px;
-    padding-bottom: 10px;
-
-    &.expanded {
-      padding: 20px;
-      background-color: var(--color-dark-blue);
-    }
-
-    .info-content {
-      opacity: 0.8;
-      transition: opacity 0.3s ease;
-    }
-
-    &.expanded .info-content {
-      opacity: 1;
-    }
-
-    .placeholder {
-      opacity: 0.7;
-      font-style: italic;
-    }
-  }
+  max-width: 100vw;
 }
 
-.airport-marker {
-  width: 18px;
-  height: 18px;
-  background-color: #0077ff;
-  border: 3px solid white;
-  border-radius: 50%;
-  box-shadow: 0 0 6px rgba(0,0,0,0.6);
+.contenido {
+  flex: 1;
+  min-width: 0;      /* CLAVE: permite que se encoja y no genere scroll */
 }
 
+/* Contenedor que flota sobre el mapa */
+.controls-dropdown {
+  position: absolute;
+  top: 12px;
+  left: 70px;          /* separado de los + / - de Leaflet */
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+/* Botón que abre/cierra el panel */
+.controls-toggle {
+  border: none;
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  background-color: rgba(15, 23, 42, 0.9);
+  color: #fff;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.35);
+  margin-bottom: 8px;
+}
+
+.controls-toggle:hover {
+  filter: brightness(1.05);
+}
+
+.leaflet-marker-icon img {
+  pointer-events: auto;
+}
