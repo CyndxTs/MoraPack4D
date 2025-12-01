@@ -12,20 +12,13 @@ import java.util.List;
 
 public class PuntoDeReplanificacion {
     private Ruta ruta;
-    private LocalDateTime fechaHoraInicio;
-    private Aeropuerto aeropuerto;
+    private LocalDateTime umbralDeConexion;
+    private List<Vuelo> vuelosFijos;
     private List<Lote> lotes;
 
     public PuntoDeReplanificacion() {
+        this.vuelosFijos = new ArrayList<>();
         this.lotes = new ArrayList<>();
-    }
-
-    public LocalDateTime getFechaHoraInicio() {
-        return fechaHoraInicio;
-    }
-
-    public void setFechaHoraInicio(LocalDateTime fechaHoraInicio) {
-        this.fechaHoraInicio = fechaHoraInicio;
     }
 
     public Ruta getRuta() {
@@ -36,6 +29,22 @@ public class PuntoDeReplanificacion {
         this.ruta = ruta;
     }
 
+    public LocalDateTime getUmbralDeConexion() {
+        return umbralDeConexion;
+    }
+
+    public void setUmbralDeConexion(LocalDateTime umbralDeConexion) {
+        this.umbralDeConexion = umbralDeConexion;
+    }
+
+    public List<Vuelo> getVuelosFijos() {
+        return vuelosFijos;
+    }
+
+    public void setVuelosFijos(List<Vuelo> vuelosFijos) {
+        this.vuelosFijos = vuelosFijos;
+    }
+
     public List<Lote> getLotes() {
         return lotes;
     }
@@ -43,14 +52,4 @@ public class PuntoDeReplanificacion {
     public void setLote(List<Lote> lotes) {
         this.lotes = lotes;
     }
-
-    public Aeropuerto getAeropuerto() {
-        return aeropuerto;
-    }
-
-    public void setAeropuerto(Aeropuerto aeropuerto) {
-        this.aeropuerto = aeropuerto;
-    }
 }
-
-

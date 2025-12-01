@@ -60,7 +60,7 @@ public class Pedido {
         this.segmentaciones = new ArrayList<>(pedido.segmentaciones);
     }
 
-    public void cargarRestriccionesDeReplanificacion(Map<Ruta, Lote> segmentacionModificable, Map<Ruta, List<Aeropuerto>> secuenciasIntocables) {
+    public void cargarRestriccionesDeReplanificacion(Map<Ruta, Lote> segmentacionModificable, Map<Ruta, List<Aeropuerto>> secuenciasInalterables) {
         Map<Ruta, Lote> segmentacion = this.obtenerSegementacionVigente().getLotesPorRuta();
         for (Map.Entry<Ruta, Lote> entry : segmentacion.entrySet()) {
             Ruta ruta = entry.getKey();
@@ -68,24 +68,26 @@ public class Pedido {
             if (!lote.esModificable(ruta)) {
                 continue;
             }
-            List<Aeropuerto> secuenciaIntocable = this.obtenerSecuenciaInalterable(ruta);
-            if(!secuenciaIntocable.isEmpty()) {
-                secuenciasIntocables.put(ruta, secuenciaIntocable);
+            List<Aeropuerto> saInalterable = this.obtenerSecuenciaInalterable(ruta, lote);
+            if(!saInalterable.isEmpty()) {
+                secuenciasInalterables.put(ruta, saInalterable);
             }
             segmentacionModificable.put(ruta, lote);
         }
     }
 
-    public List<Aeropuerto> obtenerSecuenciaInalterable(Ruta ruta) {
-        PuntoDeReplanificacion pdr = Problematica.PUNTOS_REPLANIFICACION.stream().filter(p -> this.obtenerSegementacionVigente().getLotesPorRuta().values().stream().anyMatch(l -> p.getLotes().contains(l))).findFirst().orElse(null);
+    public List<Aeropuerto> obtenerSecuenciaInalterable(Ruta ruta, Lote lote) {
+        PuntoDeReplanificacion pdr = Problematica.PUNTOS_REPLANIFICACION.stream().filter(p -> ruta.equals(p.getRuta()) && p.getLotes().contains(lote)).findFirst().orElse(null);
         if (pdr == null) {
             return new ArrayList<>();
         }
-        Ruta rutaOriginal = pdr.getRuta();
-        Aeropuerto aeropuertoQuiebre = pdr.getAeropuerto();
-        List<Aeropuerto> secuenciaOriginal = rutaOriginal.obtenerSecuenciaDeAeropuertos();
-        int posQuiebre = secuenciaOriginal.indexOf(aeropuertoQuiebre);
-        return new ArrayList<>(secuenciaOriginal.subList(0, posQuiebre + 1));
+        List<Vuelo> vuelosFijos = pdr.getVuelosFijos();
+        List<Aeropuerto> saInalterable = new ArrayList<>();
+        if(!vuelosFijos.isEmpty()) {
+            vuelosFijos.forEach(v -> saInalterable.add(v.getPlan().getOrigen()));
+            saInalterable.add(vuelosFijos.getLast().getPlan().getDestino());
+        }
+        return saInalterable;
     }
 
     public Segmentacion obtenerSegementacionVigente() {
