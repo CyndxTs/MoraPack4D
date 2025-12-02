@@ -102,7 +102,7 @@ public class GVNS {
             G4DUtility.Logger.Stats.posProd = 0;
             errorDeEnrutamiento = false;
             //
-            prepararReplanificacion(pedidos, planes);
+            // prepararReplanificacion(pedidos, planes);
             //
             G4DUtility.Logger.Stats.set_process_start();
             for (Pedido pedido : pedidos) {
@@ -195,7 +195,7 @@ public class GVNS {
                             }
                             Aeropuerto aeropuertoDeConexion = vueloPorReplanificar.getPlan().getOrigen();
                             lote.setEstado(EstadoLote.POR_REPLANIFICAR);
-                            ruta.eliminarRegistroDeLoteDeProductosDesdeAeropuerto(lote, aeropuertoDeConexion, true);
+                            ruta.eliminarRegistroDeLoteDeProductosDesdeAeropuerto(lote, aeropuertoDeConexion, true, false);
                             LocalDateTime umbralDeConexion;
                             if(!vuelosFijos.isEmpty()) {
                                 umbralDeConexion = (vuelosFijos.getLast().getFechaHoraLlegada().isAfter(Problematica.UMBRAL_REPLANIFICACION)) ? vuelosFijos.getLast().getFechaHoraLlegada() : Problematica.UMBRAL_REPLANIFICACION;
@@ -230,7 +230,10 @@ public class GVNS {
                                 }
                                 Aeropuerto aeropuertoDeConexion = vueloPorReplanificar.getPlan().getOrigen();
                                 lote.setEstado(EstadoLote.POR_REPLANIFICAR);
-                                ruta.eliminarRegistroDeLoteDeProductosDesdeAeropuerto(lote, aeropuertoDeConexion, true);
+                                if(!Problematica.CODIGOS_ORIGENES.contains(aeropuertoDeConexion.getCodigo()) && aeropuertoDeConexion.getRegistros().stream().filter(Registro::getSigueVigente).filter(r->r.getLote().equals(lote)).findFirst().orElse(null) == null) {
+                                    System.out.println("hmmmm");
+                                }
+                                ruta.eliminarRegistroDeLoteDeProductosDesdeAeropuerto(lote, aeropuertoDeConexion, true, false);
                                 LocalDateTime umbralDeConexion;
                                 if(!vuelosFijos.isEmpty()) {
                                     umbralDeConexion = (vuelosFijos.getLast().getFechaHoraLlegada().isAfter(Problematica.UMBRAL_REPLANIFICACION)) ? vuelosFijos.getLast().getFechaHoraLlegada() : Problematica.UMBRAL_REPLANIFICACION;
@@ -251,7 +254,7 @@ public class GVNS {
                         PuntoDeReplanificacion pdr = Problematica.PUNTOS_REPLANIFICACION.stream().filter(p -> ruta.equals(p.getRutaInicial())).findFirst().orElse(null);
                         if(pdr != null) {
                             lote.setEstado(EstadoLote.POR_REPLANIFICAR);
-                            ruta.eliminarRegistroDeLoteDeProductosDesdeAeropuerto(lote, pdr.getAeropuertoDeConexion(), true);
+                            ruta.eliminarRegistroDeLoteDeProductosDesdeAeropuerto(lote, pdr.getAeropuertoDeConexion(), true, false);
                             pdr.getLotes().add(lote);
                         }
                     }
@@ -267,6 +270,7 @@ public class GVNS {
         int cantPorEnrutar = pedido.getCantidadSolicitada();
         LocalDateTime fechaHoraGeneracion = pedido.getFechaHoraGeneracion();
         LocalDateTime fechaHoraProcesamiento = pedido.getFechaHoraProcesamiento();
+        LocalDateTime origFechaHoraMaxEgreso = fechaHoraProcesamiento.plusMinutes((long)(60*Problematica.MAX_HORAS_ESTANCIA));
         Aeropuerto destino = pedido.getDestino();
         List<Aeropuerto> origenesDisponibles = new ArrayList<>(origenes);
         Set<Vuelo> vuelosActivados = new HashSet<>(vuelosEnTransito);
@@ -284,7 +288,7 @@ public class GVNS {
             G4DUtility.Logger.delete_upper_line();
             if(ruta == null) {
                 // Construcción de nueva ruta
-                ruta = construirRutaVoraz(fechaHoraProcesamiento, fechaHoraLimite, origen, destino, planes, vuelosActivados);
+                ruta = construirRutaVoraz(fechaHoraProcesamiento, fechaHoraProcesamiento, origFechaHoraMaxEgreso, fechaHoraLimite, origen, destino, planes, vuelosActivados);
                 if(ruta == null) {
                     G4DUtility.Logger.logln_err("ERROR: No fue posible generar una ruta a partir de este origen.");
                     origenesDisponibles.remove(origen);
@@ -349,8 +353,9 @@ public class GVNS {
         return null;
     }
 
-    private Ruta construirRutaVoraz(LocalDateTime fechaHoraInicial, LocalDateTime fechaHoraLimite, Aeropuerto origen,
-                                    Aeropuerto destino, List<Plan> planes, Set<Vuelo> vuelosActivados) {
+    private Ruta construirRutaVoraz(LocalDateTime fechaHoraInicial, LocalDateTime origFechaHoraMinEgreso, LocalDateTime origFechaHoraMaxEgreso,
+                                    LocalDateTime fechaHoraLimite, Aeropuerto origen, Aeropuerto destino, List<Plan> planes,
+                                    Set<Vuelo> vuelosActivados) {
         G4DUtility.Logger.log("Construyendo nueva ruta..");
         // Validación por origen factible
         if(origen.equals(destino)) {
@@ -370,7 +375,7 @@ public class GVNS {
             G4DUtility.Logger.logf("- Aeropuerto completed: %s%n", actual);
             // Búsqueda de plan de vuelo más próximo
             G4DUtility.Logger.log(": Buscando mejor plan de vuelo..");
-            Plan mejorPlan = obtenerPlanMasProximo(actual, destino, fechaHoraActual, fechaHoraLimite, planes, aeropuertosVisitados, vuelosActivados);
+            Plan mejorPlan = obtenerPlanMasProximo(actual, destino, fechaHoraActual, origFechaHoraMinEgreso,origFechaHoraMaxEgreso, fechaHoraLimite, planes, aeropuertosVisitados, vuelosActivados);
             if(mejorPlan == null) {
                 G4DUtility.Logger.log(" [NO ENCONTRADO]");
                 G4DUtility.Logger.delete_lines(4);
@@ -390,9 +395,11 @@ public class GVNS {
             } else G4DUtility.Logger.logln(" [ENCONTRADO]");
             // Asignación de vuelo
             secuenciaDeVuelos.add(vuelo);
-            fechaHoraActual = vuelo.getFechaHoraLlegada();
             actual = vuelo.getPlan().getDestino();
-            G4DUtility.Logger.logf(": Vuelo asignado: %s -> %s%n", vuelo.getPlan().getOrigen().getCodigo(), actual.getCodigo());
+            fechaHoraActual = vuelo.getFechaHoraLlegada();
+            origFechaHoraMinEgreso = vuelo.getFechaHoraLlegada().plusMinutes((long)(60*Problematica.MIN_HORAS_ESTANCIA));
+            origFechaHoraMaxEgreso = vuelo.getFechaHoraLlegada().plusMinutes((long)(60*Problematica.MAX_HORAS_ESTANCIA));
+            G4DUtility.Logger.logf(": Vuelo asignado: %s -> %s%n", vuelo.getPlan().getOrigen().getCodigo(), vuelo.getPlan().getDestino().getCodigo());
             G4DUtility.Logger.delete_lines(6);
         }
         G4DUtility.Logger.delete_upper_line();
@@ -408,15 +415,16 @@ public class GVNS {
     }
 
     private Plan obtenerPlanMasProximo(Aeropuerto origen, Aeropuerto destino, LocalDateTime fechaHoraActual,
+                                       LocalDateTime origFechaHoraMinEgreso, LocalDateTime origFechaHoraMaxEgreso,
                                        LocalDateTime fechaHoraLimite, List<Plan> planes, Set<Aeropuerto> visitados,
                                        Set<Vuelo> vuelosActivados) {
         // Declaración & inicialización de variables
         Double menorLejania = Double.MAX_VALUE;
         Plan planMasProximo = null;
         // Búsqueda de plan de vuelo más próximo
-        List<Plan> planesPosibles = planes.stream().filter(p -> p.getOrigen().equals(origen)).toList();
+        List<Plan> planesPosibles = planes.stream().filter(p -> p.getOrigen().equals(origen)).filter(p -> !visitados.contains(p.getDestino())).toList();
         for(Plan plan : planesPosibles) {
-            if(!plan.esAlcanzable(fechaHoraActual, fechaHoraLimite, destino, vuelosActivados)) continue;
+            if(!plan.esAlcanzable(fechaHoraActual, origFechaHoraMinEgreso, origFechaHoraMaxEgreso, fechaHoraLimite, destino, vuelosActivados)) continue;
             Double lejania = plan.obtenerLejania(fechaHoraActual, destino);
             if(lejania < menorLejania) {
                 menorLejania = lejania;
@@ -445,19 +453,23 @@ public class GVNS {
             List<Vuelo> vuelosFijos = pdr.getVuelosFijos();
             Aeropuerto aeropuertoDeConexion = pdr.getAeropuertoDeConexion();
             LocalDateTime umbralDeConexion = pdr.getUmbralDeConexion();
+            LocalDateTime instanteMinimoDeEstancia = pedido.getFechaHoraProcesamiento();
+            LocalDateTime instanteMaximoDeEstancia = pedido.getFechaHoraProcesamiento().plusMinutes((long)(60*Problematica.MAX_HORAS_ESTANCIA));
             if(aeropuertoDeConexion != null) {
                 Registro registro = aeropuertoDeConexion.obtenerRegistroDeLoteDeProductos(lotePorReplanificar);
                 if(registro != null) {
+                    instanteMinimoDeEstancia = registro.getFechaHoraIngreso().plusMinutes((long)(60*Problematica.MIN_HORAS_ESTANCIA));
+                    instanteMaximoDeEstancia = registro.getFechaHoraEgreso();
                     registro.setFechaHoraEgreso(null);
                     registro.setSigueVigente(false);
                 }
             }
             while(restantePorReplanificar > 0) {
                 // Búsqueda de ruta reutilizable
-                Ruta ruta = buscarRutaVoraz(vuelosFijos, aeropuertoDeConexion, umbralDeConexion, pedido.getFechaHoraGeneracion(), destino, rutasAsignadas);
+                Ruta ruta = buscarRutaVoraz(vuelosFijos, aeropuertoDeConexion, umbralDeConexion, instanteMinimoDeEstancia, instanteMaximoDeEstancia, pedido.getFechaHoraGeneracion(), destino, rutasAsignadas);
                 if(ruta == null) {
                     // Construcción de nueva ruta
-                    ruta = construirRutaVoraz(vuelosFijos, aeropuertoDeConexion, umbralDeConexion, pedido.getFechaHoraGeneracion(), origenes, destino, planes, vuelosActivados);
+                    ruta = construirRutaVoraz(vuelosFijos, aeropuertoDeConexion, umbralDeConexion, instanteMinimoDeEstancia, instanteMaximoDeEstancia, pedido.getFechaHoraGeneracion(), origenes, destino, planes, vuelosActivados);
                     if(ruta == null) {
                         return false;
                     }
@@ -471,13 +483,14 @@ public class GVNS {
                 }
                 // Producción y registro de segmento de pedido
                 Lote lote = ruta.getOrigen().generarLoteDeProductos(cantEnrutables);
-                ruta.registraLoteDeProductosDesdeAeropuerto(lote, aeropuertoDeConexion, vuelosActivados, rutasAsignadas);
                 if(nuevaSegmentacion.containsKey(ruta)) {
                     Lote lotePorConsolidar = nuevaSegmentacion.get(ruta);
                     lotePorConsolidar.setEstado(EstadoLote.REPLANIFICADO);
+                    ruta.eliminarRegistroDeLoteDeProductosDesdeAeropuerto(lote, aeropuertoDeConexion, true, true);
                     lote.setTamanio(lote.getTamanio() + lotePorConsolidar.getTamanio());
                     nuevaSegmentacion.remove(ruta);
                 }
+                ruta.registraLoteDeProductosDesdeAeropuerto(lote, aeropuertoDeConexion, vuelosActivados, rutasAsignadas);
                 nuevaSegmentacion.put(ruta, lote);
                 restantePorReplanificar -= cantEnrutables;
                 G4DUtility.Logger.Stats.set_proccess_duration();
@@ -502,7 +515,8 @@ public class GVNS {
     }
 
     private Ruta buscarRutaVoraz(List<Vuelo> vuelosFijos, Aeropuerto aeropuertoDeConexion, LocalDateTime umbralDeConexion,
-                                 LocalDateTime fechaHoraGeneracion, Aeropuerto destino, Set<Ruta> rutasAsignadas) {
+                                 LocalDateTime instanteMinimoDeEstancia, LocalDateTime instanteMaximoDeEstancia, LocalDateTime fechaHoraGeneracion,
+                                 Aeropuerto destino, Set<Ruta> rutasAsignadas) {
         // Búsqueda de ruta reutilizable
         List<Ruta> rutasPosibles = rutasAsignadas.stream().filter(r -> r.getDestino().equals(destino))
                                                           .filter(r -> r.getEstado().equals(EstadoRuta.OPERATIVA))
@@ -513,9 +527,7 @@ public class GVNS {
                                                               List<Aeropuerto> sa = r.obtenerSecuenciaDeAeropuertos();
                                                               int posConexion = sa.indexOf(aeropuertoDeConexion);
                                                               if(posConexion == -1) return false;
-                                                              if(posConexion >= sa.size() - 1) return false;
-                                                              Vuelo vueloDesdeConexion = r.getVuelos().get(posConexion);
-                                                              return vueloDesdeConexion.getFechaHoraSalida().isAfter(umbralDeConexion);
+                                                              return posConexion < sa.size() - 1;
                                                           }).toList();
         for(Ruta ruta : rutasPosibles) {
             boolean esValida = true;
@@ -529,7 +541,7 @@ public class GVNS {
                 Aeropuerto origen = ruta.getOrigen();
                 TipoRuta tipoRuta = (origen.getContinente().compareTo(destino.getContinente()) == 0) ? TipoRuta.INTRACONTINENTAL : TipoRuta.INTERCONTINENTAL;
                 LocalDateTime fechaHoraLimite = fechaHoraGeneracion.plusMinutes(tipoRuta.getMaxMinutosParaEntrega());
-                if(!ruta.esAlcanzableDesdeAeropuerto(aeropuertoDeConexion, umbralDeConexion, fechaHoraLimite)) continue;
+                if(!ruta.esAlcanzableDesdeAeropuerto(aeropuertoDeConexion, umbralDeConexion, instanteMinimoDeEstancia, instanteMaximoDeEstancia, fechaHoraLimite)) continue;
                 ruta.setTipo(tipoRuta);
                 return ruta;
             }
@@ -538,33 +550,30 @@ public class GVNS {
     }
 
 
-    private Ruta construirRutaVoraz(List<Vuelo> vuelosFijos, Aeropuerto aConexion, LocalDateTime umbralDeConexion, LocalDateTime fechaHoraGeneracion, List<Aeropuerto> origenes, Aeropuerto destino, List<Plan> planes, Set<Vuelo> vuelosActivados) {
+    private Ruta construirRutaVoraz(List<Vuelo> vuelosFijos, Aeropuerto aeropuertoDeConexion, LocalDateTime umbralDeConexion,
+                                    LocalDateTime origFechaHoraMinEstancia, LocalDateTime origFechaHoraMaxEstancia, LocalDateTime fechaHoraGeneracion,
+                                    List<Aeropuerto> origenes, Aeropuerto destino, List<Plan> planes, Set<Vuelo> vuelosActivados) {
         G4DUtility.Logger.log("Construyendo nueva ruta..");
         // Declaración & inicialización de variables
-        Ruta ruta = new Ruta();
-        List<Aeropuerto> origenesDisponibles = new ArrayList<>(origenes);
-        while(!origenesDisponibles.isEmpty()) {
+        if(aeropuertoDeConexion != null) {
+            Ruta ruta = new Ruta();
             List<Vuelo> secuenciaDeVuelos = (!vuelosFijos.isEmpty()) ? new ArrayList<>(vuelosFijos) : new ArrayList<>();
             Set<Aeropuerto> aeropuertosVisitados = new HashSet<>();
             secuenciaDeVuelos.forEach(v -> aeropuertosVisitados.add(v.getPlan().getOrigen()));
-            Aeropuerto inicial;
-            if(aConexion != null) {
-                inicial = aConexion;
-            } else inicial = origenesDisponibles.get(random.nextInt(0, origenesDisponibles.size()));
             TipoRuta tipoRuta;
             if(!vuelosFijos.isEmpty()) {
                 tipoRuta = (vuelosFijos.getFirst().getPlan().getOrigen().getContinente().compareTo(destino.getContinente()) == 0) ? TipoRuta.INTRACONTINENTAL : TipoRuta.INTERCONTINENTAL;
-            } else tipoRuta = (inicial.getContinente().compareTo(destino.getContinente()) == 0) ? TipoRuta.INTRACONTINENTAL : TipoRuta.INTERCONTINENTAL;
-            LocalDateTime fechaHoraActual = umbralDeConexion;
+            } else tipoRuta = (aeropuertoDeConexion.getContinente().compareTo(destino.getContinente()) == 0) ? TipoRuta.INTRACONTINENTAL : TipoRuta.INTERCONTINENTAL;
             LocalDateTime fechaHoraLimite = fechaHoraGeneracion.plusMinutes(tipoRuta.getMaxMinutosParaEntrega());
-            Aeropuerto actual = inicial;
+            LocalDateTime fechaHoraActual = umbralDeConexion;
+            Aeropuerto actual = aeropuertoDeConexion;
             while (!actual.equals(destino)) {
                 aeropuertosVisitados.add(actual);
                 G4DUtility.Logger.logf("- Num. vuelos asignados: %d%n", secuenciaDeVuelos.size());
                 G4DUtility.Logger.logf("- Aeropuerto completed: %s%n", actual);
                 // Búsqueda de plan de vuelo más próximo
                 G4DUtility.Logger.log(": Buscando mejor plan de vuelo..");
-                Plan mejorPlan = obtenerPlanMasProximo(actual, destino, fechaHoraActual, fechaHoraLimite, planes, aeropuertosVisitados, vuelosActivados);
+                Plan mejorPlan = obtenerPlanMasProximo(actual, destino, fechaHoraActual, origFechaHoraMinEstancia, origFechaHoraMaxEstancia, fechaHoraLimite, planes, aeropuertosVisitados, vuelosActivados);
                 if(mejorPlan == null) {
                     G4DUtility.Logger.log(" [NO ENCONTRADO]");
                     G4DUtility.Logger.delete_lines(4);
@@ -584,32 +593,39 @@ public class GVNS {
                 } else G4DUtility.Logger.logln(" [ENCONTRADO]");
                 // Asignación de vuelo
                 secuenciaDeVuelos.add(vuelo);
-                fechaHoraActual = vuelo.getFechaHoraLlegada();
                 actual = vuelo.getPlan().getDestino();
-                G4DUtility.Logger.logf(": Vuelo asignado: %s -> %s%n", vuelo.getPlan().getOrigen().getCodigo(), actual.getCodigo());
+                fechaHoraActual = vuelo.getFechaHoraLlegada();
+                origFechaHoraMinEstancia = vuelo.getFechaHoraLlegada().plusMinutes((long)(60*Problematica.MIN_HORAS_ESTANCIA));
+                origFechaHoraMaxEstancia = vuelo.getFechaHoraLlegada().plusMinutes((long)(60*Problematica.MAX_HORAS_ESTANCIA));
+                G4DUtility.Logger.logf(": Vuelo asignado: %s -> %s%n", vuelo.getPlan().getOrigen().getCodigo(), vuelo.getPlan().getDestino().getCodigo());
                 G4DUtility.Logger.delete_lines(6);
             }
-            if(!actual.equals(destino)) {
-                if(aConexion == null) {
-                    origenesDisponibles.remove(inicial);
-                } else break;
-            } else {
-                G4DUtility.Logger.delete_upper_line();
-                // Actualización de ruta construida
-                G4DUtility.Logger.logln("DESTINO ALCANZADO! | Guardando ruta..");
-                ruta.setOrigen(secuenciaDeVuelos.getFirst().getPlan().getOrigen());
-                ruta.setDestino(destino);
-                ruta.setTipo(tipoRuta);
-                ruta.setVuelos(secuenciaDeVuelos);
-                ruta.instanciarHorarios();
-                ruta.setDuracion();
-                ruta.setDistancia();
-                return ruta;
+            G4DUtility.Logger.delete_upper_line();
+            // Actualización de ruta construida
+            G4DUtility.Logger.logln("DESTINO ALCANZADO! | Guardando ruta..");
+            ruta.setOrigen(secuenciaDeVuelos.getFirst().getPlan().getOrigen());
+            ruta.setDestino(destino);
+            ruta.setTipo(tipoRuta);
+            ruta.setVuelos(secuenciaDeVuelos);
+            ruta.instanciarHorarios();
+            ruta.setDuracion();
+            ruta.setDistancia();
+            return ruta;
+        } else {
+            List<Aeropuerto> origenesDisponibles = new ArrayList<>(origenes);
+            while(!origenesDisponibles.isEmpty()) {
+                Aeropuerto origen = origenesDisponibles.get(random.nextInt(0, origenesDisponibles.size()));
+                TipoRuta tipoRuta = (origen.getContinente().compareTo(destino.getContinente()) == 0) ? TipoRuta.INTRACONTINENTAL : TipoRuta.INTERCONTINENTAL;
+                LocalDateTime fechaHoraLimite = fechaHoraGeneracion.plusMinutes(tipoRuta.getMaxMinutosParaEntrega());
+                Ruta ruta = construirRutaVoraz(umbralDeConexion, origFechaHoraMinEstancia, origFechaHoraMaxEstancia, fechaHoraLimite, origen, destino, planes, vuelosActivados);
+                if(ruta != null) {
+                    return ruta;
+                }
+                origenesDisponibles.remove(origen);
             }
+            return null;
         }
-        return null;
     }
-
 
     private void VND(Solucion solucion) {
         G4DUtility.Logger.logln("[VND]");
