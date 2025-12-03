@@ -56,6 +56,7 @@ export default function Planificacion() {
   const [minHorasEstancia, setMinHorasEstancia] = useState();
   const [maxHorasEstancia, setMaxHorasEstancia] = useState();
   const [considerarDesfaseTemporal, setConsiderarDesfaseTemporal] = useState();
+  const [probabilidadReplanificacion, setProbabilidadReplanificacion] = useState();
 
   const [dMin, setDMin] = useState();
   const [iMax, setIMax] = useState();
@@ -64,7 +65,7 @@ export default function Planificacion() {
   const [kMin, setKMin] = useState();
   const [kMax, setKMax] = useState();
   const [tMax, setTMax] = useState();
-  const [maxIntentos, setMaxIntentos] = useState();
+  const [nMax, setNMax] = useState();
 
   const [factorDeUmbralDeAberracion, setFactorDeUmbralDeAberracion] = useState();
   const [factorDeUtilizacionTemporal, setFactorDeUtilizacionTemporal] = useState();
@@ -349,11 +350,12 @@ export default function Planificacion() {
       kMin,
       kMax,
       tMax,
-      maxIntentos,
+      nMax,
       factorDeUmbralDeAberracion,
       factorDeUtilizacionTemporal,
       factorDeDesviacionEspacial,
       factorDeDisposicionOperacional,
+      probabilidadReplanificacion
     };
 
     try {
@@ -518,7 +520,8 @@ export default function Planificacion() {
         setMaxHorasRecojo(p.maxHorasRecojo);
         setMinHorasEstancia(p.minHorasEstancia);
         setMaxHorasEstancia(p.maxHorasEstancia);
-        setConsiderarDesfaseTemporal(p.considerarDesfaseTemporal);
+        //setConsiderarDesfaseTemporal(p.considerarDesfaseTemporal);
+        setProbabilidadReplanificacion(p.probabilidadReplanificacion);
 
         setDMin(p.dMin);
         setIMax(p.iMax);
@@ -527,7 +530,7 @@ export default function Planificacion() {
         setKMin(p.kMin);
         setKMax(p.kMax);
         setTMax(p.tMax);
-        setMaxIntentos(p.maxIntentos);
+        setNMax(p.nMax);
 
         setFactorDeUmbralDeAberracion(p.factorDeUmbralDeAberracion);
         setFactorDeUtilizacionTemporal(p.factorDeUtilizacionTemporal);
@@ -911,8 +914,17 @@ export default function Planificacion() {
                     min={1}
                     max={10}
                     step={1}
-                    value={maxIntentos}
-                    onChange={(num) => setMaxIntentos(parseNumber(num))}
+                    value={nMax}
+                    onChange={(num) => setNMax(parseNumber(num))}
+                  />
+
+                  <label>Probabilidad de replanificación</label>
+                  <RangeSelector 
+                    min={0.30}
+                    max={0.55}
+                    step={0.05}
+                    value={probabilidadReplanificacion}
+                    onChange={(num) => setProbabilidadReplanificacion(parseNumber(num))}
                   />
 
                   <label>Factor de Umbral de Aberración</label>
