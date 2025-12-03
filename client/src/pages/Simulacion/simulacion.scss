@@ -236,7 +236,78 @@
   width: 100%;
   min-height: 800px;
 }
+/* ===============================
+   POPUP AEROPUERTOS
+================================ */
 
+.airport-popup {
+  min-width: 220px;
+  font-size: 12px;
+}
+
+.airport-popup__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.airport-popup__country {
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.airport-popup__code {
+  font-weight: 600;
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  border: 1px solid #d0d7de;
+  background-color: #f3f4f6;
+}
+
+.airport-popup__city {
+  color: #6b7280;
+  margin-bottom: 8px;
+}
+
+.airport-popup__row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.airport-popup__label {
+  color: #6b7280;
+}
+
+.airport-popup__value {
+  font-weight: 500;
+}
+
+.airport-popup__progress {
+  margin-top: 6px;
+  margin-bottom: 2px;
+  width: 100%;
+  height: 6px;
+  border-radius: 999px;
+  background-color: #e5e7eb;
+  overflow: hidden;
+}
+
+.airport-popup__progress-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #22c55e, #eab308, #ef4444);
+}
+
+.airport-popup__footnote {
+  margin-top: 2px;
+  font-size: 10px;
+  color: #9ca3af;
+}
+/* ===============================
+   PANEL INFORMATIVO INFERIOR*/
 .info-panel {
   width: 100%;
   background-color: var(--color-dark-blue);

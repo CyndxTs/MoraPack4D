@@ -72,6 +72,9 @@ export default function Simulacion() {
 
   //Aeropuertos
   const [airports, setAirports] = useState(null);
+  // Paquetes almacenados por aeropuerto: { [codigo]: cantidad }
+  const [airportLoads, setAirportLoads] = useState({});
+
   // Inputs de inicio de simulación (no se auto-actualizan)
   const [inputDate, setInputDate] = useState(
     new Date().toISOString().split("T")[0]
@@ -82,6 +85,9 @@ export default function Simulacion() {
   // Reloj de simulación (ms) y velocidad: 600 = 1s real -> 10 minutos simulados (1h en 6s)
   const [simNowMs, setSimNowMs] = useState(() => Date.now());
   const SIM_SPEED = 500;
+  // Momento en que inicia la simulación (para contar cargas desde ahí)
+const [simStartMs, setSimStartMs] = useState(null);
+
   // Refs internas para el avance suave
   const lastRealMsRef = useRef(null);
   // Helpers de tiempo (trabajamos en UTC porque tu JSON está en UTC)
@@ -109,10 +115,6 @@ export default function Simulacion() {
     setNotification({ type, message });
     setTimeout(() => setNotification(null), 5000);
   };
-  //Filtros
-  const handleFilter = async () => {};
-  //Limpiar filtros
-  const handleCleanFilters = async () => {};
 
   // Botones
   const [stopDisabled, setStopDisabled] = useState(true);
@@ -224,6 +226,7 @@ export default function Simulacion() {
     // Primer inicio: fija el tiempo de simulación al valor de los inputs
     const base = fromInputsToMsUTC(inputDate, inputTime);
     setSimNowMs(base);
+    setSimStartMs(base);  
     lastRealMsRef.current = performance.now();
 
     setTimerRunning(true);
@@ -262,6 +265,8 @@ export default function Simulacion() {
     setAirports(null);
     setSelectedItem(null);
     setStopDisabled(true);
+    setAirportLoads({});
+setSimStartMs(null);
   };
 
   // Vuelos
@@ -274,6 +279,55 @@ export default function Simulacion() {
       simNowMs >= f.startMs &&
       simNowMs < f.endMs
   );
+
+// Recalcular capacidad ocupada de cada aeropuerto
+// Partimos SIEMPRE de 0 en el inicio de la simulación
+useEffect(() => {
+  if (!airports || simStartMs == null) return;
+
+  // 1) Inicializar todos en 0
+  const loads = {};
+  Object.values(airports).forEach((ap) => {
+    loads[ap.code] = 0;
+  });
+
+  // 2) Para cada vuelo, contamos salidas y llegadas
+  flights.forEach((flight) => {
+    if (!flight || typeof flight.capacity !== "number") return;
+
+    const load = flight.capacity || 0;
+    const originCode = flight.origin?.code;
+    const destCode = flight.destination?.code;
+
+    // SALIDA dentro de la simulación y YA ocurrida
+    if (
+      originCode &&
+      flight.startMs >= simStartMs &&
+      flight.startMs <= simNowMs
+    ) {
+      loads[originCode] = (loads[originCode] || 0) - load;
+    }
+
+    // LLEGADA dentro de la simulación y YA ocurrida
+    if (
+      destCode &&
+      flight.endMs >= simStartMs &&
+      flight.endMs <= simNowMs
+    ) {
+      loads[destCode] = (loads[destCode] || 0) + load;
+    }
+  });
+
+  // 3) Nunca permitimos valores negativos
+  Object.keys(loads).forEach((code) => {
+    if (loads[code] < 0) loads[code] = 0;
+  });
+
+  setAirportLoads(loads);
+}, [airports, flights, simNowMs, simStartMs]);
+
+
+
   const createColoredIcon = (filterCss, rotation) =>
     L.divIcon({
       html: `<img src="${planeIconImg}" 
@@ -287,12 +341,12 @@ export default function Simulacion() {
       iconAnchor: [11, 8],
     });
 
-const airportIcon = L.icon({
-  iconUrl: airportIconImg,
-  iconSize: [24, 24],   // tamaño del svg en el mapa
-  iconAnchor: [12, 12], // punto que “toca” el mapa (centro del ícono)
-  popupAnchor: [0, -12] // dónde aparece el popup respecto al icono
-});
+  const airportIcon = L.icon({
+    iconUrl: airportIconImg,
+    iconSize: [24, 24], // tamaño del svg en el mapa
+    iconAnchor: [12, 12], // punto que “toca” el mapa (centro del ícono)
+    popupAnchor: [0, -12], // dónde aparece el popup respecto al icono
+  });
   //
 
   // Detener cronómetro cuando todos los vuelos hayan llegado
@@ -345,31 +399,31 @@ const airportIcon = L.icon({
   }
   //
   function getPlaneColorFilter(capacity, maxCapacity) {
-  if (!maxCapacity || maxCapacity <= 0) {
-    // color por defecto si falta dato → amarillo
+    if (!maxCapacity || maxCapacity <= 0) {
+      // color por defecto si falta dato → amarillo
+      return "invert(80%) sepia(72%) saturate(657%) hue-rotate(3deg) brightness(101%) contrast(102%)";
+    }
+
+    const ratio = capacity / maxCapacity; // 0.0 → 1.0
+
+    // VERDE → menos del 50%
+    if (ratio < 0.5) {
+      return "invert(54%) sepia(81%) saturate(356%) hue-rotate(85deg) brightness(94%) contrast(90%)";
+    }
+
+    // AMARILLO → 50% a 75%
+    if (ratio >= 0.5 && ratio < 0.75) {
+      return "invert(80%) sepia(72%) saturate(657%) hue-rotate(3deg) brightness(101%) contrast(102%)";
+    }
+
+    // ROJO → 90% a 100%
+    if (ratio >= 0.9) {
+      return "invert(37%) sepia(79%) saturate(844%) hue-rotate(338deg) brightness(94%) contrast(92%)";
+    }
+
+    // Rango 75%–90% → también amarillo
     return "invert(80%) sepia(72%) saturate(657%) hue-rotate(3deg) brightness(101%) contrast(102%)";
   }
-
-  const ratio = capacity / maxCapacity; // 0.0 → 1.0
-
-  // VERDE → menos del 50%
-  if (ratio < 0.5) {
-    return "invert(54%) sepia(81%) saturate(356%) hue-rotate(85deg) brightness(94%) contrast(90%)";
-  }
-
-  // AMARILLO → 50% a 75%
-  if (ratio >= 0.5 && ratio < 0.75) {
-    return "invert(80%) sepia(72%) saturate(657%) hue-rotate(3deg) brightness(101%) contrast(102%)";
-  }
-
-  // ROJO → 90% a 100%
-  if (ratio >= 0.9) {
-    return "invert(37%) sepia(79%) saturate(844%) hue-rotate(338deg) brightness(94%) contrast(92%)";
-  }
-
-  // Rango 75%–90% → también amarillo
-  return "invert(80%) sepia(72%) saturate(657%) hue-rotate(3deg) brightness(101%) contrast(102%)";
-}
 
   function ClickHandler({ onMapClick }) {
     useMapEvent("click", () => onMapClick());
@@ -807,7 +861,7 @@ const airportIcon = L.icon({
         )}
       </aside>
 
-            <section className="contenido">
+      <section className="contenido">
         <div className="map-and-info">
           {/* BOTÓN + PANEL DE CONTROLES (arriba izquierda) */}
           <div className={`controls-dropdown ${controlsOpen ? "open" : ""}`}>
@@ -867,31 +921,70 @@ const airportIcon = L.icon({
               />
 
               {/* Marcadores de aeropuertos */}
-              {airports &&
-                Object.values(airports).map((ap, i) => (
-                  <Marker
-                    key={i}
-                    position={[ap.lat, ap.lng]}
-                    icon={airportIcon}
-                    eventHandlers={{
-                      click: () =>
-                        setSelectedItem(
-                          `Aeropuerto ${ap.name} (${ap.code}) - ${ap.city}, ${ap.country} | Capacidad: ${ap.capacidad}`
-                        ),
-                    }}
-                  >
-                    <Popup>
-                      <b>{ap.country}</b>
-                      <br />
-                      Código: {ap.code}
-                      <br />
-                      Ciudad: {ap.city}
-                      <br />
-                      Capacidad: {ap.capacidad} unidades
-                      <br />
-                    </Popup>
-                  </Marker>
-                ))}
+              {/* Marcadores de aeropuertos */}
+{airports &&
+  Object.values(airports).map((ap, i) => {
+    const occupied = airportLoads?.[ap.code] ?? 0;
+    const occupancyPct =
+      ap.capacidad && ap.capacidad > 0
+        ? Math.min(100, Math.round((occupied / ap.capacidad) * 100))
+        : 0;
+
+    return (
+      <Marker
+        key={ap.code || i}
+        position={[ap.lat, ap.lng]}
+        icon={airportIcon}
+        eventHandlers={{
+          click: () =>
+            setSelectedItem(
+              `Aeropuerto ${ap.name} (${ap.code}) - ${ap.city}, ${ap.country} | Capacidad total: ${ap.capacidad} | Capacidad ocupada: ${occupied}`
+            ),
+        }}
+      >
+        <Popup>
+          <div className="airport-popup">
+            <div className="airport-popup__header">
+              <span className="airport-popup__country">{ap.country}</span>
+              <span className="airport-popup__code">{ap.code}</span>
+            </div>
+
+            <div className="airport-popup__city">
+              {ap.city} · {ap.name}
+            </div>
+
+            <div className="airport-popup__row">
+              <span className="airport-popup__label">Capacidad total</span>
+              <span className="airport-popup__value">
+                {ap.capacidad} unidades
+              </span>
+            </div>
+
+            <div className="airport-popup__row">
+              <span className="airport-popup__label">
+                Capacidad ocupada
+              </span>
+              <span className="airport-popup__value">
+                {occupied} paquetes
+              </span>
+            </div>
+
+            <div className="airport-popup__progress">
+              <div
+                className="airport-popup__progress-fill"
+                style={{ width: `${occupancyPct}%` }}
+              />
+            </div>
+
+            <div className="airport-popup__footnote">
+              Ocupado {occupancyPct}% de la capacidad.
+            </div>
+          </div>
+        </Popup>
+      </Marker>
+    );
+  })}
+
 
               {flights.map((flight) => {
                 if (
@@ -904,59 +997,63 @@ const airportIcon = L.icon({
                 }
 
                 const filterCss = getPlaneColorFilter(
-  flight.capacity,
-  flight.planeCapacity
-);
+                  flight.capacity,
+                  flight.planeCapacity
+                );
+
+                // 👇 Ventana en la que el vuelo está "activo" en el mapa
+                const isInActiveWindow =
+                  typeof flight.startMs === "number" &&
+                  typeof flight.endMs === "number" &&
+                  simNowMs >= flight.startMs && // ✅ ya es la fecha/hora de salida
+                  simNowMs < flight.endMs; // opcional, mientras no haya llegado
 
                 return (
                   <React.Fragment key={flight.code}>
-                    {timerActive &&
-                      simNowMs >= flight.startMs &&
-                      simNowMs < flight.endMs && (
-                        <Polyline
-                          positions={flight.path.slice(
-                            Math.floor(flight.path.length * flight.progress)
-                          )}
-                          color="#eb6774ff"
-                          weight={3}
-                          opacity={0.5}
-                          dashArray="6, 10"
-                          interactive={false} 
-                        />
-                      )}
+                    {/* Ruta solo mientras está en la ventana activa y el cronómetro corre */}
+                    {timerActive && isInActiveWindow && (
+                      <Polyline
+                        positions={flight.path.slice(
+                          Math.floor(
+                            flight.path.length * (flight.progress ?? 0)
+                          )
+                        )}
+                        color="#eb6774ff"
+                        weight={3}
+                        opacity={0.5}
+                        dashArray="6, 10"
+                        interactive={false}
+                      />
+                    )}
 
-                    {!flight.arrived && (
+                    {/* Avión solo se ve cuando ya es su hora de salida */}
+                    {isInActiveWindow && (
                       <Marker
-  position={flight.position}
-  icon={createColoredIcon(
-    filterCss,
-    flight.rotation || 0
-  )}
-  riseOnHover={true}
-  zIndexOffset={1000}
-  eventHandlers={{
-    click: (e) => {
-      // 1) Abrir explícitamente el popup de este marker
-      if (e.target && e.target.openPopup) {
-        e.target.openPopup();
-      }
+                        position={flight.position}
+                        icon={createColoredIcon(
+                          filterCss,
+                          flight.rotation || 0
+                        )}
+                        riseOnHover={true}
+                        zIndexOffset={1000}
+                        eventHandlers={{
+                          click: (e) => {
+                            if (e.target && e.target.openPopup) {
+                              e.target.openPopup();
+                            }
 
-      // 2) Actualizar el panel de abajo
-      setSelectedItem(
-        `Vuelo ${flight.code}: ${flight.origin.city} (${flight.origin.code}) → ${flight.destination.city} (${flight.destination.code}) | Salida: ${flight.startTime} | Llegada: ${flight.endTime}`
-      );
-    },
-  }}
->
-
+                            setSelectedItem(
+                              `Vuelo ${flight.code}: ${flight.origin.city} (${flight.origin.code}) → ${flight.destination.city} (${flight.destination.code}) | Salida: ${flight.startTime} | Llegada: ${flight.endTime}`
+                            );
+                          },
+                        }}
+                      >
                         <Popup>
                           <b>{flight.code}</b>
                           <br />
-                          {flight.origin.country} →{" "}
-                          {flight.destination.country}
+                          {flight.origin.country} → {flight.destination.country}
                           <br />
-                          Salida: {flight.startTime} | Llegada:{" "}
-                          {flight.endTime}
+                          Salida: {flight.startTime} | Llegada: {flight.endTime}
                           <br />
                           Capacidad: {flight.capacity} pax
                           <br />
@@ -1029,7 +1126,6 @@ const airportIcon = L.icon({
           </div>
         </div>
       </section>
-
 
       {/* MODAL */}
       {isModalOpen && (
