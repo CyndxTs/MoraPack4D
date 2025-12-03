@@ -75,12 +75,7 @@ public class Plan {
         List<Vuelo> vuelosPosibles = vuelosActivos.stream().filter(v -> this.esEquivalente(v.getPlan())).toList();
         LocalDateTime[] rango = G4DUtility.Convertor.toDateTimeRange(this.horaSalida, this.horaLlegada, fechaHoraActual);
         LocalDateTime fechaHoraSalida = rango[0], fechaHoraLlegada = rango[1];
-        for(Vuelo vuelo : vuelosPosibles) {
-            if(fechaHoraSalida.equals(vuelo.getFechaHoraSalida()) && fechaHoraLlegada.equals(vuelo.getFechaHoraLlegada())) {
-                return vuelo;
-            }
-        }
-        return null;
+        return vuelosPosibles.stream().filter(v -> fechaHoraSalida.equals(v.getFechaHoraSalida()) && fechaHoraLlegada.equals(v.getFechaHoraLlegada())).findFirst().orElse(null);
     }
 
     public Boolean esProblematico() {
@@ -88,12 +83,10 @@ public class Plan {
         return !eventosConsiderables.isEmpty();
     }
 
-    public Boolean esAlcanzable(LocalDateTime fechaHoraActual, LocalDateTime fechaHoraLimite, Aeropuerto aDest, Set<Vuelo> vuelosActivos) {
-        LocalDateTime origFechaHoraMinEgreso = fechaHoraActual.plusMinutes((long)(60*Problematica.MIN_HORAS_ESTANCIA));
-        LocalDateTime origFechaHoraMaxEgreso = fechaHoraActual.plusMinutes((long)(60*Problematica.MAX_HORAS_ESTANCIA));
+    public Boolean esAlcanzable(LocalDateTime fechaHoraActual, LocalDateTime origfechaHoraMinEgreso, LocalDateTime origFechaHoraMaxEgreso, LocalDateTime fechaHoraLimite, Aeropuerto aDest, Set<Vuelo> vuelosActivos) {
         LocalDateTime[] rango = G4DUtility.Convertor.toDateTimeRange(this.horaSalida, this.horaLlegada, fechaHoraActual);
         LocalDateTime vFechaHoraSalida = rango[0], vFechaHoraLlegada = rango[1];
-        if(vFechaHoraSalida.isBefore(origFechaHoraMinEgreso) || vFechaHoraSalida.isAfter(origFechaHoraMaxEgreso) || vFechaHoraLlegada.isAfter(fechaHoraLimite)) return false;
+        if(vFechaHoraSalida.isBefore(origfechaHoraMinEgreso) || vFechaHoraSalida.isAfter(origFechaHoraMaxEgreso) || vFechaHoraLlegada.isAfter(fechaHoraLimite)) return false;
         LocalDateTime destFechaHoraMaxEgreso = vFechaHoraLlegada.plusMinutes((long)(60*((!this.destino.equals(aDest)) ? Problematica.MAX_HORAS_ESTANCIA : Problematica.MAX_HORAS_RECOJO)));
         int destCapDisp = this.destino.obtenerCapacidadDisponible(vFechaHoraLlegada, destFechaHoraMaxEgreso);
         if(destCapDisp < 1) return false;

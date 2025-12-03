@@ -7,10 +7,8 @@
 package com.pucp.dp1.grupo4d.morapack.model.algorithm;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.*;
+
 import com.pucp.dp1.grupo4d.morapack.algorithm.Problematica;
 import com.pucp.dp1.grupo4d.morapack.util.G4DUtility;
 
@@ -66,7 +64,7 @@ public class Aeropuerto {
     }
 
     public boolean eliminarRegistroDeLoteDeProductos(Lote lote, boolean softDelete) {
-        List<Registro> registrosVigentes = this.registros.stream().filter(Registro::getSigueVigente).toList();
+        List<Registro> registrosVigentes = this.registros.stream().filter(Registro::getSigueVigente).sorted(Comparator.comparing(Registro::getFechaHoraIngreso).thenComparing(Registro::getFechaHoraEgreso)).toList();
         for(Registro registro : registrosVigentes) {
             if(registro.getLote().equals(lote)) {
                 registro.setSigueVigente(false);
@@ -79,41 +77,35 @@ public class Aeropuerto {
         return false;
     }
 
-    public void actualizarEstanciaHaciaTiempoMaximoHabitable(Lote lote) {
-        int disp = this.capacidad;
-        Map<LocalDateTime, Integer> eventos = new TreeMap<>();
-        Registro registroDeLote = null;
-        List<Registro> registrosVigentes = this.registros.stream().filter(Registro::getSigueVigente).toList();
-        for(Registro registro : registrosVigentes) {
-            if(!registro.getLote().equals(lote)) {
-                LocalDateTime rFechaHoraIngreso = registro.getFechaHoraIngreso(), rFechaHoraEgreso = registro.getFechaHoraEgreso();
-                int tamanio = registro.getLote().getTamanio();
-                eventos.merge(rFechaHoraIngreso, -tamanio, Integer::sum);
-                eventos.merge(rFechaHoraEgreso, +tamanio, Integer::sum);
-            } else registroDeLote = registro;
-        }
-        if(registroDeLote != null) {
-            LocalDateTime fechaHoraIngresoDeLote = registroDeLote.getFechaHoraIngreso();
-            if(!eventos.isEmpty()) {
-                for(Map.Entry<LocalDateTime, Integer> entry : eventos.entrySet()) {
-                    if(!fechaHoraIngresoDeLote.isAfter(entry.getKey()) && disp + entry.getValue() < lote.getTamanio()) {
-                        long maxMinutos = (long)(60*Math.min(G4DUtility.Calculator.getElapsedHours(fechaHoraIngresoDeLote, entry.getKey()), Problematica.MAX_HORAS_ESTANCIA));
-                        registroDeLote.setFechaHoraEgreso(fechaHoraIngresoDeLote.plusMinutes(maxMinutos));
-                        return;
-                    }
-                    disp += entry.getValue();
+    public LocalDateTime obtenerInstanteMaximoDeEstanciaPosible(Lote lote) {
+        Map<LocalDateTime, Integer> movimientos = new TreeMap<>();
+        Registro registroDeLote = obtenerRegistroDeLoteDeProductos(lote);
+        registroDeLote.setSigueVigente(false);
+        List<Registro> registrosVigentes = this.registros.stream().filter(Registro::getSigueVigente).sorted(Comparator.comparing(Registro::getFechaHoraIngreso).thenComparing(Registro::getFechaHoraEgreso)).toList();
+        registrosVigentes.forEach(r -> {
+            movimientos.merge(r.getFechaHoraIngreso(), -r.getLote().getTamanio(), Integer::sum);
+            movimientos.merge(r.getFechaHoraEgreso(), +r.getLote().getTamanio(), Integer::sum);
+        });
+        registroDeLote.setSigueVigente(true);
+        LocalDateTime fechaHoraIngresoDeLote = registroDeLote.getFechaHoraIngreso();
+        if(!movimientos.isEmpty()) {
+            int aCapDisp = this.capacidad;
+            for(Map.Entry<LocalDateTime, Integer> entry : movimientos.entrySet()) {
+                if(!entry.getKey().isBefore(fechaHoraIngresoDeLote) && aCapDisp + entry.getValue() < lote.getTamanio()) {
+                    long maxMinutos = (long)(60*Math.min(G4DUtility.Calculator.getElapsedHours(fechaHoraIngresoDeLote, entry.getKey()), Problematica.MAX_HORAS_ESTANCIA));
+                    return fechaHoraIngresoDeLote.plusMinutes(maxMinutos);
                 }
-            } else {
-                long maxMinutos = (long)(60* Problematica.MAX_HORAS_ESTANCIA);
-                registroDeLote.setFechaHoraEgreso(fechaHoraIngresoDeLote.plusMinutes(maxMinutos));
+                aCapDisp +=  entry.getValue();
             }
         }
+        long maxMinutos = (long)(60*Problematica.MAX_HORAS_ESTANCIA);
+        return fechaHoraIngresoDeLote.plusMinutes(maxMinutos);
     }
 
     public Integer obtenerCapacidadDisponible(LocalDateTime fechaHoraInicio, LocalDateTime fechaHoraFin) {
         int disp = this.capacidad, minDisp = this.capacidad;
         Map<LocalDateTime, Integer> eventos = new TreeMap<>();
-        List<Registro> registrosVigentes = this.registros.stream().filter(Registro::getSigueVigente).toList();
+        List<Registro> registrosVigentes = this.registros.stream().filter(Registro::getSigueVigente).sorted(Comparator.comparing(Registro::getFechaHoraIngreso).thenComparing(Registro::getFechaHoraEgreso)).toList();
         for(Registro registro : registrosVigentes) {
             LocalDateTime rFechaHoraIngreso = registro.getFechaHoraIngreso(), rFechaHoraEgreso = registro.getFechaHoraEgreso();
             if(rFechaHoraIngreso.isBefore(fechaHoraFin) && rFechaHoraEgreso.isAfter(fechaHoraInicio)) {
