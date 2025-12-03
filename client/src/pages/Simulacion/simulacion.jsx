@@ -955,10 +955,11 @@ const airportIcon = L.icon({
                           {flight.origin.country} →{" "}
                           {flight.destination.country}
                           <br />
-                          Salida: {flight.startTime} | Llegada:{" "}
-                          {flight.endTime}
+                          Salida: {flight.startTime} 
                           <br />
-                          Capacidad: {flight.capacity} pax
+                          Llegada: {flight.endTime}
+                          <br />
+                          Capacidad: {flight.capacity} / {flight.planeCapacity} pax
                           <br />
                           Estado: {flight.arrived ? "Finalizado" : "En curso"}
                         </Popup>
