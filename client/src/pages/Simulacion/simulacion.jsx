@@ -927,27 +927,33 @@ const airportIcon = L.icon({
 
                     {!flight.arrived && (
                       <Marker
-  position={flight.position}
-  icon={createColoredIcon(
-    filterCss,
-    flight.rotation || 0
-  )}
-  riseOnHover={true}
-  zIndexOffset={1000}
-  eventHandlers={{
-    click: (e) => {
-      // 1) Abrir explícitamente el popup de este marker
-      if (e.target && e.target.openPopup) {
-        e.target.openPopup();
-      }
+                        position={flight.position}
+                        icon={createColoredIcon(
+                          filterCss,
+                          flight.rotation || 0
+                        )}
+                        riseOnHover={true}
+                        zIndexOffset={1000}
+                        eventHandlers={{
+                          click: (e) => {
+                            // 1) Abrir explícitamente el popup de este marker
+                            if (e.target && e.target.openPopup) {
+                              e.target.openPopup();
+                            }
 
-      // 2) Actualizar el panel de abajo
-      setSelectedItem(
-        `Vuelo ${flight.code}: ${flight.origin.city} (${flight.origin.code}) → ${flight.destination.city} (${flight.destination.code}) | Salida: ${flight.startTime} | Llegada: ${flight.endTime}`
-      );
-    },
-  }}
->
+                            // 2) Actualizar el panel de abajo
+                            setSelectedItem(
+                                `Vuelo ${flight.code}:
+                              ${flight.origin.city} (${flight.origin.code}) → ${flight.destination.city} (${flight.destination.code})
+                              Salida: ${flight.startTime}
+                              Llegada: ${flight.endTime}
+                              Capacidad: ${flight.capacity} / ${flight.planeCapacity} pax`
+                              );
+
+
+                          },
+                        }}
+                      >
 
                         <Popup>
                           <b>{flight.code}</b>
@@ -960,8 +966,6 @@ const airportIcon = L.icon({
                           Llegada: {flight.endTime}
                           <br />
                           Capacidad: {flight.capacity} / {flight.planeCapacity} pax
-                          <br />
-                          Estado: {flight.arrived ? "Finalizado" : "En curso"}
                         </Popup>
                       </Marker>
                     )}
