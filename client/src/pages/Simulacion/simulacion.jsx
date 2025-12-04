@@ -42,6 +42,7 @@ export default function Simulacion() {
   const [collapsed, setCollapsed] = useState(true);
   const [codigoVuelo, setCodigoVuelo] = useState("");
   const [selectedItem, setSelectedItem] = useState(null);
+  const [selectedAirport, setSelectedAirport] = useState(null);
   // -------- MODAL --------
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [fechaI, setFechaI] = useState("");
@@ -81,9 +82,13 @@ export default function Simulacion() {
   );
   // Reloj de simulación (ms) y velocidad: 600 = 1s real -> 10 minutos simulados (1h en 6s)
   const [simNowMs, setSimNowMs] = useState(() => Date.now());
-  const SIM_SPEED = 500;
+  const simSpeed =
+    typeof multiplicadorTemporal === "number" && multiplicadorTemporal > 0
+      ? multiplicadorTemporal
+      : 500;
   // Refs internas para el avance suave
   const lastRealMsRef = useRef(null);
+  const stopRequestedRef = useRef(false);
   // Helpers de tiempo (trabajamos en UTC porque tu JSON está en UTC)
   const toISODate = (ms) => new Date(ms).toISOString().split("T")[0];
   const toISOTime = (ms) => new Date(ms).toISOString().slice(11, 16);
@@ -109,10 +114,6 @@ export default function Simulacion() {
     setNotification({ type, message });
     setTimeout(() => setNotification(null), 5000);
   };
-  //Filtros
-  const handleFilter = async () => {};
-  //Limpiar filtros
-  const handleCleanFilters = async () => {};
 
   // Botones
   const [stopDisabled, setStopDisabled] = useState(true);
@@ -135,8 +136,8 @@ export default function Simulacion() {
       const elapsedRealMs = now - lastRealMsRef.current; // ms reales desde el último frame
       lastRealMsRef.current = now;
 
-      // Avanzar reloj simulado: simSpeed = ms_sim / ms_real (3600 => 1s real = 1h simulada)
-      setSimNowMs((prev) => prev + elapsedRealMs * SIM_SPEED);
+      // Avanzar reloj simulado según el multiplicador temporal del modal
+      setSimNowMs((prev) => prev + elapsedRealMs * simSpeed);
 
       rafId = requestAnimationFrame(tick);
     };
@@ -144,7 +145,7 @@ export default function Simulacion() {
     lastRealMsRef.current = performance.now();
     rafId = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(rafId);
-  }, [timerRunning]);
+  }, [timerRunning, simSpeed]);
 
   useEffect(() => {
     if (!timerActive) return;
@@ -232,15 +233,18 @@ export default function Simulacion() {
   };
 
   const handleStop = async () => {
+    // Marcamos que el stop lo inició el usuario
+    stopRequestedRef.current = true;
+
+    // ÚNICO mensaje que queremos mostrar por el botón
+    showNotification("info", "Deteniendo simulación...");
+
     try {
-      const res = await sendStopSimulation(); // HTTP /api/simulation-stop
-      if (res && res.message) {
-        showNotification("info", res.message);
-      } else {
-        showNotification("info", "Solicitud de detención enviada");
-      }
+      await sendStopSimulation();
     } catch (err) {
-      showNotification("danger", err.message || "Error al detener simulación");
+      // ❌ NO mostrar errores del stop
+      console.warn("Error interno al detener simulación:", err);
+      // Mantener el flag de stopRequested activo
     }
 
     // 1. Detener timers
@@ -274,6 +278,33 @@ export default function Simulacion() {
       simNowMs >= f.startMs &&
       simNowMs < f.endMs
   );
+
+  // === Vuelos saliendo / llegando del aeropuerto seleccionado ===
+  const vuelosSaliendo = selectedAirport
+    ? flights.filter(
+        (f) =>
+          f &&
+          f.origin &&
+          f.origin.code === selectedAirport.code &&
+          simNowMs < f.endMs // solo los que aún no han llegado
+      )
+    : [];
+
+  const vuelosLlegando = selectedAirport
+    ? flights.filter(
+        (f) =>
+          f &&
+          f.destination &&
+          f.destination.code === selectedAirport.code &&
+          simNowMs < f.endMs
+      )
+    : [];
+
+  const haySeleccionAeropuerto =
+    !!selectedAirport &&
+    (vuelosSaliendo.length > 0 || vuelosLlegando.length > 0);
+
+  const infoPanelExpanded = !!(selectedAirport || selectedItem);
   const createColoredIcon = (filterCss, rotation) =>
     L.divIcon({
       html: `<img src="${planeIconImg}" 
@@ -287,12 +318,12 @@ export default function Simulacion() {
       iconAnchor: [11, 8],
     });
 
-const airportIcon = L.icon({
-  iconUrl: airportIconImg,
-  iconSize: [24, 24],   // tamaño del svg en el mapa
-  iconAnchor: [12, 12], // punto que “toca” el mapa (centro del ícono)
-  popupAnchor: [0, -12] // dónde aparece el popup respecto al icono
-});
+  const airportIcon = L.icon({
+    iconUrl: airportIconImg,
+    iconSize: [24, 24], // tamaño del svg en el mapa
+    iconAnchor: [12, 12], // punto que “toca” el mapa (centro del ícono)
+    popupAnchor: [0, -12], // dónde aparece el popup respecto al icono
+  });
   //
 
   // Detener cronómetro cuando todos los vuelos hayan llegado
@@ -345,31 +376,31 @@ const airportIcon = L.icon({
   }
   //
   function getPlaneColorFilter(capacity, maxCapacity) {
-  if (!maxCapacity || maxCapacity <= 0) {
-    // color por defecto si falta dato → amarillo
+    if (!maxCapacity || maxCapacity <= 0) {
+      // color por defecto si falta dato → amarillo
+      return "invert(80%) sepia(72%) saturate(657%) hue-rotate(3deg) brightness(101%) contrast(102%)";
+    }
+
+    const ratio = capacity / maxCapacity; // 0.0 → 1.0
+
+    // VERDE → menos del 50%
+    if (ratio < 0.5) {
+      return "invert(54%) sepia(81%) saturate(356%) hue-rotate(85deg) brightness(94%) contrast(90%)";
+    }
+
+    // AMARILLO → 50% a 75%
+    if (ratio >= 0.5 && ratio < 0.75) {
+      return "invert(80%) sepia(72%) saturate(657%) hue-rotate(3deg) brightness(101%) contrast(102%)";
+    }
+
+    // ROJO → 90% a 100%
+    if (ratio >= 0.9) {
+      return "invert(37%) sepia(79%) saturate(844%) hue-rotate(338deg) brightness(94%) contrast(92%)";
+    }
+
+    // Rango 75%–90% → también amarillo
     return "invert(80%) sepia(72%) saturate(657%) hue-rotate(3deg) brightness(101%) contrast(102%)";
   }
-
-  const ratio = capacity / maxCapacity; // 0.0 → 1.0
-
-  // VERDE → menos del 50%
-  if (ratio < 0.5) {
-    return "invert(54%) sepia(81%) saturate(356%) hue-rotate(85deg) brightness(94%) contrast(90%)";
-  }
-
-  // AMARILLO → 50% a 75%
-  if (ratio >= 0.5 && ratio < 0.75) {
-    return "invert(80%) sepia(72%) saturate(657%) hue-rotate(3deg) brightness(101%) contrast(102%)";
-  }
-
-  // ROJO → 90% a 100%
-  if (ratio >= 0.9) {
-    return "invert(37%) sepia(79%) saturate(844%) hue-rotate(338deg) brightness(94%) contrast(92%)";
-  }
-
-  // Rango 75%–90% → también amarillo
-  return "invert(80%) sepia(72%) saturate(657%) hue-rotate(3deg) brightness(101%) contrast(102%)";
-}
 
   function ClickHandler({ onMapClick }) {
     useMapEvent("click", () => onMapClick());
@@ -467,7 +498,7 @@ const airportIcon = L.icon({
         );
 
         const prev = prevByCode.get(v.codigo);
-        
+
         if (prev) {
           // ✅ Vuelo ya existía → PRESERVAR completamente su estado de animación
           // Solo actualizamos datos estáticos que podrían haber cambiado
@@ -478,8 +509,8 @@ const airportIcon = L.icon({
             planeCapacity: v.capacidadMaxima,
             // NO tocamos: progress, position, rotation, arrived, startMs, endMs, path
             rutas: (solution.rutasEnOperacion || [])
-            .filter(r => (r.codVuelos || []).includes(v.codigo))
-            .map(r => `${r.codOrigen} → ${r.codDestino}`)
+              .filter((r) => (r.codVuelos || []).includes(v.codigo))
+              .map((r) => `${r.codOrigen} → ${r.codDestino}`),
           });
         } else {
           // 🆕 Vuelo nuevo → inicializarlo según simNowMs
@@ -490,8 +521,8 @@ const airportIcon = L.icon({
           let rotation = 0;
 
           // Buscar rutas asociadas a este vuelo
-          const rutasDelVuelo = (solution.rutasEnOperacion || []).filter(
-            r => (r.codVuelos || []).includes(v.codigo)
+          const rutasDelVuelo = (solution.rutasEnOperacion || []).filter((r) =>
+            (r.codVuelos || []).includes(v.codigo)
           );
 
           if (simNowMs <= startMs) {
@@ -547,7 +578,7 @@ const airportIcon = L.icon({
             position,
             rotation,
             arrived,
-            rutas: rutasDelVuelo.map(r => `${r.codOrigen} → ${r.codDestino}`),
+            rutas: rutasDelVuelo.map((r) => `${r.codOrigen} → ${r.codDestino}`),
           });
         }
       });
@@ -591,7 +622,6 @@ const airportIcon = L.icon({
       (status) => {
         console.log("Status simulador:", status);
 
-        // StatusPayload del back: { estadoEjecucion, estadoFinalizacion } o similar
         const estadoEjecucion =
           typeof status === "string" ? status : status.estadoEjecucion;
         const estadoFinalizacion =
@@ -612,8 +642,18 @@ const airportIcon = L.icon({
         } else if (estadoEjecucion === "INICIADO") {
           showNotification("info", "Simulación iniciada");
         } else if (estadoEjecucion === "POR_DETENER") {
-          showNotification("info", "Deteniendo simulación...");
+          // Si el stop no vino del botón, dejamos que el back muestre este mensaje
+          if (!stopRequestedRef.current) {
+            showNotification("info", "Deteniendo simulación...");
+          }
         } else if (estadoEjecucion === "DETENIDO") {
+          if (stopRequestedRef.current) {
+            // limpiamos el flag para futuras simulaciones
+            stopRequestedRef.current = false;
+            return;
+          }
+
+          // Si NO vino del botón (terminó sola / por error), mantenemos la lógica original
           if (estadoFinalizacion === "EXITOSO") {
             showNotification("success", "Simulación finalizada exitosamente");
           } else if (estadoFinalizacion === "FORZADO") {
@@ -765,11 +805,12 @@ const airportIcon = L.icon({
                     <div
                       key={flight.code}
                       className="flight-card"
-                      onClick={() =>
+                      onClick={() => {
+                        setSelectedAirport(null);
                         setSelectedItem(
                           `Vuelo ${flight.code}: ${flight.origin.city} (${flight.origin.code}) → ${flight.destination.city} (${flight.destination.code}) | Llegada: ${flight.endTime}`
-                        )
-                      }
+                        );
+                      }}
                     >
                       <div className="flight-card-header">
                         <span className="flight-route">
@@ -816,7 +857,7 @@ const airportIcon = L.icon({
         )}
       </aside>
 
-            <section className="contenido">
+      <section className="contenido">
         <div className="map-and-info">
           {/* BOTÓN + PANEL DE CONTROLES (arriba izquierda) */}
           <div className={`controls-dropdown ${controlsOpen ? "open" : ""}`}>
@@ -883,10 +924,10 @@ const airportIcon = L.icon({
                     position={[ap.lat, ap.lng]}
                     icon={airportIcon}
                     eventHandlers={{
-                      click: () =>
-                        setSelectedItem(
-                          `Aeropuerto ${ap.name} (${ap.code}) - ${ap.city}, ${ap.country} | Capacidad: ${ap.capacidad}`
-                        ),
+                      click: () => {
+                        setSelectedAirport(ap);
+                        setSelectedItem(null);
+                      },
                     }}
                   >
                     <Popup>
@@ -912,6 +953,19 @@ const airportIcon = L.icon({
                   return null;
                 }
 
+                // ✅ Solo queremos mostrar el vuelo cuando YA está en su ventana de vuelo
+                const enVentanaVuelo =
+                  timerActive &&
+                  typeof flight.startMs === "number" &&
+                  typeof flight.endMs === "number" &&
+                  simNowMs >= flight.startMs &&
+                  simNowMs < flight.endMs;
+
+                // Si aún no es hora de despegar o ya llegó → no se dibuja nada
+                if (!enVentanaVuelo) {
+                  return null;
+                }
+
                 const filterCss = getPlaneColorFilter(
                   flight.capacity,
                   flight.planeCapacity
@@ -919,21 +973,19 @@ const airportIcon = L.icon({
 
                 return (
                   <React.Fragment key={flight.code}>
-                    {timerActive &&
-                      simNowMs >= flight.startMs &&
-                      simNowMs < flight.endMs && (
-                        <Polyline
-                          positions={flight.path.slice(
-                            Math.floor(flight.path.length * flight.progress)
-                          )}
-                          color="#eb6774ff"
-                          weight={3}
-                          opacity={0.5}
-                          dashArray="6, 10"
-                          interactive={false} 
-                        />
+                    {/* Trayectoria a partir del progreso actual */}
+                    <Polyline
+                      positions={flight.path.slice(
+                        Math.floor(flight.path.length * (flight.progress ?? 0))
                       )}
+                      color="#eb6774ff"
+                      weight={3}
+                      opacity={0.5}
+                      dashArray="6, 10"
+                      interactive={false}
+                    />
 
+                    {/* Avión solo mientras está en vuelo */}
                     {!flight.arrived && (
                       <Marker
                         position={flight.position}
@@ -945,32 +997,29 @@ const airportIcon = L.icon({
                         zIndexOffset={1000}
                         eventHandlers={{
                           click: (e) => {
-                            // 1) Abrir explícitamente el popup de este marker
                             if (e.target && e.target.openPopup) {
                               e.target.openPopup();
                             }
 
-                            // 2) Actualizar el panel de abajo
+                            setSelectedAirport(null); // 👈 limpiamos selección de aeropuerto
                             setSelectedItem(
-                                `Vuelo ${flight.code}:
-                              ${flight.origin.city} (${flight.origin.code}) → ${flight.destination.city} (${flight.destination.code})
-                              Salida: ${flight.startTime}
-                              Llegada: ${flight.endTime}
-                              Capacidad: ${flight.capacity} / ${flight.planeCapacity} pax
-                              Rutas que pasa:
-                              ${
-                                flight.rutas && flight.rutas.length > 0
-                                  ? flight.rutas.map(r => ` - ${r}`).join("\n")
-                                  : " - No asignadas"
-                              }`
-                              );
-
-
-
+                              `Vuelo ${flight.code}:
+${flight.origin.city} (${flight.origin.code}) → ${flight.destination.city} (${
+                                flight.destination.code
+                              })
+Salida: ${flight.startTime}
+Llegada: ${flight.endTime}
+Capacidad: ${flight.capacity} / ${flight.planeCapacity} pax
+Rutas que pasa:
+${
+  flight.rutas && flight.rutas.length > 0
+    ? flight.rutas.map((r) => ` - ${r}`).join("\n")
+    : " - No asignadas"
+}`
+                            );
                           },
                         }}
                       >
-
                         <Popup>
                           <b>{flight.code}</b>
                           <br />
@@ -980,17 +1029,22 @@ const airportIcon = L.icon({
                           <br />
                           Llegada: {flight.endTime}
                           <br />
-                          Capacidad: {flight.capacity} / {flight.planeCapacity} pax
+                          Capacidad: {flight.capacity} / {flight.planeCapacity}{" "}
+                          pax
                           <br />
                         </Popup>
-
                       </Marker>
                     )}
                   </React.Fragment>
                 );
               })}
 
-              <ClickHandler onMapClick={() => setSelectedItem(null)} />
+              <ClickHandler
+                onMapClick={() => {
+                  setSelectedItem(null);
+                  setSelectedAirport(null);
+                }}
+              />
             </MapContainer>
 
             {/* LEYENDA DENTRO DEL MAPA, ABAJO IZQUIERDA */}
@@ -1034,24 +1088,161 @@ const airportIcon = L.icon({
           </div>
 
           {/* PANEL INFORMATIVO DEBAJO DEL MAPA */}
-          <div className={`info-panel ${selectedItem ? "expanded" : ""}`}>
-            <div className="info-content">
-              {selectedItem ? (
-                <>
-                  <h3>Información seleccionada</h3>
-                  <p>{selectedItem}</p>
-                </>
-              ) : (
-                <p className="placeholder">
-                  Haz clic en un avión o aeropuerto para ver detalles.
+          {/* PANEL INFORMATIVO DEBAJO DEL MAPA */}
+{infoPanelExpanded && (   // 👈 solo se pinta si hay aeropuerto o vuelo seleccionado
+  <div className="info-panel expanded">
+    <div className="info-content">
+      {selectedAirport ? (
+        <>
+          {/* Cabecera: aeropuerto */}
+          <div className="info-panel-header">
+            <div className="left">
+              <div className="info-panel-title">Información seleccionada</div>
+              <div className="info-panel-airport">
+                {selectedAirport.city} ({selectedAirport.code})
+              </div>
+              <div className="info-panel-subtitle">
+                {selectedAirport.country}
+              </div>
+            </div>
+
+            <div className="right">
+              <div className="info-panel-capacity">
+                Capacidad: {selectedAirport.capacidad} unidades
+              </div>
+            </div>
+          </div>
+
+          {/* Cuerpo: vuelos saliendo / llegando */}
+          <div className="info-panel-body">
+            {/* Columna 1: saliendo */}
+            <div className="info-panel-column">
+              <h4>Vuelos saliendo</h4>
+
+              {vuelosSaliendo.length === 0 && (
+                <p className="info-panel-empty-list">
+                  No hay vuelos saliendo en este momento.
                 </p>
               )}
+
+              <ul className="info-panel-flights">
+                {vuelosSaliendo.map((flight) => {
+                  const porcentaje =
+                    flight.planeCapacity > 0
+                      ? Math.round(
+                          (flight.capacity * 100) / flight.planeCapacity
+                        )
+                      : 0;
+
+                  return (
+                    <li key={flight.code} className="flight-card">
+                      <div className="flight-card-header">
+                        <span className="flight-route">
+                          {flight.origin.code}
+                          <span className="flight-arrow"> ✈ </span>
+                          {flight.destination.code}
+                        </span>
+                        <span className="flight-code">{flight.code}</span>
+                      </div>
+
+                      <div className="flight-card-body">
+                        <div className="flight-card-row">
+                          <span className="flight-label">Salida</span>
+                          <span className="flight-value">
+                            {flight.startTime}
+                          </span>
+                        </div>
+                        <div className="flight-card-row">
+                          <span className="flight-label">Llegada</span>
+                          <span className="flight-value">
+                            {flight.endTime}
+                          </span>
+                        </div>
+                        <div className="flight-card-row">
+                          <span className="flight-label">Capacidad</span>
+                          <span className="flight-value">
+                            {flight.capacity}/{flight.planeCapacity} unidades ·{" "}
+                            {porcentaje}% ocupación
+                          </span>
+                        </div>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
             </div>
-            <div className="info-triangle"></div>
+
+            {/* Columna 2: llegando */}
+            <div className="info-panel-column">
+              <h4>Vuelos llegando</h4>
+
+              {vuelosLlegando.length === 0 && (
+                <p className="info-panel-empty-list">
+                  No hay vuelos llegando en este momento.
+                </p>
+              )}
+
+              <ul className="info-panel-flights">
+                {vuelosLlegando.map((flight) => {
+                  const porcentaje =
+                    flight.planeCapacity > 0
+                      ? Math.round(
+                          (flight.capacity * 100) / flight.planeCapacity
+                        )
+                      : 0;
+
+                  return (
+                    <li key={flight.code} className="flight-card">
+                      <div className="flight-card-header">
+                        <span className="flight-route">
+                          {flight.origin.code}
+                          <span className="flight-arrow"> ✈ </span>
+                          {flight.destination.code}
+                        </span>
+                        <span className="flight-code">{flight.code}</span>
+                      </div>
+
+                      <div className="flight-card-body">
+                        <div className="flight-card-row">
+                          <span className="flight-label">Salida</span>
+                          <span className="flight-value">
+                            {flight.startTime}
+                          </span>
+                        </div>
+                        <div className="flight-card-row">
+                          <span className="flight-label">Llegada</span>
+                          <span className="flight-value">
+                            {flight.endTime}
+                          </span>
+                        </div>
+                        <div className="flight-card-row">
+                          <span className="flight-label">Capacidad</span>
+                          <span className="flight-value">
+                            {flight.capacity}/{flight.planeCapacity} unidades ·{" "}
+                            {porcentaje}% ocupación
+                          </span>
+                        </div>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
           </div>
+        </>
+      ) : (
+        // Caso: solo hay selectedItem (avión), usamos layout simple
+        <>
+          <h3>Información seleccionada</h3>
+          <p>{selectedItem}</p>
+        </>
+      )}
+    </div>
+  </div>
+)}
+
         </div>
       </section>
-
 
       {/* MODAL */}
       {isModalOpen && (

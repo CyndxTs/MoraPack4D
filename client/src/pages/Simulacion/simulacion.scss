@@ -312,24 +312,80 @@
   width: 100%;
   background-color: var(--color-dark-blue);
   color: white;
-  border-top: 2px solid var(--color-dark-blue);
-  margin-top: 20px;
-  overflow: hidden;
-  transition: all 0.3s ease;
-  padding: 10px 20px;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  z-index: 3000;
+  max-height: 0;               /* 🔥 por defecto (sin .expanded) no se ve */
+  overflow-y: hidden;
+  border-top: 3px solid #0d1b2a;
+  padding: 0 24px;
+  border-radius: 18px 18px 0 0;
+  box-shadow: 0 -4px 18px rgba(15, 23, 42, 0.45);
+  transition: max-height 0.25s ease, padding 0.25s ease;
 }
 
 .info-panel.expanded {
-  padding: 20px;
+  max-height: 32vh;            /* 🔥 máximo ~30% de la pantalla */
+  overflow-y: auto;            /* 🔥 scroll interno si hay muchos vuelos */
+  padding: 16px 24px;
 }
 
 .info-content {
-  opacity: 0.8;
-  transition: opacity 0.3s ease;
+  opacity: 1;
 }
 
+.info-panel-header {
+  margin-bottom: 12px;
+}
+.info-panel-title {
+  font-size: 18px;
+  font-weight: 700;
+}
+.info-panel-airport {
+  font-size: 16px;
+  font-weight: 600;
+}
+.info-panel-subtitle {
+  font-size: 14px;
+  opacity: 0.9;
+}
+.info-panel-body {
+  display: flex;
+  gap: 32px;
+  margin-top: 16px;
+}
 .info-panel.expanded .info-content {
   opacity: 1;
+}
+
+/* Cada columna */
+.info-panel-column {
+  flex: 1;
+}
+
+/* Listado de vuelos */
+.info-panel-flights {
+  list-style: none;
+  padding: 0;
+  margin-top: 12px;
+}
+
+.info-panel-empty-list {
+  opacity: 0.8;
+  font-style: italic;
+}
+
+/* Mejoramiento de las cards dentro del panel */
+.info-panel .flight-card {
+  background: #ffffff10;
+  border: 1px solid #ffffff22;
+  color: #fff;
+}
+
+.info-panel .flight-card-header span,
+.info-panel .flight-card-row span {
+  color: #fff;
 }
 
 .placeholder {
@@ -341,6 +397,17 @@
   white-space: pre-line;
 }
 
+.info-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.info-panel-capacity {
+  font-size: 14px;
+  font-weight: 600;
+  opacity: 0.9;
+}
 
 
 /* ===============================
@@ -543,4 +610,12 @@
 
 .leaflet-marker-icon img {
   pointer-events: auto;
+}
+
+/* Corrección: el código del vuelo NO debe ser blanco dentro del panel */
+.info-panel .flight-code {
+  color: #111827 !important;          /* texto oscuro */
+  background: #ffffffdd !important;   /* burbuja clara */
+  border-radius: 999px;
+  padding: 2px 8px;
 }
