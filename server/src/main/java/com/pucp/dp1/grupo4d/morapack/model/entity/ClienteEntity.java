@@ -27,7 +27,7 @@ public class ClienteEntity extends UsuarioEntity{
     @Column(nullable = false, length = 60)
     private String nombre;
 
-    @Column(nullable = false, unique = true, length = 60)
+    @Column(nullable = false, unique = true, length = 80)
     private String correo;
 
     @Column(nullable = false, length = 255)

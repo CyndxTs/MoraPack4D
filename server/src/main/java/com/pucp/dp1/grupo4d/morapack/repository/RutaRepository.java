@@ -25,7 +25,7 @@ public interface RutaRepository extends JpaRepository<RutaEntity, Integer> {
     @Query(
         value = """
             SELECT DISTINCT r.*
-            FROM rutaInicial r
+            FROM ruta r
             JOIN lote l ON l.id_ruta = r.id
             JOIN segmentacion s ON s.id = l.id_segmentacion
             JOIN pedido p ON p.id = s.id_pedido

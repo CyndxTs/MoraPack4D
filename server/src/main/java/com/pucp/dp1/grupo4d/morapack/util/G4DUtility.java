@@ -674,6 +674,7 @@ public class G4DUtility {
             logger.setUseParentHandlers(false);
             logger.addHandler(handler);
             logger.setLevel(Level.INFO);
+            toggle_log();
         }
 
         public static void toggle_log() {

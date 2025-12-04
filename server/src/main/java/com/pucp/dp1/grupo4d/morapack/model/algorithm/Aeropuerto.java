@@ -41,6 +41,7 @@ public class Aeropuerto {
         aeropuerto.capacidad = this.capacidad;
         aeropuerto.latitud = this.latitud;
         aeropuerto.longitud = this.longitud;
+        aeropuerto.esSede = this.esSede;
         this.registros.forEach(r -> aeropuerto.registros.add(r.replicar(poolLotes)));
         return aeropuerto;
     }
@@ -63,7 +64,7 @@ public class Aeropuerto {
         this.registros.add(registro);
     }
 
-    public boolean eliminarRegistroDeLoteDeProductos(Lote lote, boolean softDelete) {
+    public void eliminarRegistroDeLoteDeProductos(Lote lote, boolean softDelete) {
         List<Registro> registrosVigentes = this.registros.stream().filter(Registro::getSigueVigente).sorted(Comparator.comparing(Registro::getFechaHoraIngreso).thenComparing(Registro::getFechaHoraEgreso)).toList();
         for(Registro registro : registrosVigentes) {
             if(registro.getLote().equals(lote)) {
@@ -71,54 +72,55 @@ public class Aeropuerto {
                 if(!softDelete) {
                     this.registros.remove(registro);
                 }
-                return true;
+                return;
             }
         }
-        return false;
     }
 
-    public LocalDateTime obtenerInstanteMaximoDeEstanciaPosible(Lote lote) {
+    public LocalDateTime obtenerInstanteMaximoDeEgresoPosible(Lote lote) {
         Map<LocalDateTime, Integer> movimientos = new TreeMap<>();
-        Registro registroDeLote = obtenerRegistroDeLoteDeProductos(lote);
-        registroDeLote.setSigueVigente(false);
+        Registro rLote = obtenerRegistroDeLoteDeProductos(lote);
+        if(rLote == null) {
+            return null;
+        }
+        LocalDateTime inicio = rLote.getFechaHoraEgreso();
+        LocalDateTime fin = rLote.getFechaHoraIngreso().plusMinutes((long)(60*Problematica.MAX_HORAS_ESTANCIA));
         List<Registro> registrosVigentes = this.registros.stream().filter(Registro::getSigueVigente).sorted(Comparator.comparing(Registro::getFechaHoraIngreso).thenComparing(Registro::getFechaHoraEgreso)).toList();
         registrosVigentes.forEach(r -> {
-            movimientos.merge(r.getFechaHoraIngreso(), -r.getLote().getTamanio(), Integer::sum);
-            movimientos.merge(r.getFechaHoraEgreso(), +r.getLote().getTamanio(), Integer::sum);
+            LocalDateTime rInstanteIngreso = r.getFechaHoraIngreso(), rInstanteEgreso = r.getFechaHoraEgreso();
+            if(rInstanteIngreso.isBefore(fin) && rInstanteEgreso.isAfter(inicio)) {
+                movimientos.merge(rInstanteIngreso, -r.getLote().getTamanio(), Integer::sum);
+                movimientos.merge(rInstanteEgreso, +r.getLote().getTamanio(), Integer::sum);
+            }
         });
-        registroDeLote.setSigueVigente(true);
-        LocalDateTime fechaHoraIngresoDeLote = registroDeLote.getFechaHoraIngreso();
         if(!movimientos.isEmpty()) {
-            int aCapDisp = this.capacidad;
+            int capDisp = this.capacidad;
             for(Map.Entry<LocalDateTime, Integer> entry : movimientos.entrySet()) {
-                if(!entry.getKey().isBefore(fechaHoraIngresoDeLote) && aCapDisp + entry.getValue() < lote.getTamanio()) {
-                    long maxMinutos = (long)(60*Math.min(G4DUtility.Calculator.getElapsedHours(fechaHoraIngresoDeLote, entry.getKey()), Problematica.MAX_HORAS_ESTANCIA));
-                    return fechaHoraIngresoDeLote.plusMinutes(maxMinutos);
+                if(capDisp + entry.getValue() < lote.getTamanio()) {
+                    return entry.getKey();
                 }
-                aCapDisp +=  entry.getValue();
+                capDisp += entry.getValue();
             }
         }
-        long maxMinutos = (long)(60*Problematica.MAX_HORAS_ESTANCIA);
-        return fechaHoraIngresoDeLote.plusMinutes(maxMinutos);
+        return fin;
     }
 
-    public Integer obtenerCapacidadDisponible(LocalDateTime fechaHoraInicio, LocalDateTime fechaHoraFin) {
-        int disp = this.capacidad, minDisp = this.capacidad;
-        Map<LocalDateTime, Integer> eventos = new TreeMap<>();
+    public Integer obtenerCapacidadDisponible(LocalDateTime inicio, LocalDateTime fin) {
+        Map<LocalDateTime, Integer> movimientos = new TreeMap<>();
         List<Registro> registrosVigentes = this.registros.stream().filter(Registro::getSigueVigente).sorted(Comparator.comparing(Registro::getFechaHoraIngreso).thenComparing(Registro::getFechaHoraEgreso)).toList();
-        for(Registro registro : registrosVigentes) {
-            LocalDateTime rFechaHoraIngreso = registro.getFechaHoraIngreso(), rFechaHoraEgreso = registro.getFechaHoraEgreso();
-            if(rFechaHoraIngreso.isBefore(fechaHoraFin) && rFechaHoraEgreso.isAfter(fechaHoraInicio)) {
-                int tamanio = registro.getLote().getTamanio();
-                eventos.merge(rFechaHoraIngreso, -tamanio, Integer::sum);
-                eventos.merge(rFechaHoraEgreso, +tamanio, Integer::sum);
+        registrosVigentes.forEach(r -> {
+            LocalDateTime rInstanteIngreso = r.getFechaHoraIngreso(), rInstanteEgreso = r.getFechaHoraEgreso();
+            if(rInstanteIngreso.isBefore(fin) && rInstanteEgreso.isAfter(inicio)) {
+                movimientos.merge(rInstanteIngreso, -r.getLote().getTamanio(), Integer::sum);
+                movimientos.merge(rInstanteEgreso, +r.getLote().getTamanio(), Integer::sum);
             }
+        });
+        int capDisp = this.capacidad, minCapDisp = this.capacidad;
+        for(int cantProd : movimientos.values()) {
+            capDisp += cantProd;
+            minCapDisp = Math.min(minCapDisp, capDisp);
         }
-        for(int canProd : eventos.values()) {
-            disp += canProd;
-            minDisp = Math.min(minDisp, disp);
-        }
-        return minDisp;
+        return minCapDisp;
     }
 
     public Double obtenerDistanciaHasta(Aeropuerto aDest) {
