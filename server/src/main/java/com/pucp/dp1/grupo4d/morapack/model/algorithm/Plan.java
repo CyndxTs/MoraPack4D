@@ -9,7 +9,6 @@ package com.pucp.dp1.grupo4d.morapack.model.algorithm;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.*;
-
 import com.pucp.dp1.grupo4d.morapack.algorithm.Problematica;
 import com.pucp.dp1.grupo4d.morapack.util.G4DUtility;
 
@@ -63,43 +62,41 @@ public class Plan {
         return plan;
     }
 
-    public Double obtenerLejania(LocalDateTime fechaHoraActual, Aeropuerto aDest) {
-        LocalDateTime[] rango = G4DUtility.Convertor.toDateTimeRange(this.horaSalida, this.horaLlegada, fechaHoraActual);
+    public Double obtenerLejania(LocalDateTime instanteActual, Aeropuerto aDest) {
+        LocalDateTime[] rango = G4DUtility.Convertor.toDateTimeRange(this.horaSalida, this.horaLlegada, instanteActual);
         LocalDateTime fechaHoraLlegadaUTC = rango[1];
-        double transcurrido = G4DUtility.Calculator.getElapsedHours(fechaHoraActual, fechaHoraLlegadaUTC);
+        double transcurrido = G4DUtility.Calculator.getElapsedHours(instanteActual, fechaHoraLlegadaUTC);
         double distanciaFinal = this.destino.obtenerDistanciaHasta(aDest);
         return transcurrido + 0.0085 * distanciaFinal;
     }
 
-    public Vuelo obtenerVueloActivo(LocalDateTime fechaHoraActual, Set<Vuelo> vuelosActivos) {
+    public Vuelo obtenerVueloActivo(LocalDateTime instanteActual, Set<Vuelo> vuelosActivos) {
         List<Vuelo> vuelosPosibles = vuelosActivos.stream().filter(v -> this.esEquivalente(v.getPlan())).toList();
-        LocalDateTime[] rango = G4DUtility.Convertor.toDateTimeRange(this.horaSalida, this.horaLlegada, fechaHoraActual);
+        LocalDateTime[] rango = G4DUtility.Convertor.toDateTimeRange(this.horaSalida, this.horaLlegada, instanteActual);
         LocalDateTime fechaHoraSalida = rango[0], fechaHoraLlegada = rango[1];
         return vuelosPosibles.stream().filter(v -> fechaHoraSalida.equals(v.getFechaHoraSalida()) && fechaHoraLlegada.equals(v.getFechaHoraLlegada())).findFirst().orElse(null);
     }
 
     public Boolean esProblematico() {
-        List<Evento> eventosConsiderables = this.eventos.stream().filter(e -> !e.getFechaHoraInicio().isAfter(Problematica.FIN_PLANIFICACION) && e.getFechaHoraFin().isAfter(Problematica.UMBRAL_REPLANIFICACION)).toList();
-        return !eventosConsiderables.isEmpty();
+        return this.eventos.stream().anyMatch(e -> !e.getFechaHoraInicio().isAfter(Problematica.FIN_PLANIFICACION) && e.getFechaHoraFin().isAfter(Problematica.UMBRAL_REPLANIFICACION));
     }
 
-    public Boolean esAlcanzable(LocalDateTime fechaHoraActual, LocalDateTime origfechaHoraMinEgreso, LocalDateTime origFechaHoraMaxEgreso, LocalDateTime fechaHoraLimite, Aeropuerto aDest, Set<Vuelo> vuelosActivos) {
-        LocalDateTime[] rango = G4DUtility.Convertor.toDateTimeRange(this.horaSalida, this.horaLlegada, fechaHoraActual);
+    public Boolean esAlcanzable(Vuelo vueloReplanificado, LocalDateTime instanteDeRefenerencia, LocalDateTime origInstanteMinimoDeEgreso, LocalDateTime origInstanteMaximoDeEgreso, LocalDateTime instanteLimite, Aeropuerto aDest, Set<Vuelo> vuelosActivos) {
+        LocalDateTime[] rango = G4DUtility.Convertor.toDateTimeRange(this.horaSalida, this.horaLlegada, instanteDeRefenerencia);
         LocalDateTime vFechaHoraSalida = rango[0], vFechaHoraLlegada = rango[1];
-        if(vFechaHoraSalida.isBefore(origfechaHoraMinEgreso) || vFechaHoraSalida.isAfter(origFechaHoraMaxEgreso) || vFechaHoraLlegada.isAfter(fechaHoraLimite)) return false;
+        if(vFechaHoraSalida.isBefore(origInstanteMinimoDeEgreso) || (!this.origen.getEsSede() && vFechaHoraSalida.isAfter(origInstanteMaximoDeEgreso)) || vFechaHoraLlegada.isAfter(instanteLimite)) return false;
+        int origCapDisp = this.origen.obtenerCapacidadDisponible(instanteDeRefenerencia, vFechaHoraSalida);
         LocalDateTime destFechaHoraMaxEgreso = vFechaHoraLlegada.plusMinutes((long)(60*((!this.destino.equals(aDest)) ? Problematica.MAX_HORAS_ESTANCIA : Problematica.MAX_HORAS_RECOJO)));
         int destCapDisp = this.destino.obtenerCapacidadDisponible(vFechaHoraLlegada, destFechaHoraMaxEgreso);
-        if(destCapDisp < 1) return false;
-        Vuelo vuelo = obtenerVueloActivo(fechaHoraActual, vuelosActivos);
-        if(vuelo != null && vuelo.getCapacidadDisponible() < 1) return false;
-        return true;
+        Vuelo vuelo = obtenerVueloActivo(instanteDeRefenerencia, vuelosActivos);
+        return origCapDisp > 0 && destCapDisp > 0 && (vuelo == null || (!vuelo.equals(vueloReplanificado) && vuelo.getCapacidadDisponible() > 0));
     }
 
     public Boolean esEquivalente(Plan plan) {
         return Objects.equals(origen, plan.origen) &&
-                Objects.equals(destino, plan.destino) &&
-                Objects.equals(horaSalida, plan.horaSalida) &&
-                Objects.equals(horaLlegada, plan.horaLlegada);
+               Objects.equals(destino, plan.destino) &&
+               Objects.equals(horaSalida, plan.horaSalida) &&
+               Objects.equals(horaLlegada, plan.horaLlegada);
     }
 
     @Override

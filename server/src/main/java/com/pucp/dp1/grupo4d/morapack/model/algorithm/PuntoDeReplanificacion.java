@@ -14,6 +14,7 @@ public class PuntoDeReplanificacion {
     private LocalDateTime umbralDeConexion;
     private Aeropuerto aeropuertoDeConexion;
     private Ruta rutaInicial;
+    private Vuelo vueloReplanificado;
     private List<Vuelo> vuelosFijos;
     private List<Lote> lotes;
 
@@ -44,6 +45,14 @@ public class PuntoDeReplanificacion {
 
     public void setRutaInicial(Ruta rutaInicial) {
         this.rutaInicial = rutaInicial;
+    }
+
+    public Vuelo getVueloReplanificado() {
+        return vueloReplanificado;
+    }
+
+    public void setVueloReplanificado(Vuelo vueloReplanificado) {
+        this.vueloReplanificado = vueloReplanificado;
     }
 
     public List<Vuelo> getVuelosFijos() {

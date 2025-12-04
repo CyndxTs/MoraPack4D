@@ -11,7 +11,6 @@ import com.pucp.dp1.grupo4d.morapack.model.algorithm.*;
 import com.pucp.dp1.grupo4d.morapack.model.entity.*;
 import com.pucp.dp1.grupo4d.morapack.model.enumeration.EstadoRuta;
 import com.pucp.dp1.grupo4d.morapack.service.model.*;
-import com.pucp.dp1.grupo4d.morapack.util.G4DUtility;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -85,8 +84,10 @@ public class Problematica {
         aeropuertosEntity.forEach(entity -> {
             Aeropuerto aeropuerto = aeropuertoAdapter.toAlgorithm(entity);
             if (CODIGOS_ORIGENES.contains(aeropuerto.getCodigo())) {
+                aeropuerto.setEsSede(true);
                 origenes.add(aeropuerto);
             } else {
+                aeropuerto.setEsSede(false);
                 destinos.add(aeropuerto);
             }
         });
@@ -117,18 +118,19 @@ public class Problematica {
 
     public void cargarPedidos(PedidoService pedidoService, PedidoAdapter pedidoAdapter) {
         System.out.println(">> Cargando pedidos desde la base de datos..");
-        G4DUtility.IntegerWrapper cantAtendidos = new G4DUtility.IntegerWrapper();
         List<PedidoEntity> pedidosEntity = pedidoService.findAllByDateTimeRange(INICIO_PLANIFICACION, FIN_PLANIFICACION, ESCENARIO);
-        pedidosEntity.forEach(entity -> {
+        List<PedidoEntity> pedidosFiltrados = pedidosEntity.stream().filter(entity -> !CODIGOS_ORIGENES.contains(entity.getDestino().getCodigo())).toList();
+        pedidosFiltrados.forEach(entity -> {
             if(pedidos.stream().noneMatch(p -> p.getCodigo().equals(entity.getCodigo()))) {
                 Pedido pedido = pedidoAdapter.toAlgorithm(entity);
-                if(pedido.getFechaHoraProcesamiento() == null) {
+                if (pedido.getFechaHoraProcesamiento() == null) {
                     pedido.setFechaHoraProcesamiento(INSTANTE_PROCESAMIENTO);
                 }
                 pedidos.add(pedido);
-            } else cantAtendidos.increment();
+            }
         });
-        System.out.printf("[:] PEDIDOS CARGADOS! | '%d' por atender! & '%d' ya atendidos!%n", pedidos.size() - cantAtendidos.value, cantAtendidos.value);
+        int cantAtendidos = pedidos.stream().filter(Pedido::getFueAtendido).toList().size();
+        System.out.printf("[:] PEDIDOS CARGADOS! | '%d' por atender! & '%d' ya atendidos! & '%d' descartados por 'destino is origen'!%n", pedidos.size() - cantAtendidos, cantAtendidos, pedidosEntity.size() - pedidosFiltrados.size());
     }
 
     public void cargarVuelos(VueloService vueloService, VueloAdapter vueloAdapter) {
@@ -139,7 +141,6 @@ public class Problematica {
             vuelos.add(vuelo);
         });
         System.out.printf("[:] VUELOS CARGADOS! | '%d' vuelos!%n", vuelos.size());
-
     }
 
     public void cargarRutas(RutaService rutaService, RutaAdapter rutaAdapter) {
@@ -147,11 +148,9 @@ public class Problematica {
         List<RutaEntity> rutasEntity = rutaService.findAllByDateTimeRange(INICIO_PLANIFICACION, FIN_PLANIFICACION, ESCENARIO);
         rutasEntity.forEach(entity -> {
             Ruta ruta = rutaAdapter.toAlgorithm(entity);
-            if(ruta.getEstado().equals(EstadoRuta.OPERATIVA)) {
-                ruta.setEstado(EstadoRuta.REVISION_PENDIENTE);
-            }
             rutas.add(ruta);
         });
+        rutas.stream().filter(r -> r.getEstado().equals(EstadoRuta.OPERATIVA)).forEach(r -> r.setEstado(EstadoRuta.REVISION_PENDIENTE));
         System.out.printf("[:] RUTAS CARGADAS! | '%d' rutas!%n", rutas.size());
     }
 }

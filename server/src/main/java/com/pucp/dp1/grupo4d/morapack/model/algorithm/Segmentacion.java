@@ -6,6 +6,8 @@
 
 package com.pucp.dp1.grupo4d.morapack.model.algorithm;
 
+import com.pucp.dp1.grupo4d.morapack.util.G4DUtility;
+
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
@@ -17,7 +19,19 @@ public class Segmentacion {
     private Map<Ruta, Lote> lotesPorRuta;
 
     public Segmentacion() {
+        this.codigo = G4DUtility.Generator.getUniqueString("SEG");
         this.lotesPorRuta = new HashMap<>();
+    }
+
+    public Segmentacion(Segmentacion segmentacion) {
+        this.reasignar(segmentacion);
+    }
+
+    public void reasignar(Segmentacion segmentacion) {
+        this.codigo = segmentacion.getCodigo();
+        this.fechaHoraAplicacion = segmentacion.getFechaHoraAplicacion();
+        this.fechaHoraSustitucion = segmentacion.getFechaHoraSustitucion();
+        this.lotesPorRuta = new HashMap<>(segmentacion.getLotesPorRuta());
     }
 
     public Segmentacion replicar(Map<String,Aeropuerto> poolAeropuertos, Map<String, Lote> poolLotes, Map<String, Ruta> poolRutas, Map<String,Vuelo> poolVuelos, Map<String, Plan> poolPlanes) {
@@ -25,9 +39,9 @@ public class Segmentacion {
         segmentacion.codigo = this.codigo;
         segmentacion.fechaHoraAplicacion = this.fechaHoraAplicacion;
         segmentacion.fechaHoraSustitucion = this.fechaHoraSustitucion;
-        this.lotesPorRuta.entrySet().forEach(e -> {
-            Ruta ruta = poolRutas.computeIfAbsent(e.getKey().getCodigo(), codigo -> e.getKey().replicar(poolAeropuertos, poolLotes, poolVuelos, poolPlanes));
-            Lote lote = poolLotes.computeIfAbsent(e.getValue().getCodigo(), codigo -> e.getValue().replicar());
+        this.lotesPorRuta.forEach((key, value) -> {
+            Ruta ruta = poolRutas.computeIfAbsent(key.getCodigo(), codigo -> key.replicar(poolAeropuertos, poolLotes, poolVuelos, poolPlanes));
+            Lote lote = poolLotes.computeIfAbsent(value.getCodigo(), codigo -> value.replicar());
             segmentacion.lotesPorRuta.put(ruta, lote);
         });
         return segmentacion;

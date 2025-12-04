@@ -140,7 +140,7 @@ public class G4DService {
                     esPrimeraIteracion = false;
                 }
                 Instant end = Instant.now();
-                long segundosSimulados = (long) (Duration.between(start, end).toMillis()*multiplicadorTemporal/500);
+                long segundosSimulados = (long) (Duration.between(start, end).toMillis()*multiplicadorTemporal/250);
                 umbralDeReplanificacion = umbralDeReplanificacion.plusSeconds(segundosSimulados);
                 horasPlanificadas += saltoTemporalEnHoras;
                 minutosPlanificados += saltoTemporalEnMinutos;
@@ -270,6 +270,7 @@ public class G4DService {
             }
             pSimulacion.cargarClientes(clienteService, usuarioAdapter);
             pSimulacion.cargarPedidos(pedidoService, pedidoAdapter);
+            pSimulacion.cargarRutas(rutaService, rutaAdapter);
             problematica = pSimulacion;
             System.out.printf("[*] SIMULANDO BLOQUE TEMPORAL! ['%s' - '%s']%n", G4DUtility.Convertor.toDisplayString(inicioDePlanificacion), G4DUtility.Convertor.toDisplayString(finDePlanificacion));
         } else {
