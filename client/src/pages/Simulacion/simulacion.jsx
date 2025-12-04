@@ -40,6 +40,8 @@ import planeIconImg from "../../assets/icons/planeMora.svg";
 export default function Simulacion() {
   const [controlsOpen, setControlsOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(true);
+  // qué pestaña se ve en el sidebar: "flights" o "orders"
+const [sidebarTab, setSidebarTab] = useState("flights");
   const [codigoVuelo, setCodigoVuelo] = useState("");
   const [selectedItem, setSelectedItem] = useState(null);
   const [selectedAirport, setSelectedAirport] = useState(null);
@@ -265,11 +267,16 @@ export default function Simulacion() {
     setFlights([]);
     setAirports(null);
     setSelectedItem(null);
+    setSelectedAirport(null);
+    setOrders([]);            
+    setSidebarTab("flights"); 
     setStopDisabled(true);
   };
 
   // Vuelos
   const [flights, setFlights] = useState([]);
+  // 🚚 Pedidos (para el sidebar)
+  const [orders, setOrders] = useState([]);
   const activeFlights = flights.filter(
     (f) =>
       f &&
@@ -455,7 +462,54 @@ export default function Simulacion() {
       };
     });
     console.log("airportMap construido:", airportMap);
+  // Mapa rápido de rutas por código
+  const rutasPorCodigo = {};
+  (solution.rutasEnOperacion || []).forEach((r) => {
+    rutasPorCodigo[r.codigo] = r;
+  });
 
+  // Construir pedidos con segmentaciones, lotes y vuelos
+  const pedidosAtendidos = (solution.pedidosAtendidos || []).map((p) => {
+    const segmentaciones = (p.segmentaciones || []).map((seg) => {
+      const lotes = (seg.lotesPorRuta || []).map((lpr) => {
+        const ruta = rutasPorCodigo[lpr.codRuta];
+        const vuelosRuta = ruta?.codVuelos || [];
+        const origen = ruta ? airportMap[ruta.codOrigen] : null;
+        const destino = ruta ? airportMap[ruta.codDestino] : null;
+
+        return {
+          codRuta: lpr.codRuta,
+          loteCodigo: lpr.lote.codigo,
+          loteTamanio: lpr.lote.tamanio,
+          loteEstado: lpr.lote.estado,
+          vuelos: vuelosRuta,
+          origenCode: ruta?.codOrigen,
+          destinoCode: ruta?.codDestino,
+          origenNombre: origen?.name || ruta?.codOrigen,
+          destinoNombre: destino?.name || ruta?.codDestino,
+        };
+      });
+
+      return {
+        codigo: seg.codigo,
+        fechaHoraAplicacion: seg.fechaHoraAplicacion,
+        fechaHoraSustitucion: seg.fechaHoraSustitucion,
+        lotes,
+      };
+    });
+
+    return {
+      codigo: p.codigo,
+      codCliente: p.codCliente,
+      codDestino: p.codDestino,
+      cantidadSolicitada: p.cantidadSolicitada,
+      fueAtendido: p.fueAtendido,
+      segmentaciones,
+    };
+  });
+
+  setOrders(pedidosAtendidos);
+  console.log("Pedidos construidos:", pedidosAtendidos);
     // Actualizar airports solo si cambió
     setAirports((prevAirports) => {
       if (JSON.stringify(prevAirports) !== JSON.stringify(airportMap)) {
@@ -771,7 +825,7 @@ export default function Simulacion() {
 
       <aside className={`sidebar ${collapsed ? "collapsed" : ""}`}>
         <div className="sidebar-header">
-          <span className="sidebar-title">Vuelos activos</span>
+          <span className="sidebar-title">Panel informativo</span>
           <img
             src={hideIcon}
             alt="Ocultar"
@@ -780,81 +834,217 @@ export default function Simulacion() {
           />
         </div>
 
-        {!collapsed && (
-          <div className="sidebar-content sidebar-content--flights">
-            <div className="active-flights-header">
-              <span className="active-flights-title">Vuelos en tránsito</span>
-              <span className="active-flights-count">
+              {!collapsed && (
+        <div className="sidebar-content sidebar-content--flights">
+          {/* Pestañas Vuelos / Pedidos */}
+          <div className="sidebar-tabs">
+            <button
+              className={`sidebar-tab ${
+                sidebarTab === "flights" ? "active" : ""
+              }`}
+              onClick={() => setSidebarTab("flights")}
+            >
+              <span>Vuelos</span>
+              <span className="sidebar-tab-badge">
                 {activeFlights.length}
               </span>
-            </div>
+            </button>
 
-            <div className="active-flights-list">
-              {activeFlights.length === 0 ? (
-                <p className="no-flights-text">
-                  No hay vuelos activos en este momento.
-                </p>
-              ) : (
-                activeFlights.map((flight) => {
-                  const progressPct = Math.min(
-                    100,
-                    Math.max(0, Math.round((flight.progress ?? 0) * 100))
-                  );
+            <button
+              className={`sidebar-tab ${
+                sidebarTab === "orders" ? "active" : ""
+              }`}
+              onClick={() => setSidebarTab("orders")}
+            >
+              <span>Pedidos</span>
+              <span className="sidebar-tab-badge">
+                {orders.length}
+              </span>
+            </button>
+          </div>
 
-                  return (
+          {/* ===== CONTENIDO PESTAÑA VUELOS ===== */}
+          {sidebarTab === "flights" && (
+            <>
+              <div className="active-flights-header">
+                <span className="active-flights-title">
+                  Vuelos en tránsito
+                </span>
+                <span className="active-flights-count">
+                  {activeFlights.length}
+                </span>
+              </div>
+
+              <div className="active-flights-list">
+                {activeFlights.length === 0 ? (
+                  <p className="no-flights-text">
+                    No hay vuelos activos en este momento.
+                  </p>
+                ) : (
+                  activeFlights.map((flight) => {
+                    const progressPct = Math.min(
+                      100,
+                      Math.max(0, Math.round((flight.progress ?? 0) * 100))
+                    );
+
+                    return (
+                      <div
+                        key={flight.code}
+                        className="flight-card"
+                        onClick={() => {
+                          setSelectedAirport(null);
+                          setSelectedItem(
+                            `Vuelo ${flight.code}: ${flight.origin.city} (${flight.origin.code}) → ${flight.destination.city} (${flight.destination.code}) | Llegada: ${flight.endTime}`
+                          );
+                        }}
+                      >
+                        <div className="flight-card-header">
+                          <span className="flight-route">
+                            {flight.origin.city}
+                            <span className="flight-arrow"> ✈ </span>
+                            {flight.destination.city}
+                          </span>
+                          <span className="flight-code">{flight.code}</span>
+                        </div>
+
+                        <div className="flight-card-body">
+                          <div className="flight-card-row">
+                            <span className="flight-label">Capacidad</span>
+                            <span className="flight-value">
+                              {flight.capacity} / {flight.planeCapacity}
+                            </span>
+                          </div>
+
+                          <div className="flight-card-row">
+                            <span className="flight-label">Salida</span>
+                            <span className="flight-value">
+                              {flight.startTime}
+                            </span>
+                          </div>
+
+                          <div className="flight-card-row">
+                            <span className="flight-label">Llegada</span>
+                            <span className="flight-value">
+                              {flight.endTime}
+                            </span>
+                          </div>
+
+                          <div className="flight-progress">
+                            <div
+                              className="flight-progress-bar"
+                              style={{ width: `${progressPct}%` }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </>
+          )}
+
+          {/* ===== CONTENIDO PESTAÑA PEDIDOS ===== */}
+          {sidebarTab === "orders" && (
+            <div className="sidebar-section sidebar-section--orders">
+              <div className="orders-header">
+                <span className="orders-title">Pedidos atendidos</span>
+                <span className="orders-count">{orders.length}</span>
+              </div>
+
+              <div className="orders-list">
+                {orders.length === 0 ? (
+                  <p className="no-orders-text">
+                    No hay pedidos en esta simulación.
+                  </p>
+                ) : (
+                  orders.map((pedido) => (
                     <div
-                      key={flight.code}
-                      className="flight-card"
+                      key={pedido.codigo}
+                      className="order-card"
                       onClick={() => {
                         setSelectedAirport(null);
                         setSelectedItem(
-                          `Vuelo ${flight.code}: ${flight.origin.city} (${flight.origin.code}) → ${flight.destination.city} (${flight.destination.code}) | Llegada: ${flight.endTime}`
+                          `Pedido ${pedido.codigo}
+Cliente: ${pedido.codCliente}
+Destino: ${pedido.codDestino}
+Cantidad solicitada: ${pedido.cantidadSolicitada} unidades`
                         );
                       }}
                     >
-                      <div className="flight-card-header">
-                        <span className="flight-route">
-                          {flight.origin.city}
-                          <span className="flight-arrow"> ✈ </span>
-                          {flight.destination.city}
+                      <div className="order-card-header">
+                        <span className="order-code">{pedido.codigo}</span>
+                        <span className="order-destination">
+                          {pedido.codDestino}
                         </span>
-                        <span className="flight-code">{flight.code}</span>
                       </div>
 
-                      <div className="flight-card-body">
-                        <div className="flight-card-row">
-                          <span className="flight-label">Capacidad</span>
-                          <span className="flight-value">
-                            {flight.capacity} / {flight.planeCapacity}
+                      <div className="order-card-body">
+                        <div className="order-row">
+                          <span className="order-label">Cliente</span>
+                          <span className="order-value">
+                            {pedido.codCliente}
+                          </span>
+                        </div>
+                        <div className="order-row">
+                          <span className="order-label">Cantidad</span>
+                          <span className="order-value">
+                            {pedido.cantidadSolicitada} u.
                           </span>
                         </div>
 
-                        <div className="flight-card-row">
-                          <span className="flight-label">Salida</span>
-                          <span className="flight-value">
-                            {flight.startTime}
-                          </span>
-                        </div>
+                        {pedido.segmentaciones.map((seg) => (
+                          <div key={seg.codigo} className="order-seg">
+                            <div className="order-seg-header">
+                              <span className="order-seg-code">
+                                {seg.codigo}
+                              </span>
+                              {seg.fechaHoraAplicacion && (
+                                <span className="order-seg-date">
+                                  {seg.fechaHoraAplicacion}
+                                </span>
+                              )}
+                            </div>
 
-                        <div className="flight-card-row">
-                          <span className="flight-label">Llegada</span>
-                          <span className="flight-value">{flight.endTime}</span>
-                        </div>
-
-                        <div className="flight-progress">
-                          <div
-                            className="flight-progress-bar"
-                            style={{ width: `${progressPct}%` }}
-                          />
-                        </div>
+                            {seg.lotes.map((lote) => (
+                              <div
+                                key={lote.loteCodigo}
+                                className="order-lote"
+                              >
+                                <div className="order-row">
+                                  <span className="order-label">Lote</span>
+                                  <span className="order-value">
+                                    {lote.loteCodigo} · {lote.loteTamanio} u.
+                                  </span>
+                                </div>
+                                <div className="order-row">
+                                  <span className="order-label">Ruta</span>
+                                  <span className="order-value">
+                                    {lote.origenCode} → {lote.destinoCode}
+                                  </span>
+                                </div>
+                                <div className="order-row">
+                                  <span className="order-label">Vuelos</span>
+                                  <span className="order-value">
+                                    {lote.vuelos && lote.vuelos.length > 0
+                                      ? lote.vuelos.join(", ")
+                                      : "Sin vuelo asignado"}
+                                  </span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        ))}
                       </div>
                     </div>
-                  );
-                })
-              )}
+                  ))
+                )}
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
+      )}
+
       </aside>
 
       <section className="contenido">
@@ -1089,158 +1279,173 @@ ${
 
           {/* PANEL INFORMATIVO DEBAJO DEL MAPA */}
           {/* PANEL INFORMATIVO DEBAJO DEL MAPA */}
-{infoPanelExpanded && (   // 👈 solo se pinta si hay aeropuerto o vuelo seleccionado
-  <div className="info-panel expanded">
-    <div className="info-content">
-      {selectedAirport ? (
-        <>
-          {/* Cabecera: aeropuerto */}
-          <div className="info-panel-header">
-            <div className="left">
-              <div className="info-panel-title">Información seleccionada</div>
-              <div className="info-panel-airport">
-                {selectedAirport.city} ({selectedAirport.code})
+          {infoPanelExpanded && ( // 👈 solo se pinta si hay aeropuerto o vuelo seleccionado
+            <div className="info-panel expanded">
+              <div className="info-content">
+                {selectedAirport ? (
+                  <>
+                    {/* Cabecera: aeropuerto */}
+                    <div className="info-panel-header">
+                      <div className="left">
+                        <div className="info-panel-title">
+                          Información seleccionada
+                        </div>
+                        <div className="info-panel-airport">
+                          {selectedAirport.city} ({selectedAirport.code})
+                        </div>
+                        <div className="info-panel-subtitle">
+                          {selectedAirport.country}
+                        </div>
+                      </div>
+
+                      <div className="right">
+                        <div className="info-panel-capacity">
+                          Capacidad: {selectedAirport.capacidad} unidades
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Cuerpo: vuelos saliendo / llegando */}
+                    <div className="info-panel-body">
+                      {/* Columna 1: saliendo */}
+                      <div className="info-panel-column">
+                        <h4>Vuelos saliendo</h4>
+
+                        {vuelosSaliendo.length === 0 && (
+                          <p className="info-panel-empty-list">
+                            No hay vuelos saliendo en este momento.
+                          </p>
+                        )}
+
+                        <ul className="info-panel-flights">
+                          {vuelosSaliendo.map((flight) => {
+                            const porcentaje =
+                              flight.planeCapacity > 0
+                                ? Math.round(
+                                    (flight.capacity * 100) /
+                                      flight.planeCapacity
+                                  )
+                                : 0;
+
+                            return (
+                              <li key={flight.code} className="flight-card">
+                                <div className="flight-card-header">
+                                  <span className="flight-route">
+                                    {flight.origin.code}
+                                    <span className="flight-arrow"> ✈ </span>
+                                    {flight.destination.code}
+                                  </span>
+                                  <span className="flight-code">
+                                    {flight.code}
+                                  </span>
+                                </div>
+
+                                <div className="flight-card-body">
+                                  <div className="flight-card-row">
+                                    <span className="flight-label">Salida</span>
+                                    <span className="flight-value">
+                                      {flight.startTime}
+                                    </span>
+                                  </div>
+                                  <div className="flight-card-row">
+                                    <span className="flight-label">
+                                      Llegada
+                                    </span>
+                                    <span className="flight-value">
+                                      {flight.endTime}
+                                    </span>
+                                  </div>
+                                  <div className="flight-card-row">
+                                    <span className="flight-label">
+                                      Capacidad
+                                    </span>
+                                    <span className="flight-value">
+                                      {flight.capacity}/{flight.planeCapacity}{" "}
+                                      unidades · {porcentaje}% ocupación
+                                    </span>
+                                  </div>
+                                </div>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      </div>
+
+                      {/* Columna 2: llegando */}
+                      <div className="info-panel-column">
+                        <h4>Vuelos llegando</h4>
+
+                        {vuelosLlegando.length === 0 && (
+                          <p className="info-panel-empty-list">
+                            No hay vuelos llegando en este momento.
+                          </p>
+                        )}
+
+                        <ul className="info-panel-flights">
+                          {vuelosLlegando.map((flight) => {
+                            const porcentaje =
+                              flight.planeCapacity > 0
+                                ? Math.round(
+                                    (flight.capacity * 100) /
+                                      flight.planeCapacity
+                                  )
+                                : 0;
+
+                            return (
+                              <li key={flight.code} className="flight-card">
+                                <div className="flight-card-header">
+                                  <span className="flight-route">
+                                    {flight.origin.code}
+                                    <span className="flight-arrow"> ✈ </span>
+                                    {flight.destination.code}
+                                  </span>
+                                  <span className="flight-code">
+                                    {flight.code}
+                                  </span>
+                                </div>
+
+                                <div className="flight-card-body">
+                                  <div className="flight-card-row">
+                                    <span className="flight-label">Salida</span>
+                                    <span className="flight-value">
+                                      {flight.startTime}
+                                    </span>
+                                  </div>
+                                  <div className="flight-card-row">
+                                    <span className="flight-label">
+                                      Llegada
+                                    </span>
+                                    <span className="flight-value">
+                                      {flight.endTime}
+                                    </span>
+                                  </div>
+                                  <div className="flight-card-row">
+                                    <span className="flight-label">
+                                      Capacidad
+                                    </span>
+                                    <span className="flight-value">
+                                      {flight.capacity}/{flight.planeCapacity}{" "}
+                                      unidades · {porcentaje}% ocupación
+                                    </span>
+                                  </div>
+                                </div>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  // Caso: solo hay selectedItem (avión), usamos layout simple
+                  <>
+                    <h3>Información seleccionada</h3>
+                    <p>{selectedItem}</p>
+                  </>
+                )}
               </div>
-              <div className="info-panel-subtitle">
-                {selectedAirport.country}
-              </div>
             </div>
-
-            <div className="right">
-              <div className="info-panel-capacity">
-                Capacidad: {selectedAirport.capacidad} unidades
-              </div>
-            </div>
-          </div>
-
-          {/* Cuerpo: vuelos saliendo / llegando */}
-          <div className="info-panel-body">
-            {/* Columna 1: saliendo */}
-            <div className="info-panel-column">
-              <h4>Vuelos saliendo</h4>
-
-              {vuelosSaliendo.length === 0 && (
-                <p className="info-panel-empty-list">
-                  No hay vuelos saliendo en este momento.
-                </p>
-              )}
-
-              <ul className="info-panel-flights">
-                {vuelosSaliendo.map((flight) => {
-                  const porcentaje =
-                    flight.planeCapacity > 0
-                      ? Math.round(
-                          (flight.capacity * 100) / flight.planeCapacity
-                        )
-                      : 0;
-
-                  return (
-                    <li key={flight.code} className="flight-card">
-                      <div className="flight-card-header">
-                        <span className="flight-route">
-                          {flight.origin.code}
-                          <span className="flight-arrow"> ✈ </span>
-                          {flight.destination.code}
-                        </span>
-                        <span className="flight-code">{flight.code}</span>
-                      </div>
-
-                      <div className="flight-card-body">
-                        <div className="flight-card-row">
-                          <span className="flight-label">Salida</span>
-                          <span className="flight-value">
-                            {flight.startTime}
-                          </span>
-                        </div>
-                        <div className="flight-card-row">
-                          <span className="flight-label">Llegada</span>
-                          <span className="flight-value">
-                            {flight.endTime}
-                          </span>
-                        </div>
-                        <div className="flight-card-row">
-                          <span className="flight-label">Capacidad</span>
-                          <span className="flight-value">
-                            {flight.capacity}/{flight.planeCapacity} unidades ·{" "}
-                            {porcentaje}% ocupación
-                          </span>
-                        </div>
-                      </div>
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
-
-            {/* Columna 2: llegando */}
-            <div className="info-panel-column">
-              <h4>Vuelos llegando</h4>
-
-              {vuelosLlegando.length === 0 && (
-                <p className="info-panel-empty-list">
-                  No hay vuelos llegando en este momento.
-                </p>
-              )}
-
-              <ul className="info-panel-flights">
-                {vuelosLlegando.map((flight) => {
-                  const porcentaje =
-                    flight.planeCapacity > 0
-                      ? Math.round(
-                          (flight.capacity * 100) / flight.planeCapacity
-                        )
-                      : 0;
-
-                  return (
-                    <li key={flight.code} className="flight-card">
-                      <div className="flight-card-header">
-                        <span className="flight-route">
-                          {flight.origin.code}
-                          <span className="flight-arrow"> ✈ </span>
-                          {flight.destination.code}
-                        </span>
-                        <span className="flight-code">{flight.code}</span>
-                      </div>
-
-                      <div className="flight-card-body">
-                        <div className="flight-card-row">
-                          <span className="flight-label">Salida</span>
-                          <span className="flight-value">
-                            {flight.startTime}
-                          </span>
-                        </div>
-                        <div className="flight-card-row">
-                          <span className="flight-label">Llegada</span>
-                          <span className="flight-value">
-                            {flight.endTime}
-                          </span>
-                        </div>
-                        <div className="flight-card-row">
-                          <span className="flight-label">Capacidad</span>
-                          <span className="flight-value">
-                            {flight.capacity}/{flight.planeCapacity} unidades ·{" "}
-                            {porcentaje}% ocupación
-                          </span>
-                        </div>
-                      </div>
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
-          </div>
-        </>
-      ) : (
-        // Caso: solo hay selectedItem (avión), usamos layout simple
-        <>
-          <h3>Información seleccionada</h3>
-          <p>{selectedItem}</p>
-        </>
-      )}
-    </div>
-  </div>
-)}
-
+          )}
         </div>
       </section>
 
