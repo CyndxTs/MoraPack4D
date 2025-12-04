@@ -467,7 +467,7 @@ const airportIcon = L.icon({
         );
 
         const prev = prevByCode.get(v.codigo);
-
+        
         if (prev) {
           // ✅ Vuelo ya existía → PRESERVAR completamente su estado de animación
           // Solo actualizamos datos estáticos que podrían haber cambiado
@@ -477,6 +477,9 @@ const airportIcon = L.icon({
             capacity: v.capacidadOcupada,
             planeCapacity: v.capacidadMaxima,
             // NO tocamos: progress, position, rotation, arrived, startMs, endMs, path
+            rutas: (solution.rutasEnOperacion || [])
+            .filter(r => (r.codVuelos || []).includes(v.codigo))
+            .map(r => `${r.codOrigen} → ${r.codDestino}`)
           });
         } else {
           // 🆕 Vuelo nuevo → inicializarlo según simNowMs
@@ -485,6 +488,11 @@ const airportIcon = L.icon({
           let position = path[0];
           let arrived = false;
           let rotation = 0;
+
+          // Buscar rutas asociadas a este vuelo
+          const rutasDelVuelo = (solution.rutasEnOperacion || []).filter(
+            r => (r.codVuelos || []).includes(v.codigo)
+          );
 
           if (simNowMs <= startMs) {
             // Aún no despega
@@ -539,6 +547,7 @@ const airportIcon = L.icon({
             position,
             rotation,
             arrived,
+            rutas: rutasDelVuelo.map(r => `${r.codOrigen} → ${r.codDestino}`),
           });
         }
       });
@@ -904,9 +913,9 @@ const airportIcon = L.icon({
                 }
 
                 const filterCss = getPlaneColorFilter(
-  flight.capacity,
-  flight.planeCapacity
-);
+                  flight.capacity,
+                  flight.planeCapacity
+                );
 
                 return (
                   <React.Fragment key={flight.code}>
@@ -947,8 +956,15 @@ const airportIcon = L.icon({
                               ${flight.origin.city} (${flight.origin.code}) → ${flight.destination.city} (${flight.destination.code})
                               Salida: ${flight.startTime}
                               Llegada: ${flight.endTime}
-                              Capacidad: ${flight.capacity} / ${flight.planeCapacity} pax`
+                              Capacidad: ${flight.capacity} / ${flight.planeCapacity} pax
+                              Rutas que pasa:
+                              ${
+                                flight.rutas && flight.rutas.length > 0
+                                  ? flight.rutas.map(r => ` - ${r}`).join("\n")
+                                  : " - No asignadas"
+                              }`
                               );
+
 
 
                           },
@@ -958,15 +974,16 @@ const airportIcon = L.icon({
                         <Popup>
                           <b>{flight.code}</b>
                           <br />
-                          {flight.origin.country} →{" "}
-                          {flight.destination.country}
+                          {flight.origin.country} → {flight.destination.country}
                           <br />
-                          Salida: {flight.startTime} 
+                          Salida: {flight.startTime}
                           <br />
                           Llegada: {flight.endTime}
                           <br />
                           Capacidad: {flight.capacity} / {flight.planeCapacity} pax
+                          <br />
                         </Popup>
+
                       </Marker>
                     )}
                   </React.Fragment>
