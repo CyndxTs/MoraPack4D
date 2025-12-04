@@ -62,16 +62,16 @@ export default function Aeropuertos() {
     }
 
     // Validación del nombre exacto
-    if (
-      archivo &&
-      archivo.name !== "c.1inf54.25.2.Aeropuerto.husos.v1.20250818__estudiantes.txt"
-    ) {
-      showNotification(
-        "warning",
-        "El archivo debe llamarse exactamente 'c.1inf54.25.2.Aeropuerto.husos.v1.20250818__estudiantes.txt'."
-      );
-      return;
-    }
+    //if (
+    //  archivo &&
+    //  archivo.name !== "c.1inf54.25.2.Aeropuerto.husos.v1.20250818__estudiantes.txt"
+    //) {
+    //  showNotification(
+    //    "warning",
+    //    "El archivo debe llamarse exactamente 'c.1inf54.25.2.Aeropuerto.husos.v1.20250818__estudiantes.txt'."
+    //  );
+    //  return;
+    //}
 
     try {
       setProcessing(true);
