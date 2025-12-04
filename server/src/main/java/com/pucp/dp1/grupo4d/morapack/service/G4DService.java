@@ -140,7 +140,7 @@ public class G4DService {
                     esPrimeraIteracion = false;
                 }
                 Instant end = Instant.now();
-                long segundosSimulados = (long) (Duration.between(start, end).toMillis()*multiplicadorTemporal/250);
+                long segundosSimulados = (long) (Duration.between(start, end).toMillis()*multiplicadorTemporal/333);
                 umbralDeReplanificacion = umbralDeReplanificacion.plusSeconds(segundosSimulados);
                 horasPlanificadas += saltoTemporalEnHoras;
                 minutosPlanificados += saltoTemporalEnMinutos;

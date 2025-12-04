@@ -133,10 +133,10 @@ export default function Clientes() {
       return;
     }
 
-    if (archivo && archivo.name !== "Clientes.txt") {
-      showNotification("warning", "El archivo debe llamarse exactamente 'Clientes.txt'.");
-      return;
-    }
+    //if (archivo && archivo.name !== "Clientes.txt") {
+    //  showNotification("warning", "El archivo debe llamarse exactamente 'Clientes.txt'.");
+    //  return;
+    //}
 
     try {
       setProcessing(true);

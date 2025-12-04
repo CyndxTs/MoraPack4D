@@ -66,16 +66,16 @@ export default function Planes() {
     }
 
     // Validación del nombre exacto del archivo
-    if (
-      archivo &&
-      archivo.name !== "c.1inf54.25.2.planes_vuelo.v4.20250818.txt"
-    ) {
-      showNotification(
-        "warning",
-        "El archivo debe llamarse exactamente 'c.1inf54.25.2.planes_vuelo.v4.20250818'."
-      );
-      return;
-    }
+    //if (
+    //  archivo &&
+    //  archivo.name !== "c.1inf54.25.2.planes_vuelo.v4.20250818.txt"
+    //) {
+    //  showNotification(
+    //    "warning",
+    //    "El archivo debe llamarse exactamente 'c.1inf54.25.2.planes_vuelo.v4.20250818'."
+    //  );
+    //  return;
+    //}
 
     try {
       setProcessing(true);
