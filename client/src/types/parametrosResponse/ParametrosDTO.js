@@ -10,11 +10,12 @@
  * @property {string[]} codOrigenes
  * @property {number} eleMin
  * @property {number} eleMax
- * @property {number} maxIntentos
+ * @property {number} nMax
  * @property {number} factorDeUmbralDeAberracion
  * @property {number} factorDeUtilizacionTemporal
  * @property {number} factorDeDesviacionEspacial
  * @property {number} factorDeDisposicionOperacional
+ * @property {number} probabilidadReplanificacion
  *
  * 
  * @property {number} [dmin]
