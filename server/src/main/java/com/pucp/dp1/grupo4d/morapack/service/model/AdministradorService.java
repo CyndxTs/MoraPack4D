@@ -9,6 +9,7 @@ package com.pucp.dp1.grupo4d.morapack.service.model;
 import com.pucp.dp1.grupo4d.morapack.mapper.UsuarioMapper;
 import com.pucp.dp1.grupo4d.morapack.model.dto.DTO;
 import com.pucp.dp1.grupo4d.morapack.model.dto.UsuarioDTO;
+import com.pucp.dp1.grupo4d.morapack.model.dto.payload.ProgressPayload;
 import com.pucp.dp1.grupo4d.morapack.model.dto.request.FilterRequest;
 import com.pucp.dp1.grupo4d.morapack.model.dto.request.ListRequest;
 import com.pucp.dp1.grupo4d.morapack.model.dto.response.GenericResponse;
@@ -17,6 +18,7 @@ import com.pucp.dp1.grupo4d.morapack.model.entity.AdministradorEntity;
 import com.pucp.dp1.grupo4d.morapack.model.enumeration.EstadoUsuario;
 import com.pucp.dp1.grupo4d.morapack.model.exception.G4DException;
 import com.pucp.dp1.grupo4d.morapack.repository.AdministradorRepository;
+import com.pucp.dp1.grupo4d.morapack.service.WebSocketService;
 import com.pucp.dp1.grupo4d.morapack.util.G4DUtility;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -27,7 +29,6 @@ import java.util.*;
 
 @Service
 public class AdministradorService {
-
     private final AdministradorRepository administradorRepository;
     private final UsuarioMapper usuarioMapper;
     private final List<AdministradorEntity> administradores = new ArrayList<>();
@@ -77,7 +78,7 @@ public class AdministradorService {
         return administradorRepository.findByCorreo(correo).isPresent();
     }
 
-    public String obtenerNuevoCodigo() {
+    public String generarNuevoCodigo() {
         OptionalInt maxCodigo;
         if(!administradores.isEmpty()) {
             maxCodigo = administradores.stream().mapToInt(entity -> Integer.parseInt(entity.getCodigo().substring(5))).max();
@@ -117,22 +118,38 @@ public class AdministradorService {
         try {
             System.out.printf("Importando administradores desde '%s'..%n", archivo.getName());
             Scanner archivoSC = new Scanner(archivo.getInputStream(), G4DUtility.Reader.getFileCharset(archivo));
+            int lTotales = (int) G4DUtility.Reader.getLineCount(archivo);
+            int lProcesadas = 0;
+            WebSocketService.enviar("/topic/loader", new ProgressPayload("Leyendo archivo", lProcesadas, lTotales));
             while (archivoSC.hasNextLine()) {
                 String linea = archivoSC.nextLine().trim();
                 Scanner lineaSC = new Scanner(linea);
                 lineaSC.useDelimiter("\\s{2,}");
                 AdministradorEntity administrador = new AdministradorEntity();
-                administrador.setCodigo(this.obtenerNuevoCodigo());
+                administrador.setCodigo(this.generarNuevoCodigo());
                 administrador.setNombre(lineaSC.next());
                 administrador.setCorreo(lineaSC.next());
                 administrador.setContrasenia("12345678");
                 administradores.add(administrador);
                 lineaSC.close();
+                lProcesadas++;
+                WebSocketService.enviar("/topic/loader", new ProgressPayload("Leyendo archivo", lProcesadas, lTotales));
+                if(lProcesadas % 500 == 0 || lProcesadas == lTotales) {
+                    List<AdministradorEntity> entities = administradores.stream().filter(entity -> !this.existsByCorreo(entity.getCorreo())).toList();
+                    int eTotales = entities.size();
+                    int eProcesadas = 0;
+                    WebSocketService.enviar("/topic/loader", new ProgressPayload("Guardando administradores", eProcesadas, eTotales));
+                    for(AdministradorEntity entity : entities) {
+                        this.save(entity);
+                        eProcesadas++;
+                        WebSocketService.enviar("/topic/loader", new ProgressPayload("Guardando administradores", eProcesadas, eTotales));
+                    }
+                    System.out.printf("[<] ADMINISTRADORES IMPORTADOS! ('%d')%n", administradores.size());
+                    clearPools();
+                }
             }
             archivoSC.close();
-            administradores.stream().filter(entity -> !this.existsByCorreo(entity.getCorreo())).forEach(this::save);
-            System.out.printf("[<] ADMINISTRADORES IMPORTADOS! ('%d')%n", administradores.size());
-            return new GenericResponse(true, String.format("Administradores importados correctamente! ('%d')", administradores.size()));
+            return new GenericResponse(true, "Administradores importados correctamente!");
         } catch (NoSuchElementException e) {
             throw new G4DException(String.format("El archivo '%s' no sigue el formato esperado.", archivo.getName()));
         } catch (IOException e) {

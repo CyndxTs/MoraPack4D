@@ -9,15 +9,17 @@ package com.pucp.dp1.grupo4d.morapack.service.model;
 import com.pucp.dp1.grupo4d.morapack.mapper.UsuarioMapper;
 import com.pucp.dp1.grupo4d.morapack.model.dto.DTO;
 import com.pucp.dp1.grupo4d.morapack.model.dto.UsuarioDTO;
+import com.pucp.dp1.grupo4d.morapack.model.dto.payload.ProgressPayload;
 import com.pucp.dp1.grupo4d.morapack.model.dto.request.FilterRequest;
 import com.pucp.dp1.grupo4d.morapack.model.dto.request.ListRequest;
 import com.pucp.dp1.grupo4d.morapack.model.dto.response.GenericResponse;
 import com.pucp.dp1.grupo4d.morapack.model.dto.response.ListResponse;
+import com.pucp.dp1.grupo4d.morapack.model.entity.AdministradorEntity;
 import com.pucp.dp1.grupo4d.morapack.model.entity.ClienteEntity;
 import com.pucp.dp1.grupo4d.morapack.model.enumeration.EstadoUsuario;
-import com.pucp.dp1.grupo4d.morapack.model.enumeration.TipoEscenario;
 import com.pucp.dp1.grupo4d.morapack.model.exception.G4DException;
 import com.pucp.dp1.grupo4d.morapack.repository.ClienteRepository;
+import com.pucp.dp1.grupo4d.morapack.service.WebSocketService;
 import com.pucp.dp1.grupo4d.morapack.util.G4DUtility;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -109,7 +111,7 @@ public class ClienteService {
         return cliente;
     }
 
-    public String obtenerNuevoCodigo() {
+    public String generarNuevoCodigo() {
         OptionalInt maxCodigo;
         if (!clientes.isEmpty()) {
             maxCodigo = clientes.stream().mapToInt(entity -> Integer.parseInt(entity.getCodigo())).max();
@@ -149,22 +151,38 @@ public class ClienteService {
         try {
             System.out.printf("Importando clientes desde '%s'..%n", archivo.getName());
             Scanner archivoSC = new Scanner(archivo.getInputStream(), G4DUtility.Reader.getFileCharset(archivo));
+            int lTotales = (int) G4DUtility.Reader.getLineCount(archivo);
+            int lProcesadas = 2;
+            WebSocketService.enviar("/topic/loader", new ProgressPayload("Leyendo archivo", lProcesadas, lTotales));
             while (archivoSC.hasNextLine()) {
                 String linea = archivoSC.nextLine().trim();
                 Scanner lineaSC = new Scanner(linea);
                 lineaSC.useDelimiter("\\s{2,}");
                 ClienteEntity cliente = new ClienteEntity();
-                cliente.setCodigo(this.obtenerNuevoCodigo());
+                cliente.setCodigo(this.generarNuevoCodigo());
                 cliente.setNombre(lineaSC.next());
                 cliente.setCorreo(lineaSC.next());
                 cliente.setContrasenia("12345678");
                 clientes.add(cliente);
                 lineaSC.close();
+                lProcesadas++;
+                WebSocketService.enviar("/topic/loader", new ProgressPayload("Leyendo archivo", lProcesadas, lTotales));
+                if(lProcesadas % 500 == 0 || lProcesadas == lTotales) {
+                    List<ClienteEntity> entities = clientes.stream().filter(entity -> !this.existsByCorreo(entity.getCorreo())).toList();
+                    int eTotales = entities.size();
+                    int eProcesadas = 0;
+                    WebSocketService.enviar("/topic/loader", new ProgressPayload("Guardando clientes", eProcesadas, eTotales));
+                    for(ClienteEntity entity : entities) {
+                        this.save(entity);
+                        eProcesadas++;
+                        WebSocketService.enviar("/topic/loader", new ProgressPayload("Guardando clientes", eProcesadas, eTotales));
+                    }
+                    System.out.printf("[<] CLIENTES IMPORTADOS! ('%d')%n", clientes.size());
+                    clearPools();
+                }
             }
             archivoSC.close();
-            clientes.stream().filter(entity -> !this.existsByCorreo(entity.getCorreo())).forEach(this::save);
-            System.out.printf("[<] CLIENTES IMPORTADOS! ('%d')%n", clientes.size());
-            return new  GenericResponse(true, String.format("Clientes importados correctamente! ('%d')", clientes.size()));
+            return new  GenericResponse(true, "Clientes importados correctamente!");
         } catch (NoSuchElementException e) {
             throw new G4DException(String.format("El archivo '%s' no sigue el formato esperado.", archivo.getName()));
         } catch (IOException e) {

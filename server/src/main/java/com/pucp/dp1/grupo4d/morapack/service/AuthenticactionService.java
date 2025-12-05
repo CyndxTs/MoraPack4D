@@ -117,8 +117,8 @@ public class AuthenticactionService {
 
     private String obtenerNuevoCodigo(TipoUsuario tipoUsuario) {
         return switch (tipoUsuario) {
-            case CLIENTE -> clienteService.obtenerNuevoCodigo();
-            case ADMINISTRADOR -> administradorService.obtenerNuevoCodigo();
+            case CLIENTE -> clienteService.generarNuevoCodigo();
+            case ADMINISTRADOR -> administradorService.generarNuevoCodigo();
         };
     }
 

@@ -9,14 +9,17 @@ package com.pucp.dp1.grupo4d.morapack.service.model;
 import com.pucp.dp1.grupo4d.morapack.mapper.AeropuertoMapper;
 import com.pucp.dp1.grupo4d.morapack.model.dto.AeropuertoDTO;
 import com.pucp.dp1.grupo4d.morapack.model.dto.DTO;
+import com.pucp.dp1.grupo4d.morapack.model.dto.payload.ProgressPayload;
 import com.pucp.dp1.grupo4d.morapack.model.dto.request.FilterRequest;
 import com.pucp.dp1.grupo4d.morapack.model.dto.request.ImportRequest;
 import com.pucp.dp1.grupo4d.morapack.model.dto.request.ListRequest;
 import com.pucp.dp1.grupo4d.morapack.model.dto.response.GenericResponse;
 import com.pucp.dp1.grupo4d.morapack.model.dto.response.ListResponse;
+import com.pucp.dp1.grupo4d.morapack.model.entity.AdministradorEntity;
 import com.pucp.dp1.grupo4d.morapack.model.entity.AeropuertoEntity;
 import com.pucp.dp1.grupo4d.morapack.model.exception.G4DException;
 import com.pucp.dp1.grupo4d.morapack.repository.AeropuertoRepository;
+import com.pucp.dp1.grupo4d.morapack.service.WebSocketService;
 import com.pucp.dp1.grupo4d.morapack.util.G4DUtility;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
@@ -27,7 +30,6 @@ import java.util.*;
 
 @Service
 public class AeropuertoService {
-
     private final AeropuertoRepository aeropuertoRepository;
     private final AeropuertoMapper aeropuertoMapper;
     private final List<AeropuertoEntity> aeropuertos = new ArrayList<>();
@@ -139,9 +141,12 @@ public class AeropuertoService {
         try {
             System.out.printf("Importando aeropuertos desde '%s'..%n", archivo.getName());
             Scanner archivoSC = new Scanner(archivo.getInputStream(), G4DUtility.Reader.getFileCharset(archivo));
+            int lTotales = (int) G4DUtility.Reader.getLineCount(archivo);
+            int lProcesadas = 2;
             if (archivoSC.hasNextLine()) archivoSC.nextLine();
             if (archivoSC.hasNextLine()) archivoSC.nextLine();
             String continente = "";
+            WebSocketService.enviar("/topic/loader", new ProgressPayload("Leyendo archivo", lProcesadas, lTotales));
             while (archivoSC.hasNextLine()) {
                 String linea = archivoSC.nextLine().trim();
                 if (linea.isEmpty()) continue;
@@ -168,11 +173,24 @@ public class AeropuertoService {
                     aeropuertos.add(aeropuerto);
                 } else continente = lineaSC.next();
                 lineaSC.close();
+                lProcesadas++;
+                WebSocketService.enviar("/topic/loader", new ProgressPayload("Leyendo archivo", lProcesadas, lTotales));
+                if(lProcesadas % 500 == 0 || lProcesadas == lTotales) {
+                    List<AeropuertoEntity> entities = aeropuertos.stream().filter(entity -> !this.existsByCodigo(entity.getCodigo())).toList();
+                    int eTotales = entities.size();
+                    int eProcesadas = 0;
+                    WebSocketService.enviar("/topic/loader", new ProgressPayload("Guardando aeropuertos", eProcesadas, eTotales));
+                    for(AeropuertoEntity entity : entities) {
+                        this.save(entity);
+                        eProcesadas++;
+                        WebSocketService.enviar("/topic/loader", new ProgressPayload("Guardando aeropuertos", eProcesadas, eTotales));
+                    }
+                    System.out.printf("[<] AEROPUERTOS IMPORTADOS! ('%d')%n", aeropuertos.size());
+                    clearPools();
+                }
             }
             archivoSC.close();
-            aeropuertos.stream().filter(entity -> !this.existsByCodigo(entity.getCodigo())).forEach(this::save);
-            System.out.printf("[<] AEROPUERTOS IMPORTADOS! ('%d')%n", aeropuertos.size());
-            return new GenericResponse(true, String.format("Aeropuertos importados correctamente! ('%d')",  aeropuertos.size()));
+            return new GenericResponse(true, "Aeropuertos importados correctamente!");
         } catch (NoSuchElementException e) {
             throw new G4DException(String.format("El archivo '%s' no sigue el formato esperado.", archivo.getName()));
         } catch (IOException e) {

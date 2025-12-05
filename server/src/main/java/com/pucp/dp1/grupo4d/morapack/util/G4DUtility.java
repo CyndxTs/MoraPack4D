@@ -472,36 +472,48 @@ public class G4DUtility {
     public static class Reader {
 
         // Obtener 'Charset' de un archivo
-        public static Charset getFileCharset(Object file) {
-            try (InputStream fis = getInputStream(file)) {
-                byte[] bom = new byte[3];
-                Integer n = fis.read(bom, 0, bom.length);
-                if (n >= 2) {
-                    if ((bom[0] & 0xFF) == 0xFF && (bom[1] & 0xFF) == 0xFE) {
-                        return StandardCharsets.UTF_16LE; // UTF-16 Little Endian
-                    }
-                    if ((bom[0] & 0xFF) == 0xFE && (bom[1] & 0xFF) == 0xFF) {
-                        return StandardCharsets.UTF_16BE; // UTF-16 Big Endian
-                    }
+        public static Charset getFileCharset(Object file) throws IOException {
+            if (file instanceof File f) {
+                return getFileCharset(new FileInputStream(f));
+            }
+            if (file instanceof MultipartFile mf) {
+                return getFileCharset(mf.getInputStream());
+            }
+            throw new IllegalArgumentException("El tipo de archivo '" + file.getClass().getName() + "' no está soportado.");
+        }
+        // Obtener 'Charset' de un archivo
+        public static Charset getFileCharset(InputStream is) throws IOException {
+            byte[] bom = new byte[3];
+            int n = is.read(bom, 0, bom.length);
+            if (n >= 2) {
+                if ((bom[0] & 0xFF) == 0xFF && (bom[1] & 0xFF) == 0xFE) {
+                    return StandardCharsets.UTF_16LE; // UTF-16 Little Endian
                 }
-                if (n == 3) {
-                    if ((bom[0] & 0xFF) == 0xEF && (bom[1] & 0xFF) == 0xBB && (bom[2] & 0xFF) == 0xBF) {
-                        return StandardCharsets.UTF_8; // UTF-8 with BOM
-                    }
+                if ((bom[0] & 0xFF) == 0xFE && (bom[1] & 0xFF) == 0xFF) {
+                    return StandardCharsets.UTF_16BE; // UTF-16 Big Endian
                 }
-            } catch (IOException e) {
-                e.printStackTrace();
+            }
+            if (n == 3) {
+                if ((bom[0] & 0xFF) == 0xEF && (bom[1] & 0xFF) == 0xBB && (bom[2] & 0xFF) == 0xBF) {
+                    return StandardCharsets.UTF_8; // UTF-8 with BOM
+                }
             }
             return StandardCharsets.UTF_8; // default UTF-8
         }
-        // Obtener InputStream de 'File' o 'MultipartFile'
-        private static InputStream getInputStream(Object file) throws IOException {
+        // Obtener recuento de lineas de un archivo
+        public static long getLineCount(Object file) throws IOException {
             if (file instanceof File f) {
-                return new FileInputStream(f);
-            } else if (file instanceof MultipartFile mf) {
-                return mf.getInputStream();
-            } else {
-                throw new IllegalArgumentException("Tipo no soportado para getFileCharset: " + file.getClass());
+                return getLineCount(new FileInputStream(f));
+            }
+            if (file instanceof MultipartFile mf) {
+                return getLineCount(mf.getInputStream());
+            }
+            throw new IllegalArgumentException("El tipo de archivo '" + file.getClass().getName() + "' no está soportado.");
+        }
+        // Obtener recuento de lineas de un archivo
+        public static long getLineCount(InputStream is) throws IOException {
+            try (var br = new BufferedReader(new InputStreamReader(is))) {
+                return br.lines().count();
             }
         }
     }
