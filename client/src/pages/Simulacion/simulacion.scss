@@ -236,29 +236,156 @@
   width: 100%;
   min-height: 800px;
 }
+/* ===============================
+   POPUP AEROPUERTOS
+================================ */
 
+.airport-popup {
+  min-width: 220px;
+  font-size: 12px;
+}
+
+.airport-popup__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.airport-popup__country {
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.airport-popup__code {
+  font-weight: 600;
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  border: 1px solid #d0d7de;
+  background-color: #f3f4f6;
+}
+
+.airport-popup__city {
+  color: #6b7280;
+  margin-bottom: 8px;
+}
+
+.airport-popup__row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.airport-popup__label {
+  color: #6b7280;
+}
+
+.airport-popup__value {
+  font-weight: 500;
+}
+
+.airport-popup__progress {
+  margin-top: 6px;
+  margin-bottom: 2px;
+  width: 100%;
+  height: 6px;
+  border-radius: 999px;
+  background-color: #e5e7eb;
+  overflow: hidden;
+}
+
+.airport-popup__progress-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #22c55e, #eab308, #ef4444);
+}
+
+.airport-popup__footnote {
+  margin-top: 2px;
+  font-size: 10px;
+  color: #9ca3af;
+}
+/* ===============================
+   PANEL INFORMATIVO INFERIOR*/
 .info-panel {
   width: 100%;
   background-color: var(--color-dark-blue);
   color: white;
-  border-top: 2px solid var(--color-dark-blue);
-  margin-top: 20px;
-  overflow: hidden;
-  transition: all 0.3s ease;
-  padding: 10px 20px;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  z-index: 3000;
+  max-height: 0;               /* 🔥 por defecto (sin .expanded) no se ve */
+  overflow-y: hidden;
+  border-top: 3px solid #0d1b2a;
+  padding: 0 24px;
+  border-radius: 18px 18px 0 0;
+  box-shadow: 0 -4px 18px rgba(15, 23, 42, 0.45);
+  transition: max-height 0.25s ease, padding 0.25s ease;
 }
 
 .info-panel.expanded {
-  padding: 20px;
+  max-height: 32vh;            /* 🔥 máximo ~30% de la pantalla */
+  overflow-y: auto;            /* 🔥 scroll interno si hay muchos vuelos */
+  padding: 16px 24px;
 }
 
 .info-content {
-  opacity: 0.8;
-  transition: opacity 0.3s ease;
+  opacity: 1;
 }
 
+.info-panel-header {
+  margin-bottom: 12px;
+}
+.info-panel-title {
+  font-size: 18px;
+  font-weight: 700;
+}
+.info-panel-airport {
+  font-size: 16px;
+  font-weight: 600;
+}
+.info-panel-subtitle {
+  font-size: 14px;
+  opacity: 0.9;
+}
+.info-panel-body {
+  display: flex;
+  gap: 32px;
+  margin-top: 16px;
+}
 .info-panel.expanded .info-content {
   opacity: 1;
+}
+
+/* Cada columna */
+.info-panel-column {
+  flex: 1;
+}
+
+/* Listado de vuelos */
+.info-panel-flights {
+  list-style: none;
+  padding: 0;
+  margin-top: 12px;
+}
+
+.info-panel-empty-list {
+  opacity: 0.8;
+  font-style: italic;
+}
+
+/* Mejoramiento de las cards dentro del panel */
+.info-panel .flight-card {
+  background: #ffffff10;
+  border: 1px solid #ffffff22;
+  color: #fff;
+}
+
+.info-panel .flight-card-header span,
+.info-panel .flight-card-row span {
+  color: #fff;
 }
 
 .placeholder {
@@ -270,6 +397,17 @@
   white-space: pre-line;
 }
 
+.info-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.info-panel-capacity {
+  font-size: 14px;
+  font-weight: 600;
+  opacity: 0.9;
+}
 
 
 /* ===============================
@@ -472,4 +610,195 @@
 
 .leaflet-marker-icon img {
   pointer-events: auto;
+}
+
+/* Corrección: el código del vuelo NO debe ser blanco dentro del panel */
+.info-panel .flight-code {
+  color: #111827 !important;          /* texto oscuro */
+  background: #ffffffdd !important;   /* burbuja clara */
+  border-radius: 999px;
+  padding: 2px 8px;
+}
+
+/* ===============================
+   SECCIÓN DE PEDIDOS EN EL SIDEBAR
+================================ */
+
+.sidebar-section--orders {
+  margin-top: 16px;
+  border-top: 1px solid #e5e7eb;
+  padding-top: 10px;
+}
+
+.orders-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.orders-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #344767;
+}
+
+.orders-count {
+  min-width: 26px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 999px;
+  padding: 2px 8px;
+  background: #0f766e;
+  color: #ffffff;
+}
+
+.orders-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: calc(100vh - 180px);  /* igual que vuelos */
+  overflow-y: auto;
+  padding-right: 6px;
+}
+
+.no-orders-text {
+  font-size: 12px;
+  color: #6c757d;
+}
+
+/* Card de pedido */
+.order-card {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 12px;
+  padding: 10px 12px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  box-shadow: 0 3px 8px rgba(15, 23, 42, 0.08);
+  font-size: 11px;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.order-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.18);
+  border-color: #0f766e;
+}
+
+.order-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.order-code {
+  font-weight: 600;
+  font-size: 11px;
+  background: #0f172a;
+  color: #fff;
+  border-radius: 999px;
+  padding: 2px 8px;
+}
+
+.order-destination {
+  font-weight: 500;
+  color: #111827;
+}
+
+.order-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.order-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 2px;
+}
+
+.order-label {
+  color: #6b7280;
+}
+
+.order-value {
+  color: #111827;
+  margin-left: 6px;
+  text-align: right;
+}
+
+/* Segmentaciones y lotes */
+.order-seg {
+  margin-top: 6px;
+  padding-top: 4px;
+  border-top: 1px dashed #e5e7eb;
+}
+
+.order-seg-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.order-seg-code {
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.order-seg-date {
+  font-size: 10px;
+  color: #6b7280;
+}
+
+.order-lote {
+  padding: 3px 0;
+}
+
+/* ===============================
+   PESTAÑAS DEL SIDEBAR
+================================ */
+
+.sidebar-tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.sidebar-tab {
+  flex: 1;
+  border-radius: 999px;
+  border: 1px solid #d1d5db;
+  background: #f9fafb;
+  padding: 4px 8px;
+  font-size: 12px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+}
+
+.sidebar-tab-badge {
+  min-width: 18px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  font-size: 11px;
+  background: #e5e7eb;
+  color: #111827;
+  text-align: center;
+}
+
+.sidebar-tab.active {
+  background: #1a73e8;
+  color: #fff;
+  border-color: #1a73e8;
+}
+
+.sidebar-tab.active .sidebar-tab-badge {
+  background: #fff;
+  color: #1a73e8;
 }
