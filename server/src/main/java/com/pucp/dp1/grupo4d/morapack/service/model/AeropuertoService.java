@@ -153,33 +153,31 @@ public class AeropuertoService {
             WebSocketService.enviar("/topic/loader-status", new StatusPayload(EstadoEjecucion.INICIADO));
             while (archivoSC.hasNextLine()) {
                 String linea = archivoSC.nextLine().trim();
-                if (linea.isEmpty()) {
-                    lProcesadas++;
-                    continue;
+                if (!linea.isEmpty()) {
+                    Scanner lineaSC = new Scanner(linea);
+                    lineaSC.useDelimiter("\\s{2,}");
+                    if (Character.isDigit(linea.charAt(0))) {
+                        AeropuertoEntity aeropuerto = new AeropuertoEntity();
+                        lineaSC.nextInt();
+                        aeropuerto.setCodigo(lineaSC.next());
+                        aeropuerto.setCiudad(lineaSC.next());
+                        aeropuerto.setPais(lineaSC.next());
+                        aeropuerto.setContinente(continente);
+                        aeropuerto.setAlias(lineaSC.next());
+                        aeropuerto.setHusoHorario(lineaSC.nextInt());
+                        aeropuerto.setCapacidad(lineaSC.nextInt());
+                        lineaSC.useDelimiter("\\s+");
+                        lineaSC.next();
+                        aeropuerto.setLatitudDMS(lineaSC.next() + " " + lineaSC.next() + " " + lineaSC.next() + " " + lineaSC.next());
+                        aeropuerto.setLatitudDEC(G4DUtility.Calculator.getLatDEC(aeropuerto.getLatitudDMS()));
+                        lineaSC.next();
+                        aeropuerto.setLongitudDMS(lineaSC.next() + " " + lineaSC.next() + " " + lineaSC.next() + " " + lineaSC.next());
+                        aeropuerto.setLongitudDEC(G4DUtility.Calculator.getLonDEC(aeropuerto.getLongitudDMS()));
+                        aeropuerto.setEsSede(false);
+                        aeropuertos.add(aeropuerto);
+                    } else continente = lineaSC.next();
+                    lineaSC.close();
                 }
-                Scanner lineaSC = new Scanner(linea);
-                lineaSC.useDelimiter("\\s{2,}");
-                if (Character.isDigit(linea.charAt(0))) {
-                    AeropuertoEntity aeropuerto = new AeropuertoEntity();
-                    lineaSC.nextInt();
-                    aeropuerto.setCodigo(lineaSC.next());
-                    aeropuerto.setCiudad(lineaSC.next());
-                    aeropuerto.setPais(lineaSC.next());
-                    aeropuerto.setContinente(continente);
-                    aeropuerto.setAlias(lineaSC.next());
-                    aeropuerto.setHusoHorario(lineaSC.nextInt());
-                    aeropuerto.setCapacidad(lineaSC.nextInt());
-                    lineaSC.useDelimiter("\\s+");
-                    lineaSC.next();
-                    aeropuerto.setLatitudDMS(lineaSC.next() + " " + lineaSC.next() + " " + lineaSC.next() + " " + lineaSC.next());
-                    aeropuerto.setLatitudDEC(G4DUtility.Calculator.getLatDEC(aeropuerto.getLatitudDMS()));
-                    lineaSC.next();
-                    aeropuerto.setLongitudDMS(lineaSC.next() + " " + lineaSC.next() + " " + lineaSC.next() + " " + lineaSC.next());
-                    aeropuerto.setLongitudDEC(G4DUtility.Calculator.getLonDEC(aeropuerto.getLongitudDMS()));
-                    aeropuerto.setEsSede(false);
-                    aeropuertos.add(aeropuerto);
-                } else continente = lineaSC.next();
-                lineaSC.close();
                 lProcesadas++;
                 WebSocketService.enviar("/topic/loader", new ProgressPayload("Leyendo archivo", lProcesadas, lTotales));
                 if(aeropuertos.size() % 500 == 0 || !archivoSC.hasNextLine()) {

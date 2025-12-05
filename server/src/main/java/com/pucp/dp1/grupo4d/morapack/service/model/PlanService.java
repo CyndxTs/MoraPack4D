@@ -113,33 +113,31 @@ public class PlanService {
             WebSocketService.enviar("/topic/loader-status", new StatusPayload(EstadoEjecucion.INICIADO));
             while (archivoSC.hasNextLine()) {
                 String linea = archivoSC.nextLine().trim();
-                if (linea.isEmpty()) {
-                    lProcesadas++;
-                    continue;
+                if (!linea.isEmpty()) {
+                    Scanner lineaSC = new Scanner(linea);
+                    lineaSC.useDelimiter("-");
+                    PlanEntity plan = new PlanEntity();
+                    String codOrigen = lineaSC.next();
+                    AeropuertoEntity origen = aeropuertoService.obtenerPorCodigo(codOrigen);
+                    if(origen != null) {
+                        String codDestino = lineaSC.next();
+                        AeropuertoEntity destino = aeropuertoService.obtenerPorCodigo(codDestino);
+                        if(destino != null) {
+                            plan.setOrigen(origen);
+                            plan.setDestino(destino);
+                            plan.setDistancia(G4DUtility.Calculator.getGeodesicDistance(origen.getLatitudDEC(), origen.getLongitudDEC(), destino.getLatitudDEC(), destino.getLongitudDEC()));
+                            plan.setHoraSalidaLocal(G4DUtility.Convertor.toTime(lineaSC.next()));
+                            plan.setHoraSalidaUTC(G4DUtility.Convertor.toUTC(plan.getHoraSalidaLocal(), plan.getOrigen().getHusoHorario()));
+                            plan.setHoraLlegadaLocal(G4DUtility.Convertor.toTime(lineaSC.next()));
+                            plan.setHoraLlegadaUTC(G4DUtility.Convertor.toUTC(plan.getHoraLlegadaLocal(), plan.getDestino().getHusoHorario()));
+                            plan.setDuracion(G4DUtility.Calculator.getElapsedHours(plan.getHoraSalidaUTC(), plan.getHoraLlegadaUTC()));
+                            plan.setCapacidad(lineaSC.nextInt());
+                            plan.setCodigo(G4DUtility.Generator.getUniqueString("PLA"));
+                            planes.add(plan);
+                        } else throw new G4DException(String.format("El destino ('%s') del plan de la linea #%d es inválido.", codDestino, lProcesadas + 1));
+                    } else throw new G4DException(String.format("El origen ('%s') del plan de la linea #%d es inválido.", codOrigen, lProcesadas + 1));
+                    lineaSC.close();
                 }
-                Scanner lineaSC = new Scanner(linea);
-                lineaSC.useDelimiter("-");
-                PlanEntity plan = new PlanEntity();
-                String codOrigen = lineaSC.next();
-                AeropuertoEntity origen = aeropuertoService.obtenerPorCodigo(codOrigen);
-                if(origen != null) {
-                    String codDestino = lineaSC.next();
-                    AeropuertoEntity destino = aeropuertoService.obtenerPorCodigo(codDestino);
-                    if(destino != null) {
-                        plan.setOrigen(origen);
-                        plan.setDestino(destino);
-                        plan.setDistancia(G4DUtility.Calculator.getGeodesicDistance(origen.getLatitudDEC(), origen.getLongitudDEC(), destino.getLatitudDEC(), destino.getLongitudDEC()));
-                        plan.setHoraSalidaLocal(G4DUtility.Convertor.toTime(lineaSC.next()));
-                        plan.setHoraSalidaUTC(G4DUtility.Convertor.toUTC(plan.getHoraSalidaLocal(), plan.getOrigen().getHusoHorario()));
-                        plan.setHoraLlegadaLocal(G4DUtility.Convertor.toTime(lineaSC.next()));
-                        plan.setHoraLlegadaUTC(G4DUtility.Convertor.toUTC(plan.getHoraLlegadaLocal(), plan.getDestino().getHusoHorario()));
-                        plan.setDuracion(G4DUtility.Calculator.getElapsedHours(plan.getHoraSalidaUTC(), plan.getHoraLlegadaUTC()));
-                        plan.setCapacidad(lineaSC.nextInt());
-                        plan.setCodigo(G4DUtility.Generator.getUniqueString("PLA"));
-                        planes.add(plan);
-                    } else throw new G4DException(String.format("El destino ('%s') del plan de la linea #%d es inválido.", codDestino, lProcesadas + 1));
-                } else throw new G4DException(String.format("El origen ('%s') del plan de la linea #%d es inválido.", codOrigen, lProcesadas + 1));
-                lineaSC.close();
                 lProcesadas++;
                 WebSocketService.enviar("/topic/loader", new ProgressPayload("Leyendo archivo", lProcesadas, lTotales));
                 if(lProcesadas % 500 == 0 || !archivoSC.hasNextLine()) {
