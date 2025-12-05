@@ -56,6 +56,7 @@ public class GVNS {
         G4DUtility.Logger.Stats.log_stat_local_sol();
         imprimirSolucion(x, "SolucionInicial.txt");
         this.solucion = x;
+        /*
         // Optimización inicial (Variable Neighborhood Descent)
         G4DUtility.Logger.Stats.set_local_start();
         G4DUtility.Logger.log("Realizando optimización inicial.. ");
@@ -74,6 +75,7 @@ public class GVNS {
         G4DUtility.Logger.Stats.log_stat_local_sol();
         imprimirSolucion(x, "SolucionGVNS.txt");
         this.solucion = x;
+         */
         G4DUtility.Logger.Stats.set_global_duration();
         G4DUtility.Logger.Stats.log_stat_global_sol();
     }
@@ -293,7 +295,7 @@ public class GVNS {
             G4DUtility.Logger.logf("Enrutando %d productos..", cantEnrutables);
             // Producción y registro de segmento de pedido
             Lote lote = origen.generarLoteDeProductos(cantEnrutables);
-            ruta.registrarLoteDeProductos(lote, vuelosActivados, rutasAsignadas);
+            ruta.agregarRegistroDeLoteDeProductos(lote, vuelosActivados, rutasAsignadas);
             Segmentacion segmentacion = pedido.obtenerSegementacionVigente();
             if(segmentacion == null) {
                 segmentacion = new Segmentacion();
@@ -382,7 +384,7 @@ public class GVNS {
         ruta.setOrigen(origen);
         ruta.setDestino(destino);
         ruta.setVuelos(secuenciaDeVuelos);
-        ruta.instanciarHorarios();
+        ruta.instanciarAtributos();
         ruta.setDuracion();
         ruta.setDistancia();
         return ruta;
@@ -422,7 +424,7 @@ public class GVNS {
             vuelo = new Vuelo();
             vuelo.setPlan(planMasProximo);
             vuelo.setCapacidadDisponible(vuelo.getPlan().getCapacidad());
-            vuelo.instanciarHorarios(instanteActual);
+            vuelo.instanciarAtributos(instanteActual);
         }
         return vuelo;
     }
@@ -475,7 +477,7 @@ public class GVNS {
                                 r.eliminarRegistroDeLoteDeProductosDesdeAeropuerto(l, conexionesNew.get(l), false);
                                 l.setEstado(EstadoLote.REPLANIFICADO);
                             });
-                            enrutamientosOld.forEach((l, r) -> r.registrarLoteDeProductosDesdeAeropuerto(l, conexionesOld.get(l), vuelosEnTransito, rutasEnOperacion));
+                            enrutamientosOld.forEach((l, r) -> r.agregarRegistroDeLoteDeProductosDesdeAeropuerto(l, conexionesOld.get(l), vuelosEnTransito, rutasEnOperacion));
                             return true;
                         } else return false;
                     }
@@ -499,7 +501,7 @@ public class GVNS {
                 }
                 enrutamientosNew.put(lote, ruta);
                 conexionesNew.put(lote, aeropuertoDeConexion);
-                ruta.registrarLoteDeProductosDesdeAeropuerto(lote, aeropuertoDeConexion, vuelosActivados, rutasAsignadas);
+                ruta.agregarRegistroDeLoteDeProductosDesdeAeropuerto(lote, aeropuertoDeConexion, vuelosActivados, rutasAsignadas);
                 sNew.getLotesPorRuta().put(ruta, lote);
                 restantePorReplanificar -= cantEnrutables;
                 System.out.printf("Quedan '%d' por enrutar!%n", restantePorReplanificar);
@@ -615,7 +617,7 @@ public class GVNS {
         ruta.setDestino(destino);
         ruta.setTipo(tipoRuta);
         ruta.setVuelos(secuenciaDeVuelos);
-        ruta.instanciarHorarios();
+        ruta.instanciarAtributos();
         ruta.setDuracion();
         ruta.setDistancia();
         System.out.printf("Nueva ruta construida '%s': '%s'", ruta.getCodigo(), ruta.getOrigen().getCodigo());
@@ -761,7 +763,7 @@ public class GVNS {
                 rDest.eliminarRegistroDeLoteDeProductos(lOld);
                 segmentacion.remove(rDest);
                 Lote lNew = rDest.getOrigen().generarLoteDeProductos(tamanioDeConsolidado);
-                rDest.registrarLoteDeProductos(lNew, vuelosEnTransito, rutasEnOperacion);
+                rDest.agregarRegistroDeLoteDeProductos(lNew, vuelosEnTransito, rutasEnOperacion);
                 segmentacion.put(rDest, lNew);
                 tamanioRestantePorFusionar -= tamanioDeFusion;
             }
@@ -779,7 +781,7 @@ public class GVNS {
         segmentacion.putAll(segmentacionAux);
         for (Ruta r : segmentacion.keySet()) {
             Lote l = segmentacion.get(r);
-            r.registrarLoteDeProductos(l, vuelosEnTransito, rutasEnOperacion);
+            r.agregarRegistroDeLoteDeProductos(l, vuelosEnTransito, rutasEnOperacion);
         }
     }
 
@@ -856,14 +858,14 @@ public class GVNS {
                     rIni.eliminarRegistroDeLoteDeProductos(lote);
                     if(rNew.obtenerCapacidadDisponible() < lote.getTamanio()) {
                         G4DUtility.Logger.logln(" [INVALIDA]");
-                        rIni.registrarLoteDeProductos(lote, vuelosEnTransito, rutasEnOperacion);
+                        rIni.agregarRegistroDeLoteDeProductos(lote, vuelosEnTransito, rutasEnOperacion);
                         G4DUtility.Logger.delete_upper_line();
                         continue;
                     } else G4DUtility.Logger.logln(" [VALIDA]");
                     // Fusión
                     G4DUtility.Logger.logf(": Mejor fitness completed: %.3f | >> FUSIONANDO..", mejorFitness);
                     segmentacion.remove(rIni);
-                    rNew.registrarLoteDeProductos(lote, vuelosEnTransito, rutasEnOperacion);
+                    rNew.agregarRegistroDeLoteDeProductos(lote, vuelosEnTransito, rutasEnOperacion);
                     segmentacion.put(rNew, lote);
                     solucion.setFitness();
                     double fitnessObtenido = solucion.getFitness();
@@ -880,7 +882,7 @@ public class GVNS {
                     // Reversión de cambios [Nuevos]
                     rNew.eliminarRegistroDeLoteDeProductos(lote);
                     segmentacion.remove(rNew);
-                    rIni.registrarLoteDeProductos(lote, vuelosEnTransito, rutasEnOperacion);
+                    rIni.agregarRegistroDeLoteDeProductos(lote, vuelosEnTransito, rutasEnOperacion);
                     segmentacion.put(rIni, lote);
                     G4DUtility.Logger.delete_lines(3);
                 }
@@ -903,7 +905,7 @@ public class GVNS {
                 Lote lote = segmentacion.get(rIni);
                 rIni.eliminarRegistroDeLoteDeProductos(lote);
                 segmentacion.remove(rIni);
-                rNew.registrarLoteDeProductos(lote, vuelosEnTransito, rutasEnOperacion);
+                rNew.agregarRegistroDeLoteDeProductos(lote, vuelosEnTransito, rutasEnOperacion);
                 segmentacion.put(rNew, lote);
             }
             G4DUtility.Logger.delete_upper_line();
@@ -1007,7 +1009,7 @@ public class GVNS {
             int capDisp = rDest.obtenerCapacidadDisponible();
             int asignar = Math.min(capDisp, restante);
             Lote lNew = rDest.getOrigen().generarLoteDeProductos(asignar);
-            rDest.registrarLoteDeProductos(lNew, vuelosEnTransito, rutasEnOperacion);
+            rDest.agregarRegistroDeLoteDeProductos(lNew, vuelosEnTransito, rutasEnOperacion);
             lotesPorRuta.put(rDest, lNew);
             restante -= asignar;
         }
@@ -1235,14 +1237,14 @@ public class GVNS {
             segmentacion.remove(rIni);
             if(rNew.obtenerCapacidadDisponible() < lote.getTamanio()) {
                 G4DUtility.Logger.logln(" [INVALIDA]");
-                rIni.registrarLoteDeProductos(lote, vuelosEnTransito, rutasEnOperacion);
+                rIni.agregarRegistroDeLoteDeProductos(lote, vuelosEnTransito, rutasEnOperacion);
                 segmentacion.put(rIni, lote);
                 G4DUtility.Logger.delete_lines(3);
                 continue;
             } else G4DUtility.Logger.logln(" [VALIDA]");
             // Fusión
             G4DUtility.Logger.logln(": Fusionando..");
-            rNew.registrarLoteDeProductos(lote, vuelosEnTransito, rutasEnOperacion);
+            rNew.agregarRegistroDeLoteDeProductos(lote, vuelosEnTransito, rutasEnOperacion);
             segmentacion.put(rNew, lote);
             G4DUtility.Logger.delete_lines(4);
         }

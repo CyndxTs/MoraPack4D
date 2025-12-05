@@ -8,8 +8,8 @@ package com.pucp.dp1.grupo4d.morapack.model.algorithm;
 
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
 
-import com.pucp.dp1.grupo4d.morapack.algorithm.Problematica;
 import com.pucp.dp1.grupo4d.morapack.util.G4DUtility;
 
 public class Aeropuerto {
@@ -28,15 +28,17 @@ public class Aeropuerto {
     public Aeropuerto() {
         this.codigo = G4DUtility.Generator.getUniqueString("AER");
         this.capacidad = 0;
+        this.esSede = false;
         this.registros = new ArrayList<>();
     }
 
     public Aeropuerto replicar(Map<String, Lote> poolLotes) {
         Aeropuerto aeropuerto = new Aeropuerto();
         aeropuerto.codigo = this.codigo;
-        aeropuerto.ciudad = this.ciudad;
-        aeropuerto.pais = this.pais;
         aeropuerto.continente = this.continente;
+        aeropuerto.pais = this.pais;
+        aeropuerto.ciudad = this.ciudad;
+        aeropuerto.alias = this.alias;
         aeropuerto.husoHorario = this.husoHorario;
         aeropuerto.capacidad = this.capacidad;
         aeropuerto.latitud = this.latitud;
@@ -47,62 +49,11 @@ public class Aeropuerto {
     }
 
     public Lote generarLoteDeProductos(int cantProd) {
-        Lote lote = new Lote();
-        lote.setTamanio(cantProd);
-        return lote;
-    }
-
-    public Registro obtenerRegistroDeLoteDeProductos(Lote lote) {
-        return this.registros.stream().filter(Registro::getSigueVigente).filter(r -> r.getLote().equals(lote)).findFirst().orElse(null);
-    }
-
-    public void registrarLoteDeProductos(Lote lote, LocalDateTime fechaHoraIngreso, LocalDateTime fechaHoraEgreso) {
-        Registro registro = new Registro();
-        registro.setFechaHoraIngreso(fechaHoraIngreso);
-        registro.setFechaHoraEgreso(fechaHoraEgreso);
-        registro.setLote(lote);
-        this.registros.add(registro);
-    }
-
-    public void eliminarRegistroDeLoteDeProductos(Lote lote, boolean softDelete) {
-        List<Registro> registrosVigentes = this.registros.stream().filter(Registro::getSigueVigente).sorted(Comparator.comparing(Registro::getFechaHoraIngreso).thenComparing(Registro::getFechaHoraEgreso)).toList();
-        for(Registro registro : registrosVigentes) {
-            if(registro.getLote().equals(lote)) {
-                registro.setSigueVigente(false);
-                if(!softDelete) {
-                    this.registros.remove(registro);
-                }
-                return;
-            }
-        }
-    }
-
-    public LocalDateTime obtenerInstanteMaximoDeEgresoPosible(Lote lote) {
-        Map<LocalDateTime, Integer> movimientos = new TreeMap<>();
-        Registro rLote = obtenerRegistroDeLoteDeProductos(lote);
-        if(rLote == null) {
-            return null;
-        }
-        LocalDateTime inicio = rLote.getFechaHoraEgreso();
-        LocalDateTime fin = rLote.getFechaHoraIngreso().plusMinutes((long)(60*Problematica.MAX_HORAS_ESTANCIA));
-        List<Registro> registrosVigentes = this.registros.stream().filter(Registro::getSigueVigente).sorted(Comparator.comparing(Registro::getFechaHoraIngreso).thenComparing(Registro::getFechaHoraEgreso)).toList();
-        registrosVigentes.forEach(r -> {
-            LocalDateTime rInstanteIngreso = r.getFechaHoraIngreso(), rInstanteEgreso = r.getFechaHoraEgreso();
-            if(rInstanteIngreso.isBefore(fin) && rInstanteEgreso.isAfter(inicio)) {
-                movimientos.merge(rInstanteIngreso, -r.getLote().getTamanio(), Integer::sum);
-                movimientos.merge(rInstanteEgreso, +r.getLote().getTamanio(), Integer::sum);
-            }
-        });
-        if(!movimientos.isEmpty()) {
-            int capDisp = this.capacidad;
-            for(Map.Entry<LocalDateTime, Integer> entry : movimientos.entrySet()) {
-                if(capDisp + entry.getValue() < lote.getTamanio()) {
-                    return entry.getKey();
-                }
-                capDisp += entry.getValue();
-            }
-        }
-        return fin;
+        if(this.esSede) {
+            Lote lote = new Lote();
+            lote.setTamanio(cantProd);
+            return lote;
+        } else return null;
     }
 
     public Integer obtenerCapacidadDisponible(LocalDateTime inicio, LocalDateTime fin) {
@@ -123,8 +74,33 @@ public class Aeropuerto {
         return minCapDisp;
     }
 
-    public Double obtenerDistanciaHasta(Aeropuerto aDest) {
-        return G4DUtility.Calculator.getGeodesicDistance(this.latitud, this.longitud, aDest.latitud, aDest.longitud);
+    public Double obtenerDistanciaHasta(Aeropuerto destino) {
+        return G4DUtility.Calculator.getGeodesicDistance(this.latitud, this.longitud, destino.latitud, destino.longitud);
+    }
+
+    public Registro obtenerRegistroDeLoteDeProductos(Lote lote) {
+        return this.registros.stream().filter(Registro::getSigueVigente).filter(r -> r.getLote().equals(lote)).findFirst().orElse(null);
+    }
+
+    public void agregarRegistroDeLoteDeProductos(Lote lote, LocalDateTime fechaHoraIngreso, LocalDateTime fechaHoraEgreso) {
+        Registro registro = new Registro();
+        registro.setFechaHoraIngreso(fechaHoraIngreso);
+        registro.setFechaHoraEgreso(fechaHoraEgreso);
+        registro.setLote(lote);
+        this.registros.add(registro);
+    }
+
+    public void eliminarRegistroDeLoteDeProductos(Lote lote, boolean softDelete) {
+        List<Registro> registrosVigentes = this.registros.stream().filter(Registro::getSigueVigente).sorted(Comparator.comparing(Registro::getFechaHoraIngreso).thenComparing(Registro::getFechaHoraEgreso)).toList();
+        for(Registro rVigente : registrosVigentes) {
+            if(rVigente.getLote().equals(lote)) {
+                rVigente.setSigueVigente(false);
+                if(!softDelete) {
+                    this.registros.remove(rVigente);
+                }
+                return;
+            }
+        }
     }
 
     @Override
@@ -205,20 +181,12 @@ public class Aeropuerto {
         return latitud;
     }
 
-    public void setLatitud(String latDMS) {
-        this.latitud = G4DUtility.Calculator.getLatDEC(latDMS);
-    }
-
     public void setLatitud(double latitud) {
         this.latitud = latitud;
     }
 
     public Double getLongitud() {
         return longitud;
-    }
-
-    public void setLongitud(String lonDMS) {
-        this.longitud = G4DUtility.Calculator.getLonDEC(lonDMS);
     }
 
     public void setLongitud(double longitud) {

@@ -11,7 +11,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-
 import com.pucp.dp1.grupo4d.morapack.algorithm.Problematica;
 import com.pucp.dp1.grupo4d.morapack.model.enumeration.TipoRuta;
 import com.pucp.dp1.grupo4d.morapack.util.G4DUtility;
@@ -90,13 +89,13 @@ public class Pedido {
         return saInalterable;
     }
 
-    public Segmentacion obtenerSegementacionVigente() {
-        return (!this.segmentaciones.isEmpty()) ? this.segmentaciones.getLast() : null;
+    public Integer obtenerCantidadDeProductosEnRuta(Ruta ruta) {
+        Lote lote = this.obtenerSegementacionVigente().getLotesPorRuta().get(ruta);
+        return (lote != null) ? lote.getTamanio() : 0;
     }
 
-    public Integer obtenerCantidadDeProductosEnRuta(Ruta ruta) {
-        Lote lote = obtenerSegementacionVigente().getLotesPorRuta().get(ruta);
-        return (lote != null) ? lote.getTamanio() : 0;
+    public Segmentacion obtenerSegementacionVigente() {
+        return this.segmentaciones.stream().filter(s -> s.getFechaHoraSustitucion() == null).findFirst().orElse(null);
     }
 
     @Override

@@ -86,9 +86,140 @@ public class Ruta {
         });
     }
 
-    public void instanciarHorarios() {
-        this.fechaHoraSalida = this.vuelos.getFirst().getFechaHoraSalida();
-        this.fechaHoraLlegada = this.vuelos.getLast().getFechaHoraLlegada();
+    public void instanciarAtributos() {
+        if(!this.vuelos.isEmpty()) {
+            this.origen = this.vuelos.getFirst().getPlan().getOrigen();
+            this.destino = this.vuelos.getFirst().getPlan().getDestino();
+            this.setDistancia();
+            this.fechaHoraSalida = this.vuelos.getFirst().getFechaHoraSalida();
+            this.fechaHoraLlegada = this.vuelos.getLast().getFechaHoraLlegada();
+            this.setDuracion();
+        }
+    }
+
+    public void agregarRegistroDeLoteDeProductos(Lote lote, Set<Vuelo> vuelosEnTransito, Set<Ruta> rutasEnOperacion) {
+        System.out.printf("%-20sRegistro de lote '%s(%d)' en los aeropuertos:", "AGREGACIÓN:", lote.getCodigo(), lote.getTamanio());
+        rutasEnOperacion.add(this);
+        vuelosEnTransito.addAll(this.vuelos);
+        for(int i = 0; i < this.vuelos.size(); i++) {
+            Vuelo vuelo = this.vuelos.get(i);
+            vuelo.setCapacidadDisponible(vuelo.getCapacidadDisponible() - lote.getTamanio());
+            LocalDateTime destFechaHoraIngreso = vuelo.getFechaHoraLlegada(), destFechaHoraEgreso = (i + 1 < vuelos.size()) ? this.vuelos.get(i + 1).getFechaHoraSalida() : destFechaHoraIngreso.plusMinutes((long)(60*Problematica.MAX_HORAS_RECOJO));
+            vuelo.getPlan().getDestino().agregarRegistroDeLoteDeProductos(lote, destFechaHoraIngreso, destFechaHoraEgreso);
+            System.out.printf(" '%s'", vuelo.getPlan().getDestino().getCodigo());
+        }
+        System.out.println();
+    }
+
+    public void agregarRegistroDeLoteDeProductosDesdeAeropuerto(Lote lote, Aeropuerto aeropuerto, Set<Vuelo> vuelosEnTransito, Set<Ruta> rutasEnOperacion) {
+        if(aeropuerto == null || aeropuerto.getEsSede()) {
+            this.agregarRegistroDeLoteDeProductos(lote, vuelosEnTransito, rutasEnOperacion);
+            return;
+        }
+        System.out.printf("%-20sRegistro de lote '%s(%d)' en los aeropuertos:", "AGREGACIÓN:", lote.getCodigo(), lote.getTamanio());
+        rutasEnOperacion.add(this);
+        vuelosEnTransito.addAll(this.vuelos);
+        boolean agregar = false;
+        for(int i = 0; i < this.vuelos.size(); i++) {
+            Vuelo vuelo = this.vuelos.get(i);
+            if(!agregar && vuelo.getPlan().getOrigen().equals(aeropuerto)) {
+                agregar = true;
+                aeropuerto.agregarRegistroDeLoteDeProductos(lote, this.vuelos.get(i-1).getFechaHoraLlegada(), vuelo.getFechaHoraSalida());
+                System.out.printf(" '%s'", vuelo.getPlan().getOrigen().getCodigo());
+            }
+            if(agregar) {
+                vuelo.setCapacidadDisponible(vuelo.getCapacidadDisponible() - lote.getTamanio());
+                LocalDateTime destFechaHoraIngreso = vuelo.getFechaHoraLlegada(), destFechaHoraEgreso = (i + 1 < vuelos.size()) ? this.vuelos.get(i + 1).getFechaHoraSalida() : destFechaHoraIngreso.plusMinutes((long)(60*Problematica.MAX_HORAS_RECOJO));
+                vuelo.getPlan().getDestino().agregarRegistroDeLoteDeProductos(lote, destFechaHoraIngreso, destFechaHoraEgreso);
+                System.out.printf(" '%s'", vuelo.getPlan().getDestino().getCodigo());
+            }
+        }
+        System.out.println();
+    }
+
+    public void eliminarRegistroDeLoteDeProductos(Lote lote) {
+        this.eliminarRegistroDeLoteDeProductos(lote, false);
+    }
+
+    public void eliminarRegistroDeLoteDeProductos(Lote lote, boolean softDelete) {
+        System.out.printf("%-20sRegistro de lote '%s(%d)' en los aeropuertos:", "ELIMINACIÓN-" + ((softDelete)? "SOFT":"HARD"), lote.getCodigo(), lote.getTamanio());
+        for(Vuelo vuelo : this.vuelos) {
+            vuelo.getPlan().getDestino().eliminarRegistroDeLoteDeProductos(lote, softDelete);
+            System.out.printf(" '%s'", vuelo.getPlan().getDestino().getCodigo());
+            vuelo.setCapacidadDisponible(vuelo.getCapacidadDisponible() + lote.getTamanio());
+        }
+        System.out.println();
+    }
+
+    public void eliminarRegistroDeLoteDeProductosDesdeAeropuerto(Lote lote, Aeropuerto aeropuerto) {
+        this.eliminarRegistroDeLoteDeProductosDesdeAeropuerto(lote, aeropuerto, false);
+    }
+
+    public void eliminarRegistroDeLoteDeProductosDesdeAeropuerto(Lote lote, Aeropuerto aeropuerto, boolean softDelete) {
+        if(aeropuerto == null || aeropuerto.getEsSede()) {
+            this.eliminarRegistroDeLoteDeProductos(lote, softDelete);
+            return;
+        }
+        System.out.printf("%-20sRegistro de lote '%s(%d)' en los aeropuertos:", "ELIMINACIÓN-" + ((softDelete)? "SOFT":"HARD"), lote.getCodigo(), lote.getTamanio());
+        boolean eliminar = false;
+        for (Vuelo vuelo : this.vuelos) {
+            if (!eliminar && vuelo.getPlan().getOrigen().equals(aeropuerto)) {
+                eliminar = true;
+                System.out.printf(" '%s'", vuelo.getPlan().getOrigen().getCodigo());
+                aeropuerto.eliminarRegistroDeLoteDeProductos(lote, softDelete);
+            }
+            if (eliminar) {
+                vuelo.getPlan().getDestino().eliminarRegistroDeLoteDeProductos(lote, softDelete);
+                System.out.printf(" '%s'", vuelo.getPlan().getDestino().getCodigo());
+                vuelo.setCapacidadDisponible(vuelo.getCapacidadDisponible() + lote.getTamanio());
+            }
+        }
+        System.out.println();
+    }
+
+    public Integer obtenerCapacidadDisponible() {
+        int minCapDisp = Integer.MAX_VALUE;
+        for(int i = 0; i < this.vuelos.size(); i++) {
+            Vuelo vActual = this.vuelos.get(i);
+            LocalDateTime destInstanteDeIngreso = vActual.getFechaHoraLlegada(), destInstanteDeEgreso =  (i + 1 < this.vuelos.size()) ? this.vuelos.get(i+1).getFechaHoraSalida() : destInstanteDeIngreso.plusMinutes((long)(60*Problematica.MAX_HORAS_RECOJO));
+            int aDestCapDisp = vActual.getPlan().getDestino().obtenerCapacidadDisponible(destInstanteDeIngreso, destInstanteDeEgreso);
+            int vCapDisp = vActual.getCapacidadDisponible();
+            minCapDisp = Math.min(minCapDisp, Math.min(aDestCapDisp, vCapDisp));
+        }
+        return minCapDisp;
+    }
+
+    public Integer obtenerCapacidadDisponibleDesdeAeropuerto(Aeropuerto aeropuerto) {
+        if(aeropuerto == null || aeropuerto.getEsSede()) {
+            return this.obtenerCapacidadDisponible();
+        }
+        boolean contar = false;
+        int minCapDisp = Integer.MAX_VALUE;
+        for(int i = 0; i < this.vuelos.size(); i++) {
+            Vuelo vActual = this.vuelos.get(i);
+            if(!contar && vActual.getPlan().getOrigen().equals(aeropuerto)) {
+                contar = true;
+                minCapDisp = Math.min(minCapDisp, aeropuerto.obtenerCapacidadDisponible(this.vuelos.get(i-1).getFechaHoraLlegada(), vActual.getFechaHoraSalida()));
+            }
+            if(contar) {
+                LocalDateTime destInstanteDeIngreso = vActual.getFechaHoraLlegada(), destInstanteDeEgreso =  (i + 1 < this.vuelos.size()) ? this.vuelos.get(i+1).getFechaHoraSalida() : destInstanteDeIngreso.plusMinutes((long)(60*Problematica.MAX_HORAS_RECOJO));
+                int aDestCapDisp = vActual.getPlan().getDestino().obtenerCapacidadDisponible(destInstanteDeIngreso, destInstanteDeEgreso);
+                int vCapDisp = vActual.getCapacidadDisponible();
+                minCapDisp = Math.min(minCapDisp, Math.min(aDestCapDisp, vCapDisp));
+            }
+        }
+        return minCapDisp;
+    }
+
+    public Integer obtenerCapacidadMaxima() {
+        int maxCap = 0;
+        for (Vuelo vuelo : this.vuelos) {
+            Plan plan = vuelo.getPlan();
+            int aDestCap = plan.getDestino().getCapacidad();
+            int vCap = plan.getCapacidad();
+            maxCap = Math.max(maxCap, Math.max(aDestCap, vCap));
+        }
+        return maxCap;
     }
 
     public Double obtenerDuracionActivaTotal() {
@@ -113,154 +244,27 @@ public class Ruta {
         ).toList();
     }
 
-    public Integer obtenerCapacidadDisponible() {
-        int minCapDisp = Integer.MAX_VALUE;
-        for(int i = 0; i < this.vuelos.size(); i++) {
-            Vuelo vActual = this.vuelos.get(i);
-            LocalDateTime destFechaHoraIngreso = vActual.getFechaHoraLlegada(), destFechaHoraEgreso =  (i + 1 < this.vuelos.size()) ? this.vuelos.get(i+1).getFechaHoraSalida() : destFechaHoraIngreso.plusMinutes((long)(60*Problematica.MAX_HORAS_RECOJO));
-            int aDestCapDisp = vActual.getPlan().getDestino().obtenerCapacidadDisponible(destFechaHoraIngreso, destFechaHoraEgreso);
-            if(aDestCapDisp < 0) {
-                vActual.getPlan().getDestino().obtenerCapacidadDisponible(destFechaHoraIngreso, destFechaHoraEgreso);
-            }
-            int vCapDisp = vActual.getCapacidadDisponible();
-            if(vCapDisp < 0) {
-                vActual.getCapacidadDisponible();
-            }
-            minCapDisp = Math.min(minCapDisp, Math.min(aDestCapDisp, vCapDisp));
-        }
-        return minCapDisp;
-    }
-
-    public Integer obtenerCapacidadDisponibleDesdeAeropuerto(Aeropuerto aeropuerto) {
-        if(aeropuerto == null || aeropuerto.getEsSede()) {
-            return this.obtenerCapacidadDisponible();
-        }
-        boolean contar = false;
-        int minCapDisp = Integer.MAX_VALUE;
-        for(int i = 0; i < this.vuelos.size(); i++) {
-            Vuelo vActual = this.vuelos.get(i);
-            if(!contar && vActual.getPlan().getOrigen().equals(aeropuerto)) {
-                contar = true;
-                minCapDisp = Math.min(minCapDisp, aeropuerto.obtenerCapacidadDisponible(this.vuelos.get(i-1).getFechaHoraLlegada(), vActual.getFechaHoraSalida()));
-            }
-            if(contar) {
-                LocalDateTime destFechaHoraIngreso = vActual.getFechaHoraLlegada(), destFechaHoraEgreso =  (i + 1 < this.vuelos.size()) ? this.vuelos.get(i+1).getFechaHoraSalida() : destFechaHoraIngreso.plusMinutes((long)(60*Problematica.MAX_HORAS_RECOJO));
-                int aDestCapDisp = vActual.getPlan().getDestino().obtenerCapacidadDisponible(destFechaHoraIngreso, destFechaHoraEgreso);
-                int vCapDisp = vActual.getCapacidadDisponible();
-                minCapDisp = Math.min(minCapDisp, Math.min(aDestCapDisp, vCapDisp));
-            }
-        }
-        return minCapDisp;
-    }
-
-    public Integer obtenerCapacidadMaxima() {
-        int maxCap = 0;
-        for (Vuelo vuelo : this.vuelos) {
-            Plan plan = vuelo.getPlan();
-            int aDestCap = plan.getDestino().getCapacidad();
-            int vCap = plan.getCapacidad();
-            maxCap = Math.max(maxCap, Math.max(aDestCap, vCap));
-        }
-        return maxCap;
-    }
-
-    public Boolean esAlcanzable(LocalDateTime instanteActual, LocalDateTime instanteLimite) {
-        if(!this.fechaHoraSalida.isAfter(instanteActual)) return false;
+    public Boolean esAlcanzable(LocalDateTime instanteDeReferencia, LocalDateTime instanteLimite) {
+        if(!this.fechaHoraSalida.isAfter(instanteDeReferencia)) return false;
         if(this.fechaHoraLlegada.isAfter(instanteLimite)) return false;
         return this.obtenerCapacidadDisponible() > 0;
     }
 
-    public Boolean esAlcanzableDesdeAeropuerto(Aeropuerto aeropuerto, LocalDateTime instanteActual, LocalDateTime origInstanteMinimoDeEgreso, LocalDateTime origInstanteMaximoDeEgreso, LocalDateTime instanteLimite) {
+    public Boolean esAlcanzableDesdeAeropuerto(Aeropuerto aeropuerto, LocalDateTime instanteDeReferencia, LocalDateTime origInstanteMinimoDeEgreso, LocalDateTime origInstanteMaximoDeEgreso, LocalDateTime instanteLimite) {
         if(aeropuerto == null || aeropuerto.getEsSede()) {
-            return this.esAlcanzable(instanteActual, instanteLimite);
+            return this.esAlcanzable(instanteDeReferencia, instanteLimite);
         }
         for (Vuelo vuelo : this.vuelos) {
             if (vuelo.getPlan().getOrigen().equals(aeropuerto)) {
-                if (!vuelo.getFechaHoraSalida().isAfter(instanteActual)) return false;
-                if (vuelo.getFechaHoraSalida().isBefore(origInstanteMinimoDeEgreso)) return false;
-                if (vuelo.getFechaHoraSalida().isAfter(origInstanteMaximoDeEgreso)) return false;
-                if (vuelo.getFechaHoraLlegada().isAfter(instanteLimite)) return false;
+                if (!vuelo.getFechaHoraSalida().isAfter(instanteDeReferencia) || vuelo.getFechaHoraSalida().isBefore(origInstanteMinimoDeEgreso)) return false;
+                if (vuelo.getFechaHoraLlegada().isAfter(instanteLimite) || vuelo.getFechaHoraSalida().isAfter(origInstanteMaximoDeEgreso)) return false;
                 return this.obtenerCapacidadDisponibleDesdeAeropuerto(aeropuerto) > 0;
             }
         }
         return false;
     }
 
-    public void registrarLoteDeProductos(Lote lote, Set<Vuelo> vuelosEnTransito, Set<Ruta> rutasEnOperacion) {
-        System.out.printf("%-20sRegistro de lote '%s(%d)' en los aeropuertos:", "AGREGACIÓN:", lote.getCodigo(), lote.getTamanio());
-        rutasEnOperacion.add(this);
-        vuelosEnTransito.addAll(this.vuelos);
-        for(int i = 0; i < this.vuelos.size(); i++) {
-            Vuelo vuelo = this.vuelos.get(i);
-            vuelo.setCapacidadDisponible(vuelo.getCapacidadDisponible() - lote.getTamanio());
-            LocalDateTime destFechaHoraIngreso = vuelo.getFechaHoraLlegada(), destFechaHoraEgreso = (i + 1 < vuelos.size()) ? this.vuelos.get(i + 1).getFechaHoraSalida() : destFechaHoraIngreso.plusMinutes((long)(60*Problematica.MAX_HORAS_RECOJO));
-            vuelo.getPlan().getDestino().registrarLoteDeProductos(lote, destFechaHoraIngreso, destFechaHoraEgreso);
-            System.out.printf(" '%s'", vuelo.getPlan().getDestino().getCodigo());
-        }
-        System.out.println();
-    }
 
-    public void registrarLoteDeProductosDesdeAeropuerto(Lote lote, Aeropuerto aeropuerto, Set<Vuelo> vuelosEnTransito, Set<Ruta> rutasEnOperacion) {
-        if(aeropuerto == null || aeropuerto.getEsSede()) {
-            this.registrarLoteDeProductos(lote, vuelosEnTransito, rutasEnOperacion);
-            return;
-        }
-        System.out.printf("%-20sRegistro de lote '%s(%d)' en los aeropuertos:", "AGREGACIÓN:", lote.getCodigo(), lote.getTamanio());
-        rutasEnOperacion.add(this);
-        vuelosEnTransito.addAll(this.vuelos);
-        boolean agregar = false;
-        for(int i = 0; i < this.vuelos.size(); i++) {
-            Vuelo vuelo = this.vuelos.get(i);
-            if(!agregar && vuelo.getPlan().getOrigen().equals(aeropuerto)) {
-                agregar = true;
-                aeropuerto.registrarLoteDeProductos(lote, this.vuelos.get(i-1).getFechaHoraLlegada(), vuelo.getFechaHoraSalida());
-                System.out.printf(" '%s'", vuelo.getPlan().getOrigen().getCodigo());
-            }
-            if(agregar) {
-                vuelo.setCapacidadDisponible(vuelo.getCapacidadDisponible() - lote.getTamanio());
-                LocalDateTime destFechaHoraIngreso = vuelo.getFechaHoraLlegada(), destFechaHoraEgreso = (i + 1 < vuelos.size()) ? this.vuelos.get(i + 1).getFechaHoraSalida() : destFechaHoraIngreso.plusMinutes((long)(60*Problematica.MAX_HORAS_RECOJO));
-                vuelo.getPlan().getDestino().registrarLoteDeProductos(lote, destFechaHoraIngreso, destFechaHoraEgreso);
-                System.out.printf(" '%s'", vuelo.getPlan().getDestino().getCodigo());
-            }
-        }
-        System.out.println();
-    }
-
-    public void eliminarRegistroDeLoteDeProductos(Lote lote) {
-        this.eliminarRegistroDeLoteDeProductos(lote, false);
-    }
-
-    public void eliminarRegistroDeLoteDeProductos(Lote lote, boolean softDelete) {
-        System.out.printf("%-20sRegistro de lote '%s(%d)' en los aeropuertos:", "ELIMINACIÓN-" + ((softDelete)? "SOFT":"HARD"), lote.getCodigo(), lote.getTamanio());
-        for(Vuelo vuelo : this.vuelos) {
-            vuelo.getPlan().getDestino().eliminarRegistroDeLoteDeProductos(lote, softDelete);
-            System.out.printf(" '%s'", vuelo.getPlan().getDestino().getCodigo());
-            vuelo.setCapacidadDisponible(vuelo.getCapacidadDisponible() + lote.getTamanio());
-        }
-        System.out.println();
-    }
-
-    public void eliminarRegistroDeLoteDeProductosDesdeAeropuerto(Lote lote, Aeropuerto aeropuerto, boolean softDelete) {
-        if(aeropuerto == null || aeropuerto.getEsSede()) {
-            this.eliminarRegistroDeLoteDeProductos(lote, softDelete);
-            return;
-        }
-        System.out.printf("%-20sRegistro de lote '%s(%d)' en los aeropuertos:", "ELIMINACIÓN-" + ((softDelete)? "SOFT":"HARD"), lote.getCodigo(), lote.getTamanio());
-        boolean eliminar = false;
-        for (Vuelo vuelo : this.vuelos) {
-            if (!eliminar && vuelo.getPlan().getOrigen().equals(aeropuerto)) {
-                eliminar = true;
-                System.out.printf(" '%s'", vuelo.getPlan().getOrigen().getCodigo());
-                aeropuerto.eliminarRegistroDeLoteDeProductos(lote, softDelete);
-            }
-            if (eliminar) {
-                vuelo.getPlan().getDestino().eliminarRegistroDeLoteDeProductos(lote, softDelete);
-                System.out.printf(" '%s'", vuelo.getPlan().getDestino().getCodigo());
-                vuelo.setCapacidadDisponible(vuelo.getCapacidadDisponible() + lote.getTamanio());
-            }
-        }
-        System.out.println();
-    }
 
     @Override
     public boolean equals(Object o) {

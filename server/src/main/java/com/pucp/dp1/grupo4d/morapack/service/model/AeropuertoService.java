@@ -9,14 +9,20 @@ package com.pucp.dp1.grupo4d.morapack.service.model;
 import com.pucp.dp1.grupo4d.morapack.mapper.AeropuertoMapper;
 import com.pucp.dp1.grupo4d.morapack.model.dto.AeropuertoDTO;
 import com.pucp.dp1.grupo4d.morapack.model.dto.DTO;
+import com.pucp.dp1.grupo4d.morapack.model.dto.payload.ProgressPayload;
+import com.pucp.dp1.grupo4d.morapack.model.dto.payload.StatusPayload;
 import com.pucp.dp1.grupo4d.morapack.model.dto.request.FilterRequest;
 import com.pucp.dp1.grupo4d.morapack.model.dto.request.ImportRequest;
 import com.pucp.dp1.grupo4d.morapack.model.dto.request.ListRequest;
 import com.pucp.dp1.grupo4d.morapack.model.dto.response.GenericResponse;
 import com.pucp.dp1.grupo4d.morapack.model.dto.response.ListResponse;
+import com.pucp.dp1.grupo4d.morapack.model.entity.AdministradorEntity;
 import com.pucp.dp1.grupo4d.morapack.model.entity.AeropuertoEntity;
+import com.pucp.dp1.grupo4d.morapack.model.enumeration.EstadoEjecucion;
+import com.pucp.dp1.grupo4d.morapack.model.enumeration.EstadoFinalizacion;
 import com.pucp.dp1.grupo4d.morapack.model.exception.G4DException;
 import com.pucp.dp1.grupo4d.morapack.repository.AeropuertoRepository;
+import com.pucp.dp1.grupo4d.morapack.service.WebSocketService;
 import com.pucp.dp1.grupo4d.morapack.util.G4DUtility;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
@@ -27,7 +33,6 @@ import java.util.*;
 
 @Service
 public class AeropuertoService {
-
     private final AeropuertoRepository aeropuertoRepository;
     private final AeropuertoMapper aeropuertoMapper;
     private final List<AeropuertoEntity> aeropuertos = new ArrayList<>();
@@ -139,43 +144,64 @@ public class AeropuertoService {
         try {
             System.out.printf("Importando aeropuertos desde '%s'..%n", archivo.getName());
             Scanner archivoSC = new Scanner(archivo.getInputStream(), G4DUtility.Reader.getFileCharset(archivo));
+            int lTotales = (int) G4DUtility.Reader.getLineCount(archivo);
+            int lProcesadas = 2;
             if (archivoSC.hasNextLine()) archivoSC.nextLine();
             if (archivoSC.hasNextLine()) archivoSC.nextLine();
             String continente = "";
+            WebSocketService.enviar("/topic/loader", new ProgressPayload("Leyendo archivo", lProcesadas, lTotales));
+            WebSocketService.enviar("/topic/loader-status", new StatusPayload(EstadoEjecucion.INICIADO));
             while (archivoSC.hasNextLine()) {
                 String linea = archivoSC.nextLine().trim();
-                if (linea.isEmpty()) continue;
-                Scanner lineaSC = new Scanner(linea);
-                lineaSC.useDelimiter("\\s{2,}");
-                if (Character.isDigit(linea.charAt(0))) {
-                    AeropuertoEntity aeropuerto = new AeropuertoEntity();
-                    lineaSC.nextInt();
-                    aeropuerto.setCodigo(lineaSC.next());
-                    aeropuerto.setCiudad(lineaSC.next());
-                    aeropuerto.setPais(lineaSC.next());
-                    aeropuerto.setContinente(continente);
-                    aeropuerto.setAlias(lineaSC.next());
-                    aeropuerto.setHusoHorario(lineaSC.nextInt());
-                    aeropuerto.setCapacidad(lineaSC.nextInt());
-                    lineaSC.useDelimiter("\\s+");
-                    lineaSC.next();
-                    aeropuerto.setLatitudDMS(lineaSC.next() + " " + lineaSC.next() + " " + lineaSC.next() + " " + lineaSC.next());
-                    aeropuerto.setLatitudDEC(G4DUtility.Calculator.getLatDEC(aeropuerto.getLatitudDMS()));
-                    lineaSC.next();
-                    aeropuerto.setLongitudDMS(lineaSC.next() + " " + lineaSC.next() + " " + lineaSC.next() + " " + lineaSC.next());
-                    aeropuerto.setLongitudDEC(G4DUtility.Calculator.getLonDEC(aeropuerto.getLongitudDMS()));
-                    aeropuerto.setEsSede(false);
-                    aeropuertos.add(aeropuerto);
-                } else continente = lineaSC.next();
-                lineaSC.close();
+                if (!linea.isEmpty()) {
+                    Scanner lineaSC = new Scanner(linea);
+                    lineaSC.useDelimiter("\\s{2,}");
+                    if (Character.isDigit(linea.charAt(0))) {
+                        AeropuertoEntity aeropuerto = new AeropuertoEntity();
+                        lineaSC.nextInt();
+                        aeropuerto.setCodigo(lineaSC.next());
+                        aeropuerto.setCiudad(lineaSC.next());
+                        aeropuerto.setPais(lineaSC.next());
+                        aeropuerto.setContinente(continente);
+                        aeropuerto.setAlias(lineaSC.next());
+                        aeropuerto.setHusoHorario(lineaSC.nextInt());
+                        aeropuerto.setCapacidad(lineaSC.nextInt());
+                        lineaSC.useDelimiter("\\s+");
+                        lineaSC.next();
+                        aeropuerto.setLatitudDMS(lineaSC.next() + " " + lineaSC.next() + " " + lineaSC.next() + " " + lineaSC.next());
+                        aeropuerto.setLatitudDEC(G4DUtility.Calculator.getLatDEC(aeropuerto.getLatitudDMS()));
+                        lineaSC.next();
+                        aeropuerto.setLongitudDMS(lineaSC.next() + " " + lineaSC.next() + " " + lineaSC.next() + " " + lineaSC.next());
+                        aeropuerto.setLongitudDEC(G4DUtility.Calculator.getLonDEC(aeropuerto.getLongitudDMS()));
+                        aeropuerto.setEsSede(false);
+                        aeropuertos.add(aeropuerto);
+                    } else continente = lineaSC.next();
+                    lineaSC.close();
+                }
+                lProcesadas++;
+                WebSocketService.enviar("/topic/loader", new ProgressPayload("Leyendo archivo", lProcesadas, lTotales));
+                if(aeropuertos.size() % 500 == 0 || !archivoSC.hasNextLine()) {
+                    List<AeropuertoEntity> entities = aeropuertos.stream().filter(entity -> !this.existsByCodigo(entity.getCodigo())).toList();
+                    int eTotales = entities.size();
+                    int eProcesadas = 0;
+                    WebSocketService.enviar("/topic/loader", new ProgressPayload("Guardando aeropuertos", eProcesadas, eTotales));
+                    for(AeropuertoEntity entity : entities) {
+                        this.save(entity);
+                        eProcesadas++;
+                        WebSocketService.enviar("/topic/loader", new ProgressPayload("Guardando aeropuertos", eProcesadas, eTotales));
+                    }
+                    System.out.printf("[<] AEROPUERTOS IMPORTADOS! ('%d')%n", aeropuertos.size());
+                    clearPools();
+                }
             }
             archivoSC.close();
-            aeropuertos.stream().filter(entity -> !this.existsByCodigo(entity.getCodigo())).forEach(this::save);
-            System.out.printf("[<] AEROPUERTOS IMPORTADOS! ('%d')%n", aeropuertos.size());
-            return new GenericResponse(true, String.format("Aeropuertos importados correctamente! ('%d')",  aeropuertos.size()));
+            WebSocketService.enviar("/topic/loader-status", new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.EXITOSO));
+            return new GenericResponse(true, "Aeropuertos importados correctamente!");
         } catch (NoSuchElementException e) {
+            WebSocketService.enviar("/topic/loader-status", new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.ERRONEO));
             throw new G4DException(String.format("El archivo '%s' no sigue el formato esperado.", archivo.getName()));
         } catch (IOException e) {
+            WebSocketService.enviar("/topic/loader-status", new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.ERRONEO));
             throw new G4DException(String.format("No se pudo cargar el archivo '%s'.", archivo.getName()));
         } finally {
             clearPools();

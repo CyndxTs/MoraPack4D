@@ -15,7 +15,6 @@ import java.util.Map;
 
 @Component
 public class EventoAdapter {
-
     private final Map<String, Evento> poolAlgorithm = new HashMap<>();
     private final Map<String, EventoEntity> poolEntity = new HashMap<>();
 

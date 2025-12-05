@@ -8,6 +8,7 @@ package com.pucp.dp1.grupo4d.morapack.model.algorithm;
 
 import java.time.LocalDateTime;
 import java.util.Map;
+
 import com.pucp.dp1.grupo4d.morapack.util.G4DUtility;
 
 public class Vuelo {
@@ -32,10 +33,10 @@ public class Vuelo {
         return vuelo;
     }
 
-    public void instanciarHorarios(LocalDateTime fechaHoraReferencia) {
-        LocalDateTime[] rangoUTC = G4DUtility.Convertor.toDateTimeRange(this.plan.getHoraSalida(), this.plan.getHoraLlegada(), fechaHoraReferencia);
-        this.fechaHoraSalida = rangoUTC[0];
-        this.fechaHoraLlegada = rangoUTC[1];
+    public void instanciarAtributos(LocalDateTime instanteDeReferencia) {
+        LocalDateTime[] dtr = G4DUtility.Convertor.toDateTimeRange(this.plan.getHoraSalida(), this.plan.getHoraLlegada(), instanteDeReferencia);
+        this.fechaHoraSalida = dtr[0];
+        this.fechaHoraLlegada = dtr[1];
     }
 
     @Override

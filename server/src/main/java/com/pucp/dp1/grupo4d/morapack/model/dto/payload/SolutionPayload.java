@@ -15,5 +15,5 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class SolutionPayload {
-    SolucionDTO solucion;
+    private SolucionDTO solucion;
 }
