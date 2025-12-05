@@ -26,7 +26,6 @@ import java.util.Map;
 
 @Component
 public class PedidoMapper {
-
     private final LoteMapper loteMapper;
     private final Map<String, PedidoDTO> poolDTO = new HashMap<>();
     private final SegmentacionMapper segmentacionMapper;

@@ -35,7 +35,6 @@ public class AuthenticationController {
         } catch (G4DException e) {
             return ResponseEntity.badRequest().body(new AuthenticationResponse(false, e.getMessage()));
         } catch (Exception e) {
-            e.printStackTrace();
             return ResponseEntity.internalServerError().body(new AuthenticationResponse(false, "ERROR INTERNO: " + e.getMessage()));
         }
     }

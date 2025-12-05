@@ -10,6 +10,7 @@ import com.pucp.dp1.grupo4d.morapack.mapper.AeropuertoMapper;
 import com.pucp.dp1.grupo4d.morapack.model.dto.AeropuertoDTO;
 import com.pucp.dp1.grupo4d.morapack.model.dto.DTO;
 import com.pucp.dp1.grupo4d.morapack.model.dto.payload.ProgressPayload;
+import com.pucp.dp1.grupo4d.morapack.model.dto.payload.StatusPayload;
 import com.pucp.dp1.grupo4d.morapack.model.dto.request.FilterRequest;
 import com.pucp.dp1.grupo4d.morapack.model.dto.request.ImportRequest;
 import com.pucp.dp1.grupo4d.morapack.model.dto.request.ListRequest;
@@ -17,6 +18,8 @@ import com.pucp.dp1.grupo4d.morapack.model.dto.response.GenericResponse;
 import com.pucp.dp1.grupo4d.morapack.model.dto.response.ListResponse;
 import com.pucp.dp1.grupo4d.morapack.model.entity.AdministradorEntity;
 import com.pucp.dp1.grupo4d.morapack.model.entity.AeropuertoEntity;
+import com.pucp.dp1.grupo4d.morapack.model.enumeration.EstadoEjecucion;
+import com.pucp.dp1.grupo4d.morapack.model.enumeration.EstadoFinalizacion;
 import com.pucp.dp1.grupo4d.morapack.model.exception.G4DException;
 import com.pucp.dp1.grupo4d.morapack.repository.AeropuertoRepository;
 import com.pucp.dp1.grupo4d.morapack.service.WebSocketService;
@@ -147,9 +150,13 @@ public class AeropuertoService {
             if (archivoSC.hasNextLine()) archivoSC.nextLine();
             String continente = "";
             WebSocketService.enviar("/topic/loader", new ProgressPayload("Leyendo archivo", lProcesadas, lTotales));
+            WebSocketService.enviar("/topic/loader-status", new StatusPayload(EstadoEjecucion.INICIADO));
             while (archivoSC.hasNextLine()) {
                 String linea = archivoSC.nextLine().trim();
-                if (linea.isEmpty()) continue;
+                if (linea.isEmpty()) {
+                    lProcesadas++;
+                    continue;
+                }
                 Scanner lineaSC = new Scanner(linea);
                 lineaSC.useDelimiter("\\s{2,}");
                 if (Character.isDigit(linea.charAt(0))) {
@@ -175,7 +182,7 @@ public class AeropuertoService {
                 lineaSC.close();
                 lProcesadas++;
                 WebSocketService.enviar("/topic/loader", new ProgressPayload("Leyendo archivo", lProcesadas, lTotales));
-                if(lProcesadas % 500 == 0 || lProcesadas == lTotales) {
+                if(aeropuertos.size() % 500 == 0 || !archivoSC.hasNextLine()) {
                     List<AeropuertoEntity> entities = aeropuertos.stream().filter(entity -> !this.existsByCodigo(entity.getCodigo())).toList();
                     int eTotales = entities.size();
                     int eProcesadas = 0;
@@ -190,10 +197,13 @@ public class AeropuertoService {
                 }
             }
             archivoSC.close();
+            WebSocketService.enviar("/topic/loader-status", new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.EXITOSO));
             return new GenericResponse(true, "Aeropuertos importados correctamente!");
         } catch (NoSuchElementException e) {
+            WebSocketService.enviar("/topic/loader-status", new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.ERRONEO));
             throw new G4DException(String.format("El archivo '%s' no sigue el formato esperado.", archivo.getName()));
         } catch (IOException e) {
+            WebSocketService.enviar("/topic/loader-status", new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.ERRONEO));
             throw new G4DException(String.format("No se pudo cargar el archivo '%s'.", archivo.getName()));
         } finally {
             clearPools();

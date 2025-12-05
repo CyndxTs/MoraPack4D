@@ -14,7 +14,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ProgressPayload {
-    String proceso;
-    Integer completado;
-    Integer total;
+    private String proceso;
+    private Integer completado;
+    private Integer total;
 }

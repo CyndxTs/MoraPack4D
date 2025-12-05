@@ -9,15 +9,20 @@ package com.pucp.dp1.grupo4d.morapack.service.model;
 import com.pucp.dp1.grupo4d.morapack.mapper.PedidoMapper;
 import com.pucp.dp1.grupo4d.morapack.model.dto.DTO;
 import com.pucp.dp1.grupo4d.morapack.model.dto.PedidoDTO;
+import com.pucp.dp1.grupo4d.morapack.model.dto.payload.ProgressPayload;
+import com.pucp.dp1.grupo4d.morapack.model.dto.payload.StatusPayload;
 import com.pucp.dp1.grupo4d.morapack.model.dto.request.*;
 import com.pucp.dp1.grupo4d.morapack.model.dto.response.GenericResponse;
 import com.pucp.dp1.grupo4d.morapack.model.dto.response.ListResponse;
 import com.pucp.dp1.grupo4d.morapack.model.entity.AeropuertoEntity;
 import com.pucp.dp1.grupo4d.morapack.model.entity.PedidoEntity;
 import com.pucp.dp1.grupo4d.morapack.model.entity.ClienteEntity;
+import com.pucp.dp1.grupo4d.morapack.model.enumeration.EstadoEjecucion;
+import com.pucp.dp1.grupo4d.morapack.model.enumeration.EstadoFinalizacion;
 import com.pucp.dp1.grupo4d.morapack.model.enumeration.TipoEscenario;
 import com.pucp.dp1.grupo4d.morapack.model.exception.G4DException;
 import com.pucp.dp1.grupo4d.morapack.repository.PedidoRepository;
+import com.pucp.dp1.grupo4d.morapack.service.WebSocketService;
 import com.pucp.dp1.grupo4d.morapack.util.G4DUtility;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -147,10 +152,13 @@ public class PedidoService {
             if(fechaHoraFin.isBefore(fechaHoraInicio)) {
                 throw new G4DException("Rango de tiempo inválido.");
             }
-            Scanner archivoSC = new Scanner(archivo.getInputStream(), G4DUtility.Reader.getFileCharset(archivo));
             TipoEscenario tipoEscenario = G4DUtility.Convertor.toAdmissible(request.getTipoEscenario(), TipoEscenario.class);
             boolean tieneNumeroDePedido = tipoEscenario.equals(TipoEscenario.SIMULACION);
-            int numLinea = 1;
+            Scanner archivoSC = new Scanner(archivo.getInputStream(), G4DUtility.Reader.getFileCharset(archivo));
+            int lTotales = (int) G4DUtility.Reader.getLineCount(archivo);
+            int lProcesadas = 0;
+            WebSocketService.enviar("/topic/loader", new ProgressPayload("Leyendo archivo", lProcesadas, lTotales));
+            WebSocketService.enviar("/topic/loader-status", new StatusPayload(EstadoEjecucion.INICIADO));
             while (archivoSC.hasNextLine()) {
                 String linea = archivoSC.nextLine().trim();
                 Scanner lineaSC = new Scanner(linea);
@@ -184,17 +192,32 @@ public class PedidoService {
                         pedido.setTipoEscenario(tipoEscenario);
                         pedidos.add(pedido);
                     }
-                } else throw new G4DException(String.format("El destino '%s' del pedido de la linea #%d es inválido.", codDestino, numLinea));
+                } else throw new G4DException(String.format("El destino '%s' del pedido de la linea #%d es inválido.", codDestino, lProcesadas + 1));
                 lineaSC.close();
-                numLinea++;
+                lProcesadas++;
+                WebSocketService.enviar("/topic/loader", new ProgressPayload("Leyendo archivo", lProcesadas, lTotales));
+                if(pedidos.size() % 500 == 0 || !archivoSC.hasNextLine()) {
+                    List<PedidoEntity> entities = pedidos.stream().filter(entity -> !this.existsByCodigoEscenario(entity.getCodigo(), tipoEscenario.toString())).toList();
+                    int eTotales = entities.size();
+                    int eProcesadas = 0;
+                    WebSocketService.enviar("/topic/loader", new ProgressPayload("Guardando pedidos", eProcesadas, eTotales));
+                    for(PedidoEntity entity : entities) {
+                        this.save(entity);
+                        eProcesadas++;
+                        WebSocketService.enviar("/topic/loader", new ProgressPayload("Guardando pedidos", eProcesadas, eTotales));
+                    }
+                    System.out.printf("[<] PEDIDOS IMPORTADOS! ('%d')%n", pedidos.size());
+                    clearPools();
+                }
             }
             archivoSC.close();
-            pedidos.stream().filter(entity -> !this.existsByCodigoEscenario(entity.getCodigo(), tipoEscenario.toString())).forEach(this::save);
-            System.out.printf("[<] PEDIDOS IMPORTADOS! ('%d')%n", pedidos.size());
-            return new GenericResponse(true, String.format("Pedidos importados correctamente! ('%d')", pedidos.size()));
+            WebSocketService.enviar("/topic/loader-status", new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.EXITOSO));
+            return new GenericResponse(true, "Pedidos importados correctamente!");
         } catch (NoSuchElementException e) {
+            WebSocketService.enviar("/topic/loader-status", new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.ERRONEO));
             throw new G4DException(String.format("El archivo '%s' no sigue el formato esperado.", archivo.getName()));
         } catch (IOException e) {
+            WebSocketService.enviar("/topic/loader-status", new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.ERRONEO));
             throw new G4DException(String.format("No se pudo cargar el archivo '%s'.", archivo.getName()));
         } finally {
             clearPools();
