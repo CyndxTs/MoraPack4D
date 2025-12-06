@@ -16,6 +16,8 @@ import careIcon from "../../assets/icons/care.svg";
 import filterIcon from "../../assets/icons/filter.svg";
 import cleanIcon from "../../assets/icons/clean.svg";
 
+import { Client } from "@stomp/stompjs";
+
 export function Button({ icon, label, onClick, type = "button" }) {
   return (
     <button className="btn-icon" type={type} onClick={onClick}>
@@ -751,7 +753,7 @@ export function Legend({ items }) {
   );
 }
 
-export function LoadingOverlay({ text = "Cargando..." }) {
+/*export function LoadingOverlay({ text = "Cargando..." }) {
   const [seconds, setSeconds] = useState(0);
 
   useEffect(() => {
@@ -770,7 +772,68 @@ export function LoadingOverlay({ text = "Cargando..." }) {
       </p>
     </div>
   );
+}*/
+
+export function useLoaderProgress() {
+  const [payload, setPayload] = useState(null);
+
+  useEffect(() => {
+    const client = new Client({
+      brokerURL: "ws://localhost:8080/ws",  // 👈 WebSocket nativo
+      reconnectDelay: 500,
+      onConnect: () => {
+        client.subscribe("/topic/loader", (msg) => {
+          const data = JSON.parse(msg.body);
+          setPayload(data);
+        });
+      },
+      debug: () => {} // opcional para silenciar logs
+    });
+
+    client.activate();
+
+    return () => {
+      client.deactivate();
+    };
+  }, []);
+
+  return payload;
 }
+
+
+export function LoadingOverlay() {
+  const [seconds, setSeconds] = useState(0);
+  const [progress, setProgress] = useState(null);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setSeconds((prev) => prev + 1);
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, []);
+
+  // 🔥 Hook que escucha el WebSocket
+  const payload = useLoaderProgress();
+
+  useEffect(() => {
+    if (payload) {
+      setProgress(payload);
+    }
+  }, [payload]);
+
+  const text = progress
+    ? `${progress.proceso} (${progress.completado} / ${progress.total})`
+    : `Cargando... (${seconds}s)`;
+
+  return (
+    <div className="loading-overlay">
+      <div className="spinner"></div>
+      <p>{text}</p>
+    </div>
+  );
+}
+
 
 //NOTIFICACIONES
 export function Notification({ type = "success", message = "", onClose }) {
