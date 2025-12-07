@@ -73,6 +73,7 @@ export default function Simulacion() {
 
   //Vuelos
   const [flights, setFlights] = useState([]);
+  const [highlightedFlights, setHighlightedFlights] = useState([]);
   //Rutas
   const [routes, setRoutes] = useState([]);
   const [highlightedRoute, setHighlightedRoute] = useState(null);
@@ -276,6 +277,9 @@ export default function Simulacion() {
     setOrders([]);            
     setSidebarTab("flights"); 
     setStopDisabled(true);
+    setRoutes([])
+    setHighlightedRoute(null);
+    setHighlightedFlights([]);
   };
 
   // Vuelos
@@ -474,7 +478,11 @@ export default function Simulacion() {
   });
 
   // Guardar rutas completas para el sidebar
-  setRoutes(solution.rutasEnOperacion || []);
+  const rutasFiltradas = (solution.rutasEnOperacion || []).filter(
+    (r) => r.estado === "OPERATIVA" || r.estado === "FINALIZADA"
+  );
+
+  setRoutes(rutasFiltradas);
 
   // Construir pedidos con segmentaciones, lotes y vuelos
   const pedidosAtendidos = (solution.pedidosAtendidos || []).map((p) => {
@@ -1002,14 +1010,29 @@ export default function Simulacion() {
                       key={pedido.codigo}
                       className="order-card"
                       onClick={() => {
-                        setSelectedAirport(null);
-                        setSelectedItem(
-                          `Pedido ${pedido.codigo}
-                          Cliente: ${pedido.codCliente}
-                          Destino: ${pedido.codDestino}
-                          Cantidad solicitada: ${pedido.cantidadSolicitada} unidades`
-                        );
+                          setSelectedAirport(null);
+                          setHighlightedRoute(null); // por si había ruta resaltada antes
+
+                          // Buscar TODOS los vuelos de TODOS los lotes del pedido
+                          const vuelosPedido = new Set();
+
+                          pedido.segmentaciones.forEach(seg => {
+                              seg.lotes.forEach(lote => {
+                                  (lote.vuelos || []).forEach(v => vuelosPedido.add(v));
+                              });
+                          });
+
+                          // Guardar vuelos a resaltar
+                          setHighlightedFlights([...vuelosPedido]);
+
+                          setSelectedItem(
+                            `Pedido ${pedido.codigo}
+                      Cliente: ${pedido.codCliente}
+                      Destino: ${pedido.codDestino}
+                      Cantidad solicitada: ${pedido.cantidadSolicitada} unidades`
+                          );
                       }}
+
                     >
                       <div className="order-card-header">
                         <span className="order-code">{pedido.codigo}</span>
@@ -1276,30 +1299,37 @@ export default function Simulacion() {
                   flight.planeCapacity
                 );
 
+                const shouldDimOthers = highlightedFlights.length > 0;
+                const isHighlighted = highlightedFlights.includes(flight.code);
+
                 return (
                   <React.Fragment key={flight.code}>
                     {/* Trayectoria a partir del progreso actual */}
+                    
                     <Polyline
+                      key={flight.code + "-" + (isHighlighted ? "on" : "off")}
                       positions={flight.path.slice(
                         Math.floor(flight.path.length * (flight.progress ?? 0))
                       )}
-                      color="#eb6774ff"
-                      weight={3}
-                      opacity={0.5}
+                      color={!shouldDimOthers ? "#eb6774" : isHighlighted ? "#ff0019" : "#eb6774"}
+                      weight={isHighlighted ? 4 : 2}
+                      opacity={!shouldDimOthers ? 1 : isHighlighted ? 1 : 0.15}
                       dashArray="6, 10"
                       interactive={false}
                     />
+
 
                     {/* Avión solo mientras está en vuelo */}
                     {!flight.arrived && (
                       <Marker
                         position={flight.position}
+                        opacity={!shouldDimOthers ? 1 : isHighlighted ? 1 : 0.3}               // 🔥 avión atenuado si no pertenece al pedido
+                        zIndexOffset={1000}       // 🔥 aviones del pedido encima
                         icon={createColoredIcon(
                           filterCss,
                           flight.rotation || 0
                         )}
                         riseOnHover={true}
-                        zIndexOffset={1000}
                         eventHandlers={{
                           click: (e) => {
                             if (e.target && e.target.openPopup) {
@@ -1382,6 +1412,7 @@ export default function Simulacion() {
                   setSelectedItem(null);
                   setSelectedAirport(null);
                   setHighlightedRoute(null);
+                  setHighlightedFlights([]);
                 }}
               />
             </MapContainer>
