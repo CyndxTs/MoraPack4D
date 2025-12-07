@@ -12,5 +12,6 @@ import lombok.Data;
 @Data
 public class ReplanificationRequest {
     private String fechaHoraActual;
+    private Boolean almacenarParametrizacion;
     private ParametrosDTO parametros;
 }

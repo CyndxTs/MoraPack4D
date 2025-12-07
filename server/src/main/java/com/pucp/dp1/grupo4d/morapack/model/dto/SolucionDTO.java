@@ -15,8 +15,8 @@ public class SolucionDTO implements DTO {
     private Double ratioPromedioDeUtilizacionTemporal;
     private Double ratioPromedioDeDesviacionEspacial;
     private Double ratioPromedioDeDisposicionOperacional;
-    private List<PedidoDTO> pedidosAtendidos = new ArrayList<>();
     private List<AeropuertoDTO> aeropuertosTransitados = new ArrayList<>();
+    private List<PedidoDTO> pedidosAtendidos = new ArrayList<>();
     private List<VueloDTO> vuelosEnTransito =  new ArrayList<>();
     private List<RutaDTO> rutasEnOperacion =  new ArrayList<>();
 }

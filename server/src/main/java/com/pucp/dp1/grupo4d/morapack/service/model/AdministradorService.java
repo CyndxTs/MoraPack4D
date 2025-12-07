@@ -168,6 +168,5 @@ public class AdministradorService {
 
     public void clearPools() {
         administradores.clear();
-        usuarioMapper.clearPools();
     }
 }

@@ -16,19 +16,12 @@ import com.pucp.dp1.grupo4d.morapack.model.entity.VueloEntity;
 import com.pucp.dp1.grupo4d.morapack.util.G4DUtility;
 import org.springframework.stereotype.Component;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 @Component
 public class RutaMapper {
 
-    private final Map<String, RutaDTO> poolDTO = new HashMap<>();
-
     public RutaDTO toDTO(Ruta algorithm) {
-        if(poolDTO.containsKey(algorithm.getCodigo())) {
-            return poolDTO.get(algorithm.getCodigo());
-        }
         RutaDTO dto = new RutaDTO();
         dto.setCodigo(algorithm.getCodigo());
         dto.setDuracion(algorithm.getDuracion());
@@ -45,14 +38,10 @@ public class RutaMapper {
         vuelos.forEach(vuelo -> codVuelos.add(vuelo.getCodigo()));
         dto.setCodVuelos(codVuelos);
         dto.setEstado(algorithm.getEstado().toString());
-        poolDTO.put(algorithm.getCodigo(), dto);
         return dto;
     }
 
     public RutaDTO toDTO(RutaEntity entity) {
-        if(poolDTO.containsKey(entity.getCodigo())) {
-            return poolDTO.get(entity.getCodigo());
-        }
         RutaDTO dto = new RutaDTO();
         dto.setCodigo(entity.getCodigo());
         dto.setDuracion(entity.getDuracion());
@@ -69,11 +58,6 @@ public class RutaMapper {
         vuelosEntity.forEach(vueloEntity -> codVuelos.add(vueloEntity.getCodigo()));
         dto.setCodVuelos(codVuelos);
         dto.setEstado(entity.getEstado().toString());
-        poolDTO.put(entity.getCodigo(), dto);
         return dto;
-    }
-
-    public void clearPools() {
-        poolDTO.clear();
     }
 }

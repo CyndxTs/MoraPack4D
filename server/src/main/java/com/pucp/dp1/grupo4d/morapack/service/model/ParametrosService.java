@@ -20,7 +20,6 @@ import java.util.*;
 
 @Service
 public class ParametrosService {
-
     private final ParametrosRepository parametrosRepository;
     private final AeropuertoService aeropuertoService;
     private final ParametrosMapper parametrosMapper;
@@ -80,30 +79,18 @@ public class ParametrosService {
     }
 
     public ListResponse listar() {
-        try {
-            List<DTO> dtos = new ArrayList<>();
-            List<ParametrosEntity> entities = this.findAll();
-            entities.forEach(entity -> dtos.add(parametrosMapper.toDTO(entity)));
-            return new ListResponse(true, "Parametros listados correctamente!", dtos);
-        } finally {
-            clearPools();
-        }
+        List<DTO> dtos = new ArrayList<>();
+        List<ParametrosEntity> entities = this.findAll();
+        entities.forEach(entity -> dtos.add(parametrosMapper.toDTO(entity)));
+        return new ListResponse(true, "Parametros listados correctamente!", dtos);
     }
 
     public GenericResponse importar(ImportRequest<ParametrosDTO> request) {
-        try {
-            System.out.println("Importando parametros..");
-            ParametrosDTO dto = request.getDto();
-            ParametrosEntity parametros = parametrosMapper.toEntity(dto);
-            this.save(parametros);
-            System.out.println("[<] PARAMETROS IMPORTADOS!");
-            return new GenericResponse(true, "Parametros importados correctamente!");
-        } finally {
-            clearPools();
-        }
-    }
-
-    public void clearPools() {
-        aeropuertoService.clearPools();
+        System.out.println("Importando parametros..");
+        ParametrosDTO dto = request.getDto();
+        ParametrosEntity parametros = parametrosMapper.toEntity(dto);
+        this.save(parametros);
+        System.out.println("[<] PARAMETROS IMPORTADOS!");
+        return new GenericResponse(true, "Parametros importados correctamente!");
     }
 }

@@ -13,7 +13,6 @@ import com.pucp.dp1.grupo4d.morapack.model.entity.EventoEntity;
 import com.pucp.dp1.grupo4d.morapack.model.entity.PlanEntity;
 import com.pucp.dp1.grupo4d.morapack.service.model.PlanService;
 import org.springframework.stereotype.Component;
-
 import java.util.*;
 
 @Component
@@ -72,7 +71,6 @@ public class PlanAdapter {
     public void clearPools() {
         poolAlgorithm.clear();
         poolEntity.clear();
-        planService.clearPools();
         eventoAdapter.clearPools();
         aeropuertoAdapter.clearPools();
     }

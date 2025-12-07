@@ -15,18 +15,11 @@ import com.pucp.dp1.grupo4d.morapack.model.entity.PlanEntity;
 import com.pucp.dp1.grupo4d.morapack.model.entity.VueloEntity;
 import com.pucp.dp1.grupo4d.morapack.util.G4DUtility;
 import org.springframework.stereotype.Component;
-import java.util.HashMap;
-import java.util.Map;
 
 @Component
 public class VueloMapper {
 
-    private final Map<String, VueloDTO> poolDTO = new HashMap<>();
-
     public VueloDTO toDTO(Vuelo algorithm) {
-        if(poolDTO.containsKey(algorithm.getCodigo())) {
-            return poolDTO.get(algorithm.getCodigo());
-        }
         VueloDTO dto = new VueloDTO();
         dto.setCodigo(algorithm.getCodigo());
         dto.setFechaHoraSalida(G4DUtility.Convertor.toDisplayString(algorithm.getFechaHoraSalida()));
@@ -40,14 +33,10 @@ public class VueloMapper {
         dto.setCapacidadMaxima(plan.getCapacidad());
         dto.setDuracion(plan.getDuracion());
         dto.setDistancia(plan.getDistancia());
-        poolDTO.put(algorithm.getCodigo(), dto);
         return dto;
     }
 
     public VueloDTO toDTO(VueloEntity entity) {
-        if(poolDTO.containsKey(entity.getCodigo())) {
-            return poolDTO.get(entity.getCodigo());
-        }
         VueloDTO dto = new VueloDTO();
         dto.setCodigo(entity.getCodigo());
         dto.setFechaHoraSalida(G4DUtility.Convertor.toDisplayString(entity.getFechaHoraSalidaUTC()));
@@ -61,11 +50,6 @@ public class VueloMapper {
         dto.setCapacidadMaxima(planEntity.getCapacidad());
         dto.setDuracion(planEntity.getDuracion());
         dto.setDistancia(planEntity.getDistancia());
-        poolDTO.put(entity.getCodigo(), dto);
         return dto;
-    }
-
-    public void clearPools() {
-        poolDTO.clear();
     }
 }

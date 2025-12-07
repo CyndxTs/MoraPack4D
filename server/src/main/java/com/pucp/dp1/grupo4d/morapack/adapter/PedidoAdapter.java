@@ -78,16 +78,9 @@ public class PedidoAdapter {
         return entity;
     }
 
-    public void trascendReference(Pedido algorithm) {
-        if(poolAlgorithm.containsKey(algorithm.getCodigo())) {
-            poolAlgorithm.get(algorithm.getCodigo()).reasignar(algorithm);
-        }
-    }
-
     public void clearPools() {
         poolAlgorithm.clear();
         poolEntity.clear();
-        pedidoService.clearPools();
         usuarioAdapter.clearPools();
         aeropuertoAdapter.clearPools();
         rutaAdapter.clearPools();

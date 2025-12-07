@@ -35,7 +35,6 @@ import java.util.*;
 
 @Service
 public class PedidoService {
-
     private final PedidoRepository pedidoRepository;
     private final AeropuertoService aeropuertoService;
     private final ClienteService clienteService;
@@ -135,9 +134,26 @@ public class PedidoService {
         try {
             System.out.println("Importando pedido..");
             PedidoDTO dto = request.getDto();
-            PedidoEntity pedido = pedidoMapper.toEntity(dto);
-            pedido.setCodigo(this.obtenerNuevoCodigo(pedido.getDestino()));
-            this.save(pedido);
+            PedidoEntity pedido = new PedidoEntity();
+            String codCliente = dto.getCodCliente();
+            String codDestino = dto.getCodDestino();
+            AeropuertoEntity destino = aeropuertoService.obtenerPorCodigo(codDestino);
+            if(destino != null) {
+                ClienteEntity cliente = clienteService.obtenerPorCodigo(codCliente);
+                pedido.setCliente(cliente);
+                pedido.setDestino(destino);
+                pedido.setTipoEscenario(TipoEscenario.valueOf(dto.getTipoEscenario()));
+                pedido.setCantidadSolicitada(dto.getCantidadSolicitada());
+                pedido.setFechaHoraGeneracionUTC(G4DUtility.Convertor.toDateTime(dto.getFechaHoraGeneracion()));
+                pedido.setFechaHoraGeneracionLocal(G4DUtility.Convertor.toLocal(pedido.getFechaHoraGeneracionUTC(), destino.getHusoHorario()));
+                pedido.setFechaHoraProcesamientoUTC(G4DUtility.Convertor.toAdmissible(dto.getFechaHoraProcesamiento(), (LocalDateTime) null));
+                pedido.setFechaHoraProcesamientoLocal(pedido.getFechaHoraProcesamientoUTC() != null ? G4DUtility.Convertor.toLocal(pedido.getFechaHoraProcesamientoUTC(), destino.getHusoHorario()) : null);
+                pedido.setFechaHoraExpiracionUTC(G4DUtility.Convertor.toAdmissible(dto.getFechaHoraExpiracion(), (LocalDateTime) null));
+                pedido.setFechaHoraExpiracionLocal(pedido.getFechaHoraExpiracionUTC() != null ? G4DUtility.Convertor.toLocal(pedido.getFechaHoraExpiracionUTC(), destino.getHusoHorario()) : null);
+                pedido.setFueAtendido(dto.getFueAtendido() != null ? dto.getFueAtendido() : false);
+                pedido.setCodigo(this.obtenerNuevoCodigo(pedido.getDestino()));
+                this.save(pedido);
+            } else throw new G4DException(String.format("El destino ('%s') del pedido es inválido.", codDestino));
             System.out.println("[<] PEDIDO IMPORTADO!");
             return new GenericResponse(true, "Pedido importado correctamente!");
         } finally {
@@ -229,6 +245,5 @@ public class PedidoService {
         pedidos.clear();
         aeropuertoService.clearPools();
         clienteService.clearPools();
-        pedidoMapper.clearPools();
     }
 }

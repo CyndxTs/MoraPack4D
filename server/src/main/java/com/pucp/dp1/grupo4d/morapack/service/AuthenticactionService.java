@@ -160,6 +160,5 @@ public class AuthenticactionService {
     private void limpiarPools() {
         clienteService.clearPools();
         administradorService.clearPools();
-        usuarioMapper.clearPools();
     }
 }

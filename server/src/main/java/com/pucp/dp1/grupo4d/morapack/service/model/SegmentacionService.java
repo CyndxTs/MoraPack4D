@@ -20,7 +20,6 @@ import java.util.*;
 
 @Service
 public class SegmentacionService {
-
     private final SegmentacionRepository segmentacionRepository;
     private final SegmentacionMapper segmentacionMapper;
 
@@ -62,18 +61,10 @@ public class SegmentacionService {
     }
 
     public ListResponse listar(ListRequest request) {
-        try {
-            Pageable pageable = G4DUtility.Convertor.toAdmissible(request.getPagina(), request.getTamanio(), Sort.Order.asc("fechaHoraAplicacionUTC"));
-            List<DTO> dtos = new ArrayList<>();
-            List<SegmentacionEntity> entities = this.findAll(pageable);
-            entities.forEach(entity -> dtos.add(segmentacionMapper.toDTO(entity)));
-            return new ListResponse(true, String.format("Segmentaciones listadas correctamente! ('%d')", dtos.size()), dtos);
-        } finally {
-            clearPools();
-        }
-    }
-
-    public void clearPools() {
-        segmentacionMapper.clearPools();
+        Pageable pageable = G4DUtility.Convertor.toAdmissible(request.getPagina(), request.getTamanio(), Sort.Order.asc("fechaHoraAplicacionUTC"));
+        List<DTO> dtos = new ArrayList<>();
+        List<SegmentacionEntity> entities = this.findAll(pageable);
+        entities.forEach(entity -> dtos.add(segmentacionMapper.toDTO(entity)));
+        return new ListResponse(true, String.format("Segmentaciones listadas correctamente! ('%d')", dtos.size()), dtos);
     }
 }

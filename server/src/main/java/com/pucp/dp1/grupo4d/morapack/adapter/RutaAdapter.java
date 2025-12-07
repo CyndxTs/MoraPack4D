@@ -19,7 +19,6 @@ import java.util.*;
 
 @Component
 public class RutaAdapter {
-
     private final RutaService rutaService;
     private final AeropuertoAdapter aeropuertoAdapter;
     private final VueloAdapter vueloAdapter;

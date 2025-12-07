@@ -22,7 +22,6 @@ import java.util.Optional;
 
 @Service
 public class RegistroService {
-
     private final RegistroRepository registroRepository;
     private final RegistroMapper registroMapper;
 
@@ -64,18 +63,10 @@ public class RegistroService {
     }
 
     public ListResponse listar(ListRequest request) {
-        try {
-            Pageable pageable = G4DUtility.Convertor.toAdmissible(request.getPagina(), request.getTamanio(), Sort.Order.asc("fechaHoraIngresoUTC"), Sort.Order.asc("fechaHoraEgresoUTC"));
-            List<DTO> dtos = new ArrayList<>();
-            List<RegistroEntity> entities = this.findAll(pageable);
-            entities.forEach(entity -> dtos.add(registroMapper.toDTO(entity)));
-            return new ListResponse(true, String.format("Registros listados correctamente! ('%d')", dtos.size()), dtos);
-        } finally {
-            clearPools();
-        }
-    }
-
-    public void clearPools() {
-        registroMapper.clearPools();
+        Pageable pageable = G4DUtility.Convertor.toAdmissible(request.getPagina(), request.getTamanio(), Sort.Order.asc("fechaHoraIngresoUTC"), Sort.Order.asc("fechaHoraEgresoUTC"));
+        List<DTO> dtos = new ArrayList<>();
+        List<RegistroEntity> entities = this.findAll(pageable);
+        entities.forEach(entity -> dtos.add(registroMapper.toDTO(entity)));
+        return new ListResponse(true, String.format("Registros listados correctamente! ('%d')", dtos.size()), dtos);
     }
 }

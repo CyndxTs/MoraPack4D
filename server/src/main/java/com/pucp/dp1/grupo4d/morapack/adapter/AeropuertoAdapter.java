@@ -70,7 +70,6 @@ public class AeropuertoAdapter {
     public void clearPools() {
         poolAlgorithm.clear();
         poolEntity.clear();
-        aeropuertoService.clearPools();
         registroAdapter.clearPools();
     }
 }

@@ -20,7 +20,6 @@ import java.util.*;
 
 @Service
 public class EventoService {
-
     private final EventoRepository eventoRepository;
     private final EventoMapper eventoMapper;
     private final HashMap<String, EventoEntity> eventos = new HashMap<>();
@@ -76,6 +75,5 @@ public class EventoService {
 
     public void clearPools() {
         eventos.clear();
-        eventoMapper.clearPools();
     }
 }

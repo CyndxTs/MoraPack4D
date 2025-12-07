@@ -16,7 +16,6 @@ import java.util.Map;
 
 @Component
 public class UsuarioAdapter {
-
     private final ClienteService clienteService;
     private final Map<String, Cliente> poolAlgorithm = new HashMap<>();
     private final Map<String, UsuarioEntity> poolEntity = new HashMap<>();
@@ -51,6 +50,5 @@ public class UsuarioAdapter {
     public void clearPools() {
         poolAlgorithm.clear();
         poolEntity.clear();
-        clienteService.clearPools();
     }
 }

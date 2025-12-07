@@ -18,7 +18,6 @@ import com.pucp.dp1.grupo4d.morapack.model.entity.SegmentacionEntity;
 import com.pucp.dp1.grupo4d.morapack.util.G4DUtility;
 import org.springframework.stereotype.Component;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -26,16 +25,12 @@ import java.util.Map;
 public class SegmentacionMapper {
 
     private final LoteMapper loteMapper;
-    private final Map<String, SegmentacionDTO> poolDTO = new HashMap<>();
 
     public SegmentacionMapper(LoteMapper loteMapper) {
         this.loteMapper = loteMapper;
     }
 
     public SegmentacionDTO toDTO(Segmentacion algorithm) {
-        if(poolDTO.containsKey(algorithm.getCodigo())) {
-            return poolDTO.get(algorithm.getCodigo());
-        }
         SegmentacionDTO dto = new SegmentacionDTO();
         dto.setCodigo(algorithm.getCodigo());
         dto.setFechaHoraAplicacion(G4DUtility.Convertor.toDisplayString(algorithm.getFechaHoraAplicacion()));
@@ -50,14 +45,10 @@ public class SegmentacionMapper {
             lotesPorRutaDTO.add(lotePorRutaDTO);
         }
         dto.setLotesPorRuta(lotesPorRutaDTO);
-        poolDTO.put(algorithm.getCodigo(), dto);
         return dto;
     }
 
     public SegmentacionDTO toDTO(SegmentacionEntity entity) {
-        if(poolDTO.containsKey(entity.getCodigo())) {
-            return poolDTO.get(entity.getCodigo());
-        }
         SegmentacionDTO dto = new SegmentacionDTO();
         dto.setCodigo(entity.getCodigo());
         dto.setFechaHoraAplicacion(G4DUtility.Convertor.toDisplayString(entity.getFechaHoraAplicacionUTC()));
@@ -72,11 +63,6 @@ public class SegmentacionMapper {
             lotesPorRutaDTO.add(lotePorRutaDTO);
         }
         dto.setLotesPorRuta(lotesPorRutaDTO);
-        poolDTO.put(entity.getCodigo(), dto);
         return dto;
-    }
-
-    public void clearPools() {
-        poolDTO.clear();
     }
 }

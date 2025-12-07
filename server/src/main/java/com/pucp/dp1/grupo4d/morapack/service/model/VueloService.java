@@ -24,7 +24,6 @@ import java.util.Optional;
 
 @Service
 public class VueloService {
-
     private final VueloRepository vueloRepository;
     private final VueloMapper vueloMapper;
 
@@ -70,18 +69,10 @@ public class VueloService {
     }
 
     public ListResponse listar(ListRequest request) {
-        try {
-            Pageable pageable = G4DUtility.Convertor.toAdmissible(request.getPagina(), request.getTamanio(), Sort.Order.asc("fechaHoraSalidaUTC"), Sort.Order.asc("fechaHoraLlegadaUTC"));
-            List<DTO> dtos = new ArrayList<>();
-            List<VueloEntity> entities = this.findAll(pageable);
-            entities.forEach(entity -> dtos.add(vueloMapper.toDTO(entity)));
-            return new ListResponse(true, String.format("Vuelos listados correctamente! ('%d')", dtos.size()), dtos);
-        } finally {
-            clearPools();
-        }
-    }
-
-    public void clearPools() {
-        vueloMapper.clearPools();
+        Pageable pageable = G4DUtility.Convertor.toAdmissible(request.getPagina(), request.getTamanio(), Sort.Order.asc("fechaHoraSalidaUTC"), Sort.Order.asc("fechaHoraLlegadaUTC"));
+        List<DTO> dtos = new ArrayList<>();
+        List<VueloEntity> entities = this.findAll(pageable);
+        entities.forEach(entity -> dtos.add(vueloMapper.toDTO(entity)));
+        return new ListResponse(true, String.format("Vuelos listados correctamente! ('%d')", dtos.size()), dtos);
     }
 }

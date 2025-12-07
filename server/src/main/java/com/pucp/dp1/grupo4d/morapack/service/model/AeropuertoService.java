@@ -16,7 +16,6 @@ import com.pucp.dp1.grupo4d.morapack.model.dto.request.ImportRequest;
 import com.pucp.dp1.grupo4d.morapack.model.dto.request.ListRequest;
 import com.pucp.dp1.grupo4d.morapack.model.dto.response.GenericResponse;
 import com.pucp.dp1.grupo4d.morapack.model.dto.response.ListResponse;
-import com.pucp.dp1.grupo4d.morapack.model.entity.AdministradorEntity;
 import com.pucp.dp1.grupo4d.morapack.model.entity.AeropuertoEntity;
 import com.pucp.dp1.grupo4d.morapack.model.enumeration.EstadoEjecucion;
 import com.pucp.dp1.grupo4d.morapack.model.enumeration.EstadoFinalizacion;
@@ -131,7 +130,19 @@ public class AeropuertoService {
     public GenericResponse importar(ImportRequest<AeropuertoDTO> request) {
         try {
             AeropuertoDTO dto = request.getDto();
-            AeropuertoEntity aeropuerto = aeropuertoMapper.toEntity(dto);
+            AeropuertoEntity aeropuerto = new AeropuertoEntity();
+            aeropuerto.setCodigo(dto.getCodigo());
+            aeropuerto.setCiudad(dto.getCiudad());
+            aeropuerto.setPais(dto.getPais());
+            aeropuerto.setContinente(dto.getContinente());
+            aeropuerto.setAlias(dto.getAlias());
+            aeropuerto.setHusoHorario(dto.getHusoHorario());
+            aeropuerto.setCapacidad(dto.getCapacidad());
+            aeropuerto.setEsSede(dto.getEsSede());
+            aeropuerto.setLatitudDEC(dto.getLatitud());
+            aeropuerto.setLatitudDMS(G4DUtility.Calculator.getLatDMS(aeropuerto.getLatitudDEC()));
+            aeropuerto.setLongitudDEC(dto.getLongitud());
+            aeropuerto.setLongitudDMS(G4DUtility.Calculator.getLonDMS(aeropuerto.getLongitudDEC()));
             this.save(aeropuerto);
             G4DUtility.Logger.logln("[<] AEROPUERTO CARGADO!");
             return new GenericResponse(true, "Aeropuerto importado correctamente!");
@@ -210,6 +221,5 @@ public class AeropuertoService {
 
     public void clearPools() {
         aeropuertos.clear();
-        aeropuertoMapper.clearPools();
     }
 }

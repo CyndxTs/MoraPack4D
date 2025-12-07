@@ -71,7 +71,6 @@ public class RegistroAdapter {
     public void clearPools() {
         poolAlgorithm.clear();
         poolEntity.clear();
-        loteService.clearPools();
         loteAdapter.clearPools();
     }
 }

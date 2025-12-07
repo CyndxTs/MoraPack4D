@@ -1149,7 +1149,7 @@ public class G4DUtility {
                 boolean addSeparator = random.nextBoolean();
                 if(addSeparator && i != positions.length - 1) email.append((random.nextBoolean())? "_": ".");
             }
-            return email + "@G4DUtility.com";
+            return email + "@G4D.com";
         }
         // Obtener 'AgregarRandomInteger' a 'String'
         public static String addRandomInteger(String str, int index) {

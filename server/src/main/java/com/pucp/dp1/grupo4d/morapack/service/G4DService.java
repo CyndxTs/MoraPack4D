@@ -15,6 +15,7 @@ import com.pucp.dp1.grupo4d.morapack.model.algorithm.*;
 import com.pucp.dp1.grupo4d.morapack.model.dto.*;
 import com.pucp.dp1.grupo4d.morapack.model.dto.payload.StatusPayload;
 import com.pucp.dp1.grupo4d.morapack.model.dto.request.ExportationRequest;
+import com.pucp.dp1.grupo4d.morapack.model.dto.request.ImportRequest;
 import com.pucp.dp1.grupo4d.morapack.model.dto.request.ReplanificationRequest;
 import com.pucp.dp1.grupo4d.morapack.model.dto.request.SimulationRequest;
 import com.pucp.dp1.grupo4d.morapack.model.dto.response.GenericResponse;
@@ -61,6 +62,7 @@ public class G4DService {
     private final RutaMapper rutaMapper;
     private final SegmentacionAdapter segmentacionAdapter;
     private final ObjectProvider<G4DService> self;
+    private final ParametrosService parametrosService;
     private Future<?> simulationTask = null;
     private Future<?> operationTask = null;
     private Future<?> exportationTask = null;
@@ -72,7 +74,7 @@ public class G4DService {
                       PedidoMapper pedidoMapper, PedidoAdapter pedidoAdapter, AeropuertoService aeropuertoService, AeropuertoAdapter aeropuertoAdapter,
                       UsuarioAdapter usuarioAdapter, PlanService planService, PlanAdapter planAdapter, LoteAdapter loteAdapter,
                       AeropuertoMapper aeropuertoMapper, RutaMapper rutaMapper, VueloMapper vueloMapper, RegistroAdapter registroAdapter,
-                      ParametrosMapper parametrosMapper, RutaService rutaService, VueloService vueloService, RutaAdapter rutaAdapter, VueloAdapter vueloAdapter) {
+                      ParametrosMapper parametrosMapper, RutaService rutaService, VueloService vueloService, RutaAdapter rutaAdapter, VueloAdapter vueloAdapter, ParametrosService parametrosService) {
         this.clienteService = clienteService;
         this.pedidoService = pedidoService;
         this.segmentacionAdapter = segmentacionAdapter;
@@ -94,6 +96,7 @@ public class G4DService {
         this.vueloService = vueloService;
         this.rutaAdapter = rutaAdapter;
         this.vueloAdapter = vueloAdapter;
+        this.parametrosService = parametrosService;
     }
 
     public GenericResponse iniciarSimulacion(SimulationRequest request) {
@@ -193,7 +196,13 @@ public class G4DService {
     public CompletableFuture<Void> replanificar(ReplanificationRequest request) {
         try {
             TipoEscenario escenario = TipoEscenario.OPERACION;
+            boolean almacenarParametrizacion = (request.getAlmacenarParametrizacion() != null) ?  request.getAlmacenarParametrizacion() : false ;
             ParametrosDTO parametros = request.getParametros();
+            if(almacenarParametrizacion) {
+                ImportRequest<ParametrosDTO> importRequest = new ImportRequest<>();
+                importRequest.setDto(parametros);
+                parametrosService.importar(importRequest);
+            }
             parametrosMapper.toAlgorithm(parametros);
             long desfaseTemporal = 1440L*(Math.max(parametros.getMaxDiasEntregaIntracontinental(), parametros.getMaxDiasEntregaIntercontinental()));
             LocalDateTime fechaHoraActual = G4DUtility.Convertor.toAdmissible(request.getFechaHoraActual(), (LocalDateTime) null);
@@ -386,14 +395,10 @@ public class G4DService {
 
     private void limpiarPools() {
         vueloAdapter.clearPools();
-        vueloMapper.clearPools();
         rutaAdapter.clearPools();
-        rutaMapper.clearPools();
         loteAdapter.clearPools();
         pedidoAdapter.clearPools();
-        pedidoMapper.clearPools();
         aeropuertoAdapter.clearPools();
-        aeropuertoMapper.clearPools();
         usuarioAdapter.clearPools();
         planAdapter.clearPools();
         registroAdapter.clearPools();

@@ -21,7 +21,6 @@ import java.util.Map;
 
 @Component
 public class SegmentacionAdapter {
-
     private final LoteAdapter loteAdapter;
     private final RutaAdapter rutaAdapter;
     private final Map<String, Segmentacion> poolAlgorithm = new HashMap<>();
@@ -33,8 +32,8 @@ public class SegmentacionAdapter {
     }
 
     public Segmentacion toAlgorithm(SegmentacionEntity entity) {
-        if (poolAlgorithm.containsKey(entity.getId())) {
-            return poolAlgorithm.get(entity.getId());
+        if (poolAlgorithm.containsKey(entity.getCodigo())) {
+            return poolAlgorithm.get(entity.getCodigo());
         }
         Segmentacion algorithm = new Segmentacion();
         algorithm.setCodigo(entity.getCodigo());

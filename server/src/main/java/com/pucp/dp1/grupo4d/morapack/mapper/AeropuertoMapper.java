@@ -12,27 +12,19 @@ import com.pucp.dp1.grupo4d.morapack.model.dto.AeropuertoDTO;
 import com.pucp.dp1.grupo4d.morapack.model.dto.RegistroDTO;
 import com.pucp.dp1.grupo4d.morapack.model.entity.AeropuertoEntity;
 import com.pucp.dp1.grupo4d.morapack.model.entity.RegistroEntity;
-import com.pucp.dp1.grupo4d.morapack.util.G4DUtility;
 import org.springframework.stereotype.Component;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 @Component
 public class AeropuertoMapper {
-
     private final RegistroMapper registroMapper;
-    private final Map<String, AeropuertoDTO> poolDTO = new HashMap<>();
 
     public AeropuertoMapper(RegistroMapper registroMapper) {
         this.registroMapper = registroMapper;
     }
 
     public AeropuertoDTO toDTO(Aeropuerto algorithm) {
-        if(poolDTO.containsKey(algorithm.getCodigo())) {
-            return poolDTO.get(algorithm.getCodigo());
-        }
         AeropuertoDTO dto = new AeropuertoDTO();
         dto.setCodigo(algorithm.getCodigo());
         dto.setCiudad(algorithm.getCiudad());
@@ -51,14 +43,10 @@ public class AeropuertoMapper {
             registrosDTO.add(registroDTO);
         }
         dto.setRegistros(registrosDTO);
-        poolDTO.put(algorithm.getCodigo(), dto);
         return dto;
     }
 
     public AeropuertoDTO toDTO(AeropuertoEntity entity) {
-        if(poolDTO.containsKey(entity.getCodigo())) {
-            return poolDTO.get(entity.getCodigo());
-        }
         AeropuertoDTO dto = new AeropuertoDTO();
         dto.setCodigo(entity.getCodigo());
         dto.setCiudad(entity.getCiudad());
@@ -77,33 +65,6 @@ public class AeropuertoMapper {
             registrosDTO.add(registroDTO);
         }
         dto.setRegistros(registrosDTO);
-        poolDTO.put(entity.getCodigo(), dto);
         return dto;
-    }
-
-    public AeropuertoEntity toEntity(AeropuertoDTO dto) {
-        if(poolDTO.containsKey(dto.getCodigo())) {
-            return null;
-        }
-        AeropuertoEntity entity = new AeropuertoEntity();
-        entity.setCodigo(dto.getCodigo());
-        entity.setCiudad(dto.getCiudad());
-        entity.setPais(dto.getPais());
-        entity.setContinente(dto.getContinente());
-        entity.setAlias(dto.getAlias());
-        entity.setHusoHorario(dto.getHusoHorario());
-        entity.setCapacidad(dto.getCapacidad());
-        entity.setEsSede(dto.getEsSede());
-        entity.setLatitudDEC(dto.getLatitud());
-        entity.setLatitudDMS(G4DUtility.Calculator.getLatDMS(entity.getLatitudDEC()));
-        entity.setLongitudDEC(dto.getLongitud());
-        entity.setLongitudDMS(G4DUtility.Calculator.getLonDMS(entity.getLongitudDEC()));
-        poolDTO.put(dto.getCodigo(), dto);
-        return entity;
-    }
-
-    public void clearPools() {
-        poolDTO.clear();
-        registroMapper.clearPools();
     }
 }

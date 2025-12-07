@@ -20,4 +20,5 @@ public class RegistroDTO implements DTO {
     private String fechaHoraIngreso;
     private String fechaHoraEgreso;
     private String codLote;
+    private Integer tamLote;
 }

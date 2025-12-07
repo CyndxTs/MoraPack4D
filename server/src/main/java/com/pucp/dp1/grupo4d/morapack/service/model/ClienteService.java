@@ -34,7 +34,6 @@ import java.util.*;
 
 @Service
 public class ClienteService {
-
     private final ClienteRepository clienteRepository;
     private final UsuarioMapper usuarioMapper;
     private final List<ClienteEntity> clientes = new ArrayList<>();
@@ -201,6 +200,5 @@ public class ClienteService {
 
     public void clearPools() {
         clientes.clear();
-        usuarioMapper.clearPools();
     }
 }

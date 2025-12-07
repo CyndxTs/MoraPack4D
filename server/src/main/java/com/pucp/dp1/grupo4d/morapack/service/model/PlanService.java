@@ -7,7 +7,6 @@
 package com.pucp.dp1.grupo4d.morapack.service.model;
 
 import com.pucp.dp1.grupo4d.morapack.mapper.PlanMapper;
-import com.pucp.dp1.grupo4d.morapack.model.algorithm.Plan;
 import com.pucp.dp1.grupo4d.morapack.model.dto.DTO;
 import com.pucp.dp1.grupo4d.morapack.model.dto.PlanDTO;
 import com.pucp.dp1.grupo4d.morapack.model.dto.payload.ProgressPayload;
@@ -17,7 +16,6 @@ import com.pucp.dp1.grupo4d.morapack.model.dto.request.ListRequest;
 import com.pucp.dp1.grupo4d.morapack.model.dto.response.GenericResponse;
 import com.pucp.dp1.grupo4d.morapack.model.dto.response.ListResponse;
 import com.pucp.dp1.grupo4d.morapack.model.entity.AeropuertoEntity;
-import com.pucp.dp1.grupo4d.morapack.model.entity.ClienteEntity;
 import com.pucp.dp1.grupo4d.morapack.model.entity.PlanEntity;
 import com.pucp.dp1.grupo4d.morapack.model.enumeration.EstadoEjecucion;
 import com.pucp.dp1.grupo4d.morapack.model.enumeration.EstadoFinalizacion;
@@ -34,7 +32,6 @@ import java.util.*;
 
 @Service
 public class PlanService {
-
     private final PlanRepository planRepository;
     private final AeropuertoService aeropuertoService;
     private final PlanMapper planMapper;
@@ -94,8 +91,25 @@ public class PlanService {
         try {
             System.out.println("Importando plan..");
             PlanDTO dto = request.getDto();
-            PlanEntity plan = planMapper.toEntity(dto);
-            this.save(plan);
+            PlanEntity plan =  new PlanEntity();
+            plan.setCodigo(dto.getCodigo());
+            plan.setDistancia(dto.getDistancia());
+            plan.setDuracion(dto.getDuracion());
+            String codOrigen = dto.getCodOrigen();
+            AeropuertoEntity origen = aeropuertoService.obtenerPorCodigo(codOrigen);
+            if(origen != null) {
+                String codDestino = dto.getCodDestino();
+                AeropuertoEntity destino = aeropuertoService.obtenerPorCodigo(codDestino);
+                if(destino != null) {
+                    plan.setOrigen(origen);
+                    plan.setDestino(destino);
+                    plan.setHoraSalidaUTC(G4DUtility.Convertor.toTime(dto.getHoraSalida()));
+                    plan.setHoraSalidaLocal(G4DUtility.Convertor.toLocal(plan.getHoraSalidaUTC(), origen.getHusoHorario()));
+                    plan.setHoraLlegadaUTC(G4DUtility.Convertor.toTime(dto.getHoraLlegada()));
+                    plan.setHoraLlegadaLocal(G4DUtility.Convertor.toLocal(plan.getHoraLlegadaUTC(), destino.getHusoHorario()));
+                    this.save(plan);
+                } else throw new G4DException(String.format("El destino ('%s') del plan es inválido.", codDestino));
+            } else throw new G4DException(String.format("El origen ('%s') del plan es inválido.", codOrigen));
             System.out.println("[<] PLAN DE VUELO IMPORTADO!");
             return new GenericResponse(true, "Plan importado correctamente!");
         } finally {
@@ -170,6 +184,5 @@ public class PlanService {
     public void clearPools() {
         planes.clear();
         aeropuertoService.clearPools();
-        planMapper.clearPools();
     }
 }

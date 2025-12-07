@@ -54,6 +54,5 @@ public class LoteAdapter {
     public void clearPools() {
         poolAlgorithm.clear();
         poolEntity.clear();
-        loteService.clearPools();
     }
 }

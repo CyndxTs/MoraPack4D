@@ -13,7 +13,6 @@ import com.pucp.dp1.grupo4d.morapack.model.dto.ParametrosDTO;
 import com.pucp.dp1.grupo4d.morapack.model.entity.ParametrosEntity;
 import com.pucp.dp1.grupo4d.morapack.util.G4DUtility;
 import org.springframework.stereotype.Component;
-
 import java.util.List;
 
 @Component

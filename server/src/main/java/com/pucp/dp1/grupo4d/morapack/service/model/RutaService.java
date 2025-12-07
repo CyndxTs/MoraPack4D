@@ -23,7 +23,6 @@ import java.util.Optional;
 
 @Service
 public class RutaService {
-
     private final RutaRepository rutaRepository;
     private final RutaMapper rutaMapper;
 
@@ -69,18 +68,10 @@ public class RutaService {
     }
     
     public ListResponse listar(ListRequest request) {
-        try {
-            Pageable pageable = G4DUtility.Convertor.toAdmissible(request.getPagina(), request.getTamanio(), Sort.Order.asc("fechaHoraSalidaUTC"), Sort.Order.asc("fechaHoraLlegadaUTC"));
-            List<DTO> dtos = new ArrayList<>();
-            List<RutaEntity> entities = this.findAll(pageable);
-            entities.forEach(entity -> dtos.add(rutaMapper.toDTO(entity)));
-            return new ListResponse(true, String.format("Rutas listadas correctamente! ('%d')", dtos.size()), dtos);
-        } finally {
-            clearPools();
-        }
-    }
-
-    public void clearPools() {
-        rutaMapper.clearPools();
+        Pageable pageable = G4DUtility.Convertor.toAdmissible(request.getPagina(), request.getTamanio(), Sort.Order.asc("fechaHoraSalidaUTC"), Sort.Order.asc("fechaHoraLlegadaUTC"));
+        List<DTO> dtos = new ArrayList<>();
+        List<RutaEntity> entities = this.findAll(pageable);
+        entities.forEach(entity -> dtos.add(rutaMapper.toDTO(entity)));
+        return new ListResponse(true, String.format("Rutas listadas correctamente! ('%d')", dtos.size()), dtos);
     }
 }

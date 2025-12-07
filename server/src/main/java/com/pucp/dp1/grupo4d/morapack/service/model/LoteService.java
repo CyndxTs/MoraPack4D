@@ -22,7 +22,6 @@ import java.util.Optional;
 
 @Service
 public class LoteService {
-
     private final LoteRepository loteRepository;
     private final LoteMapper loteMapper;
 
@@ -64,18 +63,10 @@ public class LoteService {
     }
 
     public ListResponse listar(ListRequest request) {
-        try {
-            Pageable pageable = G4DUtility.Convertor.toAdmissible(request.getPagina(), request.getTamanio(), Sort.Order.desc("id"));
-            List<DTO> dtos = new ArrayList<>();
-            List<LoteEntity> entities = this.findAll(pageable);
-            entities.forEach(entity -> dtos.add(loteMapper.toDTO(entity)));
-            return new ListResponse(true, String.format("Lotes listados correctamente! ('%d')", dtos.size()), dtos);
-        } finally {
-            clearPools();
-        }
-    }
-
-    public void clearPools() {
-        loteMapper.clearPools();
+        Pageable pageable = G4DUtility.Convertor.toAdmissible(request.getPagina(), request.getTamanio(), Sort.Order.desc("id"));
+        List<DTO> dtos = new ArrayList<>();
+        List<LoteEntity> entities = this.findAll(pageable);
+        entities.forEach(entity -> dtos.add(loteMapper.toDTO(entity)));
+        return new ListResponse(true, String.format("Lotes listados correctamente! ('%d')", dtos.size()), dtos);
     }
 }

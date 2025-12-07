@@ -19,7 +19,6 @@ import java.util.Map;
 
 @Component
 public class VueloAdapter {
-
     private final VueloService vueloService;
     private final PlanAdapter planAdapter;
     private final Map<String, Vuelo> poolAlgorithm = new HashMap<>();
