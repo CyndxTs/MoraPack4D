@@ -625,7 +625,7 @@
 ================================ */
 
 .sidebar-section--orders {
-  margin-top: 16px;
+  margin-top: 0px;
   border-top: 1px solid #e5e7eb;
   padding-top: 10px;
 }
@@ -764,12 +764,15 @@
 
 .sidebar-tabs {
   display: flex;
+  flex-wrap: wrap;      /* permite saltar a la siguiente línea */
   gap: 6px;
   margin-bottom: 10px;
+  width: 100%;          /* asegura que el contenedor no crezca más que la sidebar */
 }
 
 .sidebar-tab {
-  flex: 1;
+  flex: 1 1 30%;         /* cada pestaña ocupa ~30% y puede bajar si no entra */
+  min-width: 70px;       /* ancho mínimo por si se reduce demasiado */
   border-radius: 999px;
   border: 1px solid #d1d5db;
   background: #f9fafb;
@@ -780,6 +783,7 @@
   align-items: center;
   justify-content: space-between;
   cursor: pointer;
+  box-sizing: border-box; /* 🔥 asegura que padding no rompa el ancho */
 }
 
 .sidebar-tab-badge {
@@ -801,4 +805,136 @@
 .sidebar-tab.active .sidebar-tab-badge {
   background: #fff;
   color: #1a73e8;
+}
+
+/* ===============================
+   LISTA DE PEDIDOS
+================================ */
+
+.pedido-list {
+  margin: 4px 0 12px 0;
+  padding-left: 18px; /* sangría correcta */
+}
+
+.pedido-list li {
+  font-size: 12px;
+  color: #fff;
+  line-height: 1.2rem;
+}
+
+.flight-no-orders {
+  margin-left: 18px;
+  font-size: 12px;
+  color: #6b7280;
+}
+
+/* ===============================
+   RUTAS (MISMA ESTÉTICA QUE VUELOS/PEDIDOS)
+================================ */
+
+.sidebar-section--routes {
+  padding: 0px 18px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.routes-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.routes-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #344767;
+}
+
+.routes-count {
+  min-width: 26px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 999px;
+  padding: 2px 8px;
+  background: #7c3aed; /* color distinto para diferenciar */
+  color: #ffffff;
+}
+
+.routes-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: calc(100vh - 180px); /* igual que vuelos y pedidos */
+  overflow-y: auto;
+  padding-right: 6px;
+}
+
+.no-routes-text {
+  font-size: 12px;
+  color: #6c757d;
+}
+
+/* === Tarjeta de ruta (misma estética que order-card/flight-card) === */
+.route-card {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 12px;
+  padding: 10px 12px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  box-shadow: 0 3px 8px rgba(15, 23, 42, 0.08);
+  font-size: 11px;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.route-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.18);
+  border-color: #7c3aed; /* morado según badge */
+}
+
+.route-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.route-code {
+  font-weight: 600;
+  font-size: 11px;
+  background: #312e81; /* morado oscuro */
+  color: white;
+  border-radius: 999px;
+  padding: 2px 8px;
+}
+
+.route-type {
+  font-size: 11px;
+  font-weight: 500;
+  color: #111827;
+}
+
+.route-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.route-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 2px;
+}
+
+.route-label {
+  color: #6b7280;
+}
+
+.route-value {
+  color: #111827;
+  font-weight: 500;
+  text-align: right;
 }

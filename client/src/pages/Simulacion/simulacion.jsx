@@ -41,7 +41,7 @@ export default function Simulacion() {
   const [controlsOpen, setControlsOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(true);
   // qué pestaña se ve en el sidebar: "flights" o "orders"
-const [sidebarTab, setSidebarTab] = useState("flights");
+  const [sidebarTab, setSidebarTab] = useState("flights");
   const [codigoVuelo, setCodigoVuelo] = useState("");
   const [selectedItem, setSelectedItem] = useState(null);
   const [selectedAirport, setSelectedAirport] = useState(null);
@@ -59,10 +59,8 @@ const [sidebarTab, setSidebarTab] = useState("flights");
     if (v === "" || v === null || v === undefined) return null;
     return Number(v);
   };
-  const [maxDiasEntregaIntercontinental, setMaxDiasEntregaIntercontinental] =
-    useState();
-  const [maxDiasEntregaIntracontinental, setMaxDiasEntregaIntracontinental] =
-    useState();
+  const [maxDiasEntregaIntercontinental, setMaxDiasEntregaIntercontinental] = useState();
+  const [maxDiasEntregaIntracontinental, setMaxDiasEntregaIntracontinental] = useState();
   const [maxHorasRecojo, setMaxHorasRecojo] = useState();
   const [minHorasEstancia, setMinHorasEstancia] = useState();
   const [maxHorasEstancia, setMaxHorasEstancia] = useState();
@@ -73,6 +71,13 @@ const [sidebarTab, setSidebarTab] = useState("flights");
   const [estadoEjecucionSim, setEstadoEjecucionSim] = useState("POR_INICIAR");
   const [showLoadingSim, setShowLoadingSim] = useState(false);
 
+  //Vuelos
+  const [flights, setFlights] = useState([]);
+  //Rutas
+  const [routes, setRoutes] = useState([]);
+  const [highlightedRoute, setHighlightedRoute] = useState(null);
+  //Pedidos
+  const [orders, setOrders] = useState([]);
   //Aeropuertos
   const [airports, setAirports] = useState(null);
   // Inputs de inicio de simulación (no se auto-actualizan)
@@ -274,9 +279,8 @@ const [sidebarTab, setSidebarTab] = useState("flights");
   };
 
   // Vuelos
-  const [flights, setFlights] = useState([]);
+  
   // 🚚 Pedidos (para el sidebar)
-  const [orders, setOrders] = useState([]);
   const activeFlights = flights.filter(
     (f) =>
       f &&
@@ -462,11 +466,15 @@ const [sidebarTab, setSidebarTab] = useState("flights");
       };
     });
     console.log("airportMap construido:", airportMap);
+
   // Mapa rápido de rutas por código
   const rutasPorCodigo = {};
   (solution.rutasEnOperacion || []).forEach((r) => {
     rutasPorCodigo[r.codigo] = r;
   });
+
+  // Guardar rutas completas para el sidebar
+  setRoutes(solution.rutasEnOperacion || []);
 
   // Construir pedidos con segmentaciones, lotes y vuelos
   const pedidosAtendidos = (solution.pedidosAtendidos || []).map((p) => {
@@ -810,6 +818,26 @@ const [sidebarTab, setSidebarTab] = useState("flights");
     }
   }, [fechaI, horaI]);
 
+  const getOrdersForFlight = (flightCode) => {
+    const pedidosEnVuelo = [];
+
+    orders.forEach((pedido) => {
+      pedido.segmentaciones.forEach((seg) => {
+        seg.lotes.forEach((lote) => {
+          if (lote.vuelos && lote.vuelos.includes(flightCode)) {
+            pedidosEnVuelo.push({
+              pedidoCodigo: pedido.codigo,
+              loteCodigo: lote.loteCodigo,
+              cantidad: lote.loteTamanio
+            });
+          }
+        });
+      });
+    });
+
+    return pedidosEnVuelo;
+  };
+
   return (
     <div className="page">
       {/* Overlay de carga de simulación */}
@@ -861,6 +889,17 @@ const [sidebarTab, setSidebarTab] = useState("flights");
                 {orders.length}
               </span>
             </button>
+
+            <button
+              className={`sidebar-tab ${sidebarTab === "routes" ? "active" : ""}`}
+              onClick={() => setSidebarTab("routes")}
+            >
+              <span>Rutas</span>
+              <span className="sidebar-tab-badge">
+                {routes.length}
+              </span>
+            </button>
+
           </div>
 
           {/* ===== CONTENIDO PESTAÑA VUELOS ===== */}
@@ -966,9 +1005,9 @@ const [sidebarTab, setSidebarTab] = useState("flights");
                         setSelectedAirport(null);
                         setSelectedItem(
                           `Pedido ${pedido.codigo}
-Cliente: ${pedido.codCliente}
-Destino: ${pedido.codDestino}
-Cantidad solicitada: ${pedido.cantidadSolicitada} unidades`
+                          Cliente: ${pedido.codCliente}
+                          Destino: ${pedido.codDestino}
+                          Cantidad solicitada: ${pedido.cantidadSolicitada} unidades`
                         );
                       }}
                     >
@@ -1045,6 +1084,82 @@ Cantidad solicitada: ${pedido.cantidadSolicitada} unidades`
         </div>
       )}
 
+      {/* ===== CONTENIDO PESTAÑA RUTAS ===== */}
+      {sidebarTab === "routes" && (
+        <div className="sidebar-section sidebar-section--routes">
+          
+          <div className="routes-header">
+            <span className="routes-title">Rutas en operación</span>
+            <span className="routes-count">{routes.length}</span>
+          </div>
+
+          <div className="routes-list">
+            {routes.length === 0 ? (
+              <p className="no-routes-text">No hay rutas en operación.</p>
+            ) : (
+              routes.map((ruta) => (
+                <div
+                  key={ruta.codigo}
+                  className="route-card"
+                  onClick={() => {
+                    setSelectedAirport(null);
+                    setSelectedItem(
+                      `Ruta ${ruta.codigo}
+      Origen: ${ruta.codOrigen}
+      Destino: ${ruta.codDestino}
+      Duración: ${ruta.duracion} h
+      Distancia: ${ruta.distancia.toFixed(2)} km
+      Vuelos: ${ruta.codVuelos?.join(", ") || "Sin vuelos"}`
+                    );
+                  setHighlightedRoute(ruta);
+                  }}
+                >
+                  <div className="route-card-header">
+                    <span className="route-code">{ruta.codigo}</span>
+                  </div>
+
+                  <div className="route-card-body">
+                    <div className="route-row">
+                      <span className="route-label">Tipo</span>
+                      <span className="route-value">{ruta.tipo}</span>
+                    </div>
+
+                    <div className="route-row">
+                      <span className="route-label">Origen</span>
+                      <span className="route-value">{ruta.codOrigen}</span>
+                    </div>
+
+                    <div className="route-row">
+                      <span className="route-label">Destino</span>
+                      <span className="route-value">{ruta.codDestino}</span>
+                    </div>
+
+                    <div className="route-row">
+                      <span className="route-label">Distancia</span>
+                      <span className="route-value">
+                        {ruta.distancia.toFixed(0)} km
+                      </span>
+                    </div>
+
+                    <div className="route-row">
+                      <span className="route-label">Vuelos</span>
+                      <span className="route-value">
+                        {ruta.codVuelos?.length > 0
+                          ? ruta.codVuelos.join(", ")
+                          : "Sin vuelos"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+        </div>
+      )}
+
+
+
       </aside>
 
       <section className="contenido">
@@ -1091,7 +1206,7 @@ Cantidad solicitada: ${pedido.cantidadSolicitada} unidades`
 
                 {/* Fila 3: Tiempo */}
                 <div className="control-row">
-                  <span className="info-label">Tiempo:</span>
+                  <span className="info-label">Tiempo de la simulación:</span>
                   <span className="value">{formatTime(seconds)}</span>
                 </div>
               </div>
@@ -1192,21 +1307,37 @@ Cantidad solicitada: ${pedido.cantidadSolicitada} unidades`
                             }
 
                             setSelectedAirport(null); // 👈 limpiamos selección de aeropuerto
+                            const pedidosVuelo = getOrdersForFlight(flight.code);
+
+                            const pedidosTexto =
+                              pedidosVuelo.length > 0
+                                ? pedidosVuelo
+                                    .map(
+                                      (p) =>
+                                        ` - Pedido ${p.pedidoCodigo} (${p.cantidad} u.)`
+                                    )
+                                    .join("\n")
+                                : " - No transporta pedidos";
+
                             setSelectedItem(
                               `Vuelo ${flight.code}:
-${flight.origin.city} (${flight.origin.code}) → ${flight.destination.city} (${
-                                flight.destination.code
-                              })
-Salida: ${flight.startTime}
-Llegada: ${flight.endTime}
-Capacidad: ${flight.capacity} / ${flight.planeCapacity} pax
-Rutas que pasa:
-${
-  flight.rutas && flight.rutas.length > 0
-    ? flight.rutas.map((r) => ` - ${r}`).join("\n")
-    : " - No asignadas"
-}`
+                            ${flight.origin.city} (${flight.origin.code}) → ${flight.destination.city} (${flight.destination.code})
+                            Salida: ${flight.startTime}
+                            Llegada: ${flight.endTime}
+                            Capacidad: ${flight.capacity} / ${flight.planeCapacity} pax
+                            
+                            Rutas que pasa:
+                            ${
+                              flight.rutas && flight.rutas.length > 0
+                                ? flight.rutas.map((r) => ` - ${r}`).join("\n")
+                                : " - No asignadas"
+                            }
+
+                            Pedidos transportados:
+                            ${pedidosTexto}
+                            `
                             );
+
                           },
                         }}
                       >
@@ -1229,10 +1360,28 @@ ${
                 );
               })}
 
+              {/* Ruta resaltada (cuando el usuario selecciona una ruta en el sidebar) */}
+              {highlightedRoute && airports && (
+                <Polyline
+                  positions={(() => {
+                    const ap1 = airports[highlightedRoute.codOrigen];
+                    const ap2 = airports[highlightedRoute.codDestino];
+                    if (!ap1 || !ap2) return [];
+
+                    return generateGeodesicPath(ap1.lat, ap1.lng, ap2.lat, ap2.lng, 120);
+                  })()}
+                  color="#ff0033"        // rojo brillante
+                  weight={2}             // más grueso
+                  opacity={0.9}
+                  dashArray={null}       // línea sólida
+                />
+              )}
+
               <ClickHandler
                 onMapClick={() => {
                   setSelectedItem(null);
                   setSelectedAirport(null);
+                  setHighlightedRoute(null);
                 }}
               />
             </MapContainer>
@@ -1278,7 +1427,6 @@ ${
           </div>
 
           {/* PANEL INFORMATIVO DEBAJO DEL MAPA */}
-          {/* PANEL INFORMATIVO DEBAJO DEL MAPA */}
           {infoPanelExpanded && ( // 👈 solo se pinta si hay aeropuerto o vuelo seleccionado
             <div className="info-panel expanded">
               <div className="info-content">
@@ -1300,7 +1448,12 @@ ${
 
                       <div className="right">
                         <div className="info-panel-capacity">
-                          Capacidad: {selectedAirport.capacidad} unidades
+                          Capacidad total: {selectedAirport.capacidad} unidades
+                        </div>
+                        <div className="info-panel-capacity">
+                          Capacidad actual: {
+                            vuelosLlegando.reduce((sum, f) => sum + (f.capacity || 0), 0)
+                          } / {selectedAirport.capacidad} unidades
                         </div>
                       </div>
                     </div>
@@ -1364,6 +1517,29 @@ ${
                                       unidades · {porcentaje}% ocupación
                                     </span>
                                   </div>
+
+                                  {/* Pedidos transportados */}
+                                  <div className="flight-card-row">
+                                    <span className="flight-label">Pedidos</span>
+                                  </div>
+
+                                  {(() => {
+                                    const pedidos = getOrdersForFlight(flight.code);
+                                    if (pedidos.length === 0) {
+                                      return <div className="flight-no-orders">—</div>;
+                                    }
+
+                                    return (
+                                      <ul className="pedido-list">
+                                        {pedidos.map((p, idx) => (
+                                          <li key={idx}>
+                                            Pedido {p.pedidoCodigo} ({p.cantidad} u.)
+                                          </li>
+                                        ))}
+                                      </ul>
+                                    );
+                                  })()}
+
                                 </div>
                               </li>
                             );
@@ -1428,6 +1604,29 @@ ${
                                       unidades · {porcentaje}% ocupación
                                     </span>
                                   </div>
+
+                                  {/* Pedidos transportados */}
+                                  <div className="flight-card-row">
+                                    <span className="flight-label">Pedidos</span>
+                                  </div>
+
+                                  {(() => {
+                                    const pedidos = getOrdersForFlight(flight.code);
+                                    if (pedidos.length === 0) {
+                                      return <div className="flight-no-orders">—</div>;
+                                    }
+
+                                    return (
+                                      <ul className="pedido-list">
+                                        {pedidos.map((p, idx) => (
+                                          <li key={idx}>
+                                            Pedido {p.pedidoCodigo} ({p.cantidad} u.)
+                                          </li>
+                                        ))}
+                                      </ul>
+                                    );
+                                  })()}
+
                                 </div>
                               </li>
                             );
