@@ -87,6 +87,30 @@ export function DateTimeInline({ dateValue, timeValue, onDateChange, onTimeChang
   );
 }
 
+// INPUT DE FECHA + HORA EN COLUMNA
+export function DateTimeColumn({ dateValue, timeValue, onDateChange, onTimeChange, disabled = false }) {
+  return (
+    <div className="datetime-column">
+      <input
+        type="date"
+        className={`custom-input ${disabled ? "disabled" : ""}`}
+        value={dateValue}
+        onChange={onDateChange}
+        disabled={disabled}
+      />
+
+      <input
+        type="time"
+        className={`custom-input ${disabled ? "disabled" : ""}`}
+        value={timeValue}
+        onChange={onTimeChange}
+        disabled={disabled}
+      />
+    </div>
+  );
+}
+
+
 
 export function RangeSelector({ min, max, step, value, onChange }) {
   const sliderRef = useRef(null);
@@ -803,36 +827,78 @@ export function useLoaderProgress() {
 
 export function LoadingOverlay() {
   const [seconds, setSeconds] = useState(0);
-  const [progress, setProgress] = useState(null);
+  const payload = useLoaderProgress();
+
+  // Mapa de todos los procesos
+  const [procesos, setProcesos] = useState({});
 
   useEffect(() => {
     const timer = setInterval(() => {
       setSeconds((prev) => prev + 1);
     }, 1000);
-
     return () => clearInterval(timer);
   }, []);
 
-  // 🔥 Hook que escucha el WebSocket
-  const payload = useLoaderProgress();
-
   useEffect(() => {
-    if (payload) {
-      setProgress(payload);
-    }
+    if (!payload) return;
+
+    const { proceso, completado, total } = payload;
+
+    setProcesos(prev => {
+      const copia = { ...prev };
+
+      // si es la primera vez que aparece este proceso, lo creamos
+      if (!copia[proceso]) {
+        copia[proceso] = { completado: 0, total };
+      }
+
+      // siempre actualizar completado
+      copia[proceso].completado = completado;
+
+      // si el backend manda un total diferente, actualízalo
+      if (total !== copia[proceso].total) {
+        copia[proceso].total = total;
+      }
+
+      return copia;
+    });
+
   }, [payload]);
 
-  const text = progress
-    ? `${progress.proceso} (${progress.completado} / ${progress.total})`
+  // Calcular progreso global
+  const totalGlobal = Object.values(procesos)
+    .reduce((acc, p) => acc + p.total, 0);
+
+  const completadoGlobal = Object.values(procesos)
+    .reduce((acc, p) => acc + p.completado, 0);
+
+  const porcentaje = totalGlobal > 0
+    ? Math.floor((completadoGlobal / totalGlobal) * 100)
+    : 0;
+
+  const texto = payload
+    ? `${payload.proceso} (${payload.completado}/${payload.total})`
     : `Cargando... (${seconds}s)`;
 
   return (
     <div className="loading-overlay">
       <div className="spinner"></div>
-      <p>{text}</p>
+
+      <p>{texto}</p>
+
+      <div className="progress-bar">
+        <div
+          className="progress-fill"
+          style={{ width: `${porcentaje}%` }}
+        />
+      </div>
+
+      <p className="percent">{porcentaje}%</p>
     </div>
   );
 }
+
+
 
 
 //NOTIFICACIONES

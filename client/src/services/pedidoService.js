@@ -60,3 +60,21 @@ export const importarPedidos = async (file, importFileRequest) => {
     return { success: false, message: "Error en la conexión con el servidor" };
   }
 };
+
+export const filtrarPedidos = async (pagina, tamanio, modelo) => {
+  try {
+    const response = await axios.post(
+      `${API_URL}/filtrar`,
+      {
+        pagina,
+        tamanio,
+        modelo
+      }
+    );
+
+    return response.data; // ListResponse con { success, mensaje, dtos }
+  } catch (error) {
+    console.error("Error al filtrar pedidos:", error);
+    throw error;
+  }
+};

@@ -9,6 +9,7 @@ import { useAppData } from "../../dataProvider";
 import { listarPedidos, importarPedido, importarPedidos } from "../../services/pedidoService";
 import { listarParametros, importarParametros  } from "../../services/parametrosService";
 import { MapContainer, TileLayer, Marker, Popup, Polyline, useMapEvent  } from 'react-leaflet';
+import { notifyNewOrder, onEvent } from "../../services/operationManager";
 import 'leaflet/dist/leaflet.css';
 import L from "leaflet";
 
@@ -192,8 +193,6 @@ export default function Planificacion() {
   };
 
   const resetDatos = () => {
-    setFecha("");
-    setHora("");
     setCantidad("");
     setSelectedCliente(null);
     setSelectedDestino(null);
@@ -289,24 +288,60 @@ export default function Planificacion() {
         console.log("DTO generado:", dto);
 
         await importarPedido(dto);
-
+        notifyNewOrder();
         showNotification("success", "Pedido manual registrado correctamente");
         resetDatos();
       }
 
       // --- Recargar tabla ---
-      const data = await listarPedidos();
-      setPedidos(data.dtos || []);
-      setPedidosOriginales(data.dtos || []);
-
       setIsModalPedidoOpen(false);
       setArchivo(null);
-    } catch {
-      showNotification("danger", "Error al agregar pedido");
+      
+    } catch (e) {
+      const mensaje = e?.response?.data?.mensaje || e?.message || "Error desconocido";
+      showNotification("danger", "Error al agregar pedido: " + mensaje);
     } finally {
       setProcessing(false);
     }
   };
+
+  useEffect(() => {
+    const stop = onEvent((msg) => {
+      if (!msg) return;
+
+      if (msg.type === "info") {
+        showNotification("info", msg.message);
+      }
+      if (msg.type === "error") {
+        showNotification("danger", msg.message);
+      }
+      if (msg.type === "replanificacion-iniciada") {
+        showNotification("info", "Replanificación iniciada.");
+      }
+      if (msg.type === "replanificacion-terminada") {
+        showNotification("success", "Replanificación finalizada.");
+      }
+
+      // Mensajes del backend
+      if (msg.type === "operator-status") {
+        const { estado, finalizacion } = msg.payload;
+        
+        if (estado === "INICIADO") {
+          showNotification("info", "El backend está replanificando...");
+        }
+
+        if (estado === "DETENIDO" && finalizacion === "EXITOSO") {
+          showNotification("success", "La replanificación terminó con éxito.");
+        }
+
+        if (estado === "DETENIDO" && finalizacion === "ERRONEO") {
+          showNotification("danger", "Error en la replanificación.");
+        }
+      }
+    });
+
+    return () => stop();
+  }, []);
 
   const handleCantidadChange = (e) => {
     const value = e.target.value;

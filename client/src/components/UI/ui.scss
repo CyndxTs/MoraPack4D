@@ -72,6 +72,13 @@
   }
 }
 
+.datetime-column {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;     /* separa los inputs */
+  width: 100%;
+}
+
 /* === Input Rango === */
 .range-input {
     height: 36px;
@@ -794,6 +801,28 @@
   to {
     transform: rotate(360deg);
   }
+}
+
+.progress-bar {
+  width: 300px;
+  height: 12px;
+  background: #e5e7eb; /* gris claro */
+  border-radius: 6px;
+  margin-top: 10px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: #3b82f6; /* azul recomendado */
+  width: 0%;
+  transition: width 0.4s ease;
+}
+
+.percent {
+  margin-top: 5px;
+  font-size: 14px;
+  color: #111;
 }
 
 

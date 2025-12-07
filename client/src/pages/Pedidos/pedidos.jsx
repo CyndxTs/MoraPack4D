@@ -3,14 +3,14 @@ import "./pedidos.scss";
 
 import { 
   ButtonAdd, Input, DateTimeInline, Dropdown, Table, SidebarActions, 
-  Notification, LoadingOverlay, Pagination, RemoveFileButton, Dropdown3, Radio 
+  Notification, LoadingOverlay, Pagination, RemoveFileButton, Dropdown3, Radio , DateTimeColumn
 } from "../../components/UI/ui";
 
 import plus from '../../assets/icons/plus.svg';
 import hideIcon from '../../assets/icons/hide-sidebar.png';
 
 import { useAppData } from "../../dataProvider";
-import { listarPedidos, importarPedido, importarPedidos } from "../../services/pedidoService";
+import { listarPedidos, importarPedido, importarPedidos, filtrarPedidos } from "../../services/pedidoService";
 import { notifyNewOrder, onEvent } from "../../services/operationManager";
 
 export default function Pedidos() {
@@ -21,7 +21,9 @@ export default function Pedidos() {
 
   // --- Filtros ---
   const [codigoFiltro, setCodigoFiltro] = useState("");
-  const [ordenFecha, setOrdenFecha] = useState("");
+  const [filtroFecha, setFiltroFecha] = useState("");
+  const [filtroHora, setFiltroHora] = useState("");
+  const [tipoEscenarioFiltro, setTipoEscenarioFiltro] = useState("");
 
   // --- Modal ---
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -279,15 +281,76 @@ export default function Pedidos() {
   // =============================
   // FILTROS
   // =============================
-  const handleFilter = () => {
-
+  const hayFiltrosActivos = () => {
+    return (
+      codigoFiltro.trim() !== "" ||
+      filtroFecha.trim() !== "" ||
+      filtroHora.trim() !== "" ||
+      tipoEscenarioFiltro !== ""
+    );
   };
 
-  const handleCleanFilters = () => {
+  const handleFilter = async () => {
+    try {
+      setLoading(true);
 
+      const backendPage = 0; // siempre arrancar desde página 0
 
-    showNotification("info", "Filtros limpiados");
+      let fechaHoraGeneracion = null;
+
+      if (filtroFecha) {
+        fechaHoraGeneracion = filtroFecha; // yyyy-MM-dd
+        if (filtroHora) {
+          fechaHoraGeneracion += " " + filtroHora + ":00"; // añade HH:mm:00
+        } else {
+          fechaHoraGeneracion += " 00:00:00"; // si no hay hora
+        }
+      }
+
+      const modelo = {
+        codigo: codigoFiltro || null,
+        fechaHoraGeneracion: fechaHoraGeneracion,  
+        fechaHoraExpiracion: null,   // no usamos aquí
+        codCliente: null,
+        fueAtendido: null,
+        tipoEscenario: tipoEscenarioFiltro || null,
+        codDestino: null,
+      };
+
+      const data = await filtrarPedidos(
+        backendPage,
+        itemsPerPage,
+        modelo
+      );
+
+      let lista = data.dtos || [];
+
+      setPedidos(lista);
+      setCurrentPage(1);
+      setHasMorePages(lista.length === itemsPerPage);
+
+      showNotification("success", "Filtros aplicados");
+
+    } catch (err) {
+      console.error(err);
+      showNotification("danger", "Error al filtrar pedidos");
+    } finally {
+      setLoading(false);
+    }
   };
+
+
+  const handleCleanFilters = async () => {
+    setCodigoFiltro("");
+    setFiltroFecha("");
+    setFiltroHora("");
+    setTipoEscenarioFiltro(""); 
+
+    await fetchPedidos(1);
+
+    showNotification("info", "Presionar 2 veces para limpiar filtros");
+  };
+
 
   // =============================
   // PAGINACIÓN
@@ -304,23 +367,50 @@ export default function Pedidos() {
     try {
       setLoading(true);
 
-      const backendPage = paginaVisual - 1; // visual 1 → backend 0
+      const backendPage = paginaVisual - 1;
 
-      const data = await listarPedidos(backendPage, itemsPerPage);
+      let data;
+
+      let fechaHoraGeneracion = null;
+
+      if (filtroFecha) {
+        fechaHoraGeneracion = filtroFecha; // yyyy-MM-dd
+        if (filtroHora) {
+          fechaHoraGeneracion += " " + filtroHora + ":00"; // añade HH:mm:00
+        } else {
+          fechaHoraGeneracion += " 00:00:00"; // si no hay hora
+        }
+      }
+
+      if (hayFiltrosActivos()) {
+        const modelo = {
+          codigo: codigoFiltro || null,
+          fechaHoraGeneracion: fechaHoraGeneracion, 
+          fechaHoraExpiracion: null,
+          codCliente: null,
+          fueAtendido: null,
+          tipoEscenario: tipoEscenarioFiltro || null,
+          codDestino: null,
+        };
+
+        data = await filtrarPedidos(backendPage, itemsPerPage, modelo);
+      } else {
+        data = await listarPedidos(backendPage, itemsPerPage);
+      }
 
       const lista = data.dtos || [];
 
       setPedidos(lista);
       setCurrentPage(paginaVisual);
-
-      // Si devuelve menos de 10, ya no hay más páginas
       setHasMorePages(lista.length === itemsPerPage);
+
     } catch (err) {
       console.error(err);
     } finally {
       setLoading(false);
     }
   };
+
 
   // =============================
   // RENDER
@@ -359,7 +449,7 @@ export default function Pedidos() {
             <span className="sidebar-subtitle">Filtros</span>
 
             <div className="filter-group">
-              <span className="sidebar-subtitle-strong">Código</span>
+              <span className="sidebar-subtitle-strong">Código del pedido</span>
               <Input
                 placeholder="Escribir..."
                 value={codigoFiltro}
@@ -368,17 +458,37 @@ export default function Pedidos() {
             </div>
 
             <div className="filter-group">
-              <span className="sidebar-subtitle-strong">Orden fecha generación</span>
-              <Dropdown
-                placeholder="Seleccionar..."
-                value={ordenFecha}
-                options={[
-                  { label: "Ascendente", value: "ascendente" },
-                  { label: "Descendente", value: "descendente" },
-                ]}
-                onSelect={(v) => setOrdenFecha(v)}
+              <span className="sidebar-subtitle-strong">Tipo de escenario</span>
+
+              <Radio
+                name="tipoEscenarioFiltro"
+                value="SIMULACION"
+                checked={tipoEscenarioFiltro === "SIMULACION"}
+                onChange={() => setTipoEscenarioFiltro("SIMULACION")}
+                label="Simulación"
+              />
+
+              <Radio
+                name="tipoEscenarioFiltro"
+                value="OPERACION"
+                checked={tipoEscenarioFiltro === "OPERACION"}
+                onChange={() => setTipoEscenarioFiltro("OPERACION")}
+                label="Operación"
               />
             </div>
+
+
+            <div className="filter-group">
+              <span className="sidebar-subtitle-strong">Fecha generación (mayor o igual a...)</span>
+
+              <DateTimeColumn
+                dateValue={filtroFecha}
+                timeValue={filtroHora}
+                onDateChange={(e) => setFiltroFecha(e.target.value)}
+                onTimeChange={(e) => setFiltroHora(e.target.value)}
+              />
+            </div>
+
 
             <SidebarActions
               onFilter={handleFilter}

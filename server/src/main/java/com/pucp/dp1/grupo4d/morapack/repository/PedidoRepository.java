@@ -45,6 +45,7 @@ public interface PedidoRepository extends JpaRepository<PedidoEntity, Integer> {
             INNER JOIN cliente c ON p.id_cliente = c.id
             WHERE (:tipoEscenario IS NULL OR p.tipo_escenario = :tipoEscenario)
               AND (:codCliente IS NULL OR c.codigo = :codCliente)
+              AND (:codigoPedido IS NULL OR p.codigo = :codigoPedido)
               AND (:fueAtendido IS NULL OR p.fue_atendido = :fueAtendido)
               AND (:fechaHoraGeneracion IS NULL OR p.fh_generacion_utc >= :fechaHoraGeneracion)
               AND (:fechaHoraExpiracion IS NULL OR (p.fh_expiracion_utc IS NOT NULL AND p.fh_expiracion_utc >= :fechaHoraExpiracion))
@@ -55,6 +56,7 @@ public interface PedidoRepository extends JpaRepository<PedidoEntity, Integer> {
             INNER JOIN cliente c ON p.id_cliente = c.id
             WHERE (:tipoEscenario IS NULL OR p.tipo_escenario = :tipoEscenario)
               AND (:codCliente IS NULL OR c.codigo = :codCliente)
+              AND (:codigoPedido IS NULL OR p.codigo = :codigoPedido)
               AND (:fueAtendido IS NULL OR p.fue_atendido = :fueAtendido)
               AND (:fechaHoraGeneracion IS NULL OR p.fh_generacion_utc >= :fechaHoraGeneracion)
               AND (:fechaHoraExpiracion IS NULL OR (p.fh_expiracion_utc IS NOT NULL AND p.fh_expiracion_utc >= :fechaHoraExpiracion))
@@ -64,6 +66,7 @@ public interface PedidoRepository extends JpaRepository<PedidoEntity, Integer> {
     Page<PedidoEntity> filterBy(
             @Param("tipoEscenario") String tipoEscenario,
             @Param("codCliente") String codCliente,
+            @Param("codigoPedido") String codigoPedido,
             @Param("fueAtendido") Boolean fueAtendido,
             @Param("fechaHoraGeneracion") String fechaHoraGeneracion,
             @Param("fechaHoraExpiracion") String fechaHoraExpiracion,

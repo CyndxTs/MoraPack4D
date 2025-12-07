@@ -118,11 +118,12 @@ public class PedidoService {
             PedidoDTO modelo = request.getModelo();
             String tipoEscenario = G4DUtility.Convertor.toAdmissibleEnumString(modelo.getTipoEscenario(),  TipoEscenario.class);
             String codCliente = G4DUtility.Convertor.toAdmissible(modelo.getCodCliente());
+            String codigoPedido = G4DUtility.Convertor.toAdmissible(modelo.getCodigo());
             Boolean fueAtendido = modelo.getFueAtendido();
             String fechaHoraGeneracion = G4DUtility.Convertor.toAdmissibleDateTimeString(modelo.getFechaHoraGeneracion());
             String fechaHoraExpiracion = G4DUtility.Convertor.toAdmissibleDateTimeString(modelo.getFechaHoraExpiracion());
             List<DTO> dtos = new ArrayList<>();
-            List<PedidoEntity> entities = pedidoRepository.filterBy(tipoEscenario, codCliente, fueAtendido, fechaHoraGeneracion, fechaHoraExpiracion, pageable).getContent();
+            List<PedidoEntity> entities = pedidoRepository.filterBy(tipoEscenario, codCliente, codigoPedido, fueAtendido, fechaHoraGeneracion, fechaHoraExpiracion, pageable).getContent();
             entities.forEach(entity -> dtos.add(pedidoMapper.toDTO(entity)));
             return new ListResponse(true, String.format("Pedidos filtrados correctamente! ('%d')", dtos.size()), dtos);
         } finally {
