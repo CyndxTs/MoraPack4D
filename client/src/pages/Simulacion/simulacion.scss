@@ -306,109 +306,18 @@
   font-size: 10px;
   color: #9ca3af;
 }
-/* ===============================
-   PANEL INFORMATIVO INFERIOR*/
-.info-panel {
-  width: 100%;
-  background-color: var(--color-dark-blue);
-  color: white;
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  z-index: 3000;
-  max-height: 0;               /* 🔥 por defecto (sin .expanded) no se ve */
-  overflow-y: hidden;
-  border-top: 3px solid #0d1b2a;
-  padding: 0 24px;
-  border-radius: 18px 18px 0 0;
-  box-shadow: 0 -4px 18px rgba(15, 23, 42, 0.45);
-  transition: max-height 0.25s ease, padding 0.25s ease;
+.airport-popup__scroll {
+  max-height: 130px;
+  overflow-y: auto;
+  margin-top: 4px;
+  padding-right: 4px;
 }
 
-.info-panel.expanded {
-  max-height: 32vh;            /* 🔥 máximo ~30% de la pantalla */
-  overflow-y: auto;            /* 🔥 scroll interno si hay muchos vuelos */
-  padding: 16px 24px;
+.airport-popup__empty {
+  font-size: 12px;
+  color: #666;
+  padding: 4px 0;
 }
-
-.info-content {
-  opacity: 1;
-}
-
-.info-panel-header {
-  margin-bottom: 12px;
-}
-.info-panel-title {
-  font-size: 18px;
-  font-weight: 700;
-}
-.info-panel-airport {
-  font-size: 16px;
-  font-weight: 600;
-}
-.info-panel-subtitle {
-  font-size: 14px;
-  opacity: 0.9;
-}
-.info-panel-body {
-  display: flex;
-  gap: 32px;
-  margin-top: 16px;
-}
-.info-panel.expanded .info-content {
-  opacity: 1;
-}
-
-/* Cada columna */
-.info-panel-column {
-  flex: 1;
-}
-
-/* Listado de vuelos */
-.info-panel-flights {
-  list-style: none;
-  padding: 0;
-  margin-top: 12px;
-}
-
-.info-panel-empty-list {
-  opacity: 0.8;
-  font-style: italic;
-}
-
-/* Mejoramiento de las cards dentro del panel */
-.info-panel .flight-card {
-  background: #ffffff10;
-  border: 1px solid #ffffff22;
-  color: #fff;
-}
-
-.info-panel .flight-card-header span,
-.info-panel .flight-card-row span {
-  color: #fff;
-}
-
-.placeholder {
-  opacity: 0.7;
-  font-style: italic;
-}
-
-.info-panel .info-content p {
-  white-space: pre-line;
-}
-
-.info-panel-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-}
-
-.info-panel-capacity {
-  font-size: 14px;
-  font-weight: 600;
-  opacity: 0.9;
-}
-
 
 /* ===============================
    LAYOUT DEL SIDEBAR (ANCHO)
