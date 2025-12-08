@@ -803,7 +803,9 @@ export function useLoaderProgress() {
 
   useEffect(() => {
     const client = new Client({
-      brokerURL: "ws://localhost:8080/ws",  // 👈 WebSocket nativo
+      brokerURL: import.meta.env.PROD
+      ? "ws://1inf54-982-4d.inf.pucp.edu.pe/ws"
+      : "ws://localhost:8080/ws",
       reconnectDelay: 500,
       onConnect: () => {
         client.subscribe("/topic/loader", (msg) => {
