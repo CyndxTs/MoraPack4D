@@ -671,8 +671,8 @@ export function Table({ headers = [], data = [], statusColors = {} }) {
                     <td key={j} className={isNumeric ? "numeric" : ""}>
                       {(() => {
                         // Booleanos → SI / NO
-                        if (value === true || value === 1) return "SI";
-                        if (value === false || value === 0) return "NO";
+                        if (value === true) return "SI";
+                        if (value === false) return "NO";
 
                         return value ?? "";
                       })()}
