@@ -1,7 +1,7 @@
 // src/pages/Simulacion/InfoPanels.jsx
 import React from "react";
 
-// ========== VUELO ==========
+/* ========== VUELO ========== */
 export function FlightInfoPanel({ flight, getOrdersForFlight }) {
   if (!flight) return null;
 
@@ -10,7 +10,17 @@ export function FlightInfoPanel({ flight, getOrdersForFlight }) {
     flight.planeCapacity > 0
       ? Math.round((flight.capacity / flight.planeCapacity) * 100)
       : 0;
+  const originCity =
+    (flight.origin && flight.origin.city) ||
+    flight.originName ||
+    (flight.origin && flight.origin.code) ||
+    "Origen";
 
+  const destinationCity =
+    (flight.destination && flight.destination.city) ||
+    flight.destinationName ||
+    (flight.destination && flight.destination.code) ||
+    "Destino";
   return (
     <div className="info-shell">
       {/* HEADER */}
@@ -18,8 +28,8 @@ export function FlightInfoPanel({ flight, getOrdersForFlight }) {
         <div className="info-shell-left">
           <div className="info-chip info-chip--flight">Vuelo seleccionado</div>
           <h3 className="info-shell-title">
-            {flight.originName} ({flight.origin.code}) →{" "}
-            {flight.destinationName} ({flight.destination.code})
+            {originCity} ({flight.origin.code}) → {destinationCity} (
+            {flight.destination.code})
           </h3>
           <p className="info-shell-subtitle">{flight.code}</p>
         </div>
@@ -54,10 +64,9 @@ export function FlightInfoPanel({ flight, getOrdersForFlight }) {
             <p className="info-empty">Este vuelo no transporta pedidos.</p>
           ) : (
             <ul className="info-list">
-              {pedidos.map((p) => (
-                <li key={`${p.pedidoCodigo}-${p.loteCodigo}`}>
-                  Pedido {p.pedidoCodigo} · Lote {p.loteCodigo} · {p.cantidad}{" "}
-                  u.
+              {pedidos.map((p, idx) => (
+                <li key={`${p.pedidoCodigo}-${idx}`}>
+                  Pedido {p.pedidoCodigo} · {p.cantidad} u.
                 </li>
               ))}
             </ul>
@@ -81,7 +90,8 @@ export function FlightInfoPanel({ flight, getOrdersForFlight }) {
   );
 }
 
-// ========== PEDIDO ==========
+/* ========== PEDIDO ========== */
+/* ========== PEDIDO ========== */
 export function OrderInfoPanel({ order }) {
   if (!order) return null;
 
@@ -102,6 +112,10 @@ export function OrderInfoPanel({ order }) {
       0
     ) || 0;
 
+  // 👉 todos los lotes de todas las segmentaciones, en una sola lista
+  const allLotes =
+    order.segmentaciones?.flatMap((seg) => seg.lotes || []) ?? [];
+
   return (
     <div className="info-shell">
       {/* HEADER */}
@@ -121,6 +135,16 @@ export function OrderInfoPanel({ order }) {
               {order.cantidadSolicitada} u.
             </span>
           </div>
+
+          {order.fechaHoraGeneracion && (
+            <div className="info-summary-row">
+              <span className="info-summary-label">Fecha creación:</span>
+              <span className="info-summary-value">
+                {order.fechaHoraGeneracion}
+              </span>
+            </div>
+          )}
+
           <div className="info-summary-row">
             <span className="info-summary-label">Estado:</span>
             <span className="info-summary-value">
@@ -141,64 +165,54 @@ export function OrderInfoPanel({ order }) {
       {/* BODY */}
       <div className="info-shell-body--two-cols">
         <div>
-          <h4 className="info-section-title">Segmentaciones y lotes</h4>
+          <h4 className="info-section-title">Segmentaciones</h4>
 
-          {order.segmentaciones && order.segmentaciones.length > 0 ? (
+          {allLotes.length > 0 ? (
             <ul className="info-list">
-              {order.segmentaciones.map((seg) => (
-                <li key={seg.codigo}>
-                  <div>
-                    <strong>{seg.codigo}</strong>{" "}
-                    {seg.fechaHoraAplicacion && (
-                      <span>({seg.fechaHoraAplicacion})</span>
-                    )}
-                  </div>
-                  {(seg.lotes || []).map((lote) => (
-                    <div key={lote.loteCodigo}>
-                      • Lote {lote.loteCodigo} · {lote.loteTamanio} u. · Ruta{" "}
-                      {lote.origenCode} → {lote.destinoCode}{" "}
-                      {lote.vuelos?.length
-                        ? `· Vuelos: ${lote.vuelos.join(", ")}`
-                        : ""}
-                    </div>
-                  ))}
-                </li>
-              ))}
+              {allLotes.map((lote, idx) => {
+                // 🛫 Origen de la ruta
+                const origenNombre =
+                  lote.origenNombre || lote.origenCode || "Origen desconocido";
+                const origenCode = lote.origenCode || "";
+
+                // 🛬 Destino de la ruta
+                const destinoNombre =
+                  lote.destinoNombre ||
+                  lote.arrivalAirportCity ||
+                  lote.destinoCode ||
+                  "Destino desconocido";
+                const destinoCode =
+                  lote.destinoCode || lote.arrivalAirportCode || "";
+
+                // ⏱ Llegada sacada de los registros del aeropuerto
+                const fechaLlegada =
+                  lote.arrivalFechaHoraIngreso || "Sin información";
+
+                return (
+                  <li key={idx}>
+                    {/* Ejemplo:
+                        300 u. · Baku (UBBB) → Sana (OYSN) · Llegada: 03/11/2025 10:09
+                    */}
+                    {lote.loteTamanio} u. · {origenNombre}
+                    {origenCode ? ` (${origenCode})` : ""} → {destinoNombre}
+                    {destinoCode ? ` (${destinoCode})` : ""} · Llegada:{" "}
+                    {fechaLlegada}
+                  </li>
+                );
+              })}
             </ul>
           ) : (
             <p className="info-empty">Este pedido no tiene segmentaciones.</p>
           )}
         </div>
 
-        <div>
-          <h4 className="info-section-title">Resumen</h4>
-          <p className="info-section-subtitle">
-            Distribución del pedido en la red.
-          </p>
-          <ul className="info-list">
-            <li>
-              Total unidades en lotes: <strong>{totalUnidades} u.</strong>
-            </li>
-            <li>
-              Segmentaciones: <strong>{totalSegmentos}</strong>
-            </li>
-            <li>
-              Lotes creados: <strong>{totalLotes}</strong>
-            </li>
-            <li>
-              Estado:{" "}
-              <strong>
-                {order.fueAtendido ? "Atendido completamente" : "Pendiente"}
-              </strong>
-            </li>
-          </ul>
-        </div>
+        {/* Puedes dejar la segunda columna vacía o usarla para otro detalle si quieres */}
       </div>
     </div>
   );
 }
 
-// ========== AEROPUERTO ==========
+/* ========== AEROPUERTO ========== */
 export function AirportInfoPanel({
   airport,
   vuelosSaliendo,
@@ -227,9 +241,19 @@ export function AirportInfoPanel({
       );
     }
 
+    // 👇 Ordenamos por fecha/hora según el tipo
+    const sorted = [...lista].sort((a, b) => {
+      const key = tipo === "saliendo" ? "startMs" : "endMs";
+
+      const ta = typeof a[key] === "number" ? a[key] : Number.POSITIVE_INFINITY;
+      const tb = typeof b[key] === "number" ? b[key] : Number.POSITIVE_INFINITY;
+
+      return ta - tb; // más próximos en el tiempo, primero
+    });
+
     return (
       <ul className="info-list">
-        {lista.map((f) => (
+        {sorted.map((f) => (
           <li key={f.code}>
             <div>
               <strong>
@@ -250,6 +274,14 @@ export function AirportInfoPanel({
       </ul>
     );
   };
+
+  // ordenados por hora
+  const vuelosSaliendoOrdenados = [...(vuelosSaliendo || [])].sort(
+    (a, b) => (a.startMs || 0) - (b.startMs || 0)
+  );
+  const vuelosLlegandoOrdenados = [...(vuelosLlegando || [])].sort(
+    (a, b) => (a.endMs || 0) - (b.endMs || 0)
+  );
 
   return (
     <div className="info-shell">
@@ -289,23 +321,31 @@ export function AirportInfoPanel({
       <div className="info-shell-body--two-cols">
         <div>
           <h4 className="info-section-title">Vuelos saliendo</h4>
-          {renderFlightList(vuelosSaliendo, "saliendo")}
+          {renderFlightList(vuelosSaliendoOrdenados, "saliendo")}
         </div>
 
         <div>
           <h4 className="info-section-title">Vuelos llegando</h4>
-          {renderFlightList(vuelosLlegando, "llegando")}
+          {renderFlightList(vuelosLlegandoOrdenados, "llegando")}
         </div>
       </div>
     </div>
   );
 }
 
-// ========== RUTA ==========
+/* ========== RUTA ========== */
 export function RouteInfoPanel({ route }) {
   if (!route) return null;
 
   const vuelos = route.codVuelos || [];
+
+  const origenLabel = route.originCity
+    ? `${route.originCity} (${route.codOrigen})`
+    : route.codOrigen;
+
+  const destinoLabel = route.destinationCity
+    ? `${route.destinationCity} (${route.codDestino})`
+    : route.codDestino;
 
   return (
     <div className="info-shell">
@@ -314,7 +354,7 @@ export function RouteInfoPanel({ route }) {
         <div className="info-shell-left">
           <div className="info-chip info-chip--route">Ruta seleccionada</div>
           <h3 className="info-shell-title">
-            {route.codOrigen} → {route.codDestino}
+            {origenLabel} → {destinoLabel}
           </h3>
           <p className="info-shell-subtitle">{route.codigo}</p>
         </div>
@@ -361,10 +401,10 @@ export function RouteInfoPanel({ route }) {
           </p>
           <ul className="info-list">
             <li>
-              Origen: <strong>{route.codOrigen}</strong>
+              Origen: <strong>{origenLabel}</strong>
             </li>
             <li>
-              Destino: <strong>{route.codDestino}</strong>
+              Destino: <strong>{destinoLabel}</strong>
             </li>
             <li>
               Tipo: <strong>{route.tipo}</strong>

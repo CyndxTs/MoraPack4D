@@ -115,15 +115,8 @@ export function AirportTooltipContent({
                     ) : (
                       <div>
                         <div className="airport-popup__orders-title">
-                          Pedidos (total {totalVuelo} u.):
+                          Pedidos (total {totalVuelo} u.)
                         </div>
-                        <ul className="airport-popup__orders-list">
-                          {pedidosVuelo.map((p) => (
-                            <li key={`${p.pedidoCodigo}-${p.cantidad}`}>
-                              {p.pedidoCodigo} ({p.cantidad} u.)
-                            </li>
-                          ))}
-                        </ul>
                       </div>
                     )}
                   </div>
@@ -180,25 +173,6 @@ export function PlaneTooltipContent({ flight, getOrdersForFlight }) {
           style={{ width: `${ocupPct}%` }}
         />
       </div>
-
-      <div className="plane-tooltip__row plane-tooltip__row--orders">
-        <span>Pedidos</span>
-        <span>
-          {pedidosVuelo.length === 0
-            ? "Sin pedidos"
-            : `${pedidosVuelo.length} pedidos · ${totalVuelo} u.`}
-        </span>
-      </div>
-
-      {pedidosVuelo.length > 0 && (
-        <ul className="plane-tooltip__orders">
-          {pedidosVuelo.map((p) => (
-            <li key={`${p.pedidoCodigo}-${p.loteCodigo}`}>
-              {p.pedidoCodigo} ({p.cantidad} u.)
-            </li>
-          ))}
-        </ul>
-      )}
     </div>
   );
 }

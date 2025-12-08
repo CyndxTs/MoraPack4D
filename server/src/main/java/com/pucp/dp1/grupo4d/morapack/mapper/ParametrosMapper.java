@@ -24,7 +24,7 @@ public class ParametrosMapper {
         Problematica.MAX_HORAS_RECOJO = G4DUtility.Convertor.toAdmissible(dto.getMaxHorasRecojo(), 2.0);
         Problematica.MAX_HORAS_ESTANCIA = G4DUtility.Convertor.toAdmissible(dto.getMaxHorasEstancia(), 12.0);
         Problematica.MIN_HORAS_ESTANCIA = G4DUtility.Convertor.toAdmissible(dto.getMinHorasEstancia(), 1.0);
-        Problematica.PROBABILIDAD_REPLANIFICACION = G4DUtility.Convertor.toAdmissible(dto.getProbabilidadReplanificacion(), 0.350);
+        Problematica.PROBABILIDAD_REPLANIFICACION = G4DUtility.Convertor.toAdmissible(dto.getProbabilidadReplanificacion(), 0.0);
         Problematica.CODIGOS_ORIGENES = G4DUtility.Convertor.toAdmissible(dto.getCodOrigenes(),() -> List.of("SPIM", "EBCI", "UBBB"));
         GVNS.D_MIN = G4DUtility.Convertor.toAdmissible(dto.getDMin(), 0.005);
         GVNS.I_MAX = G4DUtility.Convertor.toAdmissible(dto.getIMax(), 3);

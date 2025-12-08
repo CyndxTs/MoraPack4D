@@ -101,7 +101,11 @@ export default function Simulacion() {
     if (!ap) return code;
     return `${code} - ${ap.city}`;
   };
-
+  const getAirportCityName = (code) => {
+    if (!code || !airports) return code || "";
+    const ap = airports[code];
+    return ap ? ap.city : code;
+  };
   // 🔎 Búsquedas y filtros SOLO DEL PANEL
   // Vuelos
   const [flightFilterCode, setFlightFilterCode] = useState("");
@@ -248,6 +252,27 @@ export default function Simulacion() {
       })
     );
   }, [simNowMs, timerActive]);
+  // 🔄 Limpiar resaltado cuando los vuelos seleccionados ya no están visibles
+  useEffect(() => {
+    if (highlightedFlights.length === 0) return;
+
+    const activos = highlightedFlights.filter((code) =>
+      flights.some(
+        (f) =>
+          f.code === code &&
+          typeof f.startMs === "number" &&
+          typeof f.endMs === "number" &&
+          timerActive &&
+          simNowMs >= f.startMs &&
+          simNowMs < f.endMs // solo si el vuelo sigue en su ventana de vuelo
+      )
+    );
+
+    // Si ya no queda ningún vuelo de los resaltados activo, quitamos el resaltado
+    if (activos.length !== highlightedFlights.length) {
+      setHighlightedFlights(activos);
+    }
+  }, [flights, highlightedFlights, simNowMs, timerActive]);
 
   const formatTime = (sec) => {
     const m = Math.floor(sec / 60)
@@ -402,7 +427,8 @@ export default function Simulacion() {
           f &&
           f.origin &&
           f.origin.code === selectedAirport.code &&
-          simNowMs < f.endMs // solo los que aún no han llegado
+          typeof f.startMs === "number" &&
+          simNowMs < f.startMs //
       )
     : [];
 
@@ -412,7 +438,8 @@ export default function Simulacion() {
           f &&
           f.destination &&
           f.destination.code === selectedAirport.code &&
-          simNowMs < f.endMs
+          typeof f.endMs === "number" &&
+          simNowMs < f.endMs //
       )
     : [];
 
@@ -611,10 +638,32 @@ export default function Simulacion() {
         country: a.pais,
         capacidad: a.capacidad,
         esSede: a.esSede,
-        registros: a.registros || [], // aquí vienen los REG-... con tamLote
+        registros: (a.registros || []).filter(
+          (reg) => reg.sigueVigente === true
+        ), // aquí vienen los REG-... con tamLote
       };
     });
+    const loteArrivalMap = {};
+    Object.values(airportMap).forEach((ap) => {
+      (ap.registros || []).forEach((reg) => {
+        if (!reg.sigueVigente) return;
+        if (!reg.codLote || !reg.fechaHoraIngreso) return;
 
+        const loteCode = reg.codLote;
+        const ingresoMs = parseFechaHoraToMs(reg.fechaHoraIngreso);
+        const prev = loteArrivalMap[loteCode];
+
+        if (!prev || ingresoMs > prev.ingresoMs) {
+          loteArrivalMap[loteCode] = {
+            ingreso: reg.fechaHoraIngreso,
+            ingresoMs,
+            airportCode: ap.code,
+            airportCity: ap.city,
+            airportName: ap.name,
+          };
+        }
+      });
+    });
     // Mapa rápido de rutas por código
     const rutasPorCodigo = {};
     (solution.rutasEnOperacion || []).forEach((r) => {
@@ -622,9 +671,18 @@ export default function Simulacion() {
     });
 
     // Guardar rutas completas para el sidebar
-    const rutasFiltradas = (solution.rutasEnOperacion || []).filter(
-      (r) => r.estado === "OPERATIVA" || r.estado === "FINALIZADA"
-    );
+    const rutasFiltradas = (solution.rutasEnOperacion || [])
+      .filter((r) => r.estado === "OPERATIVA" || r.estado === "FINALIZADA")
+      .map((r) => {
+        const origin = airportMap[r.codOrigen];
+        const destino = airportMap[r.codDestino];
+
+        return {
+          ...r,
+          originCity: origin?.city || origin?.name || r.codOrigen,
+          destinationCity: destino?.city || destino?.name || r.codDestino,
+        };
+      });
 
     setRoutes(rutasFiltradas);
 
@@ -637,16 +695,25 @@ export default function Simulacion() {
           const origen = ruta ? airportMap[ruta.codOrigen] : null;
           const destino = ruta ? airportMap[ruta.codDestino] : null;
 
+          const loteCodigo = lpr.lote.codigo;
+          const arrivalInfo = loteArrivalMap[loteCodigo];
+
           return {
             codRuta: lpr.codRuta,
-            loteCodigo: lpr.lote.codigo,
+            loteCodigo,
             loteTamanio: lpr.lote.tamanio,
             loteEstado: lpr.lote.estado,
             vuelos: vuelosRuta,
             origenCode: ruta?.codOrigen,
             destinoCode: ruta?.codDestino,
-            origenNombre: origen?.name || ruta?.codOrigen,
-            destinoNombre: destino?.name || ruta?.codDestino,
+
+            // 👇 Usar SIEMPRE la ciudad, no el alias
+            origenNombre: origen?.city || ruta?.codOrigen,
+            destinoNombre: destino?.city || ruta?.codDestino,
+
+            arrivalAirportCode: arrivalInfo?.airportCode || null,
+            arrivalAirportCity: arrivalInfo?.airportCity || null,
+            arrivalFechaHoraIngreso: arrivalInfo?.ingreso || null,
           };
         });
 
@@ -664,6 +731,7 @@ export default function Simulacion() {
         codDestino: p.codDestino,
         cantidadSolicitada: p.cantidadSolicitada,
         fueAtendido: p.fueAtendido,
+        fechaHoraGeneracion: p.fechaHoraGeneracion,
         segmentaciones,
       };
     });
@@ -996,7 +1064,9 @@ export default function Simulacion() {
       return simNowMs >= f.startMs && simNowMs <= f.endMs;
     });
   });
-
+  const infoPanelVariant = selectedAirport
+    ? "info-panel--wide"
+    : "info-panel--compact";
   return (
     <div className="page">
       {/* Overlay de carga de simulación */}
@@ -1393,12 +1463,34 @@ export default function Simulacion() {
                                     pedido.segmentaciones.length - 1 &&
                                   loteIndex === seg.lotes.length - 1;
 
+                                const destinoCode =
+                                  lote.destinoCode ||
+                                  lote.arrivalAirportCode ||
+                                  "";
+
+                                const origenNombre =
+                                  getAirportCityName(lote.origenCode) ||
+                                  lote.origenNombre ||
+                                  lote.origenCode ||
+                                  "Origen desconocido";
+
+                                const destinoNombre =
+                                  getAirportCityName(destinoCode) ||
+                                  lote.destinoNombre ||
+                                  lote.arrivalAirportCity ||
+                                  destinoCode ||
+                                  "Destino desconocido";
+
+                                const fechaLlegada =
+                                  lote.arrivalFechaHoraIngreso ||
+                                  "Sin información";
+
                                 return (
                                   <div
                                     key={lote.loteCodigo}
                                     className="order-seg-block"
                                   >
-                                    {/* Segmentación: solo cantidad */}
+                                    {/* Segmentación */}
                                     <div className="order-row">
                                       <span className="order-label">
                                         Segmentación
@@ -1408,34 +1500,24 @@ export default function Simulacion() {
                                       </span>
                                     </div>
 
-                                    {/* Ruta en una línea aparte */}
+                                    {/* Ruta con ciudades */}
                                     <div className="order-row order-row--ruta">
                                       <span className="order-label">Ruta</span>
                                       <span className="order-value order-value--ruta">
-                                        {lote.origenCode} → {lote.destinoCode}
+                                        {origenNombre} ({lote.origenCode}) →{" "}
+                                        {destinoNombre}
+                                        {destinoCode ? ` (${destinoCode})` : ""}
                                       </span>
                                     </div>
 
-                                    {/* Vuelos */}
-                                    <div className="order-row order-row--vuelos">
+                                    {/* Llegada basada en registros de aeropuerto */}
+                                    <div className="order-row">
                                       <span className="order-label">
-                                        Vuelos
+                                        Llegada
                                       </span>
-                                      <div className="order-value order-value--multiline">
-                                        {lote.vuelos &&
-                                        lote.vuelos.length > 0 ? (
-                                          lote.vuelos.map((codVuelo) => (
-                                            <div
-                                              key={codVuelo}
-                                              className="order-flight-code"
-                                            >
-                                              {codVuelo}
-                                            </div>
-                                          ))
-                                        ) : (
-                                          <span>Sin vuelo asignado</span>
-                                        )}
-                                      </div>
+                                      <span className="order-value">
+                                        {fechaLlegada}
+                                      </span>
                                     </div>
 
                                     {!isLastLoteOfPedido && (
@@ -1486,6 +1568,9 @@ export default function Simulacion() {
                       let stockActual = 0;
 
                       registros.forEach((reg) => {
+                        // 👈 Solo consideramos registros vigentes
+                        if (!reg.sigueVigente) return;
+
                         const ingresoMs = parseFechaHoraToMs(
                           reg.fechaHoraIngreso
                         );
@@ -1723,12 +1808,13 @@ export default function Simulacion() {
 
                   let stockActual = 0;
                   registros.forEach((reg) => {
+                    if (!reg.sigueVigente) return;
+
                     const ingresoMs = parseFechaHoraToMs(reg.fechaHoraIngreso);
                     const egresoMs = reg.fechaHoraEgreso
                       ? parseFechaHoraToMs(reg.fechaHoraEgreso)
                       : null;
 
-                    // cuenta mientras simNowMs está entre ingreso y egreso
                     if (
                       simNowMs >= ingresoMs &&
                       (!egresoMs || simNowMs < egresoMs)
@@ -1968,32 +2054,34 @@ export default function Simulacion() {
 
           {/* PANEL INFORMATIVO DEBAJO DEL MAPA */}
           {infoPanelExpanded && (
-            <div className="info-panel expanded">
-              <div className="info-content">
-                {selectedAirport ? (
-                  <AirportInfoPanel
-                    airport={selectedAirport}
-                    vuelosSaliendo={vuelosSaliendo}
-                    vuelosLlegando={vuelosLlegando}
-                    getOrdersForFlight={getOrdersForFlight}
-                  />
-                ) : selectedFlight ? (
-                  <FlightInfoPanel
-                    flight={selectedFlight}
-                    getOrdersForFlight={getOrdersForFlight}
-                  />
-                ) : selectedOrder ? (
-                  <OrderInfoPanel order={selectedOrder} />
-                ) : selectedRoute ? (
-                  <RouteInfoPanel route={selectedRoute} />
-                ) : (
-                  <>
-                    <h3>Información seleccionada</h3>
-                    <p>
-                      Selecciona un vuelo, pedido o ruta para ver el detalle.
-                    </p>
-                  </>
-                )}
+            <div className={`info-panel expanded ${infoPanelVariant}`}>
+              <div className="info-panel-inner">
+                <div className="info-content">
+                  {selectedAirport ? (
+                    <AirportInfoPanel
+                      airport={selectedAirport}
+                      vuelosSaliendo={vuelosSaliendo}
+                      vuelosLlegando={vuelosLlegando}
+                      getOrdersForFlight={getOrdersForFlight}
+                    />
+                  ) : selectedFlight ? (
+                    <FlightInfoPanel
+                      flight={selectedFlight}
+                      getOrdersForFlight={getOrdersForFlight}
+                    />
+                  ) : selectedOrder ? (
+                    <OrderInfoPanel order={selectedOrder} />
+                  ) : selectedRoute ? (
+                    <RouteInfoPanel route={selectedRoute} />
+                  ) : (
+                    <>
+                      <h3>Información seleccionada</h3>
+                      <p>
+                        Selecciona un vuelo, pedido o ruta para ver el detalle.
+                      </p>
+                    </>
+                  )}
+                </div>
               </div>
             </div>
           )}
