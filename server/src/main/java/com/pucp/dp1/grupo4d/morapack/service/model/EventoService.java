@@ -22,7 +22,6 @@ import java.util.*;
 public class EventoService {
     private final EventoRepository eventoRepository;
     private final EventoMapper eventoMapper;
-    private final HashMap<String, EventoEntity> eventos = new HashMap<>();
 
     public EventoService(EventoRepository eventoRepository, EventoMapper eventoMapper) {
         this.eventoRepository = eventoRepository;
@@ -62,18 +61,10 @@ public class EventoService {
     }
 
     public ListResponse listar(ListRequest request) {
-        try {
-            Pageable pageable = G4DUtility.Convertor.toAdmissible(request.getPagina(), request.getTamanio(), Sort.Order.desc("fechaHoraInicio"), Sort.Order.desc("fechaHoraFin"));
-            List<DTO> dtos = new ArrayList<>();
-            List<EventoEntity> entities = this.findAll(pageable);
-            entities.forEach(entity -> dtos.add(eventoMapper.toDTO(entity)));
-            return new ListResponse(true, String.format("Eventos listados correctamente! ('%d')", dtos.size()), dtos);
-        } finally {
-            clearPools();
-        }
-    }
-
-    public void clearPools() {
-        eventos.clear();
+        Pageable pageable = G4DUtility.Convertor.toAdmissible(request.getPagina(), request.getTamanio(), Sort.Order.desc("fechaHoraInicio"), Sort.Order.desc("fechaHoraFin"));
+        List<DTO> dtos = new ArrayList<>();
+        List<EventoEntity> entities = this.findAll(pageable);
+        entities.forEach(entity -> dtos.add(eventoMapper.toDTO(entity)));
+        return new ListResponse(true, String.format("Eventos listados correctamente! ('%d')", dtos.size()), dtos);
     }
 }
