@@ -730,9 +730,15 @@ export default function Simulacion() {
       const segmentaciones = (p.segmentaciones || []).map((seg) => {
         const lotes = (seg.lotesPorRuta || []).map((lpr) => {
           const ruta = rutasPorCodigo[lpr.codRuta];
-          const vuelosRuta = ruta?.codVuelos || [];
           const origen = ruta ? airportMap[ruta.codOrigen] : null;
           const destino = ruta ? airportMap[ruta.codDestino] : null;
+
+          // 👇 1) vuelos específicos del lote (si vienen en el JSON)
+          //    2) si no hay, usamos los de la ruta como antes
+          const vuelosLote =
+            Array.isArray(lpr.codVuelos) && lpr.codVuelos.length > 0
+              ? lpr.codVuelos
+              : ruta?.codVuelos || [];
 
           const loteCodigo = lpr.lote.codigo;
           const arrivalInfo = loteArrivalMap[loteCodigo];
@@ -742,14 +748,13 @@ export default function Simulacion() {
             loteCodigo,
             loteTamanio: lpr.lote.tamanio,
             loteEstado: lpr.lote.estado,
-            vuelos: vuelosRuta,
+            vuelos: vuelosLote, // 👈 AHORA sí está bien
             origenCode: ruta?.codOrigen,
             destinoCode: ruta?.codDestino,
 
-            // 👇 Usar SIEMPRE la ciudad, no el alias
+            // 👇 Llegada basada en registros de aeropuertos
             origenNombre: origen?.city || ruta?.codOrigen,
             destinoNombre: destino?.city || ruta?.codDestino,
-
             arrivalAirportCode: arrivalInfo?.airportCode || null,
             arrivalAirportCity: arrivalInfo?.airportCity || null,
             arrivalFechaHoraIngreso: arrivalInfo?.ingreso || null,
@@ -1070,13 +1075,17 @@ export default function Simulacion() {
     const pedidosEnVuelo = [];
 
     orders.forEach((pedido) => {
-      pedido.segmentaciones.forEach((seg) => {
-        seg.lotes.forEach((lote) => {
+      (pedido.segmentaciones || []).forEach((seg) => {
+        (seg.lotes || []).forEach((lote) => {
           if (lote.vuelos && lote.vuelos.includes(flightCode)) {
             pedidosEnVuelo.push({
               pedidoCodigo: pedido.codigo,
+              pedidoDestino: pedido.codDestino,
               loteCodigo: lote.loteCodigo,
               cantidad: lote.loteTamanio,
+
+              origenCode: lote.origenCode,
+              destinoCode: lote.destinoCode || lote.arrivalAirportCode,
             });
           }
         });
@@ -1085,6 +1094,7 @@ export default function Simulacion() {
 
     return pedidosEnVuelo;
   };
+
   const selectedFlight =
     selectedItem?.type === "flight"
       ? flights.find((f) => f.code === selectedItem.codigo)
@@ -2122,7 +2132,7 @@ export default function Simulacion() {
                       getOrdersForFlight={getOrdersForFlight}
                     />
                   ) : selectedOrder ? (
-                    <OrderInfoPanel order={selectedOrder} />
+                    <OrderInfoPanel order={selectedOrder} flights={flights} />
                   ) : selectedRoute ? (
                     <RouteInfoPanel route={selectedRoute} />
                   ) : (
