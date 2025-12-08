@@ -40,6 +40,9 @@ public class SegmentacionMapper {
         for(Map.Entry<Ruta, Lote> entry : lotesPorRuta.entrySet()) {
             LotePorRutaDTO lotePorRutaDTO = new LotePorRutaDTO();
             lotePorRutaDTO.setCodRuta(entry.getKey().getCodigo());
+            List<String> codVuelos = new ArrayList<>();
+            entry.getKey().getVuelos().forEach(v -> codVuelos.add(v.getCodigo()));
+            lotePorRutaDTO.setCodVuelos(codVuelos);
             LoteDTO loteDTO = loteMapper.toDTO(entry.getValue());
             lotePorRutaDTO.setLote(loteDTO);
             lotesPorRutaDTO.add(lotePorRutaDTO);
@@ -58,6 +61,9 @@ public class SegmentacionMapper {
         for (LoteEntity loteEntity : lotesEntity) {
             LotePorRutaDTO lotePorRutaDTO = new LotePorRutaDTO();
             RutaEntity rutaEntity = loteEntity.getRuta();
+            List<String> codVuelos = new ArrayList<>();
+            rutaEntity.getVuelos().forEach(v -> codVuelos.add(v.getCodigo()));
+            lotePorRutaDTO.setCodVuelos(codVuelos);
             lotePorRutaDTO.setCodRuta(rutaEntity.getCodigo());
             lotePorRutaDTO.setLote(loteMapper.toDTO(loteEntity));
             lotesPorRutaDTO.add(lotePorRutaDTO);
