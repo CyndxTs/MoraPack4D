@@ -6,7 +6,7 @@ const buildFlightChainForLote = (lote, flights = []) => {
     return [];
   }
 
-  return lote.vuelos
+  const chain = lote.vuelos
     .map((codVuelo) => {
       const f = flights.find((fl) => fl.code === codVuelo);
       if (!f) return null;
@@ -23,15 +23,21 @@ const buildFlightChainForLote = (lote, flights = []) => {
         (f.destination && f.destination.code) ||
         "Destino";
 
+      const originCode = f.origin?.code || "";
+      const destCode = f.destination?.code || "";
+
       return {
-        codigo: f.code,
-        origen: originCity,
-        destino: destCity,
+        // 👉 etiqueta ciudad + código de aeropuerto, NO código de vuelo
+        origenLabel: originCode ? `${originCity} (${originCode})` : originCity,
+        destinoLabel: destCode ? `${destCity} (${destCode})` : destCity,
         salida: f.startTime,
         llegada: f.endTime,
       };
     })
     .filter(Boolean);
+
+  // Si solo hay un vuelo (sin escala), sí lo mostramos
+  return chain;
 };
 
 /* ========== VUELO ========== */
@@ -200,12 +206,14 @@ export function OrderInfoPanel({ order, flights = [] }) {
           <h4 className="info-section-title">Segmentaciones</h4>
 
           {allLotes.length > 0 ? (
-            <ul className="info-list">
+            <ul className="info-list info-list--segments">
               {allLotes.map((lote, idx) => {
+                // 🛫 Origen del lote
                 const origenNombre =
                   lote.origenNombre || lote.origenCode || "Origen desconocido";
                 const origenCode = lote.origenCode || "";
 
+                // 🛬 Destino del lote
                 const destinoNombre =
                   lote.destinoNombre ||
                   lote.arrivalAirportCity ||
@@ -214,34 +222,38 @@ export function OrderInfoPanel({ order, flights = [] }) {
                 const destinoCode =
                   lote.destinoCode || lote.arrivalAirportCode || "";
 
+                // ⏱ Llegada sacada de los registros del aeropuerto
                 const fechaLlegada =
                   lote.arrivalFechaHoraIngreso || "Sin información";
 
-                // 🔗 cadena de vuelos (escalas) para este lote
+                // ✈️ Cadena de vuelos (escalas) para este lote
                 const flightChain = buildFlightChainForLote(lote, flights);
 
                 return (
                   <li key={idx}>
-                    {/* Resumen de la segmentación */}
-                    <div>
-                      {lote.loteTamanio} u. · {origenNombre}
-                      {origenCode ? ` (${origenCode})` : ""} → {destinoNombre}
-                      {destinoCode ? ` (${destinoCode})` : ""} · Llegada:{" "}
-                      {fechaLlegada}
+                    {/* Línea principal del lote: solo cantidad + llegada */}
+                    <div className="info-lote-header-line">
+                      {lote.loteTamanio} u.
+                      {fechaLlegada && <> · Llegada: {fechaLlegada}</>}
                     </div>
 
-                    {/* Escalas / vuelos usados */}
+                    {/* Subtítulo + lista de vuelos realizados */}
                     {flightChain.length > 0 && (
-                      <div className="info-lote-flights">
-                        {flightChain.map((v) => (
-                          <div key={v.codigo} className="info-lote-flight">
-                            ✈ {v.origen} → {v.destino} ({v.codigo}){" "}
-                            <small>
-                              {v.salida} → {v.llegada}
-                            </small>
-                          </div>
-                        ))}
-                      </div>
+                      <>
+                        <div className="info-lote-subtitle">
+                          Vuelos realizados
+                        </div>
+                        <div className="info-lote-flights">
+                          {flightChain.map((v, i) => (
+                            <div key={i} className="info-lote-flight">
+                              ✈ {v.origenLabel} → {v.destinoLabel}{" "}
+                              <small>
+                                {v.salida} → {v.llegada}
+                              </small>
+                            </div>
+                          ))}
+                        </div>
+                      </>
                     )}
                   </li>
                 );

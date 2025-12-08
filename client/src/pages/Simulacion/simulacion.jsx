@@ -1094,6 +1094,20 @@ export default function Simulacion() {
 
     return pedidosEnVuelo;
   };
+  const getLastFlightOfLote = (lote) => {
+    if (!lote || !Array.isArray(lote.vuelos) || lote.vuelos.length === 0) {
+      return null;
+    }
+
+    // Vamos desde el último, por si alguno no está en `flights` todavía
+    for (let i = lote.vuelos.length - 1; i >= 0; i--) {
+      const code = lote.vuelos[i];
+      const f = flights.find((fl) => fl.code === code);
+      if (f) return f;
+    }
+
+    return null;
+  };
 
   const selectedFlight =
     selectedItem?.type === "flight"
@@ -1520,27 +1534,58 @@ export default function Simulacion() {
                                     pedido.segmentaciones.length - 1 &&
                                   loteIndex === seg.lotes.length - 1;
 
-                                const destinoCode =
+                                const destinoCodeBase =
                                   lote.destinoCode ||
                                   lote.arrivalAirportCode ||
                                   "";
 
-                                const origenNombre =
-                                  getAirportCityName(lote.origenCode) ||
+                                const fechaLlegada =
+                                  lote.arrivalFechaHoraIngreso ||
+                                  "Sin información";
+
+                                // 👉 Último vuelo del lote (si tiene varios)
+                                const lastFlight = getLastFlightOfLote(lote);
+
+                                // Valores por defecto (como antes)
+                                let origenCode = lote.origenCode;
+                                let destinoCode = destinoCodeBase;
+
+                                let origenNombre =
+                                  getAirportCityName(origenCode) ||
                                   lote.origenNombre ||
-                                  lote.origenCode ||
+                                  origenCode ||
                                   "Origen desconocido";
 
-                                const destinoNombre =
+                                let destinoNombre =
                                   getAirportCityName(destinoCode) ||
                                   lote.destinoNombre ||
                                   lote.arrivalAirportCity ||
                                   destinoCode ||
                                   "Destino desconocido";
 
-                                const fechaLlegada =
-                                  lote.arrivalFechaHoraIngreso ||
-                                  "Sin información";
+                                // Si encontramos último vuelo, usamos su origen/destino
+                                if (
+                                  lastFlight &&
+                                  lastFlight.origin &&
+                                  lastFlight.destination
+                                ) {
+                                  origenCode = lastFlight.origin.code;
+                                  destinoCode = lastFlight.destination.code;
+
+                                  origenNombre =
+                                    getAirportCityName(origenCode) ||
+                                    lastFlight.origin.city ||
+                                    lastFlight.originName ||
+                                    origenCode ||
+                                    "Origen desconocido";
+
+                                  destinoNombre =
+                                    getAirportCityName(destinoCode) ||
+                                    lastFlight.destination.city ||
+                                    lastFlight.destinationName ||
+                                    destinoCode ||
+                                    "Destino desconocido";
+                                }
 
                                 return (
                                   <div
@@ -1557,17 +1602,19 @@ export default function Simulacion() {
                                       </span>
                                     </div>
 
-                                    {/* Ruta con ciudades */}
+                                    {/* Ruta: SOLO el último vuelo hacia la ciudad destino */}
                                     <div className="order-row order-row--ruta">
                                       <span className="order-label">Ruta</span>
                                       <span className="order-value order-value--ruta">
-                                        {origenNombre} ({lote.origenCode}) →{" "}
-                                        {destinoNombre}
+                                        {origenNombre}
+                                        {origenCode
+                                          ? ` (${origenCode})`
+                                          : ""} → {destinoNombre}
                                         {destinoCode ? ` (${destinoCode})` : ""}
                                       </span>
                                     </div>
 
-                                    {/* Llegada basada en registros de aeropuerto */}
+                                    {/* Llegada */}
                                     <div className="order-row">
                                       <span className="order-label">
                                         Llegada
