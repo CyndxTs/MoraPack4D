@@ -17,6 +17,7 @@ import filterIcon from "../../assets/icons/filter.svg";
 import cleanIcon from "../../assets/icons/clean.svg";
 
 import { Client } from "@stomp/stompjs";
+import { subscribeLoader } from "../../services/loaderService";
 
 export function Button({ icon, label, onClick, type = "button" }) {
   return (
@@ -802,26 +803,15 @@ export function useLoaderProgress() {
   const [payload, setPayload] = useState(null);
 
   useEffect(() => {
-    const SOCKET_URL =
-      (window.location.protocol === "https:" ? "wss://" : "ws://") +
-      window.location.host +
-      "/ws";
+    let unsubscribe = null;
 
-    const client = new Client({
-      brokerURL: SOCKET_URL,
-      reconnectDelay: 500,
-      debug: () => {},
-      onConnect: () => {
-        client.subscribe("/topic/loader", (msg) => {
-          const data = JSON.parse(msg.body);
-          setPayload(data);
-        });
-      },
-    });
+    subscribeLoader((data) => {
+      setPayload(data);
+    }).then((unsub) => (unsubscribe = unsub));
 
-    client.activate();
-
-    return () => client.deactivate();
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
   }, []);
 
   return payload;
