@@ -802,29 +802,31 @@ export function useLoaderProgress() {
   const [payload, setPayload] = useState(null);
 
   useEffect(() => {
+    const SOCKET_URL =
+      (window.location.protocol === "https:" ? "wss://" : "ws://") +
+      window.location.host +
+      "/ws";
+
     const client = new Client({
-      brokerURL: import.meta.env.PROD
-      ? "ws://1inf54-982-4d.inf.pucp.edu.pe/ws"
-      : "ws://localhost:8080/ws",
+      brokerURL: SOCKET_URL,
       reconnectDelay: 500,
+      debug: () => {},
       onConnect: () => {
         client.subscribe("/topic/loader", (msg) => {
           const data = JSON.parse(msg.body);
           setPayload(data);
         });
       },
-      debug: () => {} // opcional para silenciar logs
     });
 
     client.activate();
 
-    return () => {
-      client.deactivate();
-    };
+    return () => client.deactivate();
   }, []);
 
   return payload;
 }
+
 
 
 export function LoadingOverlay() {
