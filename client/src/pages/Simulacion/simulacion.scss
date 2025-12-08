@@ -114,57 +114,87 @@
 
 .legend-overlay {
   position: absolute;
-  left: 16px;
-  bottom: 16px;
+  left: 1rem;
+  bottom: 1rem;
   z-index: 1000;
 }
 
 /* Tarjeta de la leyenda */
 .legend-card {
-  background-color: #ffffff;
+  background: #ffffff;
   border-radius: 12px;
-  padding: 10px 14px;
-  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.15);
-  border: 1px solid #e5e7eb;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);
+  padding: 0.5rem 0.75rem;
   max-width: 260px;
+  font-size: 0.85rem;
 }
 
 .legend-card-header {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 13px;
-  font-weight: 600;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-align: left;
 }
 
 .legend-card-info-icon {
-  width: 18px;
-  height: 18px;
+  width: 20px;
+  height: 20px;
   border-radius: 999px;
-  background-color: #2563eb;
-  color: #fff;
-  font-size: 12px;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: #e5f0ff;
+  color: #1d4ed8;
 }
-
+.legend-card-title {
+  font-weight: 600;
+}
+.legend-card-toggle {
+  margin-left: auto;
+  font-size: 0.75rem;
+  opacity: 0.7;
+}
 .legend-card-body {
-  display: flex;
-  flex-direction: column;     /* 🔥 filas verticales */
-  gap: 6px;
-  font-size: 12px;
+  margin-top: 0.5rem;
 }
 
 .legend-item {
   display: flex;
-  align-items: center;        /* icono + texto en fila horizontal */
-  gap: 6px;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+.legend-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  display: inline-block;
+}
+/* Colores de referencia para aviones y aeropuertos */
+.legend-dot--green {
+  background: #16a34a; // < 50%
 }
 
+.legend-dot--yellow {
+  background: #facc15; // 50% - 75%
+}
+
+.legend-dot--red {
+  background: #dc2626; // 90% - 100%
+}
+
+.legend-footnote {
+  margin-top: 0.25rem;
+  font-size: 0.7rem;
+  color: #6b7280;
+}
 .legend-item span {
   white-space: nowrap;
 }

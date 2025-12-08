@@ -15,6 +15,7 @@ import hideIcon from "../../assets/icons/hide-sidebar.png";
 import run from "../../assets/icons/run.svg";
 import stopIcon from "../../assets/icons/stop.svg";
 import airportIconImg from "../../assets/icons/airport.svg";
+import sedeIconImg from "../../assets/icons/sede.svg";
 import { listarParametros } from "../../services/parametrosService";
 import { listarAeropuertos } from "../../services/aeropuertoService";
 import {
@@ -77,10 +78,11 @@ export default function Simulacion() {
   const [multiplicadorTemporal, setMultiplicadorTemporal] = useState();
   const [tamanioDeSaltoTemporal, setTamanioDeSaltoTemporal] = useState();
   const [parametrosCompletos, setParametrosCompletos] = useState(null);
-
+  const [probabilidadReplanificacion, setProbabilidadReplanificacion] =
+    useState();
   const [estadoEjecucionSim, setEstadoEjecucionSim] = useState("POR_INICIAR");
   const [showLoadingSim, setShowLoadingSim] = useState(false);
-
+  const [legendCollapsed, setLegendCollapsed] = useState(false);
   //Vuelos
   const [flights, setFlights] = useState([]);
   const [highlightedFlights, setHighlightedFlights] = useState([]);
@@ -333,7 +335,7 @@ export default function Simulacion() {
 
     // 3. Limpiar mapa: vuelos + aeropuertos + panel de info
     setFlights([]);
-    setAirports(null);
+    //setAirports(null);
     setSelectedItem(null);
     setSelectedAirport(null);
     setOrders([]);
@@ -479,24 +481,28 @@ export default function Simulacion() {
     return "invert(37%) sepia(79%) saturate(844%) hue-rotate(338deg) brightness(94%) contrast(92%)";
   }
 
-  const createAirportIcon = (ap) =>
-    L.divIcon({
+  const createAirportIcon = (ap) => {
+    // si es sede usamos sede.svg, si no el icono normal de aeropuerto
+    const baseIcon = ap.esSede ? sedeIconImg : airportIconImg;
+
+    return L.divIcon({
       html: `
-        <img
-          src="${airportIconImg}"
-          class="airport-icon"
-          style="
-            width: 20px;
-            height: 20px;
-            filter: ${getAirportFilter(ap.ocupacion)};
-          "
-        />
-      `,
+      <img
+        src="${baseIcon}"
+        class="airport-icon ${ap.esSede ? "airport-icon--hub" : ""}"
+        style="
+          width: 20px;
+          height: 20px;
+          filter: ${getAirportFilter(ap.ocupacion)};
+        "
+      />
+    `,
       className: "",
       iconSize: [20, 20],
       iconAnchor: [10, 10],
       popupAnchor: [0, -10],
     });
+  };
 
   // Detener cronómetro cuando todos los vuelos hayan llegado
   useEffect(() => {
@@ -595,12 +601,14 @@ export default function Simulacion() {
         setParametrosCompletos(p);
         const a = await listarAeropuertos();
         setAeropuertos(a.dtos ?? []);
+        console.log("Aeropuertos cargados:", a.dtos);
         // === SOLO LOS 5 PARAMETROS A MOSTRAR EN EL POPUP ===
         setMaxDiasEntregaIntercontinental(p.maxDiasEntregaIntercontinental);
         setMaxDiasEntregaIntracontinental(p.maxDiasEntregaIntracontinental);
         setMaxHorasRecojo(p.maxHorasRecojo);
         setMinHorasEstancia(p.minHorasEstancia);
         setMaxHorasEstancia(p.maxHorasEstancia);
+        setProbabilidadReplanificacion(p.probabilidadReplanificacion);
         setCodOrigenes((prev) =>
           prev.length === 0 ? p.codOrigenes || [] : prev
         );
@@ -614,7 +622,38 @@ export default function Simulacion() {
       setLoadedOnOpen(true);
     }
   }, [isModalOpen, loadedOnOpen]);
+  // Cargar aeropuertos base al inicio para que el mapa nunca esté vacío
+  useEffect(() => {
+    const fetchAeropuertosIniciales = async () => {
+      try {
+        const res = await listarAeropuertos();
+        const dtos = res.dtos ?? [];
 
+        // Los transformamos al mismo formato que usa buildSimulationFromSolution
+        const baseMap = {};
+        dtos.forEach((a) => {
+          baseMap[a.codigo] = {
+            lat: a.latitud,
+            lng: a.longitud,
+            name: a.alias || a.ciudad,
+            code: a.codigo,
+            city: a.ciudad,
+            country: a.pais,
+            capacidad: a.capacidad ?? 0,
+            esSede: a.esSede ?? false,
+            registros: [], // al inicio sin registros de stock
+          };
+        });
+
+        setAirports(baseMap);
+      } catch (err) {
+        console.error("Error cargando aeropuertos iniciales", err);
+        showNotification("danger", "Error cargando aeropuertos");
+      }
+    };
+
+    fetchAeropuertosIniciales();
+  }, []);
   const buildSimulationFromSolution = (solution) => {
     if (!solution) return;
     const getRutasDeVuelo = (flightCode) => {
@@ -739,10 +778,16 @@ export default function Simulacion() {
     setOrders(pedidosAtendidos);
     // Actualizar airports solo si cambió
     setAirports((prevAirports) => {
-      if (JSON.stringify(prevAirports) !== JSON.stringify(airportMap)) {
-        return airportMap;
-      }
-      return prevAirports;
+      // partimos de lo que ya hubiera (los cargados al inicio)
+      const merged = { ...(prevAirports || {}) };
+
+      // actualizamos / enriquecemos con la info de aeropuertosTransitados
+      Object.entries(airportMap).forEach(([code, data]) => {
+        const prev = merged[code] || {};
+        merged[code] = { ...prev, ...data };
+      });
+
+      return merged;
     });
 
     const vuelosNuevos = solution.vuelosEnTransito || [];
@@ -959,12 +1004,14 @@ export default function Simulacion() {
         fechaHoraInicio: `${fechaI}T${horaI}:00`,
         fechaHoraFin: `${fechaF}T${horaF}:00`,
         parametros: {
+          ...parametrosCompletos,
           maxDiasEntregaIntercontinental,
           maxDiasEntregaIntracontinental,
           maxHorasRecojo,
           minHorasEstancia,
           maxHorasEstancia,
           codOrigenes,
+          probabilidadReplanificacion,
         },
         multiplicadorTemporal,
         tamanioDeSaltoTemporal,
@@ -1867,14 +1914,12 @@ export default function Simulacion() {
                       position={[enrichedAp.lat, enrichedAp.lng]}
                       icon={createAirportIcon(enrichedAp)}
                       eventHandlers={{
-                        click: () => {
+                        mouseover: () => {
+                          // 👉 al pasar el mouse: abrir panel inferior + tooltip
                           setSelectedAirport(enrichedAp);
                           setSelectedItem(null);
-                        },
-                        mouseover: () => {
-                          // 👇 abrir tooltip de ESTE aeropuerto
+
                           setOpenAirportTooltipCode(enrichedAp.code);
-                          // y cerrar el de aviones si hubiera
                           setOpenFlightTooltipCode(null);
                         },
                       }}
@@ -1968,14 +2013,14 @@ export default function Simulacion() {
                         )}
                         riseOnHover={true}
                         eventHandlers={{
-                          click: () => {
+                          mouseover: () => {
+                            // 👉 al pasar el mouse: seleccionar vuelo para el panel
                             setSelectedAirport(null);
                             setSelectedItem({
                               type: "flight",
                               codigo: flight.code,
                             });
-                          },
-                          mouseover: () => {
+
                             setOpenFlightTooltipCode(flight.code);
                             setOpenAirportTooltipCode(null);
                           },
@@ -2014,40 +2059,47 @@ export default function Simulacion() {
 
             {/* LEYENDA DENTRO DEL MAPA, ABAJO IZQUIERDA */}
             <div className="legend-overlay">
-              <div className="legend-card">
-                <div className="legend-card-header">
+              <div
+                className={`legend-card ${
+                  legendCollapsed ? "legend-card--collapsed" : ""
+                }`}
+              >
+                {/* Header clickeable para abrir/cerrar */}
+                <button
+                  type="button"
+                  className="legend-card-header"
+                  onClick={() => setLegendCollapsed((prev) => !prev)}
+                >
                   <span className="legend-card-info-icon">i</span>
                   <span className="legend-card-title">Leyenda</span>
-                </div>
+                  <span className="legend-card-toggle">
+                    {legendCollapsed ? "▲" : "▼"}
+                  </span>
+                </button>
 
-                <div className="legend-card-body">
-                  <div className="legend-item">
-                    <img
-                      src={planeIconImg}
-                      alt=""
-                      className="legend-plane legend-plane--green"
-                    />
-                    <span>Menos del 50% de capacidad</span>
-                  </div>
+                {/* Cuerpo solo si NO está colapsada */}
+                {!legendCollapsed && (
+                  <div className="legend-card-body">
+                    <div className="legend-item">
+                      <span className="legend-dot legend-dot--green" />
+                      <span>Menos del 50% de capacidad</span>
+                    </div>
 
-                  <div className="legend-item">
-                    <img
-                      src={planeIconImg}
-                      alt=""
-                      className="legend-plane legend-plane--yellow"
-                    />
-                    <span>Entre 50% y 75% de capacidad</span>
-                  </div>
+                    <div className="legend-item">
+                      <span className="legend-dot legend-dot--yellow" />
+                      <span>Entre 50% y 75% de capacidad</span>
+                    </div>
 
-                  <div className="legend-item">
-                    <img
-                      src={planeIconImg}
-                      alt=""
-                      className="legend-plane legend-plane--red"
-                    />
-                    <span>Entre 90% y 100% de capacidad</span>
+                    <div className="legend-item">
+                      <span className="legend-dot legend-dot--red" />
+                      <span>Entre 90% y 100% de capacidad</span>
+                    </div>
+
+                    <p className="legend-footnote">
+                      Colores aplican a aviones y aeropuertos.
+                    </p>
                   </div>
-                </div>
+                )}
               </div>
             </div>
           </div>
@@ -2222,6 +2274,16 @@ export default function Simulacion() {
                 value={maxHorasEstancia}
                 onChange={(e) =>
                   setMaxHorasEstancia(parseNumber(e.target.value))
+                }
+              />
+
+              <label>Probabilidad de replanificación</label>
+              <Input
+                label="Probabilidad de replanificación"
+                type="number"
+                value={probabilidadReplanificacion}
+                onChange={(e) =>
+                  setProbabilidadReplanificacion(parseNumber(e.target.value))
                 }
               />
             </div>
