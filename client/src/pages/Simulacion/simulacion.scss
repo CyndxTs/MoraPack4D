@@ -236,15 +236,23 @@
   width: 100%;
   min-height: 800px;
 }
+
+
+
 /* ===============================
    POPUP AEROPUERTOS
 ================================ */
 
 .airport-popup {
-  min-width: 220px;
+  min-width: 260px;
   font-size: 12px;
-}
 
+  background: #ffffff;                       /* 🔥 fondo sólido */
+  border-radius: 14px;
+  padding: 10px 14px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.25);
+}
 .airport-popup__header {
   display: flex;
   justify-content: space-between;
@@ -260,7 +268,7 @@
 .airport-popup__code {
   font-weight: 600;
   font-size: 11px;
-  padding: 2px 6px;
+  padding: 2px 8px;
   border-radius: 999px;
   border: 1px solid #d0d7de;
   background-color: #f3f4f6;
@@ -268,13 +276,14 @@
 
 .airport-popup__city {
   color: #6b7280;
-  margin-bottom: 8px;
+  margin-bottom: 4px;          /* antes 8px */
+  font-size: 11px;
 }
 
 .airport-popup__row {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 4px;
+  margin-bottom: 2px;          /* antes 4px */
 }
 
 .airport-popup__label {
@@ -286,10 +295,10 @@
 }
 
 .airport-popup__progress {
-  margin-top: 6px;
+  margin-top: 4px;
   margin-bottom: 2px;
   width: 100%;
-  height: 6px;
+  height: 5px;                 /* más finita */
   border-radius: 999px;
   background-color: #e5e7eb;
   overflow: hidden;
@@ -306,6 +315,61 @@
   font-size: 10px;
   color: #9ca3af;
 }
+
+/* Ícono de aeropuerto (el SVG que se colorea) */
+.airport-icon {
+  display: block;
+}
+
+/* Secciones Salidas / Llegadas dentro del popup (listas compactas) */
+.airport-popup__section-title {
+  margin-top: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.airport-popup__list {
+  margin: 0 0 4px 12px;
+  padding: 0;
+  list-style: disc;
+  font-size: 10px;
+}
+
+.airport-popup__list li {
+  margin-bottom: 2px;
+}
+
+.airport-popup__flight {
+  margin-top: 1px;
+}
+
+.airport-popup__flight-main {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.airport-popup__flight-code {
+  font-weight: 600;
+  font-size: 10px;
+}
+
+.airport-popup__flight-dest {
+  font-size: 10px;
+  color: #4b5563;
+}
+
+.airport-popup__flight-time {
+  font-size: 10px;
+  color: #6b7280;
+}
+
+.airport-popup__flight-orders {
+  font-size: 10px;
+  color: #4b5563;
+}
+
 /* ===============================
    PANEL INFORMATIVO INFERIOR*/
 .info-panel {
@@ -629,6 +693,11 @@
   border-top: 1px solid #e5e7eb;
   padding-top: 10px;
 }
+.sidebar-section--airports {
+  margin-top: 0px;
+  border-top: 1px solid #e5e7eb;
+  padding-top: 10px;
+}
 
 .orders-header {
   display: flex;
@@ -937,4 +1006,396 @@
   color: #111827;
   font-weight: 500;
   text-align: right;
+}
+
+/* ===============================
+   RESET TOOLTIP LEAFLET
+   (para usar nuestras tarjetas)
+================================ */
+
+.leaflet-tooltip {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 0;
+}
+
+.leaflet-tooltip-top:before,
+.leaflet-tooltip-bottom:before,
+.leaflet-tooltip-left:before,
+.leaflet-tooltip-right:before {
+  display: none; /* quita la flechita blanca de Leaflet */
+}
+
+/* ===============================
+   TABS DEL TOOLTIP AEROPUERTO
+================================ */
+
+.airport-popup-tabs {
+  display: flex;
+  gap: 6px;
+  margin: 8px 0 6px;
+}
+
+.airport-popup-tab {
+  flex: 1;
+  border-radius: 999px;
+  border: 1px solid #d1d5db;
+  background: #f9fafb;
+  padding: 4px 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.airport-popup-tab.active {
+  background: #1a73e8;
+  color: #fff;
+  border-color: #1a73e8;
+}
+/* ===============================
+   TOOLTIP DE AVIÓN
+================================ */
+
+.plane-tooltip {
+  min-width: 240px;
+  background: #ffffff;
+  border-radius: 14px;
+  padding: 10px 14px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.25);
+  font-size: 12px;
+}
+
+.plane-tooltip__route {
+  font-weight: 600;
+  font-size: 13px;
+  margin-bottom: 2px;
+}
+
+.plane-tooltip__code {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 500;
+  background: #f3f4f6;
+  border-radius: 999px;
+  padding: 2px 8px;
+  margin-bottom: 6px;
+}
+
+.plane-tooltip__row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 2px;
+  font-size: 11px;
+  color: #4b5563;
+}
+
+.plane-tooltip__row span:first-child {
+  color: #6b7280;
+  margin-right: 6px;
+}
+
+.plane-tooltip__row span:last-child {
+  font-weight: 500;
+  margin-left: 8px;
+}
+
+.plane-tooltip__row--orders {
+  margin-top: 4px;
+}
+.plane-tooltip__orders {
+  margin: 4px 0 0 16px;
+  padding: 0;
+  list-style: disc;
+  font-size: 11px;
+  color: #111827;
+}
+
+.plane-tooltip__orders li {
+  margin-bottom: 2px;
+}
+.leaflet-tooltip {
+  padding: 0;            
+  border: none;
+  background: transparent; 
+  box-shadow: none;
+}
+
+.plane-tooltip__progress {
+  margin: 4px 0 6px;
+  width: 100%;
+  height: 6px;
+  border-radius: 999px;
+  background-color: #e5e7eb;
+  overflow: hidden;
+}
+
+.plane-tooltip__progress-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #22c55e, #eab308, #ef4444);
+}
+
+/* ========= SHELL GENÉRICO DEL PANEL INFERIOR ========= */
+
+.info-shell {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  font-size: 13px;
+}
+
+/* Header común */
+.info-shell-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.info-shell-left {
+  max-width: 60%;
+}
+
+.info-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  background: #111827;
+  color: #fff;
+  margin-bottom: 6px;
+}
+
+.info-chip--flight { background: #0ea5e9; }
+.info-chip--order { background: #0f766e; }
+.info-chip--airport { background: #f97316; }
+.info-chip--route { background: #7c3aed; }
+
+.info-shell-title {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.info-shell-subtitle {
+  font-size: 13px;
+  opacity: 0.9;
+}
+
+/* Bloque de métricas a la derecha */
+.info-shell-summary {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  font-size: 12px;
+}
+
+.info-summary-row {
+  display: flex;
+  gap: 6px;
+}
+
+.info-summary-label {
+  opacity: 0.8;
+}
+
+.info-summary-value {
+  font-weight: 600;
+}
+
+/* Body en columnas */
+.info-shell-body--two-cols {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  gap: 24px;
+}
+
+.info-section-title {
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.info-section-subtitle {
+  font-size: 12px;
+  opacity: 0.85;
+  margin-bottom: 6px;
+}
+
+.info-list {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 12px;
+}
+
+.info-list li {
+  margin-bottom: 3px;
+}
+
+.info-empty {
+  font-size: 12px;
+  opacity: 0.8;
+  font-style: italic;
+}
+
+@media (max-width: 1100px) {
+  .info-shell-body--two-cols {
+    grid-template-columns: 1fr;
+  }
+}
+/*Para las cards de los aeropuertos en el panel desplegable*/
+/* Input de búsqueda en sidebar (vuelos / pedidos) */
+.orders-search-input {
+  width: 100%;
+  margin-bottom: 8px;
+  border-radius: 999px;
+  border: 1px solid #d1d5db;
+  padding: 6px 10px;
+  font-size: 12px;
+}
+/* ===============================
+   SELECTS DE FILTRO
+================================ */
+
+.filter-select {
+  width: 100%;
+  border-radius: 999px;
+  border: 1px solid #d1d5db;
+  padding: 6px 32px 6px 12px;
+  font-size: 12px;
+  background-color: #f9fafb;
+  color: #111827;
+  outline: none;
+
+  /* quitar estilo feo del navegador */
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+
+  /* flechita custom */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 20 20'%3E%3Cpath fill='none' stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4' /%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 12px;
+
+  /* que el texto no se corte feo si es largo */
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.filter-select:focus {
+  border-color: #1a73e8;
+  box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.15);
+  background-color: #ffffff;
+}
+
+/* Estilo de las opciones del desplegable */
+.filter-select option {
+  font-size: 12px;
+  padding: 6px 10px;
+  background-color: #ffffff;
+  color: #111827;
+}
+
+.filters-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+@media (min-width: 900px) {
+  .filters-row {
+    flex-direction: column; /* o 'row' si los quieres en una línea */
+  }
+}
+
+/* Toggle "solo sedes" en aeropuertos */
+.airports-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  margin-bottom: 6px;
+}
+
+/* Semáforo visual en cards de aeropuertos del PANEL */
+.airport-card--low {
+  border-left: 4px solid #22c55e;  /* verde */
+}
+
+.airport-card--medium {
+  border-left: 4px solid #eab308;  /* amarillo */
+}
+
+.airport-card--high {
+  border-left: 4px solid #ef4444;  /* rojo */
+}
+.airport-popup__orders-list {
+  margin: 4px 0 0 12px;
+  padding: 0;
+  list-style-type: disc;
+  font-size: 11px;
+}
+
+.airport-popup__orders-title {
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.route-row--vuelos {
+  flex-direction: column;
+  align-items: flex-start;
+}
+.route-row--vuelos .route-label {
+  margin-bottom: 4px;
+}
+
+.route-row--vuelos .route-value {
+  text-align: left;          /* 👈 también aquí */
+}
+.route-value--multiline {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+.order-seg-block {
+  margin-top: 8px;
+  padding-top: 8px;
+}
+
+.order-lote-separator {
+  border-bottom: 1px solid #e0e0e0;
+  margin: 8px 0 0;
+}
+
+.order-row--vuelos {
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.order-row--vuelos .order-label {
+  margin-bottom: 4px;
+}
+.order-value--multiline {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;         
+  gap: 2px;
+}/* sobreescribir el text-align:right de .order-value normal */
+.order-row--vuelos .order-value {
+  text-align: left;
+}
+.order-flight-code {
+  font-size: 0.78rem;
+  line-height: 1.2;
 }

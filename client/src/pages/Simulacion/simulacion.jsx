@@ -24,13 +24,21 @@ import {
   disconnectWS,
 } from "../../services/planificarService";
 import {
+  AirportInfoPanel,
+  FlightInfoPanel,
+  OrderInfoPanel,
+  RouteInfoPanel,
+} from "./InfoPanels";
+import {
   MapContainer,
   TileLayer,
   Marker,
   Popup,
   Polyline,
   useMapEvent,
+  Tooltip,
 } from "react-leaflet";
+import { AirportTooltipContent, PlaneTooltipContent } from "./MapTooltips";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import planeIconImg from "../../assets/icons/planeMora.svg";
@@ -59,8 +67,10 @@ export default function Simulacion() {
     if (v === "" || v === null || v === undefined) return null;
     return Number(v);
   };
-  const [maxDiasEntregaIntercontinental, setMaxDiasEntregaIntercontinental] = useState();
-  const [maxDiasEntregaIntracontinental, setMaxDiasEntregaIntracontinental] = useState();
+  const [maxDiasEntregaIntercontinental, setMaxDiasEntregaIntercontinental] =
+    useState();
+  const [maxDiasEntregaIntracontinental, setMaxDiasEntregaIntracontinental] =
+    useState();
   const [maxHorasRecojo, setMaxHorasRecojo] = useState();
   const [minHorasEstancia, setMinHorasEstancia] = useState();
   const [maxHorasEstancia, setMaxHorasEstancia] = useState();
@@ -74,6 +84,9 @@ export default function Simulacion() {
   //Vuelos
   const [flights, setFlights] = useState([]);
   const [highlightedFlights, setHighlightedFlights] = useState([]);
+  // NUEVOS estados -> para ver que no se cierre cuando quitamos el mouse
+  const [openAirportTooltipCode, setOpenAirportTooltipCode] = useState(null);
+  const [openFlightTooltipCode, setOpenFlightTooltipCode] = useState(null);
   //Rutas
   const [routes, setRoutes] = useState([]);
   const [highlightedRoute, setHighlightedRoute] = useState(null);
@@ -81,6 +94,28 @@ export default function Simulacion() {
   const [orders, setOrders] = useState([]);
   //Aeropuertos
   const [airports, setAirports] = useState(null);
+  const getAirportLabel = (code) => {
+    if (!code) return "";
+    if (!airports) return code;
+    const ap = airports[code];
+    if (!ap) return code;
+    return `${code} - ${ap.city}`;
+  };
+
+  // 🔎 Búsquedas y filtros SOLO DEL PANEL
+  // Vuelos
+  const [flightFilterCode, setFlightFilterCode] = useState("");
+  const [flightFilterOrigin, setFlightFilterOrigin] = useState("");
+  const [flightFilterDestination, setFlightFilterDestination] = useState("");
+
+  // Pedidos
+  const [orderFilterCode, setOrderFilterCode] = useState("");
+  const [orderFilterDestino, setOrderFilterDestino] = useState("");
+  // PENDIENTES = en tránsito / planificados, ENTREGADOS, TODOS
+  const [orderFilterEstado, setOrderFilterEstado] = useState("PENDIENTES");
+
+  // Aeropuertos
+  const [onlyHubs, setOnlyHubs] = useState(false); // fila 61
   // Inputs de inicio de simulación (no se auto-actualizan)
   const [inputDate, setInputDate] = useState(
     new Date().toISOString().split("T")[0]
@@ -97,6 +132,8 @@ export default function Simulacion() {
   // Refs internas para el avance suave
   const lastRealMsRef = useRef(null);
   const stopRequestedRef = useRef(false);
+  const mapRef = useRef(null);
+
   // Helpers de tiempo (trabajamos en UTC porque tu JSON está en UTC)
   const toISODate = (ms) => new Date(ms).toISOString().split("T")[0];
   const toISOTime = (ms) => new Date(ms).toISOString().slice(11, 16);
@@ -274,16 +311,18 @@ export default function Simulacion() {
     setAirports(null);
     setSelectedItem(null);
     setSelectedAirport(null);
-    setOrders([]);            
-    setSidebarTab("flights"); 
+    setOrders([]);
+    setSidebarTab("flights");
     setStopDisabled(true);
-    setRoutes([])
+    setRoutes([]);
     setHighlightedRoute(null);
     setHighlightedFlights([]);
+    setOpenAirportTooltipCode(null);
+    setOpenFlightTooltipCode(null);
   };
 
   // Vuelos
-  
+
   // 🚚 Pedidos (para el sidebar)
   const activeFlights = flights.filter(
     (f) =>
@@ -293,6 +332,68 @@ export default function Simulacion() {
       simNowMs >= f.startMs &&
       simNowMs < f.endMs
   );
+
+  // Pedidos que aún no han sido completamente entregados
+  const isOrderDelivered = (pedido) => {
+    let maxEndMs = null;
+
+    (pedido.segmentaciones || []).forEach((seg) => {
+      (seg.lotes || []).forEach((lote) => {
+        (lote.vuelos || []).forEach((codVuelo) => {
+          const f = flights.find((fl) => fl.code === codVuelo);
+          if (f && typeof f.endMs === "number") {
+            if (maxEndMs === null || f.endMs > maxEndMs) {
+              maxEndMs = f.endMs;
+            }
+          }
+        });
+      });
+    });
+
+    // si no tiene vuelos asociados, lo consideramos aún no entregado
+    if (maxEndMs === null) return false;
+
+    // entregado si el tiempo simulado ya pasó la última llegada
+    return simNowMs >= maxEndMs;
+  };
+
+  // Pedidos aún no entregados (pendientes / en tránsito)
+  const visibleOrders = orders.filter((pedido) => !isOrderDelivered(pedido));
+  // Pedidos ya entregados
+  const deliveredOrders = orders.filter((pedido) => isOrderDelivered(pedido));
+
+  // Vuelos filtrados por código / origen / destino
+  const filteredActiveFlights = activeFlights.filter((f) => {
+    if (flightFilterCode && f.code !== flightFilterCode) return false;
+    if (flightFilterOrigin && f.origin?.code !== flightFilterOrigin)
+      return false;
+    if (
+      flightFilterDestination &&
+      f.destination?.code !== flightFilterDestination
+    )
+      return false;
+    return true;
+  });
+
+  // Pedidos base según estado seleccionado
+  const baseOrders =
+    orderFilterEstado === "PENDIENTES"
+      ? visibleOrders
+      : orderFilterEstado === "ENTREGADOS"
+      ? deliveredOrders
+      : orders;
+
+  // Pedidos filtrados por código y destino
+  const filteredOrders = baseOrders.filter((p) => {
+    if (orderFilterCode && p.codigo !== orderFilterCode) return false;
+    if (orderFilterDestino && p.codDestino !== orderFilterDestino) return false;
+    return true;
+  });
+
+  // Aeropuertos visibles según "solo sedes" (fila 61)
+  const visibleAirports =
+    airports &&
+    Object.values(airports).filter((ap) => (onlyHubs ? ap.esSede : true));
 
   // === Vuelos saliendo / llegando del aeropuerto seleccionado ===
   const vuelosSaliendo = selectedAirport
@@ -320,6 +421,7 @@ export default function Simulacion() {
     (vuelosSaliendo.length > 0 || vuelosLlegando.length > 0);
 
   const infoPanelExpanded = !!(selectedAirport || selectedItem);
+
   const createColoredIcon = (filterCss, rotation) =>
     L.divIcon({
       html: `<img src="${planeIconImg}" 
@@ -333,13 +435,41 @@ export default function Simulacion() {
       iconAnchor: [11, 8],
     });
 
-  const airportIcon = L.icon({
-    iconUrl: airportIconImg,
-    iconSize: [24, 24], // tamaño del svg en el mapa
-    iconAnchor: [12, 12], // punto que “toca” el mapa (centro del ícono)
-    popupAnchor: [0, -12], // dónde aparece el popup respecto al icono
-  });
-  //
+  // Ícono de aeropuerto coloreado según ocupación (semáforo)
+  function getAirportFilter(ocupacion) {
+    if (ocupacion == null) {
+      return "none";
+    }
+    if (ocupacion < 0.5) {
+      // verde
+      return "invert(54%) sepia(81%) saturate(356%) hue-rotate(85deg) brightness(94%) contrast(90%)";
+    }
+    if (ocupacion < 0.8) {
+      // amarillo
+      return "invert(80%) sepia(72%) saturate(657%) hue-rotate(3deg) brightness(101%) contrast(102%)";
+    }
+    // rojo
+    return "invert(37%) sepia(79%) saturate(844%) hue-rotate(338deg) brightness(94%) contrast(92%)";
+  }
+
+  const createAirportIcon = (ap) =>
+    L.divIcon({
+      html: `
+        <img
+          src="${airportIconImg}"
+          class="airport-icon"
+          style="
+            width: 20px;
+            height: 20px;
+            filter: ${getAirportFilter(ap.ocupacion)};
+          "
+        />
+      `,
+      className: "",
+      iconSize: [20, 20],
+      iconAnchor: [10, 10],
+      popupAnchor: [0, -10],
+    });
 
   // Detener cronómetro cuando todos los vuelos hayan llegado
   useEffect(() => {
@@ -421,7 +551,12 @@ export default function Simulacion() {
     useMapEvent("click", () => onMapClick());
     return null; // no renderiza nada visible
   }
-
+  const getAirportOccupancyClass = (ocupacion) => {
+    if (ocupacion == null) return "airport-card--unknown";
+    if (ocupacion < 0.5) return "airport-card--low";
+    if (ocupacion < 0.8) return "airport-card--medium";
+    return "airport-card--high";
+  };
   //MODAL
   useEffect(() => {
     const fetchParametrosYAeropuertos = async () => {
@@ -455,6 +590,14 @@ export default function Simulacion() {
 
   const buildSimulationFromSolution = (solution) => {
     if (!solution) return;
+    const getRutasDeVuelo = (flightCode) => {
+      const labels = (solution.rutasEnOperacion || [])
+        .filter((r) => (r.codVuelos || []).includes(flightCode))
+        .map((r) => `${r.codOrigen} → ${r.codDestino}`);
+
+      // eliminamos duplicados
+      return Array.from(new Set(labels));
+    };
 
     // 1) Mapear aeropuertosTransitados → airports (mapa por código)
     const airportMap = {};
@@ -467,65 +610,65 @@ export default function Simulacion() {
         city: a.ciudad,
         country: a.pais,
         capacidad: a.capacidad,
+        esSede: a.esSede,
+        registros: a.registros || [], // aquí vienen los REG-... con tamLote
       };
     });
-    console.log("airportMap construido:", airportMap);
 
-  // Mapa rápido de rutas por código
-  const rutasPorCodigo = {};
-  (solution.rutasEnOperacion || []).forEach((r) => {
-    rutasPorCodigo[r.codigo] = r;
-  });
+    // Mapa rápido de rutas por código
+    const rutasPorCodigo = {};
+    (solution.rutasEnOperacion || []).forEach((r) => {
+      rutasPorCodigo[r.codigo] = r;
+    });
 
-  // Guardar rutas completas para el sidebar
-  const rutasFiltradas = (solution.rutasEnOperacion || []).filter(
-    (r) => r.estado === "OPERATIVA" || r.estado === "FINALIZADA"
-  );
+    // Guardar rutas completas para el sidebar
+    const rutasFiltradas = (solution.rutasEnOperacion || []).filter(
+      (r) => r.estado === "OPERATIVA" || r.estado === "FINALIZADA"
+    );
 
-  setRoutes(rutasFiltradas);
+    setRoutes(rutasFiltradas);
 
-  // Construir pedidos con segmentaciones, lotes y vuelos
-  const pedidosAtendidos = (solution.pedidosAtendidos || []).map((p) => {
-    const segmentaciones = (p.segmentaciones || []).map((seg) => {
-      const lotes = (seg.lotesPorRuta || []).map((lpr) => {
-        const ruta = rutasPorCodigo[lpr.codRuta];
-        const vuelosRuta = ruta?.codVuelos || [];
-        const origen = ruta ? airportMap[ruta.codOrigen] : null;
-        const destino = ruta ? airportMap[ruta.codDestino] : null;
+    // Construir pedidos con segmentaciones, lotes y vuelos
+    const pedidosAtendidos = (solution.pedidosAtendidos || []).map((p) => {
+      const segmentaciones = (p.segmentaciones || []).map((seg) => {
+        const lotes = (seg.lotesPorRuta || []).map((lpr) => {
+          const ruta = rutasPorCodigo[lpr.codRuta];
+          const vuelosRuta = ruta?.codVuelos || [];
+          const origen = ruta ? airportMap[ruta.codOrigen] : null;
+          const destino = ruta ? airportMap[ruta.codDestino] : null;
+
+          return {
+            codRuta: lpr.codRuta,
+            loteCodigo: lpr.lote.codigo,
+            loteTamanio: lpr.lote.tamanio,
+            loteEstado: lpr.lote.estado,
+            vuelos: vuelosRuta,
+            origenCode: ruta?.codOrigen,
+            destinoCode: ruta?.codDestino,
+            origenNombre: origen?.name || ruta?.codOrigen,
+            destinoNombre: destino?.name || ruta?.codDestino,
+          };
+        });
 
         return {
-          codRuta: lpr.codRuta,
-          loteCodigo: lpr.lote.codigo,
-          loteTamanio: lpr.lote.tamanio,
-          loteEstado: lpr.lote.estado,
-          vuelos: vuelosRuta,
-          origenCode: ruta?.codOrigen,
-          destinoCode: ruta?.codDestino,
-          origenNombre: origen?.name || ruta?.codOrigen,
-          destinoNombre: destino?.name || ruta?.codDestino,
+          codigo: seg.codigo,
+          fechaHoraAplicacion: seg.fechaHoraAplicacion,
+          fechaHoraSustitucion: seg.fechaHoraSustitucion,
+          lotes,
         };
       });
 
       return {
-        codigo: seg.codigo,
-        fechaHoraAplicacion: seg.fechaHoraAplicacion,
-        fechaHoraSustitucion: seg.fechaHoraSustitucion,
-        lotes,
+        codigo: p.codigo,
+        codCliente: p.codCliente,
+        codDestino: p.codDestino,
+        cantidadSolicitada: p.cantidadSolicitada,
+        fueAtendido: p.fueAtendido,
+        segmentaciones,
       };
     });
 
-    return {
-      codigo: p.codigo,
-      codCliente: p.codCliente,
-      codDestino: p.codDestino,
-      cantidadSolicitada: p.cantidadSolicitada,
-      fueAtendido: p.fueAtendido,
-      segmentaciones,
-    };
-  });
-
-  setOrders(pedidosAtendidos);
-  console.log("Pedidos construidos:", pedidosAtendidos);
+    setOrders(pedidosAtendidos);
     // Actualizar airports solo si cambió
     setAirports((prevAirports) => {
       if (JSON.stringify(prevAirports) !== JSON.stringify(airportMap)) {
@@ -566,37 +709,27 @@ export default function Simulacion() {
           dest.lng,
           120
         );
-
+        const rutasVuelo = getRutasDeVuelo(v.codigo); // sin duplicados
         const prev = prevByCode.get(v.codigo);
 
         if (prev) {
-          // ✅ Vuelo ya existía → PRESERVAR completamente su estado de animación
-          // Solo actualizamos datos estáticos que podrían haber cambiado
           nextFlights.push({
             ...prev,
-            // Actualizar solo metadata que no afecta la animación
             capacity: v.capacidadOcupada,
             planeCapacity: v.capacidadMaxima,
-            // NO tocamos: progress, position, rotation, arrived, startMs, endMs, path
-            rutas: (solution.rutasEnOperacion || [])
-              .filter((r) => (r.codVuelos || []).includes(v.codigo))
-              .map((r) => `${r.codOrigen} → ${r.codDestino}`),
+            rutas: rutasVuelo,
           });
         } else {
-          // 🆕 Vuelo nuevo → inicializarlo según simNowMs
           const total = Math.max(endMs - startMs, 60 * 1000);
           let progress = 0;
           let position = path[0];
           let arrived = false;
           let rotation = 0;
-
-          // Buscar rutas asociadas a este vuelo
           const rutasDelVuelo = (solution.rutasEnOperacion || []).filter((r) =>
             (r.codVuelos || []).includes(v.codigo)
           );
 
           if (simNowMs <= startMs) {
-            // Aún no despega
             progress = 0;
             position = path[0];
             arrived = false;
@@ -648,7 +781,7 @@ export default function Simulacion() {
             position,
             rotation,
             arrived,
-            rutas: rutasDelVuelo.map((r) => `${r.codOrigen} → ${r.codDestino}`),
+            rutas: rutasVuelo,
           });
         }
       });
@@ -662,18 +795,10 @@ export default function Simulacion() {
           !prevFlight.arrived &&
           simNowMs < prevFlight.endMs
         ) {
-          console.log(
-            `Manteniendo vuelo en tránsito que no vino en nueva solución: ${prevFlight.code}`
-          );
           nextFlights.push(prevFlight);
         }
       });
 
-      console.log(
-        `Vuelos actualizados: ${nextFlights.length} (${
-          vuelosNuevos.length
-        } nuevos, ${nextFlights.length - vuelosNuevos.length} preservados)`
-      );
       return nextFlights;
     });
   };
@@ -836,7 +961,7 @@ export default function Simulacion() {
             pedidosEnVuelo.push({
               pedidoCodigo: pedido.codigo,
               loteCodigo: lote.loteCodigo,
-              cantidad: lote.loteTamanio
+              cantidad: lote.loteTamanio,
             });
           }
         });
@@ -845,6 +970,32 @@ export default function Simulacion() {
 
     return pedidosEnVuelo;
   };
+  const selectedFlight =
+    selectedItem?.type === "flight"
+      ? flights.find((f) => f.code === selectedItem.codigo)
+      : null;
+
+  const selectedOrder =
+    selectedItem?.type === "order"
+      ? orders.find((o) => o.codigo === selectedItem.codigo)
+      : null;
+
+  const selectedRoute =
+    selectedItem?.type === "route"
+      ? routes.find((r) => r.codigo === selectedItem.codigo)
+      : null;
+  const routesInCurrentTime = routes.filter((ruta) => {
+    if (!ruta.codVuelos || ruta.codVuelos.length === 0) return false;
+
+    return ruta.codVuelos.some((codigoVuelo) => {
+      const f = flights.find((fl) => fl.code === codigoVuelo);
+      if (!f || typeof f.startMs !== "number" || typeof f.endMs !== "number") {
+        return false;
+      }
+      // Ruta visible solo si al menos uno de sus vuelos está activo
+      return simNowMs >= f.startMs && simNowMs <= f.endMs;
+    });
+  });
 
   return (
     <div className="page">
@@ -870,319 +1021,631 @@ export default function Simulacion() {
           />
         </div>
 
-              {!collapsed && (
-        <div className="sidebar-content sidebar-content--flights">
-          {/* Pestañas Vuelos / Pedidos */}
-          <div className="sidebar-tabs">
-            <button
-              className={`sidebar-tab ${
-                sidebarTab === "flights" ? "active" : ""
-              }`}
-              onClick={() => setSidebarTab("flights")}
-            >
-              <span>Vuelos</span>
-              <span className="sidebar-tab-badge">
-                {activeFlights.length}
-              </span>
-            </button>
-
-            <button
-              className={`sidebar-tab ${
-                sidebarTab === "orders" ? "active" : ""
-              }`}
-              onClick={() => setSidebarTab("orders")}
-            >
-              <span>Pedidos</span>
-              <span className="sidebar-tab-badge">
-                {orders.length}
-              </span>
-            </button>
-
-            <button
-              className={`sidebar-tab ${sidebarTab === "routes" ? "active" : ""}`}
-              onClick={() => setSidebarTab("routes")}
-            >
-              <span>Rutas</span>
-              <span className="sidebar-tab-badge">
-                {routes.length}
-              </span>
-            </button>
-
-          </div>
-
-          {/* ===== CONTENIDO PESTAÑA VUELOS ===== */}
-          {sidebarTab === "flights" && (
-            <>
-              <div className="active-flights-header">
-                <span className="active-flights-title">
-                  Vuelos en tránsito
-                </span>
-                <span className="active-flights-count">
+        {!collapsed && (
+          <div className="sidebar-content sidebar-content--flights">
+            {/* Pestañas Vuelos / Pedidos */}
+            <div className="sidebar-tabs">
+              <button
+                className={`sidebar-tab ${
+                  sidebarTab === "flights" ? "active" : ""
+                }`}
+                onClick={() => setSidebarTab("flights")}
+              >
+                <span>Vuelos</span>
+                <span className="sidebar-tab-badge">
                   {activeFlights.length}
                 </span>
-              </div>
+              </button>
 
-              <div className="active-flights-list">
-                {activeFlights.length === 0 ? (
-                  <p className="no-flights-text">
-                    No hay vuelos activos en este momento.
-                  </p>
-                ) : (
-                  activeFlights.map((flight) => {
-                    const progressPct = Math.min(
-                      100,
-                      Math.max(0, Math.round((flight.progress ?? 0) * 100))
-                    );
+              <button
+                className={`sidebar-tab ${
+                  sidebarTab === "orders" ? "active" : ""
+                }`}
+                onClick={() => setSidebarTab("orders")}
+              >
+                <span>Pedidos</span>
+                <span className="sidebar-tab-badge">
+                  {visibleOrders.length}
+                </span>
+              </button>
 
-                    return (
+              <button
+                className={`sidebar-tab ${
+                  sidebarTab === "airports" ? "active" : ""
+                }`}
+                onClick={() => setSidebarTab("airports")}
+              >
+                <span>Aeropuertos</span>
+                <span className="sidebar-tab-badge">
+                  {visibleAirports ? visibleAirports.length : 0}
+                </span>
+              </button>
+
+              <button
+                className={`sidebar-tab ${
+                  sidebarTab === "routes" ? "active" : ""
+                }`}
+                onClick={() => setSidebarTab("routes")}
+              >
+                <span>Rutas</span>
+                <span className="sidebar-tab-badge">
+                  {routesInCurrentTime.length}
+                </span>
+              </button>
+            </div>
+
+            {/* ===== CONTENIDO PESTAÑA VUELOS ===== */}
+            {sidebarTab === "flights" && (
+              <>
+                <div className="active-flights-header">
+                  <span className="active-flights-title">
+                    Vuelos en tránsito
+                  </span>
+                  <span className="active-flights-count">
+                    {activeFlights.length}
+                  </span>
+                </div>
+
+                {/* 🔎 Filtros de vuelos: código / origen / destino */}
+                <div className="filters-row">
+                  {/* Código de vuelo (solo activos) */}
+                  <select
+                    className="filter-select"
+                    value={flightFilterCode}
+                    onChange={(e) => setFlightFilterCode(e.target.value)}
+                  >
+                    <option value="">Selecciona código</option>
+                    {Array.from(new Set(activeFlights.map((f) => f.code))).map(
+                      (code) => (
+                        <option key={code} value={code}>
+                          {code}
+                        </option>
+                      )
+                    )}
+                  </select>
+
+                  {/* Origen (solo de vuelos activos) */}
+                  <select
+                    className="filter-select"
+                    value={flightFilterOrigin}
+                    onChange={(e) => setFlightFilterOrigin(e.target.value)}
+                  >
+                    <option value="">Selecciona origen</option>
+                    {Array.from(
+                      new Set(
+                        activeFlights
+                          .map((f) => f.origin?.code)
+                          .filter((code) => !!code)
+                      )
+                    ).map((code) => (
+                      <option key={code} value={code}>
+                        {getAirportLabel(code)}
+                      </option>
+                    ))}
+                  </select>
+
+                  {/* Destino (solo de vuelos activos) */}
+                  <select
+                    className="filter-select"
+                    value={flightFilterDestination}
+                    onChange={(e) => setFlightFilterDestination(e.target.value)}
+                  >
+                    <option value="">Selecciona destino</option>
+                    {Array.from(
+                      new Set(
+                        activeFlights
+                          .map((f) => f.destination?.code)
+                          .filter((code) => !!code)
+                      )
+                    ).map((code) => (
+                      <option key={code} value={code}>
+                        {getAirportLabel(code)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="active-flights-list">
+                  {filteredActiveFlights.length === 0 ? (
+                    <p className="no-flights-text">
+                      No hay vuelos activos que coincidan con la búsqueda.
+                    </p>
+                  ) : (
+                    filteredActiveFlights.map((flight) => {
+                      const progressPct = Math.min(
+                        100,
+                        Math.max(0, Math.round((flight.progress ?? 0) * 100))
+                      );
+
+                      // 📦 Pedidos asignados a este vuelo (fila 73)
+                      const ordersForFlight = getOrdersForFlight(flight.code);
+                      const totalPedidos = ordersForFlight.length;
+                      const totalUnidades = ordersForFlight.reduce(
+                        (sum, p) => sum + (p.cantidad || 0),
+                        0
+                      );
+
+                      return (
+                        <div
+                          key={flight.code}
+                          className="flight-card"
+                          onClick={() => {
+                            setSelectedAirport(null);
+
+                            setSelectedItem({
+                              type: "flight",
+                              codigo: flight.code,
+                            });
+
+                            setHighlightedRoute(null);
+                            setHighlightedFlights([flight.code]);
+                            setOpenFlightTooltipCode(flight.code);
+                            setOpenAirportTooltipCode(null);
+
+                            const pos = flight.position || {
+                              lat: flight.origin.lat,
+                              lng: flight.origin.lng,
+                            };
+
+                            if (mapRef.current && pos) {
+                              mapRef.current.setView([pos.lat, pos.lng], 4, {
+                                animate: true,
+                              });
+                            }
+                          }}
+                        >
+                          <div className="flight-card-header">
+                            <span className="flight-route">
+                              {flight.origin.city}
+                              <span className="flight-arrow"> ✈ </span>
+                              {flight.destination.city}
+                            </span>
+                            <span className="flight-code">{flight.code}</span>
+                          </div>
+
+                          <div className="flight-card-body">
+                            <div className="flight-card-row">
+                              <span className="flight-label">Capacidad</span>
+                              <span className="flight-value">
+                                {flight.capacity} / {flight.planeCapacity}
+                              </span>
+                            </div>
+
+                            <div className="flight-card-row">
+                              <span className="flight-label">Salida</span>
+                              <span className="flight-value">
+                                {flight.startTime}
+                              </span>
+                            </div>
+
+                            <div className="flight-card-row">
+                              <span className="flight-label">Llegada</span>
+                              <span className="flight-value">
+                                {flight.endTime}
+                              </span>
+                            </div>
+
+                            {/* 🛣️ Rutas planificadas para este vuelo (fila 72) */}
+                            <div className="flight-card-row">
+                              <span className="flight-label">Rutas</span>
+                              <span className="flight-value">
+                                {flight.rutas && flight.rutas.length > 0
+                                  ? flight.rutas.join(", ")
+                                  : "Sin rutas"}
+                              </span>
+                            </div>
+
+                            {/* 📦 Resumen de pedidos del vuelo (fila 73) */}
+                            <div className="flight-card-row">
+                              <span className="flight-label">Pedidos</span>
+                              <span className="flight-value">
+                                {totalPedidos === 0
+                                  ? "Sin pedidos"
+                                  : `${totalPedidos} pedido(s)${
+                                      totalUnidades
+                                        ? ` · ${totalUnidades} u.`
+                                        : ""
+                                    }`}
+                              </span>
+                            </div>
+
+                            <div className="flight-progress">
+                              <div
+                                className="flight-progress-bar"
+                                style={{ width: `${progressPct}%` }}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </>
+            )}
+
+            {/* ===== CONTENIDO PESTAÑA PEDIDOS ===== */}
+            {sidebarTab === "orders" && (
+              <div className="sidebar-section sidebar-section--orders">
+                <div className="orders-header">
+                  <span className="orders-title">Pedidos</span>
+                  <span className="orders-count">{filteredOrders.length}</span>
+                </div>
+
+                {/* 🔎 Filtros de pedidos: estado / código / destino */}
+                <div className="filters-row">
+                  {/* Estado: pendientes / entregados / todos */}
+                  <select
+                    className="filter-select"
+                    value={orderFilterEstado}
+                    onChange={(e) => setOrderFilterEstado(e.target.value)}
+                  >
+                    <option value="PENDIENTES">En tránsito / pendientes</option>
+                    <option value="ENTREGADOS">Entregados</option>
+                    <option value="TODOS">Todos</option>
+                  </select>
+
+                  <select
+                    className="filter-select"
+                    value={orderFilterCode}
+                    onChange={(e) => setOrderFilterCode(e.target.value)}
+                  >
+                    <option value="">Selecciona código</option>
+                    {Array.from(new Set(baseOrders.map((p) => p.codigo))).map(
+                      (cod) => (
+                        <option key={cod} value={cod}>
+                          {cod}
+                        </option>
+                      )
+                    )}
+                  </select>
+
+                  <select
+                    className="filter-select"
+                    value={orderFilterDestino}
+                    onChange={(e) => setOrderFilterDestino(e.target.value)}
+                  >
+                    <option value="">Selecciona destino</option>
+                    {Array.from(
+                      new Set(
+                        baseOrders
+                          .map((p) => p.codDestino)
+                          .filter((cod) => !!cod)
+                      )
+                    ).map((cod) => (
+                      <option key={cod} value={cod}>
+                        {getAirportLabel(cod)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="orders-list">
+                  {filteredOrders.length === 0 ? (
+                    <p className="no-orders-text">
+                      No hay pedidos que coincidan con la búsqueda.
+                    </p>
+                  ) : (
+                    filteredOrders.map((pedido) => (
                       <div
-                        key={flight.code}
-                        className="flight-card"
+                        key={pedido.codigo}
+                        className="order-card"
                         onClick={() => {
                           setSelectedAirport(null);
-                          setSelectedItem(
-                            `Vuelo ${flight.code}: ${flight.origin.city} (${flight.origin.code}) → ${flight.destination.city} (${flight.destination.code}) | Llegada: ${flight.endTime}`
-                          );
-                        }}
-                      >
-                        <div className="flight-card-header">
-                          <span className="flight-route">
-                            {flight.origin.city}
-                            <span className="flight-arrow"> ✈ </span>
-                            {flight.destination.city}
-                          </span>
-                          <span className="flight-code">{flight.code}</span>
-                        </div>
+                          setHighlightedRoute(null);
 
-                        <div className="flight-card-body">
-                          <div className="flight-card-row">
-                            <span className="flight-label">Capacidad</span>
-                            <span className="flight-value">
-                              {flight.capacity} / {flight.planeCapacity}
-                            </span>
-                          </div>
-
-                          <div className="flight-card-row">
-                            <span className="flight-label">Salida</span>
-                            <span className="flight-value">
-                              {flight.startTime}
-                            </span>
-                          </div>
-
-                          <div className="flight-card-row">
-                            <span className="flight-label">Llegada</span>
-                            <span className="flight-value">
-                              {flight.endTime}
-                            </span>
-                          </div>
-
-                          <div className="flight-progress">
-                            <div
-                              className="flight-progress-bar"
-                              style={{ width: `${progressPct}%` }}
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })
-                )}
-              </div>
-            </>
-          )}
-
-          {/* ===== CONTENIDO PESTAÑA PEDIDOS ===== */}
-          {sidebarTab === "orders" && (
-            <div className="sidebar-section sidebar-section--orders">
-              <div className="orders-header">
-                <span className="orders-title">Pedidos atendidos</span>
-                <span className="orders-count">{orders.length}</span>
-              </div>
-
-              <div className="orders-list">
-                {orders.length === 0 ? (
-                  <p className="no-orders-text">
-                    No hay pedidos en esta simulación.
-                  </p>
-                ) : (
-                  orders.map((pedido) => (
-                    <div
-                      key={pedido.codigo}
-                      className="order-card"
-                      onClick={() => {
-                          setSelectedAirport(null);
-                          setHighlightedRoute(null); // por si había ruta resaltada antes
-
-                          // Buscar TODOS los vuelos de TODOS los lotes del pedido
                           const vuelosPedido = new Set();
 
-                          pedido.segmentaciones.forEach(seg => {
-                              seg.lotes.forEach(lote => {
-                                  (lote.vuelos || []).forEach(v => vuelosPedido.add(v));
-                              });
+                          pedido.segmentaciones.forEach((seg) => {
+                            seg.lotes.forEach((lote) => {
+                              (lote.vuelos || []).forEach((v) =>
+                                vuelosPedido.add(v)
+                              );
+                            });
                           });
 
-                          // Guardar vuelos a resaltar
                           setHighlightedFlights([...vuelosPedido]);
 
-                          setSelectedItem(
-                            `Pedido ${pedido.codigo}
-                      Cliente: ${pedido.codCliente}
-                      Destino: ${pedido.codDestino}
-                      Cantidad solicitada: ${pedido.cantidadSolicitada} unidades`
-                          );
-                      }}
+                          setSelectedItem({
+                            type: "order",
+                            codigo: pedido.codigo,
+                          });
+                        }}
+                      >
+                        <div className="order-card-header">
+                          <span className="order-code">{pedido.codigo}</span>
+                          <span className="order-destination">
+                            {pedido.codDestino}
+                          </span>
+                        </div>
 
-                    >
-                      <div className="order-card-header">
-                        <span className="order-code">{pedido.codigo}</span>
-                        <span className="order-destination">
-                          {pedido.codDestino}
+                        <div className="order-card-body">
+                          <div className="order-row">
+                            <span className="order-label">Cliente</span>
+                            <span className="order-value">
+                              {pedido.codCliente}
+                            </span>
+                          </div>
+
+                          <div className="order-row">
+                            <span className="order-label">Cantidad</span>
+                            <span className="order-value">
+                              {pedido.cantidadSolicitada} u.
+                            </span>
+                          </div>
+
+                          {pedido.fechaHoraGeneracion && (
+                            <div className="order-row">
+                              <span className="order-label">
+                                Fecha generación
+                              </span>
+                              <span className="order-value">
+                                {pedido.fechaHoraGeneracion}
+                              </span>
+                            </div>
+                          )}
+
+                          {pedido.segmentaciones.map((seg, segIndex) => (
+                            <React.Fragment key={seg.codigo}>
+                              {seg.lotes.map((lote, loteIndex) => {
+                                const isLastLoteOfPedido =
+                                  segIndex ===
+                                    pedido.segmentaciones.length - 1 &&
+                                  loteIndex === seg.lotes.length - 1;
+
+                                return (
+                                  <div
+                                    key={lote.loteCodigo}
+                                    className="order-seg-block"
+                                  >
+                                    {/* Segmentación: solo cantidad */}
+                                    <div className="order-row">
+                                      <span className="order-label">
+                                        Segmentación
+                                      </span>
+                                      <span className="order-value">
+                                        {lote.loteTamanio} u.
+                                      </span>
+                                    </div>
+
+                                    {/* Ruta en una línea aparte */}
+                                    <div className="order-row order-row--ruta">
+                                      <span className="order-label">Ruta</span>
+                                      <span className="order-value order-value--ruta">
+                                        {lote.origenCode} → {lote.destinoCode}
+                                      </span>
+                                    </div>
+
+                                    {/* Vuelos */}
+                                    <div className="order-row order-row--vuelos">
+                                      <span className="order-label">
+                                        Vuelos
+                                      </span>
+                                      <div className="order-value order-value--multiline">
+                                        {lote.vuelos &&
+                                        lote.vuelos.length > 0 ? (
+                                          lote.vuelos.map((codVuelo) => (
+                                            <div
+                                              key={codVuelo}
+                                              className="order-flight-code"
+                                            >
+                                              {codVuelo}
+                                            </div>
+                                          ))
+                                        ) : (
+                                          <span>Sin vuelo asignado</span>
+                                        )}
+                                      </div>
+                                    </div>
+
+                                    {!isLastLoteOfPedido && (
+                                      <div className="order-lote-separator" />
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </React.Fragment>
+                          ))}
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* ===== CONTENIDO PESTAÑA AEROPUERTOS ===== */}
+            {/* ===== CONTENIDO PESTAÑA AEROPUERTOS ===== */}
+            {sidebarTab === "airports" && (
+              <div className="sidebar-section sidebar-section--airports">
+                <div className="orders-header">
+                  <span className="orders-title">Aeropuertos</span>
+                  <span className="orders-count">
+                    {visibleAirports ? visibleAirports.length : 0}
+                  </span>
+                </div>
+
+                {/* ✅ Filtro "solo sedes" (fila 61) */}
+                <label className="airports-toggle">
+                  <input
+                    type="checkbox"
+                    checked={onlyHubs}
+                    onChange={(e) => setOnlyHubs(e.target.checked)}
+                  />
+                  Mostrar solo sedes (almacenes principales)
+                </label>
+
+                <div className="orders-list">
+                  {!visibleAirports || visibleAirports.length === 0 ? (
+                    <p className="no-orders-text">
+                      No hay aeropuertos cargados en la simulación.
+                    </p>
+                  ) : (
+                    visibleAirports.map((ap) => {
+                      const registros = ap.registros || [];
+                      let stockActual = 0;
+
+                      registros.forEach((reg) => {
+                        const ingresoMs = parseFechaHoraToMs(
+                          reg.fechaHoraIngreso
+                        );
+                        const egresoMs = reg.fechaHoraEgreso
+                          ? parseFechaHoraToMs(reg.fechaHoraEgreso)
+                          : null;
+
+                        if (
+                          simNowMs >= ingresoMs &&
+                          (!egresoMs || simNowMs < egresoMs)
+                        ) {
+                          stockActual += reg.tamLote || 0;
+                        }
+                      });
+
+                      const ocupacion =
+                        ap.capacidad > 0 ? stockActual / ap.capacidad : 0;
+                      const ocupPct = Math.min(
+                        100,
+                        Math.max(0, Math.round((ocupacion ?? 0) * 100))
+                      );
+
+                      return (
+                        <div
+                          key={ap.code}
+                          className={`order-card airport-card ${getAirportOccupancyClass(
+                            ocupacion
+                          )}`}
+                          onClick={() => {
+                            const enrichedAp = {
+                              ...ap,
+                              stockActual,
+                              ocupacion,
+                            };
+
+                            setSelectedAirport(enrichedAp);
+                            setSelectedItem(null);
+                            setHighlightedRoute(null);
+                            setHighlightedFlights([]);
+                            setOpenAirportTooltipCode(ap.code);
+                            setOpenFlightTooltipCode(null);
+
+                            if (mapRef.current) {
+                              mapRef.current.setView([ap.lat, ap.lng], 4, {
+                                animate: true,
+                              });
+                            }
+                          }}
+                        >
+                          <div className="order-card-header">
+                            <span className="order-code">{ap.code}</span>
+                            <span className="order-destination">{ap.city}</span>
+                          </div>
+
+                          <div className="order-card-body">
+                            <div className="order-row">
+                              <span className="order-label">Tipo</span>
+                              <span className="order-value">
+                                {ap.esSede ? "Principal" : "Intermedio"}
+                              </span>
+                            </div>
+                            <div className="order-row">
+                              <span className="order-label">Stock actual</span>
+                              <span className="order-value">
+                                {stockActual} / {ap.capacidad} u. ({ocupPct}%)
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ===== CONTENIDO PESTAÑA RUTAS ===== */}
+        {sidebarTab === "routes" && (
+          <div className="sidebar-section sidebar-section--routes">
+            <div className="routes-header">
+              <span className="routes-title">Rutas en operación</span>
+              <span className="routes-count">{routesInCurrentTime.length}</span>
+            </div>
+
+            <div className="routes-list">
+              {routesInCurrentTime.length === 0 ? (
+                <p className="no-routes-text">
+                  No hay rutas en operación en este momento.
+                </p>
+              ) : (
+                routesInCurrentTime.map((ruta) => (
+                  <div
+                    key={ruta.codigo}
+                    className="route-card"
+                    onClick={() => {
+                      setSelectedAirport(null);
+
+                      // Para el panel inferior
+                      setSelectedItem({
+                        type: "route",
+                        codigo: ruta.codigo,
+                      });
+
+                      // ❌ Ya no usamos polyline especial para la ruta
+                      setHighlightedRoute(null);
+
+                      // ✅ Solo resaltamos los vuelos asociados a esta ruta
+                      setHighlightedFlights(ruta.codVuelos || []);
+                    }}
+                  >
+                    <div className="route-card-header">
+                      <span className="route-code">{ruta.codigo}</span>
+                    </div>
+
+                    <div className="route-card-body">
+                      <div className="route-row">
+                        <span className="route-label">Tipo</span>
+                        <span className="route-value">{ruta.tipo}</span>
+                      </div>
+
+                      <div className="route-row">
+                        <span className="route-label">Origen</span>
+                        <span className="route-value">{ruta.codOrigen}</span>
+                      </div>
+
+                      <div className="route-row">
+                        <span className="route-label">Destino</span>
+                        <span className="route-value">{ruta.codDestino}</span>
+                      </div>
+
+                      <div className="route-row">
+                        <span className="route-label">Distancia</span>
+                        <span className="route-value">
+                          {ruta.distancia.toFixed(0)} km
                         </span>
                       </div>
 
-                      <div className="order-card-body">
-                        <div className="order-row">
-                          <span className="order-label">Cliente</span>
-                          <span className="order-value">
-                            {pedido.codCliente}
-                          </span>
-                        </div>
-                        <div className="order-row">
-                          <span className="order-label">Cantidad</span>
-                          <span className="order-value">
-                            {pedido.cantidadSolicitada} u.
-                          </span>
-                        </div>
-
-                        {pedido.segmentaciones.map((seg) => (
-                          <div key={seg.codigo} className="order-seg">
-                            <div className="order-seg-header">
-                              <span className="order-seg-code">
-                                {seg.codigo}
-                              </span>
-                              {seg.fechaHoraAplicacion && (
-                                <span className="order-seg-date">
-                                  {seg.fechaHoraAplicacion}
-                                </span>
-                              )}
-                            </div>
-
-                            {seg.lotes.map((lote) => (
-                              <div
-                                key={lote.loteCodigo}
-                                className="order-lote"
-                              >
-                                <div className="order-row">
-                                  <span className="order-label">Lote</span>
-                                  <span className="order-value">
-                                    {lote.loteCodigo} · {lote.loteTamanio} u.
-                                  </span>
-                                </div>
-                                <div className="order-row">
-                                  <span className="order-label">Ruta</span>
-                                  <span className="order-value">
-                                    {lote.origenCode} → {lote.destinoCode}
-                                  </span>
-                                </div>
-                                <div className="order-row">
-                                  <span className="order-label">Vuelos</span>
-                                  <span className="order-value">
-                                    {lote.vuelos && lote.vuelos.length > 0
-                                      ? lote.vuelos.join(", ")
-                                      : "Sin vuelo asignado"}
-                                  </span>
-                                </div>
+                      <div className="route-row route-row--vuelos">
+                        <span className="route-label">Vuelos</span>
+                        <div className="route-value route-value--multiline">
+                          {ruta.codVuelos?.length > 0 ? (
+                            ruta.codVuelos.map((code) => (
+                              <div key={code} className="route-flight-code">
+                                {code}
                               </div>
-                            ))}
-                          </div>
-                        ))}
+                            ))
+                          ) : (
+                            <span>Sin vuelos</span>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  ))
-                )}
-              </div>
+                  </div>
+                ))
+              )}
             </div>
-          )}
-        </div>
-      )}
-
-      {/* ===== CONTENIDO PESTAÑA RUTAS ===== */}
-      {sidebarTab === "routes" && (
-        <div className="sidebar-section sidebar-section--routes">
-          
-          <div className="routes-header">
-            <span className="routes-title">Rutas en operación</span>
-            <span className="routes-count">{routes.length}</span>
           </div>
-
-          <div className="routes-list">
-            {routes.length === 0 ? (
-              <p className="no-routes-text">No hay rutas en operación.</p>
-            ) : (
-              routes.map((ruta) => (
-                <div
-                  key={ruta.codigo}
-                  className="route-card"
-                  onClick={() => {
-                    setSelectedAirport(null);
-                    setSelectedItem(
-                      `Ruta ${ruta.codigo}
-      Origen: ${ruta.codOrigen}
-      Destino: ${ruta.codDestino}
-      Duración: ${ruta.duracion} h
-      Distancia: ${ruta.distancia.toFixed(2)} km
-      Vuelos: ${ruta.codVuelos?.join(", ") || "Sin vuelos"}`
-                    );
-                  setHighlightedRoute(ruta);
-                  }}
-                >
-                  <div className="route-card-header">
-                    <span className="route-code">{ruta.codigo}</span>
-                  </div>
-
-                  <div className="route-card-body">
-                    <div className="route-row">
-                      <span className="route-label">Tipo</span>
-                      <span className="route-value">{ruta.tipo}</span>
-                    </div>
-
-                    <div className="route-row">
-                      <span className="route-label">Origen</span>
-                      <span className="route-value">{ruta.codOrigen}</span>
-                    </div>
-
-                    <div className="route-row">
-                      <span className="route-label">Destino</span>
-                      <span className="route-value">{ruta.codDestino}</span>
-                    </div>
-
-                    <div className="route-row">
-                      <span className="route-label">Distancia</span>
-                      <span className="route-value">
-                        {ruta.distancia.toFixed(0)} km
-                      </span>
-                    </div>
-
-                    <div className="route-row">
-                      <span className="route-label">Vuelos</span>
-                      <span className="route-value">
-                        {ruta.codVuelos?.length > 0
-                          ? ruta.codVuelos.join(", ")
-                          : "Sin vuelos"}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-
-        </div>
-      )}
-
-
-
+        )}
       </aside>
 
       <section className="contenido">
@@ -1238,38 +1701,116 @@ export default function Simulacion() {
 
           {/* WRAPPER DEL MAPA (para anclar la leyenda dentro) */}
           <div className="map-wrapper">
-            <MapContainer id="map" center={[-12.0464, -77.0428]} zoom={3}>
+            <MapContainer
+              id="map"
+              center={[-12.0464, -77.0428]}
+              zoom={3}
+              whenCreated={(map) => {
+                mapRef.current = map; // guardamos referencia al mapa Leaflet
+              }}
+            >
               <TileLayer
                 url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png"
                 attribution='&copy; <a href="https://carto.com/">Carto</a>'
               />
 
               {/* Marcadores de aeropuertos */}
+              {/* Marcadores de aeropuertos */}
               {airports &&
-                Object.values(airports).map((ap, i) => (
-                  <Marker
-                    key={i}
-                    position={[ap.lat, ap.lng]}
-                    icon={airportIcon}
-                    eventHandlers={{
-                      click: () => {
-                        setSelectedAirport(ap);
-                        setSelectedItem(null);
-                      },
-                    }}
-                  >
-                    <Popup>
-                      <b>{ap.country}</b>
-                      <br />
-                      Código: {ap.code}
-                      <br />
-                      Ciudad: {ap.city}
-                      <br />
-                      Capacidad: {ap.capacidad} unidades
-                      <br />
-                    </Popup>
-                  </Marker>
-                ))}
+                Object.values(airports).map((ap, i) => {
+                  // 1) STOCK ACTUAL EN BASE A REGISTROS + TIEMPO DE SIMULACIÓN
+                  const registros = ap.registros || [];
+
+                  let stockActual = 0;
+                  registros.forEach((reg) => {
+                    const ingresoMs = parseFechaHoraToMs(reg.fechaHoraIngreso);
+                    const egresoMs = reg.fechaHoraEgreso
+                      ? parseFechaHoraToMs(reg.fechaHoraEgreso)
+                      : null;
+
+                    // cuenta mientras simNowMs está entre ingreso y egreso
+                    if (
+                      simNowMs >= ingresoMs &&
+                      (!egresoMs || simNowMs < egresoMs)
+                    ) {
+                      stockActual += reg.tamLote || 0;
+                    }
+                  });
+
+                  const ocupacion =
+                    ap.capacidad > 0 ? stockActual / ap.capacidad : 0;
+
+                  const enrichedAp = {
+                    ...ap,
+                    stockActual,
+                    ocupacion,
+                  };
+
+                  // 2) VUELOS QUE SALEN Y LLEGAN EN ESTE AEROPUERTO
+                  // Solo mostramos los que aún NO han ocurrido y los ordenamos por fecha/hora
+                  const vuelosQueSalen = flights
+                    .filter(
+                      (f) =>
+                        f.origin &&
+                        f.origin.code === ap.code &&
+                        typeof f.startMs === "number" &&
+                        simNowMs < f.startMs // 🔥 solo salidas futuras
+                    )
+                    .slice()
+                    .sort((a, b) => a.startMs - b.startMs); // 🔥 orden por hora de salida
+
+                  const vuelosQueLlegan = flights
+                    .filter(
+                      (f) =>
+                        f.destination &&
+                        f.destination.code === ap.code &&
+                        typeof f.endMs === "number" &&
+                        simNowMs < f.endMs // 🔥 solo llegadas futuras
+                    )
+                    .slice()
+                    .sort((a, b) => a.endMs - b.endMs); // 🔥 orden por hora de llegada
+
+                  const ocupPct = Math.min(
+                    100,
+                    Math.max(0, Math.round((enrichedAp.ocupacion ?? 0) * 100))
+                  );
+
+                  return (
+                    <Marker
+                      key={i}
+                      position={[enrichedAp.lat, enrichedAp.lng]}
+                      icon={createAirportIcon(enrichedAp)}
+                      eventHandlers={{
+                        click: () => {
+                          setSelectedAirport(enrichedAp);
+                          setSelectedItem(null);
+                        },
+                        mouseover: () => {
+                          // 👇 abrir tooltip de ESTE aeropuerto
+                          setOpenAirportTooltipCode(enrichedAp.code);
+                          // y cerrar el de aviones si hubiera
+                          setOpenFlightTooltipCode(null);
+                        },
+                      }}
+                    >
+                      {openAirportTooltipCode === enrichedAp.code && (
+                        <Tooltip
+                          direction="top"
+                          opacity={0.95}
+                          interactive
+                          permanent // 👈 para que NO se cierre al salir el mouse
+                        >
+                          <AirportTooltipContent
+                            airport={enrichedAp}
+                            vuelosQueSalen={vuelosQueSalen}
+                            vuelosQueLlegan={vuelosQueLlegan}
+                            getOrdersForFlight={getOrdersForFlight}
+                          />
+                        </Tooltip>
+                      )}
+                    </Marker>
+                  );
+                })}
 
               {flights.map((flight) => {
                 if (
@@ -1304,108 +1845,74 @@ export default function Simulacion() {
 
                 return (
                   <React.Fragment key={flight.code}>
-                    {/* Trayectoria a partir del progreso actual */}
-                    
                     <Polyline
                       key={flight.code + "-" + (isHighlighted ? "on" : "off")}
                       positions={flight.path.slice(
                         Math.floor(flight.path.length * (flight.progress ?? 0))
                       )}
-                      color={!shouldDimOthers ? "#eb6774" : isHighlighted ? "#ff0019" : "#eb6774"}
-                      weight={isHighlighted ? 4 : 2}
-                      opacity={!shouldDimOthers ? 1 : isHighlighted ? 1 : 0.15}
+                      color={
+                        !shouldDimOthers
+                          ? "#eb6774" // normal
+                          : isHighlighted
+                          ? "#ff0019" // seleccionado
+                          : "#e5e7eb" // otros → gris muy clarito
+                      }
+                      weight={isHighlighted ? 4 : 1} // otros aún más finos
+                      opacity={
+                        !shouldDimOthers
+                          ? 0.9 // normal
+                          : isHighlighted
+                          ? 1 // seleccionado bien fuerte
+                          : 0.03 // otros casi desaparecen
+                      }
                       dashArray="6, 10"
                       interactive={false}
                     />
 
-
-                    {/* Avión solo mientras está en vuelo */}
                     {!flight.arrived && (
                       <Marker
                         position={flight.position}
-                        opacity={!shouldDimOthers ? 1 : isHighlighted ? 1 : 0.3}               // 🔥 avión atenuado si no pertenece al pedido
-                        zIndexOffset={1000}       // 🔥 aviones del pedido encima
+                        opacity={
+                          !shouldDimOthers ? 1 : isHighlighted ? 1 : 0.25
+                        }
+                        zIndexOffset={1000}
                         icon={createColoredIcon(
                           filterCss,
                           flight.rotation || 0
                         )}
                         riseOnHover={true}
                         eventHandlers={{
-                          click: (e) => {
-                            if (e.target && e.target.openPopup) {
-                              e.target.openPopup();
-                            }
-
-                            setSelectedAirport(null); // 👈 limpiamos selección de aeropuerto
-                            const pedidosVuelo = getOrdersForFlight(flight.code);
-
-                            const pedidosTexto =
-                              pedidosVuelo.length > 0
-                                ? pedidosVuelo
-                                    .map(
-                                      (p) =>
-                                        ` - Pedido ${p.pedidoCodigo} (${p.cantidad} u.)`
-                                    )
-                                    .join("\n")
-                                : " - No transporta pedidos";
-
-                            setSelectedItem(
-                              `Vuelo ${flight.code}:
-                            ${flight.origin.city} (${flight.origin.code}) → ${flight.destination.city} (${flight.destination.code})
-                            Salida: ${flight.startTime}
-                            Llegada: ${flight.endTime}
-                            Capacidad: ${flight.capacity} / ${flight.planeCapacity} pax
-                            
-                            Rutas que pasa:
-                            ${
-                              flight.rutas && flight.rutas.length > 0
-                                ? flight.rutas.map((r) => ` - ${r}`).join("\n")
-                                : " - No asignadas"
-                            }
-
-                            Pedidos transportados:
-                            ${pedidosTexto}
-                            `
-                            );
-
+                          click: () => {
+                            setSelectedAirport(null);
+                            setSelectedItem({
+                              type: "flight",
+                              codigo: flight.code,
+                            });
+                          },
+                          mouseover: () => {
+                            setOpenFlightTooltipCode(flight.code);
+                            setOpenAirportTooltipCode(null);
                           },
                         }}
                       >
-                        <Popup>
-                          <b>{flight.code}</b>
-                          <br />
-                          {flight.origin.country} → {flight.destination.country}
-                          <br />
-                          Salida: {flight.startTime}
-                          <br />
-                          Llegada: {flight.endTime}
-                          <br />
-                          Capacidad: {flight.capacity} / {flight.planeCapacity}{" "}
-                          pax
-                          <br />
-                        </Popup>
+                        {openFlightTooltipCode === flight.code && (
+                          <Tooltip
+                            direction="top"
+                            opacity={0.95}
+                            permanent
+                            interactive
+                          >
+                            <PlaneTooltipContent
+                              flight={flight}
+                              getOrdersForFlight={getOrdersForFlight}
+                            />
+                          </Tooltip>
+                        )}
                       </Marker>
                     )}
                   </React.Fragment>
                 );
               })}
-
-              {/* Ruta resaltada (cuando el usuario selecciona una ruta en el sidebar) */}
-              {highlightedRoute && airports && (
-                <Polyline
-                  positions={(() => {
-                    const ap1 = airports[highlightedRoute.codOrigen];
-                    const ap2 = airports[highlightedRoute.codDestino];
-                    if (!ap1 || !ap2) return [];
-
-                    return generateGeodesicPath(ap1.lat, ap1.lng, ap2.lat, ap2.lng, 120);
-                  })()}
-                  color="#ff0033"        // rojo brillante
-                  weight={2}             // más grueso
-                  opacity={0.9}
-                  dashArray={null}       // línea sólida
-                />
-              )}
 
               <ClickHandler
                 onMapClick={() => {
@@ -1413,6 +1920,8 @@ export default function Simulacion() {
                   setSelectedAirport(null);
                   setHighlightedRoute(null);
                   setHighlightedFlights([]);
+                  setOpenAirportTooltipCode(null);
+                  setOpenFlightTooltipCode(null);
                 }}
               />
             </MapContainer>
@@ -1458,219 +1967,31 @@ export default function Simulacion() {
           </div>
 
           {/* PANEL INFORMATIVO DEBAJO DEL MAPA */}
-          {infoPanelExpanded && ( // 👈 solo se pinta si hay aeropuerto o vuelo seleccionado
+          {infoPanelExpanded && (
             <div className="info-panel expanded">
               <div className="info-content">
                 {selectedAirport ? (
-                  <>
-                    {/* Cabecera: aeropuerto */}
-                    <div className="info-panel-header">
-                      <div className="left">
-                        <div className="info-panel-title">
-                          Información seleccionada
-                        </div>
-                        <div className="info-panel-airport">
-                          {selectedAirport.city} ({selectedAirport.code})
-                        </div>
-                        <div className="info-panel-subtitle">
-                          {selectedAirport.country}
-                        </div>
-                      </div>
-
-                      <div className="right">
-                        <div className="info-panel-capacity">
-                          Capacidad total: {selectedAirport.capacidad} unidades
-                        </div>
-                        <div className="info-panel-capacity">
-                          Capacidad actual: {
-                            vuelosLlegando.reduce((sum, f) => sum + (f.capacity || 0), 0)
-                          } / {selectedAirport.capacidad} unidades
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Cuerpo: vuelos saliendo / llegando */}
-                    <div className="info-panel-body">
-                      {/* Columna 1: saliendo */}
-                      <div className="info-panel-column">
-                        <h4>Vuelos saliendo</h4>
-
-                        {vuelosSaliendo.length === 0 && (
-                          <p className="info-panel-empty-list">
-                            No hay vuelos saliendo en este momento.
-                          </p>
-                        )}
-
-                        <ul className="info-panel-flights">
-                          {vuelosSaliendo.map((flight) => {
-                            const porcentaje =
-                              flight.planeCapacity > 0
-                                ? Math.round(
-                                    (flight.capacity * 100) /
-                                      flight.planeCapacity
-                                  )
-                                : 0;
-
-                            return (
-                              <li key={flight.code} className="flight-card">
-                                <div className="flight-card-header">
-                                  <span className="flight-route">
-                                    {flight.origin.code}
-                                    <span className="flight-arrow"> ✈ </span>
-                                    {flight.destination.code}
-                                  </span>
-                                  <span className="flight-code">
-                                    {flight.code}
-                                  </span>
-                                </div>
-
-                                <div className="flight-card-body">
-                                  <div className="flight-card-row">
-                                    <span className="flight-label">Salida</span>
-                                    <span className="flight-value">
-                                      {flight.startTime}
-                                    </span>
-                                  </div>
-                                  <div className="flight-card-row">
-                                    <span className="flight-label">
-                                      Llegada
-                                    </span>
-                                    <span className="flight-value">
-                                      {flight.endTime}
-                                    </span>
-                                  </div>
-                                  <div className="flight-card-row">
-                                    <span className="flight-label">
-                                      Capacidad
-                                    </span>
-                                    <span className="flight-value">
-                                      {flight.capacity}/{flight.planeCapacity}{" "}
-                                      unidades · {porcentaje}% ocupación
-                                    </span>
-                                  </div>
-
-                                  {/* Pedidos transportados */}
-                                  <div className="flight-card-row">
-                                    <span className="flight-label">Pedidos</span>
-                                  </div>
-
-                                  {(() => {
-                                    const pedidos = getOrdersForFlight(flight.code);
-                                    if (pedidos.length === 0) {
-                                      return <div className="flight-no-orders">—</div>;
-                                    }
-
-                                    return (
-                                      <ul className="pedido-list">
-                                        {pedidos.map((p, idx) => (
-                                          <li key={idx}>
-                                            Pedido {p.pedidoCodigo} ({p.cantidad} u.)
-                                          </li>
-                                        ))}
-                                      </ul>
-                                    );
-                                  })()}
-
-                                </div>
-                              </li>
-                            );
-                          })}
-                        </ul>
-                      </div>
-
-                      {/* Columna 2: llegando */}
-                      <div className="info-panel-column">
-                        <h4>Vuelos llegando</h4>
-
-                        {vuelosLlegando.length === 0 && (
-                          <p className="info-panel-empty-list">
-                            No hay vuelos llegando en este momento.
-                          </p>
-                        )}
-
-                        <ul className="info-panel-flights">
-                          {vuelosLlegando.map((flight) => {
-                            const porcentaje =
-                              flight.planeCapacity > 0
-                                ? Math.round(
-                                    (flight.capacity * 100) /
-                                      flight.planeCapacity
-                                  )
-                                : 0;
-
-                            return (
-                              <li key={flight.code} className="flight-card">
-                                <div className="flight-card-header">
-                                  <span className="flight-route">
-                                    {flight.origin.code}
-                                    <span className="flight-arrow"> ✈ </span>
-                                    {flight.destination.code}
-                                  </span>
-                                  <span className="flight-code">
-                                    {flight.code}
-                                  </span>
-                                </div>
-
-                                <div className="flight-card-body">
-                                  <div className="flight-card-row">
-                                    <span className="flight-label">Salida</span>
-                                    <span className="flight-value">
-                                      {flight.startTime}
-                                    </span>
-                                  </div>
-                                  <div className="flight-card-row">
-                                    <span className="flight-label">
-                                      Llegada
-                                    </span>
-                                    <span className="flight-value">
-                                      {flight.endTime}
-                                    </span>
-                                  </div>
-                                  <div className="flight-card-row">
-                                    <span className="flight-label">
-                                      Capacidad
-                                    </span>
-                                    <span className="flight-value">
-                                      {flight.capacity}/{flight.planeCapacity}{" "}
-                                      unidades · {porcentaje}% ocupación
-                                    </span>
-                                  </div>
-
-                                  {/* Pedidos transportados */}
-                                  <div className="flight-card-row">
-                                    <span className="flight-label">Pedidos</span>
-                                  </div>
-
-                                  {(() => {
-                                    const pedidos = getOrdersForFlight(flight.code);
-                                    if (pedidos.length === 0) {
-                                      return <div className="flight-no-orders">—</div>;
-                                    }
-
-                                    return (
-                                      <ul className="pedido-list">
-                                        {pedidos.map((p, idx) => (
-                                          <li key={idx}>
-                                            Pedido {p.pedidoCodigo} ({p.cantidad} u.)
-                                          </li>
-                                        ))}
-                                      </ul>
-                                    );
-                                  })()}
-
-                                </div>
-                              </li>
-                            );
-                          })}
-                        </ul>
-                      </div>
-                    </div>
-                  </>
+                  <AirportInfoPanel
+                    airport={selectedAirport}
+                    vuelosSaliendo={vuelosSaliendo}
+                    vuelosLlegando={vuelosLlegando}
+                    getOrdersForFlight={getOrdersForFlight}
+                  />
+                ) : selectedFlight ? (
+                  <FlightInfoPanel
+                    flight={selectedFlight}
+                    getOrdersForFlight={getOrdersForFlight}
+                  />
+                ) : selectedOrder ? (
+                  <OrderInfoPanel order={selectedOrder} />
+                ) : selectedRoute ? (
+                  <RouteInfoPanel route={selectedRoute} />
                 ) : (
-                  // Caso: solo hay selectedItem (avión), usamos layout simple
                   <>
                     <h3>Información seleccionada</h3>
-                    <p>{selectedItem}</p>
+                    <p>
+                      Selecciona un vuelo, pedido o ruta para ver el detalle.
+                    </p>
                   </>
                 )}
               </div>
