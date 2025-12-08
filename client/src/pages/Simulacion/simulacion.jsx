@@ -15,6 +15,7 @@ import hideIcon from "../../assets/icons/hide-sidebar.png";
 import run from "../../assets/icons/run.svg";
 import stopIcon from "../../assets/icons/stop.svg";
 import airportIconImg from "../../assets/icons/airport.svg";
+import sedeIconImg from "../../assets/icons/sede.svg";
 import { listarParametros } from "../../services/parametrosService";
 import { listarAeropuertos } from "../../services/aeropuertoService";
 import {
@@ -333,7 +334,7 @@ export default function Simulacion() {
 
     // 3. Limpiar mapa: vuelos + aeropuertos + panel de info
     setFlights([]);
-    setAirports(null);
+    //setAirports(null);
     setSelectedItem(null);
     setSelectedAirport(null);
     setOrders([]);
@@ -479,24 +480,28 @@ export default function Simulacion() {
     return "invert(37%) sepia(79%) saturate(844%) hue-rotate(338deg) brightness(94%) contrast(92%)";
   }
 
-  const createAirportIcon = (ap) =>
-    L.divIcon({
+  const createAirportIcon = (ap) => {
+    // si es sede usamos sede.svg, si no el icono normal de aeropuerto
+    const baseIcon = ap.esSede ? sedeIconImg : airportIconImg;
+
+    return L.divIcon({
       html: `
-        <img
-          src="${airportIconImg}"
-          class="airport-icon"
-          style="
-            width: 20px;
-            height: 20px;
-            filter: ${getAirportFilter(ap.ocupacion)};
-          "
-        />
-      `,
+      <img
+        src="${baseIcon}"
+        class="airport-icon ${ap.esSede ? "airport-icon--hub" : ""}"
+        style="
+          width: 20px;
+          height: 20px;
+          filter: ${getAirportFilter(ap.ocupacion)};
+        "
+      />
+    `,
       className: "",
       iconSize: [20, 20],
       iconAnchor: [10, 10],
       popupAnchor: [0, -10],
     });
+  };
 
   // Detener cronómetro cuando todos los vuelos hayan llegado
   useEffect(() => {
@@ -595,6 +600,7 @@ export default function Simulacion() {
         setParametrosCompletos(p);
         const a = await listarAeropuertos();
         setAeropuertos(a.dtos ?? []);
+        console.log("Aeropuertos cargados:", a.dtos);
         // === SOLO LOS 5 PARAMETROS A MOSTRAR EN EL POPUP ===
         setMaxDiasEntregaIntercontinental(p.maxDiasEntregaIntercontinental);
         setMaxDiasEntregaIntracontinental(p.maxDiasEntregaIntracontinental);
@@ -614,7 +620,38 @@ export default function Simulacion() {
       setLoadedOnOpen(true);
     }
   }, [isModalOpen, loadedOnOpen]);
+  // Cargar aeropuertos base al inicio para que el mapa nunca esté vacío
+  useEffect(() => {
+    const fetchAeropuertosIniciales = async () => {
+      try {
+        const res = await listarAeropuertos();
+        const dtos = res.dtos ?? [];
 
+        // Los transformamos al mismo formato que usa buildSimulationFromSolution
+        const baseMap = {};
+        dtos.forEach((a) => {
+          baseMap[a.codigo] = {
+            lat: a.latitud,
+            lng: a.longitud,
+            name: a.alias || a.ciudad,
+            code: a.codigo,
+            city: a.ciudad,
+            country: a.pais,
+            capacidad: a.capacidad ?? 0,
+            esSede: a.esSede ?? false,
+            registros: [], // al inicio sin registros de stock
+          };
+        });
+
+        setAirports(baseMap);
+      } catch (err) {
+        console.error("Error cargando aeropuertos iniciales", err);
+        showNotification("danger", "Error cargando aeropuertos");
+      }
+    };
+
+    fetchAeropuertosIniciales();
+  }, []);
   const buildSimulationFromSolution = (solution) => {
     if (!solution) return;
     const getRutasDeVuelo = (flightCode) => {
@@ -739,10 +776,16 @@ export default function Simulacion() {
     setOrders(pedidosAtendidos);
     // Actualizar airports solo si cambió
     setAirports((prevAirports) => {
-      if (JSON.stringify(prevAirports) !== JSON.stringify(airportMap)) {
-        return airportMap;
-      }
-      return prevAirports;
+      // partimos de lo que ya hubiera (los cargados al inicio)
+      const merged = { ...(prevAirports || {}) };
+
+      // actualizamos / enriquecemos con la info de aeropuertosTransitados
+      Object.entries(airportMap).forEach(([code, data]) => {
+        const prev = merged[code] || {};
+        merged[code] = { ...prev, ...data };
+      });
+
+      return merged;
     });
 
     const vuelosNuevos = solution.vuelosEnTransito || [];
@@ -959,6 +1002,7 @@ export default function Simulacion() {
         fechaHoraInicio: `${fechaI}T${horaI}:00`,
         fechaHoraFin: `${fechaF}T${horaF}:00`,
         parametros: {
+          ...parametrosCompletos,
           maxDiasEntregaIntercontinental,
           maxDiasEntregaIntracontinental,
           maxHorasRecojo,
