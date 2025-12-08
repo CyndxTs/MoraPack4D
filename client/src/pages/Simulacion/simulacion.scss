@@ -1479,3 +1479,42 @@
   font-size: 0.78rem;
   line-height: 1.2;
 }
+
+
+/* ==== Segmentaciones del pedido (panel inferior) ==== */
+
+/* Más espacio entre cada segmento de lote */
+.info-list--segments li + li {
+  margin-top: 10px;         /* separación vertical entre lotes */
+  padding-top: 6px;
+  border-top: 1px dashed rgba(148, 163, 184, 0.45);  /* sutil para separar */
+}
+
+/* Contenedor de las líneas de vuelos de un lote */
+.info-lote-flights {
+  margin-top: 4px;
+  font-size: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;                 /* espacio entre vuelos del mismo lote */
+}
+
+/* Cada vuelo en UNA sola línea */
+.info-lote-flight {
+  white-space: nowrap;      /* evita que se parta en varias líneas */
+}
+
+/* Línea principal de cada lote */
+.info-lote-header-line {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+/* Subtítulo "Vuelos realizados" */
+.info-lote-subtitle {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  opacity: 0.8;
+  margin-bottom: 2px;
+}
