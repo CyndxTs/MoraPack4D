@@ -39,6 +39,10 @@ public class Vuelo {
         this.fechaHoraLlegada = dtr[1];
     }
 
+    public Boolean esProblematico() {
+        return this.plan.esProblematico(this.fechaHoraSalida, this.fechaHoraLlegada);
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

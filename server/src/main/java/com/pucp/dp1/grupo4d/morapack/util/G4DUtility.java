@@ -512,9 +512,16 @@ public class G4DUtility {
         }
         // Obtener recuento de lineas de un archivo
         public static long getLineCount(InputStream is) throws IOException {
-            try (var br = new BufferedReader(new InputStreamReader(is))) {
-                return br.lines().count();
+            byte[] buffer = new byte[8192];
+            int read;
+            long lines = 0;
+
+            while ((read = is.read(buffer)) != -1) {
+                for (int i = 0; i < read; i++) {
+                    if (buffer[i] == '\n') lines++;
+                }
             }
+            return lines;
         }
     }
     // Clase 'Auxiliar' para imprimir archivos

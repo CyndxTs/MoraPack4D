@@ -38,6 +38,19 @@ public interface PedidoRepository extends JpaRepository<PedidoEntity, Integer> {
             @Param("tipoEscenario") String tipoEscenario
     );
 
+    // Encontrar pedidos por el tipo de escenario
+    @Query(
+            value = """
+            SELECT *
+            FROM pedido
+            WHERE tipo_escenario = :tipoEscenario
+            """,
+            nativeQuery = true
+    )
+    List<PedidoEntity> findAllByTipoEscenario(
+            @Param("tipoEscenario") String tipoEscenario
+    );
+
     @Query(
         value = """
             SELECT p.*

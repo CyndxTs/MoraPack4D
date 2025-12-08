@@ -22,16 +22,20 @@ import com.pucp.dp1.grupo4d.morapack.model.enumeration.EstadoFinalizacion;
 import com.pucp.dp1.grupo4d.morapack.model.enumeration.TipoEscenario;
 import com.pucp.dp1.grupo4d.morapack.model.exception.G4DException;
 import com.pucp.dp1.grupo4d.morapack.repository.PedidoRepository;
+import com.pucp.dp1.grupo4d.morapack.service.ImportService;
 import com.pucp.dp1.grupo4d.morapack.service.WebSocketService;
 import com.pucp.dp1.grupo4d.morapack.util.G4DUtility;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class PedidoService {
@@ -39,13 +43,14 @@ public class PedidoService {
     private final AeropuertoService aeropuertoService;
     private final ClienteService clienteService;
     private final PedidoMapper pedidoMapper;
-    private final List<PedidoEntity> pedidos =  new ArrayList<>();
+    private final ImportService importService;
 
-    public PedidoService(PedidoRepository pedidoRepository, AeropuertoService aeropuertoService, ClienteService clienteService, PedidoMapper pedidoMapper) {
+    public PedidoService(PedidoRepository pedidoRepository, AeropuertoService aeropuertoService, ClienteService clienteService, PedidoMapper pedidoMapper, ImportService importService) {
         this.pedidoRepository = pedidoRepository;
         this.aeropuertoService = aeropuertoService;
         this.clienteService = clienteService;
         this.pedidoMapper = pedidoMapper;
+        this.importService = importService;
     }
 
     public List<PedidoEntity> findAll() {
@@ -72,6 +77,10 @@ public class PedidoService {
         return pedidoRepository.existsById(id);
     }
 
+    public List<PedidoEntity> findAllByTipoEscenario(String tipoEscenario) {
+        return pedidoRepository.findAllByTipoEscenario(tipoEscenario);
+    }
+
     public Optional<PedidoEntity> findByCodigoEscenario(String codigo, String tipoEscenario) {
         return pedidoRepository.findByCodigoEscenario(codigo, tipoEscenario);
     }
@@ -88,58 +97,42 @@ public class PedidoService {
         return pedidoRepository.findAllByDestino(destino);
     }
 
-    public String obtenerNuevoCodigo(AeropuertoEntity destino) {
-        OptionalInt maxCodigo = OptionalInt.empty();
-        if(!pedidos.isEmpty()) {
-            maxCodigo = pedidos.stream().filter(entity -> entity.getDestino().getCodigo().equals(destino.getCodigo())).mapToInt(entity -> Integer.parseInt(entity.getCodigo().substring(4))).max();
-        }
-        if(maxCodigo.isEmpty()) {
-            maxCodigo = this.findAllByDestino(destino).stream().mapToInt(entity -> Integer.parseInt(entity.getCodigo().substring(4))).max();
-        }
-        return String.format("%s%09d", destino.getCodigo(), maxCodigo.orElse(0) + 1);
-    }
-
     public ListResponse listar(ListRequest request) {
-        try {
-            Pageable pageable = G4DUtility.Convertor.toAdmissible(request.getPagina(), request.getTamanio(), Sort.Order.asc("codigo"));
-            List<DTO> dtos = new ArrayList<>();
-            List<PedidoEntity> entities = this.findAll(pageable);
-            entities.forEach(entity -> dtos.add(pedidoMapper.toDTO(entity)));
-            return new ListResponse(true, String.format("Pedidos listados correctamente! ('%d')", dtos.size()), dtos);
-        } finally {
-            clearPools();
-        }
+        Pageable pageable = G4DUtility.Convertor.toAdmissible(request.getPagina(), request.getTamanio(), Sort.Order.asc("codigo"));
+        List<DTO> dtos = new ArrayList<>();
+        List<PedidoEntity> entities = this.findAll(pageable);
+        entities.forEach(entity -> dtos.add(pedidoMapper.toDTO(entity)));
+        return new ListResponse(true, String.format("Pedidos listados correctamente! ('%d')", dtos.size()), dtos);
     }
 
     public ListResponse filtrar(FilterRequest<PedidoDTO> request) {
-        try {
-            Pageable pageable = G4DUtility.Convertor.toAdmissible(request.getPagina(), request.getTamanio(), Sort.Order.asc("codigo"));
-            PedidoDTO modelo = request.getModelo();
-            String tipoEscenario = G4DUtility.Convertor.toAdmissibleEnumString(modelo.getTipoEscenario(),  TipoEscenario.class);
-            String codCliente = G4DUtility.Convertor.toAdmissible(modelo.getCodCliente());
-            String codigoPedido = G4DUtility.Convertor.toAdmissible(modelo.getCodigo());
-            Boolean fueAtendido = modelo.getFueAtendido();
-            String fechaHoraGeneracion = G4DUtility.Convertor.toAdmissibleDateTimeString(modelo.getFechaHoraGeneracion());
-            String fechaHoraExpiracion = G4DUtility.Convertor.toAdmissibleDateTimeString(modelo.getFechaHoraExpiracion());
-            List<DTO> dtos = new ArrayList<>();
-            List<PedidoEntity> entities = pedidoRepository.filterBy(tipoEscenario, codCliente, codigoPedido, fueAtendido, fechaHoraGeneracion, fechaHoraExpiracion, pageable).getContent();
-            entities.forEach(entity -> dtos.add(pedidoMapper.toDTO(entity)));
-            return new ListResponse(true, String.format("Pedidos filtrados correctamente! ('%d')", dtos.size()), dtos);
-        } finally {
-            clearPools();
-        }
+        Pageable pageable = G4DUtility.Convertor.toAdmissible(request.getPagina(), request.getTamanio(), Sort.Order.asc("codigo"));
+        PedidoDTO modelo = request.getModelo();
+        String tipoEscenario = G4DUtility.Convertor.toAdmissibleEnumString(modelo.getTipoEscenario(),  TipoEscenario.class);
+        String codCliente = G4DUtility.Convertor.toAdmissible(modelo.getCodCliente());
+        String codigoPedido = G4DUtility.Convertor.toAdmissible(modelo.getCodigo());
+        Boolean fueAtendido = modelo.getFueAtendido();
+        String fechaHoraGeneracion = G4DUtility.Convertor.toAdmissibleDateTimeString(modelo.getFechaHoraGeneracion());
+        String fechaHoraExpiracion = G4DUtility.Convertor.toAdmissibleDateTimeString(modelo.getFechaHoraExpiracion());
+        List<DTO> dtos = new ArrayList<>();
+        List<PedidoEntity> entities = pedidoRepository.filterBy(tipoEscenario, codCliente, codigoPedido, fueAtendido, fechaHoraGeneracion, fechaHoraExpiracion, pageable).getContent();
+        entities.forEach(entity -> dtos.add(pedidoMapper.toDTO(entity)));
+        return new ListResponse(true, String.format("Pedidos filtrados correctamente! ('%d')", dtos.size()), dtos);
     }
 
     public GenericResponse importar(ImportRequest<PedidoDTO> request) {
-        try {
-            System.out.println("Importando pedido..");
-            PedidoDTO dto = request.getDto();
-            PedidoEntity pedido = new PedidoEntity();
+        System.out.println("Importando pedido..");
+        PedidoDTO dto = request.getDto();
+        Map<String, ClienteEntity> poolClientes = clienteService.findAll().stream().collect(Collectors.toMap(ClienteEntity::getCodigo, c -> c));
+        Map<String, AeropuertoEntity> poolAeropuertos = aeropuertoService.findAll().stream().collect(Collectors.toMap(AeropuertoEntity::getCodigo, a -> a));
+        Map<String, Integer> poolMaxCodigos = this.findAllByTipoEscenario(dto.getTipoEscenario().toString()).stream().collect(Collectors.groupingBy(p -> p.getCodigo().substring(0, 4), Collectors.mapping(p -> Integer.parseInt(p.getCodigo().substring(4)), Collectors.maxBy(Integer::compareTo)))).entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().orElse(0)));
+        PedidoEntity pedido = new PedidoEntity();
+        String codDestino = dto.getCodDestino();
+        AeropuertoEntity destino = poolAeropuertos.get(codDestino);
+        if(destino != null) {
             String codCliente = dto.getCodCliente();
-            String codDestino = dto.getCodDestino();
-            AeropuertoEntity destino = aeropuertoService.obtenerPorCodigo(codDestino);
-            if(destino != null) {
-                ClienteEntity cliente = clienteService.obtenerPorCodigo(codCliente);
+            ClienteEntity cliente = poolClientes.get(codCliente);
+            if(cliente != null) {
                 pedido.setCliente(cliente);
                 pedido.setDestino(destino);
                 pedido.setTipoEscenario(TipoEscenario.valueOf(dto.getTipoEscenario()));
@@ -151,99 +144,105 @@ public class PedidoService {
                 pedido.setFechaHoraExpiracionUTC(G4DUtility.Convertor.toAdmissible(dto.getFechaHoraExpiracion(), (LocalDateTime) null));
                 pedido.setFechaHoraExpiracionLocal(pedido.getFechaHoraExpiracionUTC() != null ? G4DUtility.Convertor.toLocal(pedido.getFechaHoraExpiracionUTC(), destino.getHusoHorario()) : null);
                 pedido.setFueAtendido(dto.getFueAtendido() != null ? dto.getFueAtendido() : false);
-                pedido.setCodigo(this.obtenerNuevoCodigo(pedido.getDestino()));
+                poolMaxCodigos.merge(codDestino, 1, Integer::sum);
+                pedido.setCodigo(String.format("%s%09d", destino.getCodigo(), poolMaxCodigos.get(codDestino)));
                 this.save(pedido);
-            } else throw new G4DException(String.format("El destino ('%s') del pedido es inválido.", codDestino));
-            System.out.println("[<] PEDIDO IMPORTADO!");
-            return new GenericResponse(true, "Pedido importado correctamente!");
-        } finally {
-            clearPools();
-        }
+            } else throw new G4DException(String.format("El cliente ('%s') del pedido es inválido.", codCliente));
+        } else throw new G4DException(String.format("El destino ('%s') del pedido es inválido.", codDestino));
+        System.out.println("[<] PEDIDO IMPORTADO!");
+        return new GenericResponse(true, "Pedido importado correctamente!");
     }
 
     public GenericResponse importar(MultipartFile archivo, ImportFileRequest request) {
         try {
-            G4DUtility.Logger.logf("Importando pedidos desde '%s'..%n",archivo.getName());
+            G4DUtility.Logger.logf("Importando pedidos desde '%s'..%n", archivo.getName());
             LocalDateTime fechaHoraInicio = G4DUtility.Convertor.toAdmissible(request.getFechaHoraInicio(), LocalDateTime.MIN);
             LocalDateTime fechaHoraFin = G4DUtility.Convertor.toAdmissible(request.getFechaHoraFin(), LocalDateTime.MAX);
-            if(fechaHoraFin.isBefore(fechaHoraInicio)) {
-                throw new G4DException("Rango de tiempo inválido.");
-            }
+            if (fechaHoraFin.isBefore(fechaHoraInicio)) throw new G4DException("Rango de tiempo inválido.");
             TipoEscenario tipoEscenario = G4DUtility.Convertor.toAdmissible(request.getTipoEscenario(), TipoEscenario.class);
             boolean tieneNumeroDePedido = tipoEscenario.equals(TipoEscenario.SIMULACION);
-            Scanner archivoSC = new Scanner(archivo.getInputStream(), G4DUtility.Reader.getFileCharset(archivo));
+            BufferedReader br = new BufferedReader(new InputStreamReader(archivo.getInputStream(), G4DUtility.Reader.getFileCharset(archivo)));
+            List<PedidoEntity> pedidos = new ArrayList<>();
+            List<ClienteEntity> clientes = new ArrayList<>();
+            Set<String> poolCorreos = clienteService.findAll().stream().map(ClienteEntity::getCorreo).collect(Collectors.toSet());
+            Map<String, ClienteEntity> poolClientes = clienteService.findAll().stream().collect(Collectors.toMap(ClienteEntity::getCodigo, c -> c));
+            Map<String, AeropuertoEntity> poolAeropuertos = aeropuertoService.findAll().stream().collect(Collectors.toMap(AeropuertoEntity::getCodigo, a -> a));
+            Map<String, Integer> poolMaxCodigos = this.findAllByTipoEscenario(tipoEscenario.toString()).stream().collect(Collectors.groupingBy(p -> p.getCodigo().substring(0, 4), Collectors.mapping(p -> Integer.parseInt(p.getCodigo().substring(4)), Collectors.maxBy(Integer::compareTo)))).entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().orElse(0)));
             int lTotales = (int) G4DUtility.Reader.getLineCount(archivo);
             int lProcesadas = 0;
+            String linea;
             WebSocketService.enviar("/topic/loader", new ProgressPayload("Leyendo archivo", lProcesadas, lTotales));
             WebSocketService.enviar("/topic/loader-status", new StatusPayload(EstadoEjecucion.INICIADO));
-            while (archivoSC.hasNextLine()) {
-                String linea = archivoSC.nextLine().trim();
-                Scanner lineaSC = new Scanner(linea);
-                lineaSC.useDelimiter("-");
-                PedidoEntity pedido = new PedidoEntity();
-                String numPed = (tieneNumeroDePedido) ? lineaSC.next() : null;
-                LocalDateTime fechaHoraGeneracionLocal = LocalDateTime.of(
-                        G4DUtility.Convertor.toDate(lineaSC.nextInt()),
-                        LocalTime.of(
-                                lineaSC.nextInt(),
-                                lineaSC.nextInt(),
-                                0
-                        )
-                );
-                String codDestino = lineaSC.next();
-                AeropuertoEntity destino = aeropuertoService.obtenerPorCodigo(codDestino);
-                if(destino != null) {
-                    LocalDateTime fechaHoraGeneracionUTC = G4DUtility.Convertor.toUTC(fechaHoraGeneracionLocal, destino.getHusoHorario());
-                    if(!fechaHoraGeneracionUTC.isBefore(fechaHoraInicio) && !fechaHoraGeneracionUTC.isAfter(fechaHoraFin)) {
-                        if(numPed != null) {
-                            pedido.setCodigo(destino.getCodigo() + numPed);
-                            pedido.setFechaHoraProcesamientoLocal(fechaHoraGeneracionLocal);
-                            pedido.setFechaHoraProcesamientoUTC(fechaHoraGeneracionUTC);
-                        } else pedido.setCodigo(this.obtenerNuevoCodigo(destino));
-                        pedido.setDestino(destino);
-                        pedido.setCantidadSolicitada(lineaSC.nextInt());
-                        ClienteEntity cliente = clienteService.obtenerPorCodigo(lineaSC.next());
-                        pedido.setCliente(cliente);
-                        pedido.setFechaHoraGeneracionLocal(fechaHoraGeneracionLocal);
-                        pedido.setFechaHoraGeneracionUTC(fechaHoraGeneracionUTC);
-                        pedido.setTipoEscenario(tipoEscenario);
-                        pedidos.add(pedido);
-                    }
-                } else throw new G4DException(String.format("El destino '%s' del pedido de la linea #%d es inválido.", codDestino, lProcesadas + 1));
-                lineaSC.close();
+            while ((linea = br.readLine()) != null) {
+                linea = linea.trim();
+                if (!linea.isBlank()) {
+                    String[] partes = linea.split("-");
+                    int idx = 0;
+                    String numPed = tieneNumeroDePedido ? partes[idx++] : null;
+                    int fechaStr = Integer.parseInt(partes[idx++]);
+                    int hora = Integer.parseInt(partes[idx++]);
+                    int minuto = Integer.parseInt(partes[idx++]);
+                    String codDestino = partes[idx++];
+                    int cantidad = Integer.parseInt(partes[idx++]);
+                    String codCliente = partes[idx];
+                    LocalDateTime fechaHoraGeneracionLocal = LocalDateTime.of(G4DUtility.Convertor.toDate(fechaStr), LocalTime.of(hora, minuto, 0));
+                    AeropuertoEntity destino = poolAeropuertos.get(codDestino);
+                    if (destino != null){
+                        LocalDateTime fechaHoraGeneracionUTC = G4DUtility.Convertor.toUTC(fechaHoraGeneracionLocal, destino.getHusoHorario());
+                        if (!fechaHoraGeneracionUTC.isBefore(fechaHoraInicio) && !fechaHoraGeneracionUTC.isAfter(fechaHoraFin)) {
+                            ClienteEntity cliente = poolClientes.getOrDefault(codCliente, null);
+                            if (cliente == null) {
+                                cliente = new ClienteEntity();
+                                cliente.setCodigo(codCliente);
+                                cliente.setNombre(G4DUtility.Generator.getUniqueName());
+                                String correo = G4DUtility.Generator.getUniqueEmail();
+                                boolean existeCorreo = poolCorreos.contains(correo);
+                                if(existeCorreo) {
+                                    String newCorreo = "";
+                                    while (existeCorreo) {
+                                        newCorreo = G4DUtility.Generator.addRandomInteger(correo, correo.indexOf('@'));
+                                        existeCorreo = poolCorreos.contains(newCorreo);
+                                    }
+                                    cliente.setCorreo(newCorreo);
+                                    poolCorreos.add(newCorreo);
+                                } else cliente.setCorreo(correo);
+                                cliente.setContrasenia("12345678");
+                                poolClientes.put(codCliente, cliente);
+                                clientes.add(cliente);
+                            }
+                            PedidoEntity pedido = new PedidoEntity();
+                            poolMaxCodigos.merge(codDestino, 1, Integer::sum);
+                            pedido.setCodigo(numPed != null ? destino.getCodigo() + numPed : String.format("%s%09d", destino.getCodigo(), poolMaxCodigos.get(codDestino)));
+                            pedido.setDestino(destino);
+                            pedido.setCliente(cliente);
+                            pedido.setCantidadSolicitada(cantidad);
+                            pedido.setFechaHoraGeneracionLocal(fechaHoraGeneracionLocal);
+                            pedido.setFechaHoraGeneracionUTC(fechaHoraGeneracionUTC);
+                            pedido.setTipoEscenario(tipoEscenario);
+                            pedidos.add(pedido);
+                        }
+                    } else throw new G4DException(String.format("Destino '%s' inválido en línea #%d", codDestino, lProcesadas + 1));
+                }
                 lProcesadas++;
                 WebSocketService.enviar("/topic/loader", new ProgressPayload("Leyendo archivo", lProcesadas, lTotales));
-                if(pedidos.size() % 500 == 0 || !archivoSC.hasNextLine()) {
-                    List<PedidoEntity> entities = pedidos.stream().filter(entity -> !this.existsByCodigoEscenario(entity.getCodigo(), tipoEscenario.toString())).toList();
-                    int eTotales = entities.size();
-                    int eProcesadas = 0;
-                    WebSocketService.enviar("/topic/loader", new ProgressPayload("Guardando pedidos", eProcesadas, eTotales));
-                    for(PedidoEntity entity : entities) {
-                        this.save(entity);
-                        eProcesadas++;
-                        WebSocketService.enviar("/topic/loader", new ProgressPayload("Guardando pedidos", eProcesadas, eTotales));
-                    }
+                if (pedidos.size() % 1000 == 0 || lProcesadas == lTotales) {
+                    importService.batchSave(clientes, "clientes");
+                    System.out.printf("[<] CLIENTES IMPORTADOS! ('%d')%n", clientes.size());
+                    clientes.clear();
+                    importService.batchSave(pedidos, "pedidos");
                     System.out.printf("[<] PEDIDOS IMPORTADOS! ('%d')%n", pedidos.size());
-                    clearPools();
+                    pedidos.clear();
                 }
             }
-            archivoSC.close();
+            br.close();
             WebSocketService.enviar("/topic/loader-status", new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.EXITOSO));
             return new GenericResponse(true, "Pedidos importados correctamente!");
-        } catch (NoSuchElementException e) {
+        } catch (ArrayIndexOutOfBoundsException | NoSuchElementException e) {
             WebSocketService.enviar("/topic/loader-status", new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.ERRONEO));
             throw new G4DException(String.format("El archivo '%s' no sigue el formato esperado.", archivo.getName()));
         } catch (IOException e) {
             WebSocketService.enviar("/topic/loader-status", new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.ERRONEO));
             throw new G4DException(String.format("No se pudo cargar el archivo '%s'.", archivo.getName()));
-        } finally {
-            clearPools();
         }
-    }
-
-    public void clearPools() {
-        pedidos.clear();
-        aeropuertoService.clearPools();
-        clienteService.clearPools();
     }
 }

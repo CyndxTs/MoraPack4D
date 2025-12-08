@@ -281,7 +281,6 @@ public class G4DService {
             pSimulacion.cargarPedidos(pedidoService, pedidoAdapter);
             pSimulacion.cargarRutas(rutaService, rutaAdapter);
             problematica = pSimulacion;
-            System.out.printf("[*] SIMULANDO BLOQUE TEMPORAL! ['%s' - '%s']%n", G4DUtility.Convertor.toDisplayString(inicioDePlanificacion), G4DUtility.Convertor.toDisplayString(finDePlanificacion));
         } else {
             pOperacion = new Problematica();
             pOperacion.cargarAeropuertos(aeropuertoService, aeropuertoAdapter);
@@ -291,11 +290,12 @@ public class G4DService {
             pOperacion.cargarVuelos(vueloService, vueloAdapter);
             pOperacion.cargarRutas(rutaService, rutaAdapter);
             problematica = pOperacion;
-            System.out.printf("[*] REPLANIFICACION BLOQUE TEMPORAL DE OPERACION! ['%s' - '%s']%n", G4DUtility.Convertor.toDisplayString(inicioDePlanificacion), G4DUtility.Convertor.toDisplayString(finDePlanificacion));
         }
+        System.out.printf("[*] SIMULANDO BLOQUE TEMPORAL! ['%s' - '%s']%n", G4DUtility.Convertor.toDisplayString(inicioDePlanificacion), G4DUtility.Convertor.toDisplayString(finDePlanificacion));
         GVNS gvns = new GVNS();
         gvns.planificar(problematica);
         Solucion solucion = gvns.getSolucion();
+        System.out.printf("[*] BLOQUE TEMPORAL PLANIFICADO! ['%s' - '%s']%n", G4DUtility.Convertor.toDisplayString(inicioDePlanificacion), G4DUtility.Convertor.toDisplayString(finDePlanificacion));
         if(solucion == null) {
             return null;
         }
