@@ -383,11 +383,27 @@ export default function Simulacion() {
     // entregado si el tiempo simulado ya pasó la última llegada
     return simNowMs >= maxEndMs;
   };
+  // ⏱️ helpers para saber si el pedido ya "existe" en la simulación
+  const getOrderGenerationMs = (pedido) => {
+    if (!pedido.fechaHoraGeneracion) return null;
+    return parseFechaHoraToMs(pedido.fechaHoraGeneracion);
+  };
 
-  // Pedidos aún no entregados (pendientes / en tránsito)
-  const visibleOrders = orders.filter((pedido) => !isOrderDelivered(pedido));
-  // Pedidos ya entregados
-  const deliveredOrders = orders.filter((pedido) => isOrderDelivered(pedido));
+  const isOrderGenerated = (pedido) => {
+    const genMs = getOrderGenerationMs(pedido);
+    if (!genMs) return true; // si por alguna razón no viene fecha, lo mostramos siempre
+    return simNowMs >= genMs;
+  };
+
+  // Pedidos aún no entregados (pendientes / en tránsito) y YA generados
+  const visibleOrders = orders.filter(
+    (pedido) => isOrderGenerated(pedido) && !isOrderDelivered(pedido)
+  );
+
+  // Pedidos ya entregados y YA generados
+  const deliveredOrders = orders.filter(
+    (pedido) => isOrderGenerated(pedido) && isOrderDelivered(pedido)
+  );
 
   // Vuelos filtrados por código / origen / destino
   const filteredActiveFlights = activeFlights.filter((f) => {
@@ -408,11 +424,17 @@ export default function Simulacion() {
       ? visibleOrders
       : orderFilterEstado === "ENTREGADOS"
       ? deliveredOrders
-      : orders;
+      : orders.filter(isOrderGenerated); // "TODOS" pero solo los ya generados
 
   // Pedidos filtrados por código y destino
   const filteredOrders = baseOrders.filter((p) => {
-    if (orderFilterCode && p.codigo !== orderFilterCode) return false;
+    if (
+      orderFilterCode &&
+      !p.codigo.toUpperCase().includes(orderFilterCode.toUpperCase())
+    ) {
+      return false;
+    }
+
     if (orderFilterDestino && p.codDestino !== orderFilterDestino) return false;
     return true;
   });
@@ -470,15 +492,15 @@ export default function Simulacion() {
       return "none";
     }
     if (ocupacion < 0.5) {
-      // verde
-      return "invert(54%) sepia(81%) saturate(356%) hue-rotate(85deg) brightness(94%) contrast(90%)";
+      // verde más oscuro
+      return "invert(54%) sepia(81%) saturate(356%) hue-rotate(85deg) brightness(78%) contrast(115%)";
     }
     if (ocupacion < 0.8) {
-      // amarillo
-      return "invert(80%) sepia(72%) saturate(657%) hue-rotate(3deg) brightness(101%) contrast(102%)";
+      // amarillo más oscuro
+      return "invert(80%) sepia(72%) saturate(657%) hue-rotate(3deg) brightness(86%) contrast(118%)";
     }
-    // rojo
-    return "invert(37%) sepia(79%) saturate(844%) hue-rotate(338deg) brightness(94%) contrast(92%)";
+    // rojo más oscuro
+    return "invert(37%) sepia(79%) saturate(844%) hue-rotate(338deg) brightness(78%) contrast(120%)";
   }
 
   const createAirportIcon = (ap) => {
@@ -555,29 +577,29 @@ export default function Simulacion() {
   //
   function getPlaneColorFilter(capacity, maxCapacity) {
     if (!maxCapacity || maxCapacity <= 0) {
-      // color por defecto si falta dato → amarillo
-      return "invert(80%) sepia(72%) saturate(657%) hue-rotate(3deg) brightness(101%) contrast(102%)";
+      // amarillo por defecto, más intenso
+      return "invert(80%) sepia(72%) saturate(657%) hue-rotate(3deg) brightness(88%) contrast(115%)";
     }
 
-    const ratio = capacity / maxCapacity; // 0.0 → 1.0
+    const ratio = capacity / maxCapacity;
 
-    // VERDE → menos del 50%
+    // VERDE → menos del 50% (más oscuro y con más contraste)
     if (ratio < 0.5) {
-      return "invert(54%) sepia(81%) saturate(356%) hue-rotate(85deg) brightness(94%) contrast(90%)";
+      return "invert(54%) sepia(81%) saturate(356%) hue-rotate(85deg) brightness(78%) contrast(115%)";
     }
 
     // AMARILLO → 50% a 75%
     if (ratio >= 0.5 && ratio < 0.75) {
-      return "invert(80%) sepia(72%) saturate(657%) hue-rotate(3deg) brightness(101%) contrast(102%)";
+      return "invert(80%) sepia(72%) saturate(657%) hue-rotate(3deg) brightness(86%) contrast(118%)";
     }
 
     // ROJO → 90% a 100%
     if (ratio >= 0.9) {
-      return "invert(37%) sepia(79%) saturate(844%) hue-rotate(338deg) brightness(94%) contrast(92%)";
+      return "invert(37%) sepia(79%) saturate(844%) hue-rotate(338deg) brightness(78%) contrast(120%)";
     }
 
-    // Rango 75%–90% → también amarillo
-    return "invert(80%) sepia(72%) saturate(657%) hue-rotate(3deg) brightness(101%) contrast(102%)";
+    // 75%–90% → amarillo intenso
+    return "invert(80%) sepia(72%) saturate(657%) hue-rotate(3deg) brightness(86%) contrast(118%)";
   }
 
   function ClickHandler({ onMapClick }) {
@@ -783,13 +805,22 @@ export default function Simulacion() {
     setOrders(pedidosAtendidos);
     // Actualizar airports solo si cambió
     setAirports((prevAirports) => {
-      // partimos de lo que ya hubiera (los cargados al inicio)
       const merged = { ...(prevAirports || {}) };
 
-      // actualizamos / enriquecemos con la info de aeropuertosTransitados
       Object.entries(airportMap).forEach(([code, data]) => {
         const prev = merged[code] || {};
-        merged[code] = { ...prev, ...data };
+
+        // 👇 si data.esSede viene undefined/null, conservamos el de antes
+        const esSedeFinal =
+          data.esSede !== undefined && data.esSede !== null
+            ? data.esSede
+            : prev.esSede ?? false;
+
+        merged[code] = {
+          ...prev,
+          ...data,
+          esSede: esSedeFinal,
+        };
       });
 
       return merged;
@@ -1426,20 +1457,15 @@ export default function Simulacion() {
                     <option value="TODOS">Todos</option>
                   </select>
 
-                  <select
-                    className="filter-select"
+                  <input
+                    type="text"
+                    className="filter-select" // reutilizas el mismo estilo
+                    placeholder="Buscar código"
                     value={orderFilterCode}
-                    onChange={(e) => setOrderFilterCode(e.target.value)}
-                  >
-                    <option value="">Selecciona código</option>
-                    {Array.from(new Set(baseOrders.map((p) => p.codigo))).map(
-                      (cod) => (
-                        <option key={cod} value={cod}>
-                          {cod}
-                        </option>
-                      )
-                    )}
-                  </select>
+                    onChange={(e) =>
+                      setOrderFilterCode(e.target.value.toUpperCase())
+                    }
+                  />
 
                   <select
                     className="filter-select"

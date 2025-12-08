@@ -1347,27 +1347,28 @@
   width: 100%;
   border-radius: 999px;
   border: 1px solid #d1d5db;
-  padding: 6px 32px 6px 12px;
+  padding: 6px 12px;
   font-size: 12px;
   background-color: #f9fafb;
   color: #111827;
   outline: none;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+}
 
-  /* quitar estilo feo del navegador */
+/* flecha SOLO para los <select> */
+select.filter-select {
+  padding-right: 32px; /* espacio para la flecha */
+
   appearance: none;
   -webkit-appearance: none;
   -moz-appearance: none;
 
-  /* flechita custom */
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 20 20'%3E%3Cpath fill='none' stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4' /%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 10px center;
   background-size: 12px;
-
-  /* que el texto no se corte feo si es largo */
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  overflow: hidden;
 }
 
 .filter-select:focus {
