@@ -287,7 +287,8 @@ export default function Pedidos() {
       codigoFiltro.trim() !== "" ||
       filtroFecha.trim() !== "" ||
       filtroHora.trim() !== "" ||
-      tipoEscenarioFiltro !== ""
+      tipoEscenarioFiltro !== "" ||
+      codDestinoFiltro.trim() !== ""
     );
   };
 
@@ -392,7 +393,7 @@ export default function Pedidos() {
           codCliente: null,
           fueAtendido: null,
           tipoEscenario: tipoEscenarioFiltro || null,
-          codDestino: null,
+          codDestino: codDestinoFiltro || null,
         };
 
         data = await filtrarPedidos(backendPage, itemsPerPage, modelo);
