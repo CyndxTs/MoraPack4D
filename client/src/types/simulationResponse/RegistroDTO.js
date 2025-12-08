@@ -5,5 +5,6 @@
  * @property {string} fechaHoraIngreso
  * @property {string} fechaHoraEgreso
  * @property {string} codLote
+ * @property {number} tamLote
  */
 export {};
