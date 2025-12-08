@@ -15,6 +15,7 @@ import com.pucp.dp1.grupo4d.morapack.model.dto.request.FilterRequest;
 import com.pucp.dp1.grupo4d.morapack.model.dto.request.ListRequest;
 import com.pucp.dp1.grupo4d.morapack.model.dto.response.GenericResponse;
 import com.pucp.dp1.grupo4d.morapack.model.dto.response.ListResponse;
+import com.pucp.dp1.grupo4d.morapack.model.entity.AdministradorEntity;
 import com.pucp.dp1.grupo4d.morapack.model.entity.ClienteEntity;
 import com.pucp.dp1.grupo4d.morapack.model.enumeration.EstadoEjecucion;
 import com.pucp.dp1.grupo4d.morapack.model.enumeration.EstadoFinalizacion;
@@ -116,7 +117,7 @@ public class ClienteService {
             System.out.printf("Importando clientes desde '%s'..%n", archivo.getName());
             BufferedReader br = new BufferedReader(new InputStreamReader(archivo.getInputStream(), G4DUtility.Reader.getFileCharset(archivo)));
             List<ClienteEntity> clientes = new ArrayList<>();
-            Set<String> poolCorreos = this.findAll().stream().map(ClienteEntity::getCorreo).collect(Collectors.toSet());
+            Map<String, ClienteEntity> poolClientes = this.findAll().stream().collect(Collectors.toMap(ClienteEntity::getCorreo, cliente -> cliente));
             int maxCodigo = this.findAll().stream().map(ClienteEntity::getCodigo).mapToInt(Integer::parseInt).max().orElse(0);
             int lTotales = (int) G4DUtility.Reader.getLineCount(archivo);
             int lProcesadas = 0;
@@ -129,24 +130,25 @@ public class ClienteService {
                     String[] partes = linea.split("\\s{2,}");
                     String nombre = partes[0];
                     String correo = partes[1];
-                    if (!poolCorreos.contains(correo)) {
-                        poolCorreos.add(correo);
+                    if (!poolClientes.containsKey(correo)) {
                         ClienteEntity cliente = new ClienteEntity();
                         cliente.setCodigo(String.format("%07d", ++maxCodigo));
                         cliente.setNombre(nombre);
                         cliente.setCorreo(correo);
                         cliente.setContrasenia("12345678");
                         clientes.add(cliente);
+                        poolClientes.put(correo, cliente);
                     }
                 }
                 lProcesadas++;
                 WebSocketService.enviar("/topic/loader", new ProgressPayload("Leyendo archivo", lProcesadas, lTotales));
-                if (lProcesadas % 1000 == 0 || lProcesadas == lTotales) {
+                if (lProcesadas % 500 == 0 || lProcesadas == lTotales) {
                     importService.batchSave(clientes, "clientes");
                     System.out.printf("[<] CLIENTES IMPORTADOS! ('%d')%n", clientes.size());
                     clientes.clear();
                 }
             }
+            poolClientes.clear();
             br.close();
             WebSocketService.enviar("/topic/loader-status", new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.EXITOSO));
             return new GenericResponse(true, "Clientes importados correctamente!");

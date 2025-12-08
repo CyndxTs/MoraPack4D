@@ -164,7 +164,6 @@ public class PedidoService {
             BufferedReader br = new BufferedReader(new InputStreamReader(archivo.getInputStream(), G4DUtility.Reader.getFileCharset(archivo)));
             List<PedidoEntity> pedidos = new ArrayList<>();
             List<ClienteEntity> clientes = new ArrayList<>();
-            Set<String> poolCorreos = clienteService.findAll().stream().map(ClienteEntity::getCorreo).collect(Collectors.toSet());
             Map<String, ClienteEntity> poolClientes = clienteService.findAll().stream().collect(Collectors.toMap(ClienteEntity::getCodigo, c -> c));
             Map<String, AeropuertoEntity> poolAeropuertos = aeropuertoService.findAll().stream().collect(Collectors.toMap(AeropuertoEntity::getCodigo, a -> a));
             Map<String, Integer> poolMaxCodigos = this.findAllByTipoEscenario(tipoEscenario.toString()).stream().collect(Collectors.groupingBy(p -> p.getCodigo().substring(0, 4), Collectors.mapping(p -> Integer.parseInt(p.getCodigo().substring(4)), Collectors.maxBy(Integer::compareTo)))).entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().orElse(0)));
@@ -187,7 +186,7 @@ public class PedidoService {
                     String codCliente = partes[idx];
                     LocalDateTime fechaHoraGeneracionLocal = LocalDateTime.of(G4DUtility.Convertor.toDate(fechaStr), LocalTime.of(hora, minuto, 0));
                     AeropuertoEntity destino = poolAeropuertos.get(codDestino);
-                    if (destino != null){
+                    if (destino != null) {
                         LocalDateTime fechaHoraGeneracionUTC = G4DUtility.Convertor.toUTC(fechaHoraGeneracionLocal, destino.getHusoHorario());
                         if (!fechaHoraGeneracionUTC.isBefore(fechaHoraInicio) && !fechaHoraGeneracionUTC.isAfter(fechaHoraFin)) {
                             ClienteEntity cliente = poolClientes.getOrDefault(codCliente, null);
@@ -196,15 +195,14 @@ public class PedidoService {
                                 cliente.setCodigo(codCliente);
                                 cliente.setNombre(G4DUtility.Generator.getUniqueName());
                                 String correo = G4DUtility.Generator.getUniqueEmail();
-                                boolean existeCorreo = poolCorreos.contains(correo);
+                                boolean existeCorreo = clienteService.existsByCorreo(correo);
                                 if(existeCorreo) {
                                     String newCorreo = "";
                                     while (existeCorreo) {
                                         newCorreo = G4DUtility.Generator.addRandomInteger(correo, correo.indexOf('@'));
-                                        existeCorreo = poolCorreos.contains(newCorreo);
+                                        existeCorreo = clienteService.existsByCorreo(newCorreo);
                                     }
                                     cliente.setCorreo(newCorreo);
-                                    poolCorreos.add(newCorreo);
                                 } else cliente.setCorreo(correo);
                                 cliente.setContrasenia("12345678");
                                 poolClientes.put(codCliente, cliente);
@@ -225,7 +223,7 @@ public class PedidoService {
                 }
                 lProcesadas++;
                 WebSocketService.enviar("/topic/loader", new ProgressPayload("Leyendo archivo", lProcesadas, lTotales));
-                if (pedidos.size() % 1000 == 0 || lProcesadas == lTotales) {
+                if (pedidos.size() % 500 == 0 || lProcesadas == lTotales) {
                     importService.batchSave(clientes, "clientes");
                     System.out.printf("[<] CLIENTES IMPORTADOS! ('%d')%n", clientes.size());
                     clientes.clear();
@@ -234,6 +232,9 @@ public class PedidoService {
                     pedidos.clear();
                 }
             }
+            poolMaxCodigos.clear();
+            poolAeropuertos.clear();
+            poolClientes.clear();
             br.close();
             WebSocketService.enviar("/topic/loader-status", new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.EXITOSO));
             return new GenericResponse(true, "Pedidos importados correctamente!");

@@ -157,12 +157,13 @@ public class PlanService {
                 }
                 lProcesadas++;
                 WebSocketService.enviar("/topic/loader", new ProgressPayload("Leyendo archivo", lProcesadas, lTotales));
-                if(planes.size() % 1000 == 0 || lProcesadas == lTotales) {
+                if(planes.size() % 500 == 0 || lProcesadas == lTotales) {
                     importService.batchSave(planes, "planes de vuelo");
                     System.out.printf("[<] PLANES IMPORTADOS! ('%d')%n", planes.size());
                     planes.clear();
                 }
             }
+            poolAeropuertos.clear();
             br.close();
             WebSocketService.enviar("/topic/loader-status", new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.EXITOSO));
             return new GenericResponse(true, "Planes de vuelo importados correctamente!");

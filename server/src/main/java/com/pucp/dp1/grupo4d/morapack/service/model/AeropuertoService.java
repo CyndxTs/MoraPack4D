@@ -170,7 +170,7 @@ public class AeropuertoService {
                 }
                 lProcesadas++;
                 WebSocketService.enviar("/topic/loader", new ProgressPayload("Leyendo archivo", lProcesadas, lTotales));
-                if (lProcesadas % 1000 == 0 || lProcesadas == lTotales) {
+                if (lProcesadas % 500 == 0 || lProcesadas == lTotales) {
                     importService.batchSave(aeropuertos, "aeropuertos");
                     System.out.printf("[<] AEROPUERTOS IMPORTADOS! ('%d')%n", aeropuertos.size());
                     aeropuertos.clear();

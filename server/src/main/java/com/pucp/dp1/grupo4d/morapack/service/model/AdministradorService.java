@@ -111,7 +111,7 @@ public class AdministradorService {
             System.out.printf("Importando administradores desde '%s'..%n", archivo.getName());
             BufferedReader br = new BufferedReader(new InputStreamReader(archivo.getInputStream(), G4DUtility.Reader.getFileCharset(archivo)));
             List<AdministradorEntity> administradores = new ArrayList<>();
-            Set<String> poolCorreos = this.findAll().stream().map(AdministradorEntity::getCorreo).collect(Collectors.toSet());
+            Map<String, AdministradorEntity> poolAdministradores = this.findAll().stream().collect(Collectors.toMap(AdministradorEntity::getCorreo, admin -> admin));
             int maxCodigo = this.findAll().stream().map(AdministradorEntity::getCodigo).mapToInt(cod -> Integer.parseInt(cod.substring(5))).max().orElse(0);
             int lTotales = (int) G4DUtility.Reader.getLineCount(archivo);
             int lProcesadas = 0;
@@ -124,24 +124,25 @@ public class AdministradorService {
                     String[] partes = linea.split("\\s{2,}");
                     String nombre = partes[0];
                     String correo = partes[1];
-                    if (!poolCorreos.contains(correo)) {
-                        poolCorreos.add(correo);
-                        AdministradorEntity admin = new AdministradorEntity();
-                        admin.setCodigo(String.format("ADMIN%02d", ++maxCodigo));
-                        admin.setNombre(nombre);
-                        admin.setCorreo(correo);
-                        admin.setContrasenia("12345678");
-                        administradores.add(admin);
+                    if (!poolAdministradores.containsKey(correo)) {
+                        AdministradorEntity administrador = new AdministradorEntity();
+                        administrador.setCodigo(String.format("ADMIN%02d", ++maxCodigo));
+                        administrador.setNombre(nombre);
+                        administrador.setCorreo(correo);
+                        administrador.setContrasenia("12345678");
+                        administradores.add(administrador);
+                        poolAdministradores.put(correo, administrador);
                     }
                 }
                 lProcesadas++;
                 WebSocketService.enviar("/topic/loader", new ProgressPayload("Leyendo archivo", lProcesadas, lTotales));
-                if (lProcesadas % 1000 == 0 || lProcesadas == lTotales) {
+                if (lProcesadas % 500 == 0 || lProcesadas == lTotales) {
                     importService.batchSave(administradores, "administradores");
                     System.out.printf("[<] ADMINISTRADORES IMPORTADOS! ('%d')%n", administradores.size());
                     administradores.clear();
                 }
             }
+            poolAdministradores.clear();
             br.close();
             WebSocketService.enviar("/topic/loader-status", new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.EXITOSO));
             return new GenericResponse(true, "Administradores importados correctamente!");
