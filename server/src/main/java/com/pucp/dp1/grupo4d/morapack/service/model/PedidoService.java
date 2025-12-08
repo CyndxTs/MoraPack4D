@@ -25,6 +25,7 @@ import com.pucp.dp1.grupo4d.morapack.repository.PedidoRepository;
 import com.pucp.dp1.grupo4d.morapack.service.ImportService;
 import com.pucp.dp1.grupo4d.morapack.service.WebSocketService;
 import com.pucp.dp1.grupo4d.morapack.util.G4DUtility;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
@@ -77,8 +78,12 @@ public class PedidoService {
         return pedidoRepository.existsById(id);
     }
 
-    public List<PedidoEntity> findAllByTipoEscenario(String tipoEscenario) {
-        return pedidoRepository.findAllByTipoEscenario(tipoEscenario);
+    public Map<String, Integer> findAllMaxCodigoByEscenario(String tipoEscenario) {
+        return pedidoRepository.findAllMaxCodigoByTipoEscenario(tipoEscenario).stream().collect(Collectors.toMap(row -> (String) row[0], row -> row[1] != null ? ((Number) row[1]).intValue() : 0));
+    }
+
+    public Integer findMaxCodigoByDestinoEscenario(String codDestino, String tipoEscenario) {
+        return G4DUtility.Convertor.toAdmissible(pedidoRepository.findMaxCodigoByDestinoEscenario(codDestino, tipoEscenario), 0);
     }
 
     public Optional<PedidoEntity> findByCodigoEscenario(String codigo, String tipoEscenario) {
@@ -114,8 +119,9 @@ public class PedidoService {
         Boolean fueAtendido = modelo.getFueAtendido();
         String fechaHoraGeneracion = G4DUtility.Convertor.toAdmissibleDateTimeString(modelo.getFechaHoraGeneracion());
         String fechaHoraExpiracion = G4DUtility.Convertor.toAdmissibleDateTimeString(modelo.getFechaHoraExpiracion());
+        String codDestino = G4DUtility.Convertor.toAdmissible(modelo.getCodDestino());
         List<DTO> dtos = new ArrayList<>();
-        List<PedidoEntity> entities = pedidoRepository.filterBy(tipoEscenario, codCliente, codigoPedido, fueAtendido, fechaHoraGeneracion, fechaHoraExpiracion, pageable).getContent();
+        List<PedidoEntity> entities = pedidoRepository.filterBy(tipoEscenario, codCliente, codigoPedido, fueAtendido, fechaHoraGeneracion, fechaHoraExpiracion, codDestino, pageable).getContent();
         entities.forEach(entity -> dtos.add(pedidoMapper.toDTO(entity)));
         return new ListResponse(true, String.format("Pedidos filtrados correctamente! ('%d')", dtos.size()), dtos);
     }
@@ -123,15 +129,12 @@ public class PedidoService {
     public GenericResponse importar(ImportRequest<PedidoDTO> request) {
         System.out.println("Importando pedido..");
         PedidoDTO dto = request.getDto();
-        Map<String, ClienteEntity> poolClientes = clienteService.findAll().stream().collect(Collectors.toMap(ClienteEntity::getCodigo, c -> c));
-        Map<String, AeropuertoEntity> poolAeropuertos = aeropuertoService.findAll().stream().collect(Collectors.toMap(AeropuertoEntity::getCodigo, a -> a));
-        Map<String, Integer> poolMaxCodigos = this.findAllByTipoEscenario(dto.getTipoEscenario().toString()).stream().collect(Collectors.groupingBy(p -> p.getCodigo().substring(0, 4), Collectors.mapping(p -> Integer.parseInt(p.getCodigo().substring(4)), Collectors.maxBy(Integer::compareTo)))).entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().orElse(0)));
         PedidoEntity pedido = new PedidoEntity();
         String codDestino = dto.getCodDestino();
-        AeropuertoEntity destino = poolAeropuertos.get(codDestino);
+        AeropuertoEntity destino = aeropuertoService.findByCodigo(codDestino).orElse(null);
         if(destino != null) {
             String codCliente = dto.getCodCliente();
-            ClienteEntity cliente = poolClientes.get(codCliente);
+            ClienteEntity cliente = clienteService.findByCodigo(codCliente).orElse(null);
             if(cliente != null) {
                 pedido.setCliente(cliente);
                 pedido.setDestino(destino);
@@ -144,8 +147,7 @@ public class PedidoService {
                 pedido.setFechaHoraExpiracionUTC(G4DUtility.Convertor.toAdmissible(dto.getFechaHoraExpiracion(), (LocalDateTime) null));
                 pedido.setFechaHoraExpiracionLocal(pedido.getFechaHoraExpiracionUTC() != null ? G4DUtility.Convertor.toLocal(pedido.getFechaHoraExpiracionUTC(), destino.getHusoHorario()) : null);
                 pedido.setFueAtendido(dto.getFueAtendido() != null ? dto.getFueAtendido() : false);
-                poolMaxCodigos.merge(codDestino, 1, Integer::sum);
-                pedido.setCodigo(String.format("%s%09d", destino.getCodigo(), poolMaxCodigos.get(codDestino)));
+                pedido.setCodigo(String.format("%s%09d", destino.getCodigo(), 1 + this.findMaxCodigoByDestinoEscenario(codDestino, dto.getTipoEscenario())));
                 this.save(pedido);
             } else throw new G4DException(String.format("El cliente ('%s') del pedido es inválido.", codCliente));
         } else throw new G4DException(String.format("El destino ('%s') del pedido es inválido.", codDestino));
@@ -155,7 +157,7 @@ public class PedidoService {
 
     public GenericResponse importar(MultipartFile archivo, ImportFileRequest request) {
         try {
-            G4DUtility.Logger.logf("Importando pedidos desde '%s'..%n", archivo.getName());
+            System.out.printf("Importando pedidos desde '%s'.. (batch 500)%n", archivo.getName());
             LocalDateTime fechaHoraInicio = G4DUtility.Convertor.toAdmissible(request.getFechaHoraInicio(), LocalDateTime.MIN);
             LocalDateTime fechaHoraFin = G4DUtility.Convertor.toAdmissible(request.getFechaHoraFin(), LocalDateTime.MAX);
             if (fechaHoraFin.isBefore(fechaHoraInicio)) throw new G4DException("Rango de tiempo inválido.");
@@ -164,9 +166,15 @@ public class PedidoService {
             BufferedReader br = new BufferedReader(new InputStreamReader(archivo.getInputStream(), G4DUtility.Reader.getFileCharset(archivo)));
             List<PedidoEntity> pedidos = new ArrayList<>();
             List<ClienteEntity> clientes = new ArrayList<>();
-            Map<String, ClienteEntity> poolClientes = clienteService.findAll().stream().collect(Collectors.toMap(ClienteEntity::getCodigo, c -> c));
+            Map<String, ClienteEntity> poolClientes = new LinkedHashMap<>(16, 0.75f, true) {
+                @Override
+                protected boolean removeEldestEntry(Map.Entry<String, ClienteEntity> eldest) {
+                    return size() > 500;
+                }
+            };
+            clienteService.findAll(PageRequest.of(0, 250)).forEach(c -> poolClientes.put(c.getCodigo(), c));
             Map<String, AeropuertoEntity> poolAeropuertos = aeropuertoService.findAll().stream().collect(Collectors.toMap(AeropuertoEntity::getCodigo, a -> a));
-            Map<String, Integer> poolMaxCodigos = this.findAllByTipoEscenario(tipoEscenario.toString()).stream().collect(Collectors.groupingBy(p -> p.getCodigo().substring(0, 4), Collectors.mapping(p -> Integer.parseInt(p.getCodigo().substring(4)), Collectors.maxBy(Integer::compareTo)))).entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().orElse(0)));
+            Map<String, Integer> poolMaxCodigos = this.findAllMaxCodigoByEscenario(tipoEscenario.toString().toUpperCase());
             int lTotales = (int) G4DUtility.Reader.getLineCount(archivo);
             int lProcesadas = 0;
             String linea;
@@ -191,22 +199,25 @@ public class PedidoService {
                         if (!fechaHoraGeneracionUTC.isBefore(fechaHoraInicio) && !fechaHoraGeneracionUTC.isAfter(fechaHoraFin)) {
                             ClienteEntity cliente = poolClientes.getOrDefault(codCliente, null);
                             if (cliente == null) {
-                                cliente = new ClienteEntity();
-                                cliente.setCodigo(codCliente);
-                                cliente.setNombre(G4DUtility.Generator.getUniqueName());
-                                String correo = G4DUtility.Generator.getUniqueEmail();
-                                boolean existeCorreo = clienteService.existsByCorreo(correo);
-                                if(existeCorreo) {
-                                    String newCorreo = "";
-                                    while (existeCorreo) {
-                                        newCorreo = G4DUtility.Generator.addRandomInteger(correo, correo.indexOf('@'));
-                                        existeCorreo = clienteService.existsByCorreo(newCorreo);
-                                    }
-                                    cliente.setCorreo(newCorreo);
-                                } else cliente.setCorreo(correo);
-                                cliente.setContrasenia("12345678");
-                                poolClientes.put(codCliente, cliente);
+                                cliente = clienteService.findByCodigo(codCliente).orElse(null);
+                                if(cliente == null) {
+                                    cliente = new ClienteEntity();
+                                    cliente.setCodigo(codCliente);
+                                    cliente.setNombre(G4DUtility.Generator.getUniqueName());
+                                    String correo = G4DUtility.Generator.getUniqueEmail();
+                                    boolean existeCorreo = clienteService.existsByCorreo(correo);
+                                    if(existeCorreo) {
+                                        String newCorreo = "";
+                                        while (existeCorreo) {
+                                            newCorreo = G4DUtility.Generator.addRandomInteger(correo, correo.indexOf('@'));
+                                            existeCorreo = clienteService.existsByCorreo(newCorreo);
+                                        }
+                                        cliente.setCorreo(newCorreo);
+                                    } else cliente.setCorreo(correo);
+                                    cliente.setContrasenia("12345678");
+                                }
                                 clientes.add(cliente);
+                                poolClientes.put(codCliente, cliente);
                             }
                             PedidoEntity pedido = new PedidoEntity();
                             poolMaxCodigos.merge(codDestino, 1, Integer::sum);

@@ -63,4 +63,14 @@ public interface ClienteRepository extends JpaRepository<ClienteEntity, Integer>
             @Param("fechaHoraFin") LocalDateTime fechaHoraFin,
             @Param("tipoEscenario") String tipoEscenario
     );
+
+    // Obtener el máximo código de cliente como número
+    @Query(
+            value = """
+        SELECT MAX(CAST(c.codigo AS UNSIGNED))
+        FROM cliente c
+        """,
+            nativeQuery = true
+    )
+    Integer findMaxCodigo();
 }

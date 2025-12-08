@@ -25,6 +25,7 @@ import com.pucp.dp1.grupo4d.morapack.repository.ClienteRepository;
 import com.pucp.dp1.grupo4d.morapack.service.ImportService;
 import com.pucp.dp1.grupo4d.morapack.service.WebSocketService;
 import com.pucp.dp1.grupo4d.morapack.util.G4DUtility;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
@@ -92,6 +93,10 @@ public class ClienteService {
         return clienteRepository.findAllByDateTimeRange(fechaHoraInicio, fechaHoraFin, tipoEscenario);
     }
 
+    public Integer findMaxCodigo() {
+        return G4DUtility.Convertor.toAdmissible(clienteRepository.findMaxCodigo(), 0);
+    }
+
     public ListResponse listar(ListRequest request) {
         Pageable pageable = G4DUtility.Convertor.toAdmissible(request.getPagina(), request.getTamanio(), Sort.Order.asc("codigo"));
         List<DTO> dtos = new ArrayList<>();
@@ -117,8 +122,14 @@ public class ClienteService {
             System.out.printf("Importando clientes desde '%s'..%n", archivo.getName());
             BufferedReader br = new BufferedReader(new InputStreamReader(archivo.getInputStream(), G4DUtility.Reader.getFileCharset(archivo)));
             List<ClienteEntity> clientes = new ArrayList<>();
-            Map<String, ClienteEntity> poolClientes = this.findAll().stream().collect(Collectors.toMap(ClienteEntity::getCorreo, cliente -> cliente));
-            int maxCodigo = this.findAll().stream().map(ClienteEntity::getCodigo).mapToInt(Integer::parseInt).max().orElse(0);
+            Map<String, ClienteEntity> poolClientes = new LinkedHashMap<>(16, 0.75f, true) {
+                @Override
+                protected boolean removeEldestEntry(Map.Entry<String, ClienteEntity> eldest) {
+                    return size() > 500;
+                }
+            };
+            this.findAll(PageRequest.of(0, 250)).forEach(c -> poolClientes.put(c.getCorreo(), c));
+            int maxCodigo = this.findMaxCodigo();
             int lTotales = (int) G4DUtility.Reader.getLineCount(archivo);
             int lProcesadas = 0;
             String linea;
@@ -130,7 +141,7 @@ public class ClienteService {
                     String[] partes = linea.split("\\s{2,}");
                     String nombre = partes[0];
                     String correo = partes[1];
-                    if (!poolClientes.containsKey(correo)) {
+                    if (!poolClientes.containsKey(correo) || !this.existsByCorreo(correo)) {
                         ClienteEntity cliente = new ClienteEntity();
                         cliente.setCodigo(String.format("%07d", ++maxCodigo));
                         cliente.setNombre(nombre);

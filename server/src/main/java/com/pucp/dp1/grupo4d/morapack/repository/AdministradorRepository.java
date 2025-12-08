@@ -45,4 +45,14 @@ public interface AdministradorRepository extends JpaRepository<AdministradorEnti
             @Param("estado") String estado,
             Pageable pageable
     );
+
+    // Obtener el máximo número de administrador
+    @Query(
+            value = """
+        SELECT MAX(CAST(SUBSTRING(a.codigo, 6) AS UNSIGNED))
+        FROM administrador a
+        """,
+            nativeQuery = true
+    )
+    Integer findMaxCodigo();
 }
