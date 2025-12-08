@@ -38,16 +38,34 @@ public interface PedidoRepository extends JpaRepository<PedidoEntity, Integer> {
             @Param("tipoEscenario") String tipoEscenario
     );
 
-    // Encontrar pedidos por el tipo de escenario
+    // Encontrar el máximo número por cada prefijo de 4 letras según tipo de escenario
     @Query(
-            value = """
-            SELECT *
+        value = """
+            SELECT 
+                LEFT(codigo, 4) AS clave, 
+                MAX(CAST(SUBSTRING(codigo, 5) AS UNSIGNED)) AS max_numero
             FROM pedido
             WHERE tipo_escenario = :tipoEscenario
-            """,
+            GROUP BY LEFT(codigo, 4)
+        """,
+        nativeQuery = true
+    )
+    List<Object[]> findAllMaxCodigoByTipoEscenario(
+            @Param("tipoEscenario") String tipoEscenario
+    );
+
+    // Encontrar el máximo número de código para un destino y tipo de escenario
+    @Query(
+            value = """
+        SELECT MAX(CAST(SUBSTRING(codigo, 5) AS UNSIGNED))
+        FROM pedido
+        WHERE tipo_escenario = :tipoEscenario
+          AND LEFT(codigo, 4) = :codDestino
+    """,
             nativeQuery = true
     )
-    List<PedidoEntity> findAllByTipoEscenario(
+    Integer findMaxCodigoByDestinoEscenario(
+            @Param("codDestino") String codDestino,
             @Param("tipoEscenario") String tipoEscenario
     );
 
@@ -56,23 +74,27 @@ public interface PedidoRepository extends JpaRepository<PedidoEntity, Integer> {
             SELECT p.*
             FROM pedido p
             INNER JOIN cliente c ON p.id_cliente = c.id
+            INNER JOIN aeropuerto a ON p.id_aeropuerto_destino = a.id
             WHERE (:tipoEscenario IS NULL OR p.tipo_escenario = :tipoEscenario)
               AND (:codCliente IS NULL OR c.codigo = :codCliente)
               AND (:codigoPedido IS NULL OR p.codigo = :codigoPedido)
               AND (:fueAtendido IS NULL OR p.fue_atendido = :fueAtendido)
               AND (:fechaHoraGeneracion IS NULL OR p.fh_generacion_utc >= :fechaHoraGeneracion)
               AND (:fechaHoraExpiracion IS NULL OR (p.fh_expiracion_utc IS NOT NULL AND p.fh_expiracion_utc >= :fechaHoraExpiracion))
+              AND (:codDestino IS NULL OR UPPER(a.codigo) LIKE CONCAT(UPPER(:codDestino), '%'))
             """,
         countQuery = """
             SELECT COUNT(*)
             FROM pedido p
             INNER JOIN cliente c ON p.id_cliente = c.id
+            INNER JOIN aeropuerto a ON p.id_aeropuerto_destino = a.id
             WHERE (:tipoEscenario IS NULL OR p.tipo_escenario = :tipoEscenario)
               AND (:codCliente IS NULL OR c.codigo = :codCliente)
               AND (:codigoPedido IS NULL OR p.codigo = :codigoPedido)
               AND (:fueAtendido IS NULL OR p.fue_atendido = :fueAtendido)
               AND (:fechaHoraGeneracion IS NULL OR p.fh_generacion_utc >= :fechaHoraGeneracion)
               AND (:fechaHoraExpiracion IS NULL OR (p.fh_expiracion_utc IS NOT NULL AND p.fh_expiracion_utc >= :fechaHoraExpiracion))
+              AND (:codDestino IS NULL OR UPPER(a.codigo) LIKE CONCAT(UPPER(:codDestino), '%'))
             """,
         nativeQuery = true
     )
@@ -83,6 +105,7 @@ public interface PedidoRepository extends JpaRepository<PedidoEntity, Integer> {
             @Param("fueAtendido") Boolean fueAtendido,
             @Param("fechaHoraGeneracion") String fechaHoraGeneracion,
             @Param("fechaHoraExpiracion") String fechaHoraExpiracion,
+            @Param("codDestino") String codDestino,
             Pageable pageable
     );
 

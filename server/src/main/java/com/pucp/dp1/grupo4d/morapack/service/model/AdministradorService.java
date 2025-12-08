@@ -16,6 +16,7 @@ import com.pucp.dp1.grupo4d.morapack.model.dto.request.ListRequest;
 import com.pucp.dp1.grupo4d.morapack.model.dto.response.GenericResponse;
 import com.pucp.dp1.grupo4d.morapack.model.dto.response.ListResponse;
 import com.pucp.dp1.grupo4d.morapack.model.entity.AdministradorEntity;
+import com.pucp.dp1.grupo4d.morapack.model.entity.ClienteEntity;
 import com.pucp.dp1.grupo4d.morapack.model.enumeration.EstadoEjecucion;
 import com.pucp.dp1.grupo4d.morapack.model.enumeration.EstadoFinalizacion;
 import com.pucp.dp1.grupo4d.morapack.model.enumeration.EstadoUsuario;
@@ -24,6 +25,7 @@ import com.pucp.dp1.grupo4d.morapack.repository.AdministradorRepository;
 import com.pucp.dp1.grupo4d.morapack.service.ImportService;
 import com.pucp.dp1.grupo4d.morapack.service.WebSocketService;
 import com.pucp.dp1.grupo4d.morapack.util.G4DUtility;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
@@ -86,6 +88,10 @@ public class AdministradorService {
         return administradorRepository.findByCorreo(correo).isPresent();
     }
 
+    public Integer findMaxCodigo() {
+        return G4DUtility.Convertor.toAdmissible(administradorRepository.findMaxCodigo(), 0);
+    }
+
     public ListResponse listar(ListRequest request) {
         Pageable pageable = G4DUtility.Convertor.toAdmissible(request.getPagina(), request.getTamanio(), Sort.Order.asc("codigo"));
         List<DTO> dtos = new ArrayList<>();
@@ -111,8 +117,14 @@ public class AdministradorService {
             System.out.printf("Importando administradores desde '%s'..%n", archivo.getName());
             BufferedReader br = new BufferedReader(new InputStreamReader(archivo.getInputStream(), G4DUtility.Reader.getFileCharset(archivo)));
             List<AdministradorEntity> administradores = new ArrayList<>();
-            Map<String, AdministradorEntity> poolAdministradores = this.findAll().stream().collect(Collectors.toMap(AdministradorEntity::getCorreo, admin -> admin));
-            int maxCodigo = this.findAll().stream().map(AdministradorEntity::getCodigo).mapToInt(cod -> Integer.parseInt(cod.substring(5))).max().orElse(0);
+            Map<String, AdministradorEntity> poolAdministradores = new LinkedHashMap<>(16, 0.75f, true) {
+                @Override
+                protected boolean removeEldestEntry(Map.Entry<String, AdministradorEntity> eldest) {
+                    return size() > 500;
+                }
+            };
+            this.findAll(PageRequest.of(0, 250)).forEach(c -> poolAdministradores.put(c.getCorreo(), c));
+            int maxCodigo = this.findMaxCodigo();
             int lTotales = (int) G4DUtility.Reader.getLineCount(archivo);
             int lProcesadas = 0;
             String linea;
@@ -124,7 +136,7 @@ public class AdministradorService {
                     String[] partes = linea.split("\\s{2,}");
                     String nombre = partes[0];
                     String correo = partes[1];
-                    if (!poolAdministradores.containsKey(correo)) {
+                    if (!poolAdministradores.containsKey(correo) || !this.existsByCorreo(correo)) {
                         AdministradorEntity administrador = new AdministradorEntity();
                         administrador.setCodigo(String.format("ADMIN%02d", ++maxCodigo));
                         administrador.setNombre(nombre);

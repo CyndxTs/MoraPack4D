@@ -671,8 +671,8 @@ export function Table({ headers = [], data = [], statusColors = {} }) {
                     <td key={j} className={isNumeric ? "numeric" : ""}>
                       {(() => {
                         // Booleanos → SI / NO
-                        if (value === true || value === 1) return "SI";
-                        if (value === false || value === 0) return "NO";
+                        if (value === true) return "SI";
+                        if (value === false) return "NO";
 
                         return value ?? "";
                       })()}
@@ -802,27 +802,31 @@ export function useLoaderProgress() {
   const [payload, setPayload] = useState(null);
 
   useEffect(() => {
+    const SOCKET_URL =
+      (window.location.protocol === "https:" ? "wss://" : "ws://") +
+      window.location.host +
+      "/ws";
+
     const client = new Client({
-      brokerURL: "ws://localhost:8080/ws",  // 👈 WebSocket nativo
+      brokerURL: SOCKET_URL,
       reconnectDelay: 500,
+      debug: () => {},
       onConnect: () => {
         client.subscribe("/topic/loader", (msg) => {
           const data = JSON.parse(msg.body);
           setPayload(data);
         });
       },
-      debug: () => {} // opcional para silenciar logs
     });
 
     client.activate();
 
-    return () => {
-      client.deactivate();
-    };
+    return () => client.deactivate();
   }, []);
 
   return payload;
 }
+
 
 
 export function LoadingOverlay() {

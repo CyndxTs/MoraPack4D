@@ -24,6 +24,7 @@ export default function Pedidos() {
   const [filtroFecha, setFiltroFecha] = useState("");
   const [filtroHora, setFiltroHora] = useState("");
   const [tipoEscenarioFiltro, setTipoEscenarioFiltro] = useState("");
+  const [codDestinoFiltro, setCodDestinoFiltro] = useState("");
 
   // --- Modal ---
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -314,7 +315,7 @@ export default function Pedidos() {
         codCliente: null,
         fueAtendido: null,
         tipoEscenario: tipoEscenarioFiltro || null,
-        codDestino: null,
+        codDestino: codDestinoFiltro || null,
       };
 
       const data = await filtrarPedidos(
@@ -344,6 +345,7 @@ export default function Pedidos() {
     setCodigoFiltro("");
     setFiltroFecha("");
     setFiltroHora("");
+    setCodDestinoFiltro("");
     setTipoEscenarioFiltro(""); 
 
     await fetchPedidos(1);
@@ -477,6 +479,14 @@ export default function Pedidos() {
               />
             </div>
 
+            <div className="filter-group">
+              <span className="sidebar-subtitle-strong">Código de destino</span>
+              <Input
+                placeholder="Escribir..."
+                value={codDestinoFiltro}
+                onChange={(e) => setCodDestinoFiltro(e.target.value)}
+              />
+            </div>
 
             <div className="filter-group">
               <span className="sidebar-subtitle-strong">Fecha generación (mayor o igual a...)</span>
