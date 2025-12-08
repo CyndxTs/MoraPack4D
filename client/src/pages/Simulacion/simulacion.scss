@@ -371,33 +371,84 @@
 }
 
 /* ===============================
-   PANEL INFORMATIVO INFERIOR*/
+   PANEL INFORMATIVO INFERIOR
+================================ */
+
+
 .info-panel {
-  width: 100%;
-  background-color: var(--color-dark-blue);
-  color: white;
   position: fixed;
   bottom: 0;
   left: 0;
+  width: 100%;
   z-index: 3000;
-  max-height: 0;               /* 🔥 por defecto (sin .expanded) no se ve */
-  overflow-y: hidden;
-  border-top: 3px solid #0d1b2a;
-  padding: 0 24px;
-  border-radius: 18px 18px 0 0;
-  box-shadow: 0 -4px 18px rgba(15, 23, 42, 0.45);
+
+  max-height: 0;
+  overflow: hidden;              /* 👈 el contenedor NO scrollea */
+  display: flex;
+  justify-content: center;
+  padding: 0;
+  background: transparent;
   transition: max-height 0.25s ease, padding 0.25s ease;
 }
 
 .info-panel.expanded {
-  max-height: 32vh;            /* 🔥 máximo ~30% de la pantalla */
-  overflow-y: auto;            /* 🔥 scroll interno si hay muchos vuelos */
-  padding: 16px 24px;
+  max-height: 30vh;              /* altura máxima total del panel */
+  padding-bottom: 8px;
 }
 
+/* Tarjeta interna: aquí vive el scroll */
+.info-panel-inner {
+  width: min(820px, calc(100% - 48px));  /* más angosto */
+  background-color: var(--color-dark-blue);
+  color: #fff;
+  border-radius: 18px 18px 0 0;
+  border-top: 3px solid #0d1b2a;
+  box-shadow: 0 -4px 18px rgba(15, 23, 42, 0.45);
+  padding: 12px 18px 14px;
+
+  max-height: 30vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+.info-panel--wide .info-panel-inner {
+  width: min(1100px, calc(100% - 48px));
+}
 .info-content {
   opacity: 1;
 }
+
+/* Scroll interno cuando hay mucha información */
+.info-panel.expanded .info-panel-inner {
+  max-height: 100%;
+  overflow-y: auto;
+}
+
+.info-panel-inner {
+  scrollbar-width: thin;                       /* Firefox */
+  scrollbar-color: #64748b transparent;
+}
+
+/* Chrome / Edge / Safari */
+.info-panel-inner::-webkit-scrollbar {
+  width: 8px;
+}
+
+.info-panel-inner::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.7);          /* fondo oscuro del panel */
+  border-radius: 999px;
+}
+
+.info-panel-inner::-webkit-scrollbar-thumb {
+  background: #94a3b8;                        /* gris suave */
+  border-radius: 999px;
+  border: 2px solid rgba(15, 23, 42, 1);      /* genera efecto "pill" */
+}
+
+.info-panel-inner::-webkit-scrollbar-thumb:hover {
+  background: #e5e7eb;                        /* un poco más claro al hover */
+}
+
 
 .info-panel-header {
   margin-bottom: 12px;
@@ -1142,21 +1193,20 @@
 .info-shell {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;                   
   font-size: 13px;
 }
 
-/* Header común */
 .info-shell-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  gap: 24px;
+  gap: 18px;                  
   flex-wrap: wrap;
 }
 
 .info-shell-left {
-  max-width: 60%;
+  max-width: 58%;              
 }
 
 .info-chip {
@@ -1177,7 +1227,7 @@
 .info-chip--route { background: #7c3aed; }
 
 .info-shell-title {
-  font-size: 18px;
+  font-size: 16px;           
   font-weight: 700;
   margin-bottom: 4px;
 }
@@ -1192,7 +1242,7 @@
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 4px;
+  gap: 3px;
   font-size: 12px;
 }
 
@@ -1213,13 +1263,13 @@
 .info-shell-body--two-cols {
   display: grid;
   grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
-  gap: 24px;
+  gap: 18px;                
 }
 
 .info-section-title {
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 700;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 
 .info-section-subtitle {
