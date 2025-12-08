@@ -1,5 +1,38 @@
 // src/pages/Simulacion/InfoPanels.jsx
 import React from "react";
+// Devuelve la cadena de vuelos (escalas) que recorre un lote
+const buildFlightChainForLote = (lote, flights = []) => {
+  if (!lote || !Array.isArray(lote.vuelos) || lote.vuelos.length === 0) {
+    return [];
+  }
+
+  return lote.vuelos
+    .map((codVuelo) => {
+      const f = flights.find((fl) => fl.code === codVuelo);
+      if (!f) return null;
+
+      const originCity =
+        (f.origin && f.origin.city) ||
+        f.originName ||
+        (f.origin && f.origin.code) ||
+        "Origen";
+
+      const destCity =
+        (f.destination && f.destination.city) ||
+        f.destinationName ||
+        (f.destination && f.destination.code) ||
+        "Destino";
+
+      return {
+        codigo: f.code,
+        origen: originCity,
+        destino: destCity,
+        salida: f.startTime,
+        llegada: f.endTime,
+      };
+    })
+    .filter(Boolean);
+};
 
 /* ========== VUELO ========== */
 export function FlightInfoPanel({ flight, getOrdersForFlight }) {
@@ -91,8 +124,7 @@ export function FlightInfoPanel({ flight, getOrdersForFlight }) {
 }
 
 /* ========== PEDIDO ========== */
-/* ========== PEDIDO ========== */
-export function OrderInfoPanel({ order }) {
+export function OrderInfoPanel({ order, flights = [] }) {
   if (!order) return null;
 
   const totalSegmentos = order.segmentaciones?.length || 0;
@@ -170,12 +202,10 @@ export function OrderInfoPanel({ order }) {
           {allLotes.length > 0 ? (
             <ul className="info-list">
               {allLotes.map((lote, idx) => {
-                // 🛫 Origen de la ruta
                 const origenNombre =
                   lote.origenNombre || lote.origenCode || "Origen desconocido";
                 const origenCode = lote.origenCode || "";
 
-                // 🛬 Destino de la ruta
                 const destinoNombre =
                   lote.destinoNombre ||
                   lote.arrivalAirportCity ||
@@ -184,19 +214,35 @@ export function OrderInfoPanel({ order }) {
                 const destinoCode =
                   lote.destinoCode || lote.arrivalAirportCode || "";
 
-                // ⏱ Llegada sacada de los registros del aeropuerto
                 const fechaLlegada =
                   lote.arrivalFechaHoraIngreso || "Sin información";
 
+                // 🔗 cadena de vuelos (escalas) para este lote
+                const flightChain = buildFlightChainForLote(lote, flights);
+
                 return (
                   <li key={idx}>
-                    {/* Ejemplo:
-                        300 u. · Baku (UBBB) → Sana (OYSN) · Llegada: 03/11/2025 10:09
-                    */}
-                    {lote.loteTamanio} u. · {origenNombre}
-                    {origenCode ? ` (${origenCode})` : ""} → {destinoNombre}
-                    {destinoCode ? ` (${destinoCode})` : ""} · Llegada:{" "}
-                    {fechaLlegada}
+                    {/* Resumen de la segmentación */}
+                    <div>
+                      {lote.loteTamanio} u. · {origenNombre}
+                      {origenCode ? ` (${origenCode})` : ""} → {destinoNombre}
+                      {destinoCode ? ` (${destinoCode})` : ""} · Llegada:{" "}
+                      {fechaLlegada}
+                    </div>
+
+                    {/* Escalas / vuelos usados */}
+                    {flightChain.length > 0 && (
+                      <div className="info-lote-flights">
+                        {flightChain.map((v) => (
+                          <div key={v.codigo} className="info-lote-flight">
+                            ✈ {v.origen} → {v.destino} ({v.codigo}){" "}
+                            <small>
+                              {v.salida} → {v.llegada}
+                            </small>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </li>
                 );
               })}
