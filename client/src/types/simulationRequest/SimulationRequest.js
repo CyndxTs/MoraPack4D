@@ -9,7 +9,7 @@
  * @property {string} fechaHoraFin             - "YYYY-MM-DDTHH:mm:ss"
  * @property {ParametrosDTO} parametros
  * @property {number} multiplicadorTemporal
- * @property {number} tamanioDeSaltoTemporal
+ * @property {number} saltoDeAlgoritmo
  */
 
 export {};
