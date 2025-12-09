@@ -14,6 +14,6 @@ public class SimulationRequest {
     private String fechaHoraInicio;
     private String fechaHoraFin;
     private ParametrosDTO parametros;
-    private Double multiplicadorTemporal;
-    private Double TamanioDeSaltoTemporal;
+    private Integer multiplicadorTemporal;
+    private Double saltoDeAlgoritmo;
 }
