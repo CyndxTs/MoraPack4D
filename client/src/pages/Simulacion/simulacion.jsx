@@ -76,7 +76,7 @@ export default function Simulacion() {
   const [minHorasEstancia, setMinHorasEstancia] = useState();
   const [maxHorasEstancia, setMaxHorasEstancia] = useState();
   const [multiplicadorTemporal, setMultiplicadorTemporal] = useState();
-  const [tamanioDeSaltoTemporal, setTamanioDeSaltoTemporal] = useState();
+  const [saltoDeAlgoritmo, setTamanioDeSaltoTemporal] = useState();
   const [parametrosCompletos, setParametrosCompletos] = useState(null);
   const [probabilidadReplanificacion, setProbabilidadReplanificacion] =
     useState();
@@ -505,7 +505,6 @@ export default function Simulacion() {
     // ROJO más oscuro
     return "invert(26%) sepia(88%) saturate(900%) hue-rotate(350deg) brightness(55%) contrast(130%)";
   }
-
 
   const createAirportIcon = (ap) => {
     // si es sede usamos sede.svg, si no el icono normal de aeropuerto
@@ -1054,7 +1053,7 @@ export default function Simulacion() {
           probabilidadReplanificacion,
         },
         multiplicadorTemporal,
-        tamanioDeSaltoTemporal,
+        saltoDeAlgoritmo,
       };
 
       console.log("SimulationRequest enviado por HTTP:", body);
@@ -2010,7 +2009,7 @@ export default function Simulacion() {
                           // Abrir panel informativo
                           setSelectedAirport(enrichedAp);
                           setSelectedItem(null);
-                        }
+                        },
                       }}
                     >
                       {openAirportTooltipCode === enrichedAp.code && (
@@ -2109,9 +2108,12 @@ export default function Simulacion() {
                           },
                           click: () => {
                             // Abrir panel con info del vuelo
-                            setSelectedItem({ type: "flight", codigo: flight.code });
+                            setSelectedItem({
+                              type: "flight",
+                              codigo: flight.code,
+                            });
                             setSelectedAirport(null);
-                          }
+                          },
                         }}
                       >
                         {openFlightTooltipCode === flight.code && (
@@ -2270,11 +2272,11 @@ export default function Simulacion() {
                 }
               />
 
-              <label>Tamaño de salto temporal (horas)</label>
+              <label>Salto de algoritmo (minutos)</label>
               <Input
-                label="Tamaño de salto temporal (horas)"
+                label="Salto de algoritmo (minutos)"
                 type="number"
-                value={tamanioDeSaltoTemporal}
+                value={saltoDeAlgoritmo}
                 onChange={(e) =>
                   setTamanioDeSaltoTemporal(parseNumber(e.target.value))
                 }
