@@ -52,10 +52,10 @@ export function ButtonAdd({
 }
 
 
-export function Input({ placeholder, value, onChange, disabled = false }) {
+export function Input({ placeholder, value, onChange, disabled = false, type = "text" }) {
   return (
     <input
-      type="text"
+      type={type}
       className={`custom-input ${disabled ? "disabled" : ""}`}
       placeholder={placeholder}
       value={value}
@@ -64,6 +64,7 @@ export function Input({ placeholder, value, onChange, disabled = false }) {
     />
   );
 }
+
 
 // INPUT DE FECHA + HORA EN LÍNEA
 export function DateTimeInline({ dateValue, timeValue, onDateChange, onTimeChange, disabled = false }) {

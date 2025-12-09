@@ -2276,11 +2276,13 @@ export default function Simulacion() {
               <Input
                 label="Salto de algoritmo (minutos)"
                 type="number"
+                step="0.1"
                 value={saltoDeAlgoritmo}
                 onChange={(e) =>
-                  setTamanioDeSaltoTemporal(parseNumber(e.target.value))
+                  setTamanioDeSaltoTemporal(parseFloat(e.target.value))
                 }
               />
+
 
               {/* === CIUDADES SEDE (codOrigenes) === */}
               <span className="sidebar-subtitle">Ciudades sede</span>
