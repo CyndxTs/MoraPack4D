@@ -66,7 +66,11 @@ export default function Simulacion() {
   // estados de todos los parámetros
   const parseNumber = (v) => {
     if (v === "" || v === null || v === undefined) return null;
-    return Number(v);
+
+    const normalized = String(v).replace(",", "."); // admite 1,75 e igual 1.75
+    const n = Number(normalized);
+
+    return Number.isNaN(n) ? null : n; // así nunca guardas NaN en el estado
   };
   const [maxDiasEntregaIntercontinental, setMaxDiasEntregaIntercontinental] =
     useState();
@@ -77,6 +81,7 @@ export default function Simulacion() {
   const [maxHorasEstancia, setMaxHorasEstancia] = useState();
   const [multiplicadorTemporal, setMultiplicadorTemporal] = useState();
   const [saltoDeAlgoritmo, setTamanioDeSaltoTemporal] = useState();
+  const [saltoDeAlgoritmoInput, setSaltoDeAlgoritmoInput] = useState("");
   const [parametrosCompletos, setParametrosCompletos] = useState(null);
   const [probabilidadReplanificacion, setProbabilidadReplanificacion] =
     useState();
@@ -2275,11 +2280,13 @@ export default function Simulacion() {
               <label>Salto de algoritmo (minutos)</label>
               <Input
                 label="Salto de algoritmo (minutos)"
-                type="number"
-                value={saltoDeAlgoritmo}
-                onChange={(e) =>
-                  setTamanioDeSaltoTemporal(parseNumber(e.target.value))
-                }
+                type="text"
+                value={saltoDeAlgoritmoInput}
+                onChange={(e) => {
+                  const raw = e.target.value;
+                  setSaltoDeAlgoritmoInput(raw);
+                  setTamanioDeSaltoTemporal(parseNumber(raw));
+                }}
               />
 
               {/* === CIUDADES SEDE (codOrigenes) === */}
