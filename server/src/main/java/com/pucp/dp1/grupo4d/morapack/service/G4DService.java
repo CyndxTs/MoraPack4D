@@ -114,21 +114,19 @@ public class G4DService {
         try {
             TipoEscenario escenario = TipoEscenario.SIMULACION;
             LocalDateTime inicioDeSimulacion = G4DUtility.Convertor.toDateTime(request.getFechaHoraInicio());
-            LocalDateTime inicioDePlanificacion = inicioDeSimulacion;
-            LocalDateTime finDePlanificacion = inicioDeSimulacion;
             LocalDateTime umbralDeReplanificacion = inicioDeSimulacion;
             LocalDateTime finDeSimulacion = G4DUtility.Convertor.toAdmissible(request.getFechaHoraFin(), LocalDateTime.MAX);
             ParametrosDTO parametros = request.getParametros();
             parametrosMapper.toAlgorithm(parametros);
             int maxDesfaseTemporalEnDias = Math.max(parametros.getMaxDiasEntregaIntracontinental(), parametros.getMaxDiasEntregaIntercontinental());
             Double multiplicadorTemporal = G4DUtility.Convertor.toAdmissible(request.getMultiplicadorTemporal(), 600.0);
-            Double saltoTemporalEnHoras = G4DUtility.Convertor.toAdmissible(request.getTamanioDeSaltoTemporal(), 2.0);
-            long saltoTemporalEnMinutos = (long) (60*saltoTemporalEnHoras);
+            Double saltoDeAlgoritmo = G4DUtility.Convertor.toAdmissible(request.getTamanioDeSaltoTemporal(), 2.0);
+            long saltoDeConsumo = (long) (multiplicadorTemporal * saltoDeAlgoritmo);
+            LocalDateTime inicioDePlanificacion = inicioDeSimulacion;
+            LocalDateTime finDePlanificacion = (inicioDeSimulacion.plusMinutes(saltoDeConsumo).isAfter(finDeSimulacion)) ? finDeSimulacion : inicioDeSimulacion.plusMinutes(saltoDeConsumo);
             long minutosPlanificados = 0L;
-            double horasPlanificadas = 0.0;
             boolean esPrimeraIteracion = true;
             while(simulationTask != null) {
-                finDePlanificacion = (finDePlanificacion.plusMinutes(saltoTemporalEnMinutos).isAfter(finDeSimulacion)) ? finDeSimulacion : finDePlanificacion.plusMinutes(saltoTemporalEnMinutos);
                 Instant start = Instant.now();
                 SolucionDTO solucion = planificar(escenario, inicioDePlanificacion, finDePlanificacion, umbralDeReplanificacion, umbralDeReplanificacion);
                 if(solucion != null) {
@@ -145,11 +143,11 @@ public class G4DService {
                 Instant end = Instant.now();
                 long segundosSimulados = (long) (Duration.between(start, end).toMillis()*multiplicadorTemporal/333);
                 umbralDeReplanificacion = umbralDeReplanificacion.plusSeconds(segundosSimulados);
-                horasPlanificadas += saltoTemporalEnHoras;
-                minutosPlanificados += saltoTemporalEnMinutos;
-                long desfaseTemporal = (long) (60*(Math.min(horasPlanificadas, 24.0*maxDesfaseTemporalEnDias)));
-                if(inicioDePlanificacion.plusMinutes(saltoTemporalEnMinutos).isBefore(finDeSimulacion)) {
+                minutosPlanificados += saltoDeConsumo;
+                long desfaseTemporal = (long) (60*(Math.min(minutosPlanificados/60.0, 24.0*maxDesfaseTemporalEnDias)));
+                if(inicioDePlanificacion.plusMinutes(minutosPlanificados).isBefore(finDeSimulacion)) {
                     inicioDePlanificacion = inicioDeSimulacion.plusMinutes(minutosPlanificados).minusMinutes(desfaseTemporal);
+                    finDePlanificacion = (finDePlanificacion.plusMinutes(saltoDeConsumo).isAfter(finDeSimulacion)) ? finDeSimulacion : finDePlanificacion.plusMinutes(saltoDeConsumo);
                 } else break;
             }
             if(simulationTask != null) {
