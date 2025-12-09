@@ -1326,9 +1326,11 @@ public class GVNS {
         }
     }
 
-    public void imprimirSolucion(String rutaArchivo) { imprimirSolucion(this.solucion, rutaArchivo); }
-
-    private void imprimirSolucion(Solucion solucion, String rutaArchivo) {
+    public static void imprimirSolucion(Solucion solucion, String rutaArchivo) {
+        if(solucion == null) {
+            System.out.println("[*] NO EXISTE SOLUCION");
+            return;
+        }
         G4DUtility.Logger.logf("Cargando archivo 'Solucion' a la ruta '%s'..",rutaArchivo);
         // Declaración & inicialización de variables
         int dimLinea = 181;
