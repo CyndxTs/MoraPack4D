@@ -1172,6 +1172,29 @@ export default function Simulacion() {
   const infoPanelVariant = selectedAirport
     ? "info-panel--wide"
     : "info-panel--compact";
+  useEffect(() => {
+    // Espera un microtiempo para que el tooltip exista en el DOM
+    setTimeout(() => {
+      const elems = document.querySelectorAll(".airport-tooltip");
+      elems.forEach((el) => {
+        L.DomEvent.disableClickPropagation(el);
+        L.DomEvent.disableScrollPropagation(el);
+        el.style.pointerEvents = "auto"; // IMPORTANTE
+      });
+    }, 50);
+  }, [openAirportTooltipCode]);
+  useEffect(() => {
+    // Espera un microtiempo para que el tooltip exista en el DOM
+    setTimeout(() => {
+      const elems = document.querySelectorAll(".plane-tooltip");
+      elems.forEach((el) => {
+        L.DomEvent.disableClickPropagation(el);
+        L.DomEvent.disableScrollPropagation(el);
+        el.style.pointerEvents = "auto"; // IMPORTANTE
+      });
+    }, 50);
+  }, [openFlightTooltipCode]);
+
   return (
     <div className="page">
       {/* Overlay de carga de simulación */}
@@ -2018,12 +2041,17 @@ export default function Simulacion() {
                           opacity={0.95}
                           interactive
                           permanent // 👈 para que NO se cierre al salir el mouse
+                          className="airport-tooltip"
                         >
                           <AirportTooltipContent
                             airport={enrichedAp}
                             vuelosQueSalen={vuelosQueSalen}
                             vuelosQueLlegan={vuelosQueLlegan}
                             getOrdersForFlight={getOrdersForFlight}
+                            onOpenPanel={(ap) => {
+                              setSelectedAirport(ap);
+                              setSelectedItem(null);
+                            }}
                           />
                         </Tooltip>
                       )}
@@ -2122,10 +2150,18 @@ export default function Simulacion() {
                             opacity={0.95}
                             permanent
                             interactive
+                            className="plane-tooltip"
                           >
                             <PlaneTooltipContent
                               flight={flight}
                               getOrdersForFlight={getOrdersForFlight}
+                              onOpenPanel={() => {
+                                setSelectedAirport(null);
+                                setSelectedItem({
+                                  type: "flight",
+                                  codigo: flight.code,
+                                });
+                              }}
                             />
                           </Tooltip>
                         )}
