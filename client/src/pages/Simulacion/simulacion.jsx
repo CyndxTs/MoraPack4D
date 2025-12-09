@@ -476,11 +476,11 @@ export default function Simulacion() {
   const createColoredIcon = (filterCss, rotation) =>
     L.divIcon({
       html: `<img src="${planeIconImg}" 
-                style="width:18px;
-                       transform: rotate(${rotation}deg);
-                       transform-origin: center center;
-                       filter:${filterCss};
-                       transition: transform 0.3s linear;">`,
+            style="width:18px;
+                   transform: rotate(${rotation}deg);
+                   transform-origin: center center;
+                   filter:${filterCss} drop-shadow(0 0 2px black) drop-shadow(0 0 1px black);
+                   transition: transform 0.3s linear;">`,
       className: "",
       iconSize: [18, 18],
       iconAnchor: [11, 8],
@@ -491,17 +491,21 @@ export default function Simulacion() {
     if (ocupacion == null) {
       return "none";
     }
+
     if (ocupacion < 0.5) {
-      // verde más oscuro
-      return "invert(54%) sepia(81%) saturate(356%) hue-rotate(85deg) brightness(78%) contrast(115%)";
+      // VERDE más oscuro
+      return "invert(38%) sepia(77%) saturate(510%) hue-rotate(85deg) brightness(55%) contrast(120%)";
     }
+
     if (ocupacion < 0.8) {
-      // amarillo más oscuro
-      return "invert(80%) sepia(72%) saturate(657%) hue-rotate(3deg) brightness(86%) contrast(118%)";
+      // AMARILLO más oscuro
+      return "invert(74%) sepia(94%) saturate(750%) hue-rotate(2deg) brightness(60%) contrast(125%)";
     }
-    // rojo más oscuro
-    return "invert(37%) sepia(79%) saturate(844%) hue-rotate(338deg) brightness(78%) contrast(120%)";
+
+    // ROJO más oscuro
+    return "invert(26%) sepia(88%) saturate(900%) hue-rotate(350deg) brightness(55%) contrast(130%)";
   }
+
 
   const createAirportIcon = (ap) => {
     // si es sede usamos sede.svg, si no el icono normal de aeropuerto
@@ -1998,13 +2002,15 @@ export default function Simulacion() {
                       icon={createAirportIcon(enrichedAp)}
                       eventHandlers={{
                         mouseover: () => {
-                          // 👉 al pasar el mouse: abrir panel inferior + tooltip
-                          setSelectedAirport(enrichedAp);
-                          setSelectedItem(null);
-
+                          // Solo tooltip
                           setOpenAirportTooltipCode(enrichedAp.code);
                           setOpenFlightTooltipCode(null);
                         },
+                        click: () => {
+                          // Abrir panel informativo
+                          setSelectedAirport(enrichedAp);
+                          setSelectedItem(null);
+                        }
                       }}
                     >
                       {openAirportTooltipCode === enrichedAp.code && (
@@ -2097,16 +2103,15 @@ export default function Simulacion() {
                         riseOnHover={true}
                         eventHandlers={{
                           mouseover: () => {
-                            // 👉 al pasar el mouse: seleccionar vuelo para el panel
-                            setSelectedAirport(null);
-                            setSelectedItem({
-                              type: "flight",
-                              codigo: flight.code,
-                            });
-
+                            // Solo tooltip
                             setOpenFlightTooltipCode(flight.code);
                             setOpenAirportTooltipCode(null);
                           },
+                          click: () => {
+                            // Abrir panel con info del vuelo
+                            setSelectedItem({ type: "flight", codigo: flight.code });
+                            setSelectedAirport(null);
+                          }
                         }}
                       >
                         {openFlightTooltipCode === flight.code && (
