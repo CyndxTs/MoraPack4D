@@ -11,7 +11,8 @@
   border-radius: 12px;
   box-shadow: 0 4px 14px rgba(15, 23, 42, 0.18);
   border: 1px solid #ddd;
-  max-width: 440px;      
+  width: 350px;      
+  min-width: 350px;  
 }
 .control-row {
   display: flex;
@@ -118,7 +119,22 @@
   bottom: 1rem;
   z-index: 1000;
 }
+/* Posicionamiento del panel de flota (Arriba Derecha dentro del mapa) */
+.map-wrapper .fleet-overlay {
+  position: absolute;
+  right: 16px;
+  top: 16px; 
+  z-index: 1000; /* Para que flote sobre el mapa */
+}
 
+/* Ajuste responsivo para móviles */
+@media (max-width: 900px) {
+  .map-wrapper .fleet-overlay {
+    top: auto;
+    bottom: 80px; /* Si está en móvil, lo bajamos o movemos */
+    right: 16px;
+  }
+}
 /* Tarjeta de la leyenda */
 .legend-card {
   background: #ffffff;

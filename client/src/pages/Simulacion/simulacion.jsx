@@ -47,6 +47,16 @@ import planeIconImg from "../../assets/icons/planeMora.svg";
  * @typedef {import("../../types/simulationRequest/SimulationRequest").SimulationRequest} SimulationRequest
  */
 export default function Simulacion() {
+  // Estado para la hora real actual (reloj del sistema)
+  const [realNow, setRealNow] = useState(new Date());
+  // Guardar el tiempo de inicio de la simulación (virtual) para calcular el transcurrido simulado
+  const [simStartMs, setSimStartMs] = useState(null);
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setRealNow(new Date());
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
   const [controlsOpen, setControlsOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(true);
   // qué pestaña se ve en el sidebar: "flights" o "orders"
@@ -83,6 +93,8 @@ export default function Simulacion() {
   const [estadoEjecucionSim, setEstadoEjecucionSim] = useState("POR_INICIAR");
   const [showLoadingSim, setShowLoadingSim] = useState(false);
   const [legendCollapsed, setLegendCollapsed] = useState(false);
+  const [fleetPanelCollapsed, setFleetPanelCollapsed] =
+    useState(false); /*estado para colapsar la flota*/
   //Vuelos
   const [flights, setFlights] = useState([]);
   const [highlightedFlights, setHighlightedFlights] = useState([]);
@@ -142,7 +154,31 @@ export default function Simulacion() {
 
   // Helpers de tiempo (trabajamos en UTC porque tu JSON está en UTC)
   const toISODate = (ms) => new Date(ms).toISOString().split("T")[0];
-  const toISOTime = (ms) => new Date(ms).toISOString().slice(11, 16);
+  const toISOTime = (ms) => new Date(ms).toISOString().slice(11, 19);
+  const formatDuration = (totalSeconds) => {
+    const days = Math.floor(totalSeconds / (3600 * 24));
+    const hours = Math.floor((totalSeconds % (3600 * 24)) / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const secs = Math.floor(totalSeconds % 60);
+
+    const parts = [];
+    if (days > 0) parts.push(`${days}d`);
+    parts.push(hours.toString().padStart(2, "0") + "h");
+    parts.push(minutes.toString().padStart(2, "0") + "m");
+    parts.push(secs.toString().padStart(2, "0") + "s");
+
+    return parts.join(" : ");
+  };
+  // Función para compactar números grandes (ej: 1,500 -> 1.5K)
+  const formatCompactNumber = (num) => {
+    if (num >= 1000000) {
+      return (num / 1000000).toFixed(1) + "M"; // 1.5M
+    }
+    if (num >= 1000) {
+      return (num / 1000).toFixed(1) + "K"; // 1.5K
+    }
+    return num.toLocaleString(); // 500
+  };
   // El backend de planificación manda fechas tipo "03/11/2025 10:20"
   const parseFechaHoraToMs = (fechaHora) => {
     if (!fechaHora) return Date.now();
@@ -297,6 +333,7 @@ export default function Simulacion() {
     // Primer inicio: fija el tiempo de simulación al valor de los inputs
     const base = fromInputsToMsUTC(inputDate, inputTime);
     setSimNowMs(base);
+    setSimStartMs(base);
     lastRealMsRef.current = performance.now();
 
     setTimerRunning(true);
@@ -332,7 +369,7 @@ export default function Simulacion() {
     setInputDate(nowDate);
     setInputTime(nowTime);
     setSimNowMs(now.getTime()); // lo que se muestra en "Fecha" y "Hora"
-
+    setSimStartMs(null);
     // 3. Limpiar mapa: vuelos + aeropuertos + panel de info
     setFlights([]);
     //setAirports(null);
@@ -407,7 +444,13 @@ export default function Simulacion() {
 
   // Vuelos filtrados por código / origen / destino
   const filteredActiveFlights = activeFlights.filter((f) => {
-    if (flightFilterCode && f.code !== flightFilterCode) return false;
+    if (
+      flightFilterCode &&
+      !f.code.toUpperCase().includes(flightFilterCode.toUpperCase())
+    ) {
+      return false;
+    }
+
     if (flightFilterOrigin && f.origin?.code !== flightFilterOrigin)
       return false;
     if (
@@ -417,6 +460,28 @@ export default function Simulacion() {
       return false;
     return true;
   });
+
+  // NUEVO: Cálculo de métricas de flota activa
+  const totalOccupied = activeFlights.reduce(
+    (acc, f) => acc + (f.capacity || 0),
+    0
+  );
+  const totalMax = activeFlights.reduce(
+    (acc, f) => acc + (f.planeCapacity || 0),
+    0
+  );
+  const fleetPercentage = totalMax > 0 ? (totalOccupied / totalMax) * 100 : 0;
+  // Determinar color y texto del semáforo
+  let fleetStatusColor = "#22c55e"; // Verde (Baja ocupación / Disponible)
+  let fleetStatusLabel = "Disponibilidad Alta";
+
+  if (fleetPercentage >= 90) {
+    fleetStatusColor = "#ef4444"; // Rojo (Saturado)
+    fleetStatusLabel = "Saturación Crítica";
+  } else if (fleetPercentage >= 50) {
+    fleetStatusColor = "#eab308"; // Amarillo (Medio)
+    fleetStatusLabel = "Ocupación Media";
+  }
 
   // Pedidos base según estado seleccionado
   const baseOrders =
@@ -507,7 +572,8 @@ export default function Simulacion() {
   }
 
   const createAirportIcon = (ap) => {
-    // si es sede usamos sede.svg, si no el icono normal de aeropuerto
+    const size = ap.esSede ? 30 : 24;
+
     const baseIcon = ap.esSede ? sedeIconImg : airportIconImg;
 
     return L.divIcon({
@@ -516,16 +582,16 @@ export default function Simulacion() {
         src="${baseIcon}"
         class="airport-icon ${ap.esSede ? "airport-icon--hub" : ""}"
         style="
-          width: 20px;
-          height: 20px;
+          width: ${size}px;     /* ANTES: 20px */
+          height: ${size}px;    /* ANTES: 20px */
           filter: ${getAirportFilter(ap.ocupacion)};
         "
       />
     `,
       className: "",
-      iconSize: [20, 20],
-      iconAnchor: [10, 10],
-      popupAnchor: [0, -10],
+      iconSize: [size, size],
+      iconAnchor: [size / 2, size / 2],
+      popupAnchor: [0, -(size / 2)],
     });
   };
 
@@ -1287,20 +1353,13 @@ export default function Simulacion() {
                 {/* 🔎 Filtros de vuelos: código / origen / destino */}
                 <div className="filters-row">
                   {/* Código de vuelo (solo activos) */}
-                  <select
-                    className="filter-select"
+                  <input
+                    type="text"
+                    className="filter-select" // Reutiliza el mismo estilo CSS
+                    placeholder="Buscar código..."
                     value={flightFilterCode}
                     onChange={(e) => setFlightFilterCode(e.target.value)}
-                  >
-                    <option value="">Selecciona código</option>
-                    {Array.from(new Set(activeFlights.map((f) => f.code))).map(
-                      (code) => (
-                        <option key={code} value={code}>
-                          {code}
-                        </option>
-                      )
-                    )}
-                  </select>
+                  />
 
                   {/* Origen (solo de vuelos activos) */}
                   <select
@@ -1473,15 +1532,6 @@ export default function Simulacion() {
                 {/* 🔎 Filtros de pedidos: estado / código / destino */}
                 <div className="filters-row">
                   {/* Estado: pendientes / entregados / todos */}
-                  <select
-                    className="filter-select"
-                    value={orderFilterEstado}
-                    onChange={(e) => setOrderFilterEstado(e.target.value)}
-                  >
-                    <option value="PENDIENTES">En tránsito / pendientes</option>
-                    <option value="ENTREGADOS">Entregados</option>
-                    <option value="TODOS">Todos</option>
-                  </select>
 
                   <input
                     type="text"
@@ -1492,6 +1542,15 @@ export default function Simulacion() {
                       setOrderFilterCode(e.target.value.toUpperCase())
                     }
                   />
+                  <select
+                    className="filter-select"
+                    value={orderFilterEstado}
+                    onChange={(e) => setOrderFilterEstado(e.target.value)}
+                  >
+                    <option value="PENDIENTES">En tránsito / pendientes</option>
+                    <option value="ENTREGADOS">Entregados</option>
+                    <option value="TODOS">Todos</option>
+                  </select>
 
                   <select
                     className="filter-select"
@@ -1902,39 +1961,83 @@ export default function Simulacion() {
 
             {controlsOpen && (
               <div className="control-bar">
-                {/* Fila 1: Controles + botones */}
+                {/* Fila 1: Botones */}
+                {/* Fila 1: Botones dinámicos */}
                 <div className="control-row control-row-main">
                   <span className="control-label">Controles:</span>
 
-                  <ButtonAdd
-                    icon={run}
-                    label="Generar plan"
-                    onClick={openModal}
-                  />
+                  {/* Si NO hay simulación activa, mostramos "Generar plan" */}
+                  {!timerActive && (
+                    <ButtonAdd
+                      icon={run}
+                      label="Generar plan"
+                      onClick={openModal}
+                    />
+                  )}
 
-                  <ButtonAdd
-                    icon={stopIcon}
-                    label="Detener"
-                    type="button"
-                    onClick={handleStop}
-                    className="btn-stop"
-                    disabled={stopDisabled}
-                  />
+                  {/* Si SÍ hay simulación activa, mostramos "Detener" */}
+                  {timerActive && (
+                    <ButtonAdd
+                      icon={stopIcon}
+                      label="Detener"
+                      type="button"
+                      onClick={handleStop}
+                      className="btn-stop"
+                      disabled={stopDisabled} // Mantenemos esto por seguridad
+                    />
+                  )}
+                </div>
+                <hr
+                  style={{
+                    width: "100%",
+                    borderColor: "#eee",
+                    margin: "4px 0",
+                  }}
+                />
+
+                {/* --- 1. TIEMPO SIMULADO (Reloj virtual) --- */}
+                <div className="control-row">
+                  <span className="info-label" style={{ color: "#1a73e8" }}>
+                    Simulación (Reloj):
+                  </span>
+                  <span className="value">
+                    {toISODate(simNowMs)} {toISOTime(simNowMs)}
+                  </span>
                 </div>
 
-                {/* Fila 2: Fecha + Hora */}
+                {/* --- 3. TIEMPO TRANSCURRIDO (Virtual/Simulado) --- */}
                 <div className="control-row">
-                  <span className="info-label">Fecha:</span>
-                  <span className="value">{toISODate(simNowMs)}</span>
-
-                  <span className="info-label">Hora:</span>
-                  <span className="value">{toISOTime(simNowMs)}</span>
+                  <span className="info-label">Transcurrido (Simulado):</span>
+                  <span className="value">
+                    {simStartMs
+                      ? formatDuration((simNowMs - simStartMs) / 1000)
+                      : "00h : 00m : 00s"}
+                  </span>
                 </div>
 
-                {/* Fila 3: Tiempo */}
+                <hr
+                  style={{
+                    width: "100%",
+                    borderColor: "#eee",
+                    margin: "4px 0",
+                  }}
+                />
+
+                {/* --- 2. TIEMPO REAL (Reloj actual) --- */}
                 <div className="control-row">
-                  <span className="info-label">Tiempo de la simulación:</span>
-                  <span className="value">{formatTime(seconds)}</span>
+                  <span className="info-label" style={{ color: "#666" }}>
+                    Tiempo Real (UTC):
+                  </span>
+                  <span className="value">
+                    {realNow.toISOString().split("T")[0]}{" "}
+                    {realNow.toISOString().slice(11, 19)}
+                  </span>
+                </div>
+
+                {/* --- 4. TIEMPO TRANSCURRIDO (Real/Cronómetro) --- */}
+                <div className="control-row">
+                  <span className="info-label">Cronómetro (Sesión):</span>
+                  <span className="value">{formatDuration(seconds)}</span>
                 </div>
               </div>
             )}
@@ -1944,10 +2047,15 @@ export default function Simulacion() {
           <div className="map-wrapper">
             <MapContainer
               id="map"
-              center={[-12.0464, -77.0428]}
+              center={[20, 0]}
               zoom={3}
+              minZoom={2}
+              maxBounds={[
+                [-90, -180],
+                [90, 180],
+              ]}
               whenCreated={(map) => {
-                mapRef.current = map; // guardamos referencia al mapa Leaflet
+                mapRef.current = map;
               }}
             >
               <TileLayer
@@ -1955,7 +2063,6 @@ export default function Simulacion() {
                 attribution='&copy; <a href="https://carto.com/">Carto</a>'
               />
 
-              {/* Marcadores de aeropuertos */}
               {/* Marcadores de aeropuertos */}
               {airports &&
                 Object.values(airports).map((ap, i) => {
@@ -2228,6 +2335,137 @@ export default function Simulacion() {
                 )}
               </div>
             </div>
+            {/* NUEVO: PANEL DE ESTADO DE FLOTA (Arriba Derecha) */}
+            <div className="fleet-overlay">
+              <div
+                className={`legend-card ${
+                  fleetPanelCollapsed ? "legend-card--collapsed" : ""
+                }`}
+              >
+                {/* Header clickeable */}
+                <button
+                  type="button"
+                  className="legend-card-header"
+                  onClick={() => setFleetPanelCollapsed(!fleetPanelCollapsed)}
+                >
+                  {/* Ícono de avión o gráfico */}
+                  <span
+                    className="legend-card-info-icon"
+                    style={{ backgroundColor: fleetStatusColor, color: "#fff" }}
+                  >
+                    %
+                  </span>
+                  <span className="legend-card-title">Estado de Flota</span>
+                  <span className="legend-card-toggle">
+                    {fleetPanelCollapsed ? "▼" : "▲"}
+                  </span>
+                </button>
+
+                {/* Cuerpo del panel */}
+                {!fleetPanelCollapsed && (
+                  <div
+                    className="legend-card-body"
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "8px",
+                    }}
+                  >
+                    {/* 1. Semáforo Visual */}
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "8px",
+                        fontSize: "13px",
+                        marginBottom: "4px",
+                      }}
+                    >
+                      <span
+                        style={{
+                          width: "12px",
+                          height: "12px",
+                          borderRadius: "50%",
+                          backgroundColor: fleetStatusColor,
+                          boxShadow: `0 0 6px ${fleetStatusColor}`,
+                        }}
+                      />
+                      <span style={{ fontWeight: 600, color: "#374151" }}>
+                        {fleetStatusLabel}
+                      </span>
+                    </div>
+
+                    {/* 2. DATO NUEVO: Número exacto de vuelos en tránsito */}
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        fontSize: "12px",
+                        borderBottom: "1px solid #f3f4f6",
+                        paddingBottom: "4px",
+                      }}
+                    >
+                      <span style={{ color: "#6b7280" }}>
+                        Vuelos en tránsito:
+                      </span>
+                      <strong style={{ color: "#111827" }}>
+                        {activeFlights.length}
+                      </strong>
+                    </div>
+
+                    {/* 3. Porcentaje de uso */}
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        fontSize: "12px",
+                        marginTop: "2px",
+                      }}
+                    >
+                      <span style={{ color: "#6b7280" }}>Ocupación Total:</span>
+                      <strong style={{ color: "#111827" }}>
+                        {fleetPercentage.toFixed(1)}%
+                      </strong>
+                    </div>
+
+                    {/* Barra de progreso visual */}
+                    <div
+                      style={{
+                        width: "100%",
+                        height: "6px",
+                        background: "#e5e7eb",
+                        borderRadius: "4px",
+                        overflow: "hidden",
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: `${fleetPercentage}%`,
+                          height: "100%",
+                          background: fleetStatusColor,
+                          transition: "width 0.5s ease",
+                        }}
+                      />
+                    </div>
+
+                    {/* 4. Totales exactos de capacidad (Usado / Total) */}
+                    <div
+                      style={{
+                        fontSize: "11px",
+                        color: "#9ca3af",
+                        marginTop: "2px",
+                        textAlign: "right",
+                      }}
+                      title={`Exacto: ${totalOccupied.toLocaleString()} / ${totalMax.toLocaleString()}`} // Tooltip nativo
+                    >
+                      Carga:{" "}
+                      <strong>{formatCompactNumber(totalOccupied)}</strong> /{" "}
+                      {formatCompactNumber(totalMax)} u.
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
 
           {/* PANEL INFORMATIVO DEBAJO DEL MAPA */}
@@ -2318,7 +2556,6 @@ export default function Simulacion() {
                   setTamanioDeSaltoTemporal(parseFloat(e.target.value))
                 }
               />
-
 
               {/* === CIUDADES SEDE (codOrigenes) === */}
               <span className="sidebar-subtitle">Ciudades sede</span>
