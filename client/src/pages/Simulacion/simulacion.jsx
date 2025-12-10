@@ -66,11 +66,7 @@ export default function Simulacion() {
   // estados de todos los parámetros
   const parseNumber = (v) => {
     if (v === "" || v === null || v === undefined) return null;
-
-    const normalized = String(v).replace(",", "."); // admite 1,75 e igual 1.75
-    const n = Number(normalized);
-
-    return Number.isNaN(n) ? null : n; // así nunca guardas NaN en el estado
+    return Number(v);
   };
   const [maxDiasEntregaIntercontinental, setMaxDiasEntregaIntercontinental] =
     useState();
@@ -81,7 +77,6 @@ export default function Simulacion() {
   const [maxHorasEstancia, setMaxHorasEstancia] = useState();
   const [multiplicadorTemporal, setMultiplicadorTemporal] = useState();
   const [saltoDeAlgoritmo, setTamanioDeSaltoTemporal] = useState();
-  const [saltoDeAlgoritmoInput, setSaltoDeAlgoritmoInput] = useState("");
   const [parametrosCompletos, setParametrosCompletos] = useState(null);
   const [probabilidadReplanificacion, setProbabilidadReplanificacion] =
     useState();
@@ -1177,6 +1172,29 @@ export default function Simulacion() {
   const infoPanelVariant = selectedAirport
     ? "info-panel--wide"
     : "info-panel--compact";
+  useEffect(() => {
+    // Espera un microtiempo para que el tooltip exista en el DOM
+    setTimeout(() => {
+      const elems = document.querySelectorAll(".airport-tooltip");
+      elems.forEach((el) => {
+        L.DomEvent.disableClickPropagation(el);
+        L.DomEvent.disableScrollPropagation(el);
+        el.style.pointerEvents = "auto"; // IMPORTANTE
+      });
+    }, 50);
+  }, [openAirportTooltipCode]);
+  useEffect(() => {
+    // Espera un microtiempo para que el tooltip exista en el DOM
+    setTimeout(() => {
+      const elems = document.querySelectorAll(".plane-tooltip");
+      elems.forEach((el) => {
+        L.DomEvent.disableClickPropagation(el);
+        L.DomEvent.disableScrollPropagation(el);
+        el.style.pointerEvents = "auto"; // IMPORTANTE
+      });
+    }, 50);
+  }, [openFlightTooltipCode]);
+
   return (
     <div className="page">
       {/* Overlay de carga de simulación */}
@@ -2023,12 +2041,17 @@ export default function Simulacion() {
                           opacity={0.95}
                           interactive
                           permanent // 👈 para que NO se cierre al salir el mouse
+                          className="airport-tooltip"
                         >
                           <AirportTooltipContent
                             airport={enrichedAp}
                             vuelosQueSalen={vuelosQueSalen}
                             vuelosQueLlegan={vuelosQueLlegan}
                             getOrdersForFlight={getOrdersForFlight}
+                            onOpenPanel={(ap) => {
+                              setSelectedAirport(ap);
+                              setSelectedItem(null);
+                            }}
                           />
                         </Tooltip>
                       )}
@@ -2127,10 +2150,18 @@ export default function Simulacion() {
                             opacity={0.95}
                             permanent
                             interactive
+                            className="plane-tooltip"
                           >
                             <PlaneTooltipContent
                               flight={flight}
                               getOrdersForFlight={getOrdersForFlight}
+                              onOpenPanel={() => {
+                                setSelectedAirport(null);
+                                setSelectedItem({
+                                  type: "flight",
+                                  codigo: flight.code,
+                                });
+                              }}
                             />
                           </Tooltip>
                         )}
@@ -2280,14 +2311,14 @@ export default function Simulacion() {
               <label>Salto de algoritmo (minutos)</label>
               <Input
                 label="Salto de algoritmo (minutos)"
-                type="text"
-                value={saltoDeAlgoritmoInput}
-                onChange={(e) => {
-                  const raw = e.target.value;
-                  setSaltoDeAlgoritmoInput(raw);
-                  setTamanioDeSaltoTemporal(parseNumber(raw));
-                }}
+                type="number"
+                step="0.1"
+                value={saltoDeAlgoritmo}
+                onChange={(e) =>
+                  setTamanioDeSaltoTemporal(parseFloat(e.target.value))
+                }
               />
+
 
               {/* === CIUDADES SEDE (codOrigenes) === */}
               <span className="sidebar-subtitle">Ciudades sede</span>

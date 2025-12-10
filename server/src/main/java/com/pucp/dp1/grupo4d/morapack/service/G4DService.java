@@ -65,6 +65,7 @@ public class G4DService {
     private final ParametrosService parametrosService;
     private volatile boolean simulationFlag = false;
     private Future<?> simulationTask = null;
+    private Solucion simulationSolution = null;
     private Problematica simulationContext = null;
     private Future<?> operationTask = null;
     private Problematica operationContext = null;
@@ -120,16 +121,17 @@ public class G4DService {
             ParametrosDTO parametros = request.getParametros();
             parametrosMapper.toAlgorithm(parametros);
             int multiplicadorTemporal = G4DUtility.Convertor.toAdmissible(request.getMultiplicadorTemporal(), 120);
-            double saltoDeAlgoritmo = G4DUtility.Convertor.toAdmissible(request.getSaltoDeAlgoritmo(), 2.0);
-            long saltoDeConsumo = (long) (multiplicadorTemporal * saltoDeAlgoritmo);
-            long limiteDeDesfaseTemporal = 1440L*Math.max(G4DUtility.Convertor.toAdmissible(parametros.getMaxDiasEntregaIntracontinental(), 2), G4DUtility.Convertor.toAdmissible(parametros.getMaxDiasEntregaIntercontinental(), 3));
+            double saltoDeAlgoritmoEnMinutos = G4DUtility.Convertor.toAdmissible(request.getSaltoDeAlgoritmo(), 2.0);
+            long saltoDeAlgoritmoEnMilisegundos = (long)(60000*saltoDeAlgoritmoEnMinutos);
+            long saltoDeConsumoEnMinutos= (long)(multiplicadorTemporal * saltoDeAlgoritmoEnMinutos);
+            long limiteDeDesfaseTemporalEnMinutos = 1440L*Math.max(G4DUtility.Convertor.toAdmissible(parametros.getMaxDiasEntregaIntracontinental(), 2), G4DUtility.Convertor.toAdmissible(parametros.getMaxDiasEntregaIntercontinental(), 3));
             LocalDateTime umbralDeReplanificacion = inicioDeSimulacion;
             LocalDateTime inicioDePlanificacion = inicioDeSimulacion;
-            LocalDateTime finDePlanificacion = inicioDeSimulacion;
+            LocalDateTime finDePlanificacion = inicioDeSimulacion.plusMinutes(saltoDeConsumoEnMinutos).isAfter(finDeSimulacion) ? finDeSimulacion : inicioDeSimulacion.plusMinutes(saltoDeConsumoEnMinutos);
             long minutosPlanificados = 0L;
             boolean esPrimeraIteracion = true;
             while(simulationFlag && !Thread.currentThread().isInterrupted()) {
-                finDePlanificacion = (finDePlanificacion.plusMinutes(saltoDeConsumo).isAfter(finDeSimulacion)) ? finDeSimulacion : finDePlanificacion.plusMinutes(saltoDeConsumo);
+                finDePlanificacion = (finDePlanificacion.plusMinutes(saltoDeConsumoEnMinutos).isAfter(finDeSimulacion)) ? finDeSimulacion : finDePlanificacion.plusMinutes(saltoDeConsumoEnMinutos);
                 Instant start = Instant.now();
                 SolucionDTO solucion = planificar(TipoEscenario.SIMULACION, inicioDePlanificacion, finDePlanificacion, umbralDeReplanificacion, umbralDeReplanificacion);
                 if(solucion != null) {
@@ -144,21 +146,26 @@ public class G4DService {
                     esPrimeraIteracion = false;
                 }
                 Instant end = Instant.now();
-                long segundosSimulados = Duration.between(start, end).toMillis()*multiplicadorTemporal/333;
-                umbralDeReplanificacion = umbralDeReplanificacion.plusSeconds(segundosSimulados).plusSeconds((long)(60*saltoDeAlgoritmo));
-                minutosPlanificados += saltoDeConsumo;
-                long desfaseTemporal = Math.min(minutosPlanificados, limiteDeDesfaseTemporal);
-                if(inicioDePlanificacion.plusMinutes(minutosPlanificados).isBefore(finDeSimulacion)) {
-                    inicioDePlanificacion = inicioDeSimulacion.plusMinutes(minutosPlanificados).minusMinutes(desfaseTemporal);
-                } else break;
+                long milisegundosRealesTranscurridos = Duration.between(start, end).toMillis();
+                long segundosSimuladosTranscurridos = (long)(multiplicadorTemporal*milisegundosRealesTranscurridos/500.0); // pongo el doble para aprovechar de manera exacta respecto de la duración de la ultima ejecución en lugar de fijarlo en 30s
+                umbralDeReplanificacion = umbralDeReplanificacion.plusMinutes(saltoDeConsumoEnMinutos).plusSeconds(segundosSimuladosTranscurridos);
+                minutosPlanificados += saltoDeConsumoEnMinutos;
+                long desfaseTemporal = Math.min(minutosPlanificados, limiteDeDesfaseTemporalEnMinutos);
+                inicioDePlanificacion = inicioDeSimulacion.plusMinutes(minutosPlanificados).minusMinutes(desfaseTemporal);
+                if(!inicioDePlanificacion.isBefore(finDeSimulacion)) {
+                    break;
+                }
                 try {
-                    Thread.sleep((long)(60000L*saltoDeAlgoritmo)); // provisional hasta implementarexceutors periodicos
+                    Thread.sleep(saltoDeAlgoritmoEnMilisegundos - milisegundosRealesTranscurridos); // provisional hasta implementarexceutors periodicos
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                     break;
                 }
             }
             if(simulationFlag && !Thread.currentThread().isInterrupted()) {
+                if(finDeSimulacion.equals(LocalDateTime.MAX)) {
+                    GVNS.imprimirSolucion(simulationSolution, String.format("SIMU_COLAPSO_%s-%s.txt", G4DUtility.Convertor.toDisplayString(inicioDeSimulacion).replace(" ", "_"), G4DUtility.Convertor.toDisplayString(finDePlanificacion).replace(" ", "_")));
+                } else GVNS.imprimirSolucion(simulationSolution, String.format("SIMU_SEMANAL_%s-%s.txt", G4DUtility.Convertor.toDisplayString(inicioDeSimulacion).replace(" ", "_"), G4DUtility.Convertor.toDisplayString(finDeSimulacion).replace(" ", "_")));
                 WebSocketService.enviar("/topic/simulator-status", new StatusPayload(EstadoEjecucion.DETENIDO,  EstadoFinalizacion.EXITOSO));
                 System.out.println("[>] SIMULACION CONLCUIDA!");
             } else {
@@ -309,7 +316,7 @@ public class G4DService {
         if(!esSimulacion) {
             almacenarSolucion(solucion);
             limpiarPools();
-        }
+        } else simulationSolution = solucion;
         return devolverSolucion(solucion);
     }
 

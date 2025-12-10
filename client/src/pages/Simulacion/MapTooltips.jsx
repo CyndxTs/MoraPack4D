@@ -6,6 +6,7 @@ export function AirportTooltipContent({
   vuelosQueSalen,
   vuelosQueLlegan,
   getOrdersForFlight,
+  onOpenPanel,
 }) {
   const [tab, setTab] = useState("salidas");
 
@@ -20,7 +21,9 @@ export function AirportTooltipContent({
   const flightsToShow = flightsSource.slice(0, 2);
 
   return (
-    <div className="airport-popup">
+    <div className="airport-popup" 
+      style={{ cursor: "pointer" }}
+      onClick={() => onOpenPanel(airport)}>
       <div className="airport-popup__header">
         <span className="airport-popup__country">
           {airport.city} ({airport.code})
@@ -86,7 +89,7 @@ export function AirportTooltipContent({
             : "No hay llegadas pendientes."}
         </div>
       ) : (
-        <ul className="airport-popup__list">
+        <ul className="airport-popup__list" onClick={(e) => e.stopPropagation()}>
           {flightsToShow.map((v) => {
             const pedidosVuelo = getOrdersForFlight(v.code);
             const totalVuelo = pedidosVuelo.reduce(
@@ -131,7 +134,7 @@ export function AirportTooltipContent({
 }
 
 // === TOOLTIP AVIÓN (hover ordenado) ===
-export function PlaneTooltipContent({ flight, getOrdersForFlight }) {
+export function PlaneTooltipContent({ flight, getOrdersForFlight, onOpenPanel }) {
   const ocupPct =
     flight.planeCapacity > 0
       ? Math.round((flight.capacity * 100) / flight.planeCapacity)
@@ -144,7 +147,10 @@ export function PlaneTooltipContent({ flight, getOrdersForFlight }) {
   );
 
   return (
-    <div className="plane-tooltip">
+    <div className="plane-tooltip" 
+        onClick={() => onOpenPanel && onOpenPanel(flight)}
+        style={{ cursor: "pointer" }}
+      >
       <div className="plane-tooltip__route">
         {flight.origin.code} → {flight.destination.code}
       </div>
