@@ -1,6 +1,13 @@
 import React, { useState } from "react";
 
-// === TOOLTIP AEROPUERTO (tabs Salidas / Llegadas, máx 2) ===
+// Helper para obtener color según porcentaje
+const getProgressColor = (percentage) => {
+  if (percentage < 50) return "#22c55e"; // Verde
+  if (percentage < 80) return "#eab308"; // Amarillo
+  return "#ef4444"; // Rojo
+};
+
+// === TOOLTIP AEROPUERTO ===
 export function AirportTooltipContent({
   airport,
   vuelosQueSalen,
@@ -15,15 +22,19 @@ export function AirportTooltipContent({
     Math.max(0, Math.round((airport.ocupacion ?? 0) * 100))
   );
 
+  // Obtenemos el color dinámico
+  const barColor = getProgressColor(ocupPct);
+
   const isSalidas = tab === "salidas";
   const flightsSource = isSalidas ? vuelosQueSalen : vuelosQueLlegan;
-  // solo 2 vuelos
   const flightsToShow = flightsSource.slice(0, 2);
 
   return (
-    <div className="airport-popup" 
+    <div
+      className="airport-popup"
       style={{ cursor: "pointer" }}
-      onClick={() => onOpenPanel(airport)}>
+      onClick={() => onOpenPanel(airport)}
+    >
       <div className="airport-popup__header">
         <span className="airport-popup__country">
           {airport.city} ({airport.code})
@@ -36,21 +47,25 @@ export function AirportTooltipContent({
       <div className="airport-popup__city">{airport.country}</div>
 
       <div className="airport-popup__row">
-        <span className="airport-popup__label">Capacidad</span>
+        <span className="airport-popup__label">Capacidad: </span>
         <span className="airport-popup__value">{airport.capacidad} u</span>
       </div>
 
       <div className="airport-popup__row">
-        <span className="airport-popup__label">Stock actual</span>
+        <span className="airport-popup__label">Stock actual: </span>
         <span className="airport-popup__value">
           {airport.stockActual} u ({ocupPct}%)
         </span>
       </div>
 
+      {/* BARRA DE PROGRESO CON COLOR DINÁMICO */}
       <div className="airport-popup__progress">
         <div
           className="airport-popup__progress-fill"
-          style={{ width: `${ocupPct}%` }}
+          style={{
+            width: `${ocupPct}%`,
+            background: barColor, // 🔥 APLICA EL COLOR AQUÍ
+          }}
         />
       </div>
 
@@ -89,7 +104,10 @@ export function AirportTooltipContent({
             : "No hay llegadas pendientes."}
         </div>
       ) : (
-        <ul className="airport-popup__list" onClick={(e) => e.stopPropagation()}>
+        <ul
+          className="airport-popup__list"
+          onClick={(e) => e.stopPropagation()}
+        >
           {flightsToShow.map((v) => {
             const pedidosVuelo = getOrdersForFlight(v.code);
             const totalVuelo = pedidosVuelo.reduce(
@@ -133,24 +151,26 @@ export function AirportTooltipContent({
   );
 }
 
-// === TOOLTIP AVIÓN (hover ordenado) ===
-export function PlaneTooltipContent({ flight, getOrdersForFlight, onOpenPanel }) {
+// === TOOLTIP AVIÓN ===
+export function PlaneTooltipContent({
+  flight,
+  getOrdersForFlight,
+  onOpenPanel,
+}) {
   const ocupPct =
     flight.planeCapacity > 0
       ? Math.round((flight.capacity * 100) / flight.planeCapacity)
       : 0;
 
-  const pedidosVuelo = getOrdersForFlight(flight.code);
-  const totalVuelo = pedidosVuelo.reduce(
-    (sum, p) => sum + (p.cantidad || 0),
-    0
-  );
+  // Obtenemos el color dinámico
+  const barColor = getProgressColor(ocupPct);
 
   return (
-    <div className="plane-tooltip" 
-        onClick={() => onOpenPanel && onOpenPanel(flight)}
-        style={{ cursor: "pointer" }}
-      >
+    <div
+      className="plane-tooltip"
+      onClick={() => onOpenPanel && onOpenPanel(flight)}
+      style={{ cursor: "pointer" }}
+    >
       <div className="plane-tooltip__route">
         {flight.origin.code} → {flight.destination.code}
       </div>
@@ -172,11 +192,14 @@ export function PlaneTooltipContent({ flight, getOrdersForFlight, onOpenPanel })
         </span>
       </div>
 
-      {/* 🔥 barra de progreso de ocupación */}
+      {/* 🔥 BARRA DE PROGRESO DE AVIÓN CON COLOR */}
       <div className="plane-tooltip__progress">
         <div
           className="plane-tooltip__progress-fill"
-          style={{ width: `${ocupPct}%` }}
+          style={{
+            width: `${ocupPct}%`,
+            background: barColor, // 🔥 APLICA EL COLOR AQUÍ
+          }}
         />
       </div>
     </div>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import "./simulacion.scss";
 import {
   Dropdown,
@@ -47,6 +47,23 @@ import planeIconImg from "../../assets/icons/planeMora.svg";
 /**
  * @typedef {import("../../types/simulationRequest/SimulationRequest").SimulationRequest} SimulationRequest
  */
+
+function ClickHandler({ onMapClick }) {
+  useMapEvent("click", () => onMapClick());
+  return null; // no renderiza nada visible
+}
+const HUB_COLORS = [
+  "#3b82f6", // Azul brillante
+  "#10b981", // Verde esmeralda
+  "#8b5cf6", // Violeta
+  "#f59e0b", // Ámbar/Naranja
+  "#06b6d4", // Cyan
+  "#d946ef", // Fucsia
+  "#6366f1", // Índigo
+  "#84cc16", // Lima
+  "#ec4899", // Rosa
+  "#14b8a6", // Turquesa
+];
 export default function Simulacion() {
   // Estado para la hora real actual (reloj del sistema)
   const [realNow, setRealNow] = useState(new Date());
@@ -60,6 +77,7 @@ export default function Simulacion() {
   }, []);
   const [controlsOpen, setControlsOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(true);
+  const [isSidebarPinned, setIsSidebarPinned] = useState(false);
   // qué pestaña se ve en el sidebar: "flights" o "orders"
   const [sidebarTab, setSidebarTab] = useState("flights");
   const [codigoVuelo, setCodigoVuelo] = useState("");
@@ -137,6 +155,7 @@ export default function Simulacion() {
 
   // Aeropuertos
   const [onlyHubs, setOnlyHubs] = useState(false); // fila 61
+  const [airportFilterText, setAirportFilterText] = useState("");
   // Inputs de inicio de simulación (no se auto-actualizan)
   const [inputDate, setInputDate] = useState(
     new Date().toISOString().split("T")[0]
@@ -539,8 +558,6 @@ export default function Simulacion() {
     !!selectedAirport &&
     (vuelosSaliendo.length > 0 || vuelosLlegando.length > 0);
 
-  const infoPanelExpanded = !!(selectedAirport || selectedItem);
-
   const createColoredIcon = (filterCss, rotation) =>
     L.divIcon({
       html: `<img src="${planeIconImg}" 
@@ -674,10 +691,6 @@ export default function Simulacion() {
     return "invert(80%) sepia(72%) saturate(657%) hue-rotate(3deg) brightness(86%) contrast(118%)";
   }
 
-  function ClickHandler({ onMapClick }) {
-    useMapEvent("click", () => onMapClick());
-    return null; // no renderiza nada visible
-  }
   const getAirportOccupancyClass = (ocupacion) => {
     if (ocupacion == null) return "airport-card--unknown";
     if (ocupacion < 0.5) return "airport-card--low";
@@ -1024,9 +1037,14 @@ export default function Simulacion() {
     });
   };
 
+  // =========================================================
+  // CONEXIÓN WS Y LIMPIEZA AUTOMÁTICA (AUTO-STOP)
+  // =========================================================
   useEffect(() => {
+    // 1. Conectar al WebSocket
     connectSimulatorWS(
       (payload) => {
+        // ... (Tu lógica de recepción de mensajes, payload, etc. se mantiene igual)
         console.log("SolutionPayload recibido por WS:", payload);
         const solucion = payload.solucion || payload;
         if (!solucion) {
@@ -1036,6 +1054,7 @@ export default function Simulacion() {
         buildSimulationFromSolution(solucion);
       },
       (status) => {
+        // ... (Tu lógica de status se mantiene igual)
         console.log("Status simulador:", status);
 
         const estadoEjecucion =
@@ -1047,9 +1066,9 @@ export default function Simulacion() {
 
         setEstadoEjecucionSim(estadoEjecucion);
         if (estadoEjecucion === "POR_INICIAR") {
-          setShowLoadingSim(true); // mostrar overlay
+          setShowLoadingSim(true);
         } else {
-          setShowLoadingSim(false); // ocultar overlay
+          setShowLoadingSim(false);
         }
 
         if (estadoEjecucion === "POR_INICIAR") {
@@ -1058,18 +1077,15 @@ export default function Simulacion() {
         } else if (estadoEjecucion === "INICIADO") {
           showNotification("info", "Simulación iniciada");
         } else if (estadoEjecucion === "POR_DETENER") {
-          // Si el stop no vino del botón, dejamos que el back muestre este mensaje
           if (!stopRequestedRef.current) {
             showNotification("info", "Deteniendo simulación...");
           }
         } else if (estadoEjecucion === "DETENIDO") {
           if (stopRequestedRef.current) {
-            // limpiamos el flag para futuras simulaciones
             stopRequestedRef.current = false;
             return;
           }
-
-          // Si NO vino del botón (terminó sola / por error), mantenemos la lógica original
+          // Mensajes de finalización
           if (estadoFinalizacion === "EXITOSO") {
             showNotification("success", "Simulación finalizada exitosamente");
           } else if (estadoFinalizacion === "FORZADO") {
@@ -1085,7 +1101,31 @@ export default function Simulacion() {
       }
     );
 
+    // 2. Handler para DETENER si cierran la pestaña/navegador
+    const handleBeforeUnload = () => {
+      // Marcamos que fue solicitado para evitar errores visuales si fuera posible
+      stopRequestedRef.current = true;
+      // Enviamos petición de stop (Best effort)
+      sendStopSimulation().catch((err) =>
+        console.warn("Auto-stop on unload error:", err)
+      );
+    };
+
+    // Agregamos el listener nativo del navegador
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    // 3. CLEANUP: Se ejecuta al cambiar de página (Desmontar componente)
     return () => {
+      // a) Remover listener del navegador
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+
+      // b) DETENER la simulación automáticamente en el Backend
+      stopRequestedRef.current = true; // Evitamos notificaciones de "error" al salir
+      sendStopSimulation().catch((err) =>
+        console.warn("Auto-stop on unmount error:", err)
+      );
+
+      // c) Desconectar WS
       disconnectWS();
     };
   }, []);
@@ -1238,9 +1278,7 @@ export default function Simulacion() {
       return simNowMs >= f.startMs && simNowMs <= f.endMs;
     });
   });
-  const infoPanelVariant = selectedAirport
-    ? "info-panel--wide"
-    : "info-panel--compact";
+
   useEffect(() => {
     // Espera un microtiempo para que el tooltip exista en el DOM
     setTimeout(() => {
@@ -1265,29 +1303,23 @@ export default function Simulacion() {
   }, [openFlightTooltipCode]);
 
   // =========================================================
-  // 👇LÓGICA NUEVA 👇
+  // LOGICA DIRECTA (MAPA -> SIDEBAR)
   // =========================================================
   const handleFlightClick = (flight) => {
-    // A. Abrir Sidebar y pestaña Vuelos
     setCollapsed(false);
-    setSidebarTab("flights");
-    // B. "Seleccionar" en la lista (Filtrando por su código)
+    setSelectedItem({ type: "flight", codigo: flight.code });
+    setSelectedAirport(null);
     setFlightFilterCode(flight.code);
-    // C. Resaltar en el mapa (Esto activará la lógica de opacidad en los otros)
     setHighlightedFlights([flight.code]);
-    setHighlightedRoute(null); // Limpiar rutas si había
-    setHighlightedAirportCode(null); // Limpiar aeropuerto si había
-    // D. Centrar mapa (Opcional, si te gusta que siga al avión)
+    setHighlightedRoute(null);
+    setHighlightedAirportCode(null);
     const pos = flight.position || {
       lat: flight.origin.lat,
       lng: flight.origin.lng,
     };
     if (mapRef.current && pos) {
-      mapRef.current.setView([pos.lat, pos.lng], 4, { animate: true });
+      mapRef.current.setView([pos.lat, pos.lng], 5, { animate: true });
     }
-    // E. CERRAR PANEL INFERIOR (Para cumplir requerimiento de usar solo Sidebar)
-    setSelectedItem(null);
-    setSelectedAirport(null);
   };
 
   // Handler para click en pedido
@@ -1309,22 +1341,21 @@ export default function Simulacion() {
   // Handler para click en aeropuerto
   // 2. CLICK EN AEROPUERTO (MAPA O SIDEBAR)
   const handleAirportClick = (ap) => {
-    // A. Abrir Sidebar y pestaña Aeropuertos
-    setCollapsed(false);
-    setSidebarTab("airports");
-    // B. Resaltar en el mapa y filtrar en el sidebar
-    // Usamos este estado para filtrar la lista 'visibleAirports' abajo
+    setCollapsed(false); // Abrir sidebar
+
+    // MOSTRAR DETALLE
+    setSelectedAirport(ap);
+    setSelectedItem(null);
+
+    // Resaltar
     setHighlightedAirportCode(ap.code);
-    // Limpiar resaltado de vuelos
     setHighlightedFlights([]);
     setHighlightedRoute(null);
-    // C. Centrar mapa
+
+    // Centrar mapa
     if (mapRef.current) {
-      mapRef.current.setView([ap.lat, ap.lng], 5, { animate: true }); // Zoom un poco más cerca
+      mapRef.current.setView([ap.lat, ap.lng], 6, { animate: true });
     }
-    // D. CERRAR PANEL INFERIOR
-    setSelectedItem(null);
-    setSelectedAirport(null);
   };
 
   // 3. CLICK EN FONDO DEL MAPA (RESET)
@@ -1358,6 +1389,16 @@ export default function Simulacion() {
       // 2. NUEVO: Filtro por Selección (Si hice click en uno, solo muestro ese)
       if (highlightedAirportCode && ap.code !== highlightedAirportCode)
         return false;
+
+      if (airportFilterText) {
+        const searchText = airportFilterText.toLowerCase();
+        const matchCode = (ap.code || "").toLowerCase().includes(searchText);
+        const matchCity = (ap.city || "").toLowerCase().includes(searchText);
+        // Opcional: buscar también por país
+        // const matchCountry = (ap.country || "").toLowerCase().includes(searchText);
+
+        if (!matchCode && !matchCity) return false;
+      }
       return true;
     })
     .map((ap) => {
@@ -1382,42 +1423,120 @@ export default function Simulacion() {
   // =========================================================
 
   // 1. CLICK EN AVIÓN DESDE EL SIDEBAR
+  const handleSidebarClickGeneral = (type, item, mapAction) => {
+    // 1. Ejecutar siempre la acción del mapa (centrar, resaltar)
+    mapAction();
+
+    // 2. Decidir qué hacer con el panel
+    if (isSidebarPinned) {
+      // MODO FIJO: Aseguramos que esté abierto y mostramos el detalle
+      setCollapsed(false);
+
+      if (type === "flight")
+        setSelectedItem({ type: "flight", codigo: item.code });
+      if (type === "order")
+        setSelectedItem({ type: "order", codigo: item.codigo });
+      if (type === "route")
+        setSelectedItem({ type: "route", codigo: item.codigo });
+      if (type === "airport") {
+        setSelectedAirport(item);
+        setSelectedItem(null);
+      } else {
+        setSelectedAirport(null);
+      }
+    } else {
+      // MODO NORMAL: Cerramos el sidebar y limpiamos la selección para ver el mapa limpio
+      setCollapsed(true);
+      setSelectedItem(null);
+      setSelectedAirport(null);
+    }
+  };
+
+  // 1. Click en VUELO (Sidebar)
   const handleSidebarFlightClick = (flight) => {
-    // A. "Cerrar" el sidebar para ver el mapa
-    setCollapsed(true);
-
-    // B. Mantenemos la lógica de selección y resaltado
-    setFlightFilterCode(flight.code);
-    setHighlightedFlights([flight.code]);
-    setHighlightedRoute(null);
-    setHighlightedAirportCode(null);
-
-    // C. Centrar el mapa en el avión
-    const pos = flight.position || {
-      lat: flight.origin.lat,
-      lng: flight.origin.lng,
-    };
-    if (mapRef.current && pos) {
-      // Zoom un poco más cercano para enfocar la unidad
-      mapRef.current.setView([pos.lat, pos.lng], 5, { animate: true });
-    }
+    handleSidebarClickGeneral("flight", flight, () => {
+      setFlightFilterCode(flight.code);
+      setHighlightedFlights([flight.code]);
+      setHighlightedRoute(null);
+      setHighlightedAirportCode(null);
+      const pos = flight.position || {
+        lat: flight.origin.lat,
+        lng: flight.origin.lng,
+      };
+      if (mapRef.current && pos) {
+        mapRef.current.setView([pos.lat, pos.lng], 5, { animate: true });
+      }
+    });
   };
 
-  // 2. CLICK EN AEROPUERTO DESDE EL SIDEBAR
+  // 2. Click en AEROPUERTO (Sidebar)
   const handleSidebarAirportClick = (ap) => {
-    // A. Cerrar sidebar
-    setCollapsed(true);
-
-    // B. Resaltar
-    setHighlightedAirportCode(ap.code);
-    setHighlightedFlights([]);
-    setHighlightedRoute(null);
-
-    // C. Centrar mapa
-    if (mapRef.current) {
-      mapRef.current.setView([ap.lat, ap.lng], 6, { animate: true });
-    }
+    handleSidebarClickGeneral("airport", ap, () => {
+      setHighlightedAirportCode(ap.code);
+      setHighlightedFlights([]);
+      setHighlightedRoute(null);
+      if (mapRef.current) {
+        mapRef.current.setView([ap.lat, ap.lng], 6, { animate: true });
+      }
+    });
   };
+  const handleSidebarOrderClick = (pedido) => {
+    handleSidebarClickGeneral("order", pedido, () => {
+      // Lógica de resaltado (copiada de tu handleOrderClick original)
+      setSelectedAirport(null);
+      setHighlightedRoute(null);
+      const vuelosPedido = new Set();
+      pedido.segmentaciones.forEach((seg) => {
+        seg.lotes.forEach((lote) => {
+          (lote.vuelos || []).forEach((v) => vuelosPedido.add(v));
+        });
+      });
+      setHighlightedFlights([...vuelosPedido]);
+    });
+  };
+
+  // 4. Click en RUTA (Sidebar) -> Con lógica de Pin
+  const handleSidebarRouteClick = (ruta) => {
+    handleSidebarClickGeneral("route", ruta, () => {
+      // Lógica de resaltado
+      setSelectedAirport(null);
+      setHighlightedRoute(null);
+      setHighlightedFlights(ruta.codVuelos || []);
+
+      // Centrar mapa en el origen de la ruta
+      const originAp = airports ? airports[ruta.codOrigen] : null;
+      if (mapRef.current && originAp) {
+        mapRef.current.setView([originAp.lat, originAp.lng], 4, {
+          animate: true,
+        });
+      }
+    });
+  };
+  const handleClearSelection = () => {
+    setSelectedItem(null);
+    setSelectedAirport(null);
+    setHighlightedRoute(null);
+    setHighlightedFlights([]);
+    setHighlightedAirportCode(null);
+    setFlightFilterCode("");
+    // Nota: No cambiamos collapsed aquí, para que el usuario siga viendo el sidebar
+  };
+
+  const hubColorMap = useMemo(() => {
+    if (!airports) return {};
+
+    // Filtramos solo las sedes y las ordenamos por código para que el color sea siempre el mismo
+    const sedes = Object.values(airports)
+      .filter((ap) => ap.esSede)
+      .sort((a, b) => a.code.localeCompare(b.code));
+
+    const map = {};
+    sedes.forEach((sede, index) => {
+      // Asignamos un color cíclico de la paleta
+      map[sede.code] = HUB_COLORS[index % HUB_COLORS.length];
+    });
+    return map;
+  }, [airports]);
   return (
     <div className="page">
       {/* Overlay de carga de simulación */}
@@ -1437,13 +1556,24 @@ export default function Simulacion() {
         setCollapsed={setCollapsed}
         sidebarTab={sidebarTab}
         setSidebarTab={setSidebarTab}
-        // Datos
+        isSidebarPinned={isSidebarPinned}
+        setIsSidebarPinned={setIsSidebarPinned}
+        simNowMs={simNowMs}
+        // DATOS PRINCIPALES
+        flights={flights} // 🔥 IMPORTANTE: Pasamos todos los vuelos
         activeFlights={activeFlights}
         visibleOrders={visibleOrders}
         visibleAirports={visibleAirportsEnriched}
         routesInCurrentTime={routesInCurrentTime}
         baseOrders={baseOrders}
         airports={airports}
+        // ESTADO DE SELECCIÓN (Master-Detail)
+        selectedItem={selectedItem}
+        selectedAirport={selectedAirport}
+        onClearSelection={handleClearSelection} // 🔥 Esta función limpia la selección
+        // DATOS CALCULADOS PARA DETALLES
+        vuelosSaliendo={vuelosSaliendo}
+        vuelosLlegando={vuelosLlegando}
         // Filtros
         flightFilterCode={flightFilterCode}
         setFlightFilterCode={setFlightFilterCode}
@@ -1459,14 +1589,17 @@ export default function Simulacion() {
         setOrderFilterDestino={setOrderFilterDestino}
         onlyHubs={onlyHubs}
         setOnlyHubs={setOnlyHubs}
-        // Listas ya filtradas en el padre (para evitar recalcular en hijo si ya las tienes)
+        // Listas Filtradas
         filteredActiveFlights={filteredActiveFlights}
         filteredOrders={filteredOrders}
+        //Escribir aeropuerto
+        airportFilterText={airportFilterText}
+        setAirportFilterText={setAirportFilterText}
         // Callbacks
         onFlightClick={handleSidebarFlightClick}
-        onOrderClick={handleOrderClick}
+        onOrderClick={handleSidebarOrderClick}
         onAirportClick={handleSidebarAirportClick}
-        onRouteClick={handleRouteClick}
+        onRouteClick={handleSidebarRouteClick}
         // Helpers
         getAirportLabel={getAirportLabel}
         getAirportCityName={getAirportCityName}
@@ -1725,7 +1858,10 @@ export default function Simulacion() {
 
                 const shouldDimOthers = highlightedFlights.length > 0;
                 const isHighlighted = highlightedFlights.includes(flight.code);
-
+                const isOriginHub = flight.origin && flight.origin.esSede;
+                const routeNormalColor = isOriginHub
+                  ? hubColorMap[flight.origin.code] || "#eb6774" // Color de la sede
+                  : "#eb6774"; // Color rojo por defecto (Intermedios)
                 return (
                   <React.Fragment key={flight.code}>
                     <Polyline
@@ -1733,20 +1869,21 @@ export default function Simulacion() {
                       positions={flight.path.slice(
                         Math.floor(flight.path.length * (flight.progress ?? 0))
                       )}
+                      // 👇 AQUÍ ESTÁ EL CAMBIO DE COLOR
                       color={
                         !shouldDimOthers
-                          ? "#eb6774" // normal
+                          ? routeNormalColor // Color normal (Sede o Rojo)
                           : isHighlighted
-                          ? "#ff0019" // seleccionado
-                          : "#e5e7eb" // otros → gris muy clarito
+                          ? "#ff0019" // Si está seleccionado, rojo intenso (o el color que prefieras para selección)
+                          : "#e5e7eb" // Si está opaco (dimmed)
                       }
-                      weight={isHighlighted ? 4 : 1} // otros aún más finos
+                      weight={isHighlighted ? 4 : 2} // Un poco más gruesa la línea normal (2) para que se vea el color
                       opacity={
                         !shouldDimOthers
-                          ? 0.9 // normal
+                          ? 0.8 // Un poco de transparencia para que se mezclen bonito
                           : isHighlighted
-                          ? 1 // seleccionado bien fuerte
-                          : 0.03 // otros casi desaparecen
+                          ? 1
+                          : 0.03
                       }
                       dashArray="6, 10"
                       interactive={false}
@@ -1983,38 +2120,6 @@ export default function Simulacion() {
           </div>
 
           {/* PANEL INFORMATIVO DEBAJO DEL MAPA */}
-          {infoPanelExpanded && (
-            <div className={`info-panel expanded ${infoPanelVariant}`}>
-              <div className="info-panel-inner">
-                <div className="info-content">
-                  {selectedAirport ? (
-                    <AirportInfoPanel
-                      airport={selectedAirport}
-                      vuelosSaliendo={vuelosSaliendo}
-                      vuelosLlegando={vuelosLlegando}
-                      getOrdersForFlight={getOrdersForFlight}
-                    />
-                  ) : selectedFlight ? (
-                    <FlightInfoPanel
-                      flight={selectedFlight}
-                      getOrdersForFlight={getOrdersForFlight}
-                    />
-                  ) : selectedOrder ? (
-                    <OrderInfoPanel order={selectedOrder} flights={flights} />
-                  ) : selectedRoute ? (
-                    <RouteInfoPanel route={selectedRoute} />
-                  ) : (
-                    <>
-                      <h3>Información seleccionada</h3>
-                      <p>
-                        Selecciona un vuelo, pedido o ruta para ver el detalle.
-                      </p>
-                    </>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       </section>
 
