@@ -112,6 +112,12 @@
   white-space: nowrap; /* Que no se rompa en dos líneas */
 }
 
+.control-label-buttons{
+  display: flex;            /* Pone los 3 botones en una fila horizontal */
+  gap: 12px;                /* ESTA ES LA CLAVE: Espacio entre cada botón */
+  flex-wrap: wrap;
+}
+
 .value {
   font-family: 'Inter', sans-serif; /*  Mismo formato que las letras */
   font-size: 15px;                  /*  Más grande */

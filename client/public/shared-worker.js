@@ -1,231 +1,209 @@
-// ===========================================================
-// shared-worker.js - SharedWorker con STOMP WebSocket
-// ===========================================================
-
-// === CONFIG ===
-const WS_ENDPOINT_DEFAULT = "ws://localhost:8080/ws"; 
-const REPLANIFY_ENDPOINT = "http://localhost:8080/api/operation-replanificate";
-const REPLANIFICACION_MINUTOS = 15;
-
-// STOMP UMD
 importScripts("/stomp.umd.min.js");
 
-// === ESTADO GLOBAL ===
 let ports = [];
 let stompClient = null;
-let wsEndpoint = WS_ENDPOINT_DEFAULT;
 
+let wsEndpoint = null;
+let apiBaseUrl = null;
+
+let parametros = null;
+let pendingOrders = 0;
 let fechaHoraPrimerPedido = null;
 let listoParaReplanificar = false;
-let pendingOrders = 0;
-let parametros = null;
-let replanificacionTimer = null;
+let replanTimer = null;
+let log5minTimer = null;
+let log10minTimer = null;
 
-// ===========================================================
-// Broadcast
-// ===========================================================
+const REPLANIFICACION_MINUTOS = 15;
+
+// -----------------------------------------------------------
 function broadcast(msg) {
-  ports.forEach(p => { try { p.postMessage(msg); } catch(e){} });
+  ports.forEach(p => { try { p.postMessage(msg); } catch {} });
 }
 
-function parseSafeJson(s) {
-  try { return JSON.parse(s); } catch { return s; }
-}
-
-// ===========================================================
-// Conexión STOMP
-// ===========================================================
-function connectStomp() {
-  if (stompClient && stompClient.active) return;
-
-  const { Client } = StompJs;
-
-  stompClient = new Client({
-    webSocketFactory: () => new WebSocket(wsEndpoint),
-    reconnectDelay: 5000,
-    debug: () => {}
+function logEstado(origen) {
+  console.log(`[SW][${origen}]`, {
+    listoParaReplanificar,
+    fechaHoraPrimerPedido,
+    pendingOrders,
+    parametros
   });
-
-  stompClient.onConnect = () => {
-    console.log("[SW] Conectado STOMP");
-    stompClient.subscribe("/topic/operator-status", m =>
-      broadcast({ type: "operator-status", payload: parseSafeJson(m.body) })
-    );
-    stompClient.subscribe("/topic/operator", m =>
-      broadcast({ type: "operator", payload: parseSafeJson(m.body) })
-    );
-
-    broadcast({ type: "stomp-connected" });
-  };
-
-  stompClient.onStompError = (e) => {
-    console.error("[SW] STOMP error", e);
-    broadcast({ type: "stomp-error", error: e });
-  };
-
-  stompClient.activate();
 }
 
-// ===========================================================
-// Timer
-// ===========================================================
-function clearTimer() {
-  if (replanificacionTimer) clearTimeout(replanificacionTimer);
-  replanificacionTimer = null;
+// -----------------------------------------------------------
+function fechaHoraPeru(extraMinutes = 0) {
+  const now = new Date();
+  const utc = now.getTime() + now.getTimezoneOffset() * 60000;
+  const peru = new Date(utc - 5 * 3600000 + extraMinutes * 60000);
+  const pad = n => n.toString().padStart(2, "0");
+  return `${peru.getFullYear()}-${pad(peru.getMonth()+1)}-${pad(peru.getDate())} ${pad(peru.getHours())}:${pad(peru.getMinutes())}:${pad(peru.getSeconds())}`;
 }
 
-function scheduleTimerFrom(fechaIso) {
-  clearTimer();
-  if (!fechaIso) return;
+// -----------------------------------------------------------
+function fechaHoraUTC() {
+  const d = new Date();
 
-  let fecha = new Date(fechaIso);
-  let target = new Date(fecha.getTime() + REPLANIFICACION_MINUTOS * 60000);
-  let ms = target - new Date();
+  const pad = n => n.toString().padStart(2, "0");
 
-  if (ms < 0) ms = 0;
+  return (
+    d.getUTCFullYear() + "-" +
+    pad(d.getUTCMonth() + 1) + "-" +
+    pad(d.getUTCDate()) + " " +
+    pad(d.getUTCHours()) + ":" +
+    pad(d.getUTCMinutes()) + ":" +
+    pad(d.getUTCSeconds())
+  );
+}
 
-  replanificacionTimer = setTimeout(onReplanificacionTimer, ms);
+
+// -----------------------------------------------------------
+// TIMER
+// -----------------------------------------------------------
+function scheduleTimer(fromFechaPeru) {
+  clearAllTimers();
+
+  const base = new Date(fromFechaPeru.replace(" ", "T"));
+  const target = new Date(base.getTime() + REPLANIFICACION_MINUTOS * 60000);
+  const totalMs = Math.max(0, target - new Date());
+
+  // ⏱ LOG 5 MINUTOS
+  log5minTimer = setTimeout(() => {
+    console.log("[SW][TIMER] 5 minutos transcurridos");
+    logEstado("TIMER-5MIN");
+  }, 5 * 60 * 1000);
+
+  // ⏱ LOG 10 MINUTOS
+  log10minTimer = setTimeout(() => {
+    console.log("[SW][TIMER] 10 minutos transcurridos");
+    logEstado("TIMER-10MIN");
+  }, 10 * 60 * 1000);
 
   broadcast({
-    type: "timer-scheduled",
-    targetIso: target.toISOString(),
-    msRemaining: ms
+    type: "notification-global",
+    variant: "info",
+    message: "Iniciando replanificación (pedidos dentro de 15 minutos)"
   });
+
+  // ⏱ TIMER FINAL 15 MIN
+  replanTimer = setTimeout(runReplanification, totalMs);
+
+  console.log("[SW][TIMER] Programado:", {
+    desde: fromFechaPeru,
+    ejecutaEn: fechaHoraPeru(REPLANIFICACION_MINUTOS),
+    totalMs
+  });
+
+  logEstado("scheduleTimer");
 }
 
-// ===========================================================
-// EJECUTAR REPLANIFICACIÓN
-// ===========================================================
-async function onReplanificacionTimer() {
-  if (!listoParaReplanificar) return;
+function clearAllTimers() {
+  if (replanTimer) clearTimeout(replanTimer);
+  if (log5minTimer) clearTimeout(log5minTimer);
+  if (log10minTimer) clearTimeout(log10minTimer);
 
-  if (!parametros) {
-    console.warn("[SW] No hay parámetros cargados, abortando replanificación.");
-    return;
-  }
+  replanTimer = null;
+  log5minTimer = null;
+  log10minTimer = null;
+}
+
+
+// -----------------------------------------------------------
+// REPLANIFICAR
+// -----------------------------------------------------------
+async function runReplanification() {
+  if (!listoParaReplanificar || !parametros) return;
 
   broadcast({
-    type: "info",
-    message: "Comenzando replanificación…",
-    pendingOrders
+    type: "notification-global",
+    variant: "info",
+    message: `Se están replanificando ${pendingOrders} pedidos`
   });
+
+  logEstado("runReplanification-INICIO");
 
   try {
-    const resp = await fetch(REPLANIFY_ENDPOINT, {
+    const resp = await fetch(`${apiBaseUrl}/api/operation-replanificate`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        fechaHoraActual: fechaUTC5(REPLANIFICACION_MINUTOS),
+        fechaHoraActual: fechaHoraUTC(),
         parametros
       })
     });
 
-    if (!resp.ok) {
-      broadcast({
-        type: "error",
-        message: "Error POST: " + resp.status
-      });
-      return;
-    }
+    // 🔍 LOG EXACTO DEL BACKEND
+    console.log("[SW][BACKEND][status]", resp.status);
+    console.log("[SW][BACKEND][headers]", [...resp.headers.entries()]);
 
     const json = await resp.json();
 
+    
+    // 🔍 LOG EXACTO DEL BODY DEVUELTO
+    console.log("[SW][BACKEND][response-body]", json);
+
     broadcast({
-      type: "replanificacion-iniciada",
-      payload: json
+      type: "notification-global",
+      variant: "success",
+      message: `${pendingOrders} pedidos replanificados`
     });
 
-    // RESET
-    listoParaReplanificar = false;
-    fechaHoraPrimerPedido = null;
+    broadcast({
+      type: "replanificacion-iniciada",
+      payload: json,
+      pendingOrders
+    });
+
     pendingOrders = 0;
-    clearTimer();
+    fechaHoraPrimerPedido = null;
+    listoParaReplanificar = false;
+    clearAllTimers(replanTimer);
+
+    logEstado("runReplanification-FIN");
 
   } catch (e) {
     broadcast({
-      type: "error",
-      message: "Error replanificando: " + e.message
+      type: "notification-global",
+      variant: "danger",
+      message: "Error durante la replanificación"
     });
+    console.error("[SW] Error:", e);
   }
 }
 
-// ===========================================================
-// PUERTOS
-// ===========================================================
-onconnect = (e) => {
+// -----------------------------------------------------------
+// PORTS
+// -----------------------------------------------------------
+onconnect = e => {
   const port = e.ports[0];
   ports.push(port);
 
-  port.postMessage({
-    type: "sw-init",
-    estado: { fechaHoraPrimerPedido, listoParaReplanificar, pendingOrders }
-  });
-
-  port.onmessage = (evt) => {
+  port.onmessage = evt => {
     const msg = evt.data;
 
     switch (msg.type) {
       case "init":
-        wsEndpoint = msg.wsEndpoint || WS_ENDPOINT_DEFAULT;
-        connectStomp();
+        wsEndpoint = msg.wsEndpoint;
+        apiBaseUrl = msg.apiBaseUrl;
+        parametros = msg.parametros;
+        console.log("[SW] INIT", parametros);
         break;
 
       case "notify-new-order":
         pendingOrders++;
-
         if (!fechaHoraPrimerPedido) {
-          fechaHoraPrimerPedido = msg.fechaHora || new Date().toISOString();
+          fechaHoraPrimerPedido = fechaHoraPeru(); // ⬅️ SIEMPRE AHORA
           listoParaReplanificar = true;
-          scheduleTimerFrom(fechaHoraPrimerPedido);
+          scheduleTimer(fechaHoraPrimerPedido);
         }
+        logEstado("notify-new-order");
         break;
 
       case "set-parametros":
-        console.log("[SW] Parámetros actualizados:", msg.parametros);
         parametros = msg.parametros;
-        break;
-
-      case "force-replanify-now":
-        fechaHoraPrimerPedido = new Date().toISOString();
-        listoParaReplanificar = true;
-        clearTimer();
-        onReplanificacionTimer();
-        break;
-
-      case "disconnect-port":
-        try { port.close(); } catch {}
+        logEstado("set-parametros");
         break;
     }
   };
 
   port.start();
 };
-
-// ===========================================================
-// LIMPIEZA
-// ===========================================================
-setInterval(() => {
-  ports = ports.filter(p => p && !p.closed);
-}, 10000);
-
-// ===========================================================
-// FECHA: UTC-5 + minutos programados
-// ===========================================================
-function fechaUTC5(minutosExtra = 0) {
-  const now = new Date();
-  const t = now.getTime()
-    + (5 * 3600 * 1000)   // UTC-5
-    + (minutosExtra * 60000);
-
-  const d = new Date(t);
-  const pad = n => n.toString().padStart(2, "0");
-
-  return (
-    d.getFullYear() + "-" +
-    pad(d.getMonth() + 1) + "-" +
-    pad(d.getDate()) + " " +
-    pad(d.getHours()) + ":" +
-    pad(d.getMinutes()) + ":" +
-    pad(d.getSeconds())
-  );
-}

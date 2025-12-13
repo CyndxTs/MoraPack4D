@@ -198,7 +198,7 @@ export default function Pedidos() {
 
         console.log(dto);
         await importarPedido(dto);
-        notifyNewOrder();
+        notifyNewOrder({ fechaHoraISO: fechaGeneracion });
         showNotification("success", "Pedido manual registrado correctamente");
       }
 
@@ -214,45 +214,6 @@ export default function Pedidos() {
       setProcessing(false);
     }
   };
-
-  useEffect(() => {
-    const stop = onEvent((msg) => {
-      if (!msg) return;
-
-      if (msg.type === "info") {
-        showNotification("info", msg.message);
-      }
-      if (msg.type === "error") {
-        showNotification("danger", msg.message);
-      }
-      if (msg.type === "replanificacion-iniciada") {
-        showNotification("info", "Replanificación iniciada.");
-      }
-      if (msg.type === "replanificacion-terminada") {
-        showNotification("success", "Replanificación finalizada.");
-      }
-
-      // Mensajes del backend
-      if (msg.type === "operator-status") {
-        const { estado, finalizacion } = msg.payload;
-        
-        if (estado === "INICIADO") {
-          showNotification("info", "El backend está replanificando...");
-        }
-
-        if (estado === "DETENIDO" && finalizacion === "EXITOSO") {
-          showNotification("success", "La replanificación terminó con éxito.");
-        }
-
-        if (estado === "DETENIDO" && finalizacion === "ERRONEO") {
-          showNotification("danger", "Error en la replanificación.");
-        }
-      }
-    });
-
-    return () => stop();
-  }, []);
-
 
   const handleCantidadChange = (e) => {
     const value = e.target.value;
