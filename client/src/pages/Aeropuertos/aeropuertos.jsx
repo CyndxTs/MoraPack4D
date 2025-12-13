@@ -6,7 +6,7 @@ import plus from '../../assets/icons/plus.svg';
 import hideIcon from '../../assets/icons/hide-sidebar.png';
 
 export default function Aeropuertos() {
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(true);
   const [codigoFiltro, setCodigoFiltro] = useState("");
   const [ciudadFiltro, setCiudadFiltro] = useState("");
   const [orden, setOrden] = useState("");

@@ -6,7 +6,7 @@ import hideIcon from "../../assets/icons/hide-sidebar.png";
 import { listarClientes, importarClientes  } from "../../services/clienteService";
 
 export default function Clientes() {
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(true);
   const [nombreFiltro, setNombreFiltro] = useState("");
   const [correoFiltro, setCorreoFiltro] = useState("");
   const [estadoFiltro, setEstadoFiltro] = useState("");

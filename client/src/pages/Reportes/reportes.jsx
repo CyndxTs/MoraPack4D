@@ -17,7 +17,7 @@ import {
 } from "recharts";
 
 export default function Reportes() {
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(true);
   const [codigoFiltro, setCodigoFiltro] = useState("");
   const [notification, setNotification] = useState(null);
 

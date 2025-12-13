@@ -17,7 +17,7 @@ export default function Pedidos() {
 
   const { clientes, aeropuertos } = useAppData();
 
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(true);
 
   // --- Filtros ---
   const [codigoFiltro, setCodigoFiltro] = useState("");
