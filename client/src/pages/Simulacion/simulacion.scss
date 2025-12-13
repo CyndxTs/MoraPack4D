@@ -94,7 +94,7 @@
 .control-row {
   display: flex;
   align-items: center;
-  justify-content: space-between; /* 🔥 CLAVE: Etiqueta a la izq, Dato a la der */
+  justify-content: space-between; /*  CLAVE: Etiqueta a la izq, Dato a la der */
   width: 100%;
   gap: 12px; /* Espacio de seguridad por si se acercan mucho */
 }
@@ -113,8 +113,8 @@
 }
 
 .value {
-  font-family: 'Inter', sans-serif; /* 🔥 Mismo formato que las letras */
-  font-size: 15px;                  /* 🔥 Más grande */
+  font-family: 'Inter', sans-serif; /*  Mismo formato que las letras */
+  font-size: 15px;                  /*  Más grande */
   font-weight: 600;                 /* Negrita sutil para que se lea bien */
   color: #1e293b;                   /* Color oscuro casi negro */
   text-align: right;
@@ -591,7 +591,7 @@ select.filter-select {
 
 /* Grid de Métricas en el Header */
 .stats-grid {
-  display: flex; /* 🔥 Flex en lugar de Grid */
+  display: flex; /*  Flex en lugar de Grid */
   justify-content: space-between; /* Distribuye el espacio */
   gap: 16px;
   background: rgba(255,255,255,0.15);
@@ -616,7 +616,7 @@ select.filter-select {
   font-weight: 700; /* Más negrita para que se lea bien aunque sea pequeño */
   color: #0f172a; /* Texto oscuro para contraste */
   
-  white-space: nowrap; /* 🔥 Obliga a una sola línea siempre */
+  white-space: nowrap; /* Obliga a una sola línea siempre */
   overflow: visible;   /* Permitimos que se vea todo */
   
   /* Truco Pro: Letter-spacing negativo sutil comprime la palabra larga sin deformarla */

@@ -119,7 +119,7 @@ export function FlightInfoPanel({ flight, getOrdersForFlight }) {
             <span>
               {cargaActual} / {capacidadTotal} u.
             </span>
-            {/* 🔥 BARRA DE PROGRESO VISUAL */}
+            {/*  BARRA DE PROGRESO VISUAL */}
             <MiniProgressBar value={cargaActual} max={capacidadTotal} />
           </div>
         </div>
@@ -381,7 +381,7 @@ export function AirportInfoPanel({
           <div className="stat-box">
             <label>Stock ({Math.round(ocupacion)}%):</label>
             <span style={{ color: "#fff" }}>{stockActual} u.</span>
-            {/* 🔥 BARRA DE PROGRESO VISUAL */}
+            {/*  BARRA DE PROGRESO VISUAL */}
             <MiniProgressBar value={stockActual} max={capacidad} />
           </div>
         </div>

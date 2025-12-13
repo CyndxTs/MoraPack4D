@@ -64,7 +64,7 @@ export function AirportTooltipContent({
           className="airport-popup__progress-fill"
           style={{
             width: `${ocupPct}%`,
-            background: barColor, // 🔥 APLICA EL COLOR AQUÍ
+            background: barColor,
           }}
         />
       </div>
@@ -192,13 +192,13 @@ export function PlaneTooltipContent({
         </span>
       </div>
 
-      {/* 🔥 BARRA DE PROGRESO DE AVIÓN CON COLOR */}
+      {/*  BARRA DE PROGRESO DE AVIÓN CON COLOR */}
       <div className="plane-tooltip__progress">
         <div
           className="plane-tooltip__progress-fill"
           style={{
             width: `${ocupPct}%`,
-            background: barColor, // 🔥 APLICA EL COLOR AQUÍ
+            background: barColor,
           }}
         />
       </div>
