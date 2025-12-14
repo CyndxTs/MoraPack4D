@@ -16,7 +16,7 @@ import { listarParametros } from "./parametrosService";
 /* ===============================
    CONFIG
 ================================ */
-const REPLANIFICACION_MINUTOS = 20;
+const REPLANIFICACION_MINUTOS = 5;
 
 const SOCKET_URL =
   (window.location.protocol === "https:" ? "wss://" : "ws://") +
@@ -175,8 +175,8 @@ function scheduleTimer(startTimeMs) {
 
   // Timers de log (opcional, ajustados para ser relativos)
   log5minTimer = setTimeout(() => {
-    console.log("[OM] Han pasado 10 minutos");
-  }, 10 * 60 * 1000); // Esto cuenta desde AHORA, no desde el inicio, ajustar si es necesario
+    console.log("[OM] Han pasado 2 minutos");
+  }, 2 * 60 * 1000); // Esto cuenta desde AHORA, no desde el inicio, ajustar si es necesario
 
   broadcast({
     type: "notification-global",

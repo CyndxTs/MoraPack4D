@@ -76,7 +76,8 @@ public class GVNS {
         Problematica pAux = new Problematica();
         // Iteración de exploraciones iniciales para encontrar 1 solución
         for(int i = 0; i < iMax; i++) {
-            G4DUtility.Logger.logf(">> Iteración: %d de '%d':%n", i + 1, iMax);
+            //G4DUtility.Logger.logf(">> Iteración: %d de '%d':%n", i + 1, iMax);
+            System.out.printf(">> Iteración: %d de '%d':%n", i + 1, iMax);
             pAux = problematica.replicar();
             List<Aeropuerto> origenes = new ArrayList<>(pAux.origenes.values());
             List<Aeropuerto> destinos = pAux.destinos;
@@ -118,6 +119,7 @@ public class GVNS {
             }
             // Validación por error de enrutamiento
             if(errorDeEnrutamiento) {
+                System.out.println("Error de enrutamiento...");
                 continue;
             }
             // Actualización de solución
@@ -133,7 +135,8 @@ public class GVNS {
         // Validación por inexistencia de solución
         if(!problematica.pedidos.isEmpty()) {
             if(!haySolucion) {
-                G4DUtility.Logger.logf_err("ERROR: No fue posible enrutar todos los pedidos en '%d' iteraciones.%n", iMax);
+                //G4DUtility.Logger.logf_err("ERROR: No fue posible enrutar todos los pedidos en '%d' iteraciones.%n", iMax);
+                System.out.printf("ERROR: No fue posible enrutar todos los pedidos en '%d' iteraciones.%n", iMax);
                 solucion.setFitness(-9999.99);
                 this.solucion = null;
             } else problematica.reasignar(pAux);
