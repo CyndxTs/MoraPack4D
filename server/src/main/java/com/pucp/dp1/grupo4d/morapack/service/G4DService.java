@@ -408,7 +408,7 @@ public class G4DService {
                 }
             }
         }
-        // Aeropuertos && Registros
+        // Aeropuertos && Registros && Lotes
         for(Aeropuerto aeropuerto : solucion.getAeropuertosTransitados()) {
             AeropuertoEntity aeropuertoEntity = aeropuertoAdapter.toEntity(aeropuerto);
             if(aeropuertoEntity != null) {

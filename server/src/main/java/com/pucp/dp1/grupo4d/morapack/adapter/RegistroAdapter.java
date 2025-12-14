@@ -60,6 +60,9 @@ public class RegistroAdapter {
         entity.setFechaHoraIngresoUTC(algorithm.getFechaHoraIngreso());
         entity.setFechaHoraEgresoUTC(algorithm.getFechaHoraEgreso());
         LoteEntity loteEntity = loteAdapter.toEntity(algorithm.getLote());
+        if(loteEntity.getId() == null) {
+            System.out.println("Lote no encontrado");
+        }
         entity.setLote(loteEntity);
         poolEntity.put(entity.getCodigo(), entity);
         return entity;

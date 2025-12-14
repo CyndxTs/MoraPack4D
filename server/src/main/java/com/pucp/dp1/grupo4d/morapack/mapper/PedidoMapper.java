@@ -54,8 +54,10 @@ public class PedidoMapper {
         dto.setCodDestino(destinoEntity.getCodigo());
         dto.setTipoEscenario(entity.getTipoEscenario().toString());
         SegmentacionEntity sVigente = entity.getSegmentaciones().stream().filter(s -> s.getFechaHoraSustitucionUTC() == null).findFirst().orElse(null);
-        SegmentacionDTO sVigenteDTO = segmentacionMapper.toDTO(sVigente);
-        dto.setSegmentacionVigente(sVigenteDTO);
+        if(sVigente != null) {
+            SegmentacionDTO sVigenteDTO = segmentacionMapper.toDTO(sVigente);
+            dto.setSegmentacionVigente(sVigenteDTO);
+        }
         return dto;
     }
 }
