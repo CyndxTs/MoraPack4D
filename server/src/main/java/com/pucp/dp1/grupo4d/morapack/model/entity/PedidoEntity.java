@@ -62,6 +62,7 @@ public class PedidoEntity {
     private AeropuertoEntity destino;
 
     @OneToMany(mappedBy = "pedido")
+    @OrderBy("fechaHoraAplicacionUTC ASC")
     private List<SegmentacionEntity> segmentaciones = new ArrayList<>();
 
     public PedidoEntity() {}

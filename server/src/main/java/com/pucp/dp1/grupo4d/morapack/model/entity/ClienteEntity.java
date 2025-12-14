@@ -38,6 +38,7 @@ public class ClienteEntity extends UsuarioEntity{
     private EstadoUsuario estado = EstadoUsuario.OFFLINE;
 
     @OneToMany(mappedBy = "cliente")
+    @OrderBy("fechaHoraGeneracionUTC ASC")
     private List<PedidoEntity> pedidos = new ArrayList<>();
 
     public ClienteEntity() {}

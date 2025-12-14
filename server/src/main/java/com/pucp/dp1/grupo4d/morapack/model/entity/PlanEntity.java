@@ -57,6 +57,7 @@ public class PlanEntity {
     private List<VueloEntity> vuelos = new ArrayList<>();
 
     @OneToMany(mappedBy = "plan")
+    @OrderBy("fechaHoraInicio ASC")
     private List<EventoEntity> eventos = new ArrayList<>();
 
     public PlanEntity() {}

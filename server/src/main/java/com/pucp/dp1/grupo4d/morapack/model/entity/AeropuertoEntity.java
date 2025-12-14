@@ -66,6 +66,7 @@ public class AeropuertoEntity {
     private List<RutaEntity> rutasComoDestino = new ArrayList<>();
 
     @OneToMany(mappedBy = "aeropuerto")
+    @OrderBy("fechaHoraIngresoUTC ASC, fechaHoraEgresoUTC DESC")
     private List<RegistroEntity> registros = new ArrayList<>();
 
     @OneToMany(mappedBy = "origen")

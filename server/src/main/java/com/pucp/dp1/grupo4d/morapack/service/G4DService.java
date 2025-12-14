@@ -38,6 +38,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -374,6 +375,7 @@ public class G4DService {
                         rutaEntity.getVuelos().add(vueloEntity);
                     }
                 }
+                rutaEntity.getVuelos().sort(Comparator.comparing(VueloEntity::getFechaHoraSalidaUTC));
                 rutaService.save(rutaEntity);
                 System.out.println("[*] RUTA: " + rutaEntity.getCodigo() + " {'" + rutaEntity.getVuelos().size() + "' vuelos!}");
             }
@@ -411,6 +413,7 @@ public class G4DService {
             AeropuertoEntity aeropuertoEntity = aeropuertoAdapter.toEntity(aeropuerto);
             if(aeropuertoEntity != null) {
                 aeropuertoService.save(aeropuertoEntity);
+                System.out.println("[*] AEROPUERTO: " + aeropuertoEntity.getCodigo());
                 for(Registro registro : aeropuerto.getRegistros()) {
                     RegistroEntity registroEntity = registroAdapter.toEntity(registro);
                     if(registroEntity != null) {
@@ -421,7 +424,6 @@ public class G4DService {
                         System.out.println("[*] REGISTRO: " + registroEntity.getCodigo());
                     }
                 }
-                System.out.println("[*] AEROPUERTO: " + aeropuertoEntity.getCodigo());
             }
         }
         System.out.println("\nSOLUCIÓN ALMACENADA!");

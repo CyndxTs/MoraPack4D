@@ -69,6 +69,7 @@ public class RutaEntity {
             joinColumns = @JoinColumn(name = "id_ruta"),
             inverseJoinColumns = @JoinColumn(name = "id_vuelo")
     )
+    @OrderBy("fechaHoraSalidaUTC ASC")
     private List<VueloEntity> vuelos = new ArrayList<>();
 
     public RutaEntity() {}

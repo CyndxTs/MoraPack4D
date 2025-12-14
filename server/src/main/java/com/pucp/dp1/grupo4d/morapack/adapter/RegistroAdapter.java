@@ -59,8 +59,7 @@ public class RegistroAdapter {
         entity.setSigueVigente(algorithm.getSigueVigente());
         entity.setFechaHoraIngresoUTC(algorithm.getFechaHoraIngreso());
         entity.setFechaHoraEgresoUTC(algorithm.getFechaHoraEgreso());
-        String codLote = algorithm.getLote().getCodigo();
-        LoteEntity loteEntity = loteService.findByCodigo(codLote).orElse(null);
+        LoteEntity loteEntity = loteAdapter.toEntity(algorithm.getLote());
         entity.setLote(loteEntity);
         poolEntity.put(entity.getCodigo(), entity);
         return entity;
