@@ -16,14 +16,19 @@ import { listarParametros } from "./parametrosService";
 /* ===============================
    CONFIG
 ================================ */
-const REPLANIFICACION_MINUTOS = 1;
+const REPLANIFICACION_MINUTOS = 20;
 
 const SOCKET_URL =
   (window.location.protocol === "https:" ? "wss://" : "ws://") +
   window.location.host +
   "/ws";
 
-const API_BASE_URL = "http://localhost:8080/api";
+// 2. API URL (AQUÍ ESTÁ LA CORRECCIÓN CLAVE)
+// Esto detecta automáticamente si estás en localhost o en 1inf54...
+const API_BASE_URL = 
+  window.location.protocol + "//" + 
+  window.location.hostname + 
+  ":8080/api";
 
 /* ===============================
    ESTADO
@@ -170,8 +175,8 @@ function scheduleTimer(startTimeMs) {
 
   // Timers de log (opcional, ajustados para ser relativos)
   log5minTimer = setTimeout(() => {
-    console.log("[OM] Han pasado 1 minutos");
-  }, 1 * 60 * 1000); // Esto cuenta desde AHORA, no desde el inicio, ajustar si es necesario
+    console.log("[OM] Han pasado 10 minutos");
+  }, 10 * 60 * 1000); // Esto cuenta desde AHORA, no desde el inicio, ajustar si es necesario
 
   broadcast({
     type: "notification-global",
