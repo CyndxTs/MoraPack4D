@@ -417,7 +417,7 @@ public class G4DService {
                 System.out.println("[*] AEROPUERTO: " + aeropuertoEntity.getCodigo());
                 for(Registro registro : aeropuerto.getRegistros()) {
                     RegistroEntity registroEntity = registroAdapter.toEntity(registro);
-                    if(registroEntity != null) {
+                    if(registroEntity.getLote().getId() != null) {
                         registroEntity.setFechaHoraIngresoLocal(G4DUtility.Convertor.toLocal(registroEntity.getFechaHoraIngresoUTC(), aeropuertoEntity.getHusoHorario()));
                         registroEntity.setFechaHoraEgresoLocal((registroEntity.getFechaHoraEgresoUTC() != null)? G4DUtility.Convertor.toLocal(registroEntity.getFechaHoraEgresoUTC(), aeropuertoEntity.getHusoHorario()): null);
                         registroEntity.setAeropuerto(aeropuertoEntity);
