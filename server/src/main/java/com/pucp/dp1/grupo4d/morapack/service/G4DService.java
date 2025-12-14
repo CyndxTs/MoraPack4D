@@ -46,6 +46,10 @@ import java.util.concurrent.Future;
 
 @Service
 public class G4DService {
+    private final SegmentacionService segmentacionService;
+    private final LoteService loteService;
+    private final RegistroService registroService;
+
     private static class G4DContext {
         public volatile boolean running = true;
         public Future<?> task;
@@ -86,7 +90,7 @@ public class G4DService {
                       PedidoMapper pedidoMapper, PedidoAdapter pedidoAdapter, AeropuertoService aeropuertoService, AeropuertoAdapter aeropuertoAdapter,
                       UsuarioAdapter usuarioAdapter, PlanService planService, PlanAdapter planAdapter, LoteAdapter loteAdapter,
                       AeropuertoMapper aeropuertoMapper, RutaMapper rutaMapper, VueloMapper vueloMapper, RegistroAdapter registroAdapter,
-                      ParametrosMapper parametrosMapper, RutaService rutaService, VueloService vueloService, RutaAdapter rutaAdapter, VueloAdapter vueloAdapter, ParametrosService parametrosService, AdministradorService administradorService, G4DExceptionHandlerAsync asyncExceptionHandler) {
+                      ParametrosMapper parametrosMapper, RutaService rutaService, VueloService vueloService, RutaAdapter rutaAdapter, VueloAdapter vueloAdapter, ParametrosService parametrosService, AdministradorService administradorService, G4DExceptionHandlerAsync asyncExceptionHandler, SegmentacionService segmentacionService, LoteService loteService, RegistroService registroService) {
         this.clienteService = clienteService;
         this.pedidoService = pedidoService;
         this.segmentacionAdapter = segmentacionAdapter;
@@ -111,6 +115,9 @@ public class G4DService {
         this.parametrosService = parametrosService;
         this.administradorService = administradorService;
         this.asyncExceptionHandler = asyncExceptionHandler;
+        this.segmentacionService = segmentacionService;
+        this.loteService = loteService;
+        this.registroService = registroService;
     }
 
     public GenericResponse iniciarImportacion(MultipartFile file, ImportFileRequest request) throws IOException {
@@ -348,24 +355,22 @@ public class G4DService {
             return;
         }
         System.out.println("\nGuardando solución en bd..\n");
-        // Vuelos (ADD)
+        // Vuelos
         for (Vuelo vuelo : solucion.getVuelosEnTransito()) {
             VueloEntity vueloEntity = vueloAdapter.toEntity(vuelo);
-            if (vueloEntity != null && vueloEntity.getId() == null) {
+            if (vueloEntity != null) {
                 vueloService.save(vueloEntity);
                 System.out.println("[*] VUELO: " + vueloEntity.getCodigo());
             }
         }
-        // Rutas (ADD/UP) & Vuelos (UP)
+        // Rutas & RutasPorVuelos
         for (Ruta ruta : solucion.getRutasEnOperacion()) {
             RutaEntity rutaEntity = rutaAdapter.toEntity(ruta);
             if (rutaEntity != null) {
                 for (Vuelo vuelo : ruta.getVuelos()) {
                     VueloEntity vueloEntity = vueloAdapter.toEntity(vuelo);
                     if (vueloEntity != null) {
-                        if(rutaEntity.getVuelos().contains(vueloEntity)) {
-                            rutaEntity.getVuelos().remove(vueloEntity);
-                        }
+                        rutaEntity.getVuelos().remove(vueloEntity);
                         rutaEntity.getVuelos().add(vueloEntity);
                     }
                 }
@@ -373,41 +378,49 @@ public class G4DService {
                 System.out.println("[*] RUTA: " + rutaEntity.getCodigo() + " {'" + rutaEntity.getVuelos().size() + "' vuelos!}");
             }
         }
-        // Pedidos (UP) & Segmentaciones (ADD/UP)
+        // Pedidos & Segmentaciones & Lotes
         for (Pedido pedido : solucion.getPedidosAtendidos()) {
             PedidoEntity pedidoEntity = pedidoAdapter.toEntity(pedido, tipoEscenario);
             if(pedidoEntity != null) {
+                pedidoService.save(pedidoEntity);
+                System.out.println("[*] PEDIDO: " + pedidoEntity.getCodigo());
                 for(Segmentacion segmentacion : pedido.getSegmentaciones()) {
                     SegmentacionEntity segmentacionEntity = segmentacionAdapter.toEntity(segmentacion);
                     if(segmentacionEntity != null) {
                         segmentacionEntity.setFechaHoraAplicacionLocal(G4DUtility.Convertor.toLocal(segmentacionEntity.getFechaHoraAplicacionUTC(), pedidoEntity.getDestino().getHusoHorario()));
                         segmentacionEntity.setFechaHoraSustitucionLocal((segmentacionEntity.getFechaHoraSustitucionUTC() != null)? (G4DUtility.Convertor.toLocal(segmentacionEntity.getFechaHoraSustitucionUTC(), pedidoEntity.getDestino().getHusoHorario())) : null);
-                        if(pedidoEntity.getSegmentaciones().contains(segmentacionEntity)) {
-                            pedidoEntity.getSegmentaciones().remove(segmentacionEntity);
+                        segmentacionEntity.setPedido(pedidoEntity);
+                        segmentacionService.save(segmentacionEntity);
+                        System.out.println("[*] SEGMENTACION: " + segmentacion.getCodigo());
+                        for(Map.Entry<Ruta, Lote> entry : segmentacion.getLotesPorRuta().entrySet()) {
+                            RutaEntity rutaEntity = rutaAdapter.toEntity(entry.getKey());
+                            if(rutaEntity != null) {
+                                LoteEntity loteEntity = loteAdapter.toEntity(entry.getValue());
+                                loteEntity.setRuta(rutaEntity);
+                                loteEntity.setSegmentacion(segmentacionEntity);
+                                loteService.save(loteEntity);
+                                System.out.println("[*] LOTE: " + loteEntity.getCodigo());
+                            }
                         }
-                        pedidoEntity.getSegmentaciones().add(segmentacionEntity);
                     }
                 }
             }
-            pedidoService.save(pedidoEntity);
-            System.out.println("[*] PEDIDO: " + pedidoEntity.getCodigo() + " ('" + pedidoEntity.getSegmentaciones().getLast().getLotes().size() + "' lotes!)");
         }
-        // Aeropuertos (UP) && Registros (ADD/UP)
+        // Aeropuertos && Registros
         for(Aeropuerto aeropuerto : solucion.getAeropuertosTransitados()) {
             AeropuertoEntity aeropuertoEntity = aeropuertoAdapter.toEntity(aeropuerto);
             if(aeropuertoEntity != null) {
+                aeropuertoService.save(aeropuertoEntity);
                 for(Registro registro : aeropuerto.getRegistros()) {
                     RegistroEntity registroEntity = registroAdapter.toEntity(registro);
                     if(registroEntity != null) {
                         registroEntity.setFechaHoraIngresoLocal(G4DUtility.Convertor.toLocal(registroEntity.getFechaHoraIngresoUTC(), aeropuertoEntity.getHusoHorario()));
                         registroEntity.setFechaHoraEgresoLocal((registroEntity.getFechaHoraEgresoUTC() != null)? G4DUtility.Convertor.toLocal(registroEntity.getFechaHoraEgresoUTC(), aeropuertoEntity.getHusoHorario()): null);
-                        if(aeropuertoEntity.getRegistros().contains(registroEntity)) {
-                            aeropuertoEntity.getRegistros().remove(registroEntity);
-                        }
-                        aeropuertoEntity.getRegistros().add(registroEntity);
+                        registroEntity.setAeropuerto(aeropuertoEntity);
+                        registroService.save(registroEntity);
+                        System.out.println("[*] REGISTRO: " + registroEntity.getCodigo());
                     }
                 }
-                aeropuertoService.save(aeropuertoEntity);
                 System.out.println("[*] AEROPUERTO: " + aeropuertoEntity.getCodigo());
             }
         }
