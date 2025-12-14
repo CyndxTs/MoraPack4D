@@ -8,8 +8,6 @@ package com.pucp.dp1.grupo4d.morapack.model.algorithm;
 
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.stream.Collectors;
-
 import com.pucp.dp1.grupo4d.morapack.util.G4DUtility;
 
 public class Aeropuerto {

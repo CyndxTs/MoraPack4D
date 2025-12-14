@@ -8,7 +8,6 @@ package com.pucp.dp1.grupo4d.morapack.model.algorithm;
 
 import java.time.LocalDateTime;
 import java.util.*;
-
 import com.pucp.dp1.grupo4d.morapack.algorithm.Problematica;
 import com.pucp.dp1.grupo4d.morapack.model.enumeration.EstadoLote;
 import com.pucp.dp1.grupo4d.morapack.model.enumeration.TipoRuta;
@@ -72,10 +71,10 @@ public class Pedido {
         return segmentacionModificable;
     }
 
-    public Map<Ruta, PuntoDeReplanificacion> obtenerPuntosDeReplanificacion(Map<Ruta, Lote> segmentacionModificable) {
+    public Map<Ruta, PuntoDeReplanificacion> obtenerPuntosDeReplanificacion(Problematica problematica, Map<Ruta, Lote> segmentacionModificable) {
         Map<Ruta, PuntoDeReplanificacion> puntosDeReplanificacion = new HashMap<>();
         for (Map.Entry<Ruta, Lote> entry : segmentacionModificable.entrySet()) {
-            PuntoDeReplanificacion pdr = Problematica.PUNTOS_REPLANIFICACION.stream().filter(p -> p.getLotes().contains(entry.getValue())).findFirst().orElse(null);
+            PuntoDeReplanificacion pdr = problematica.puntosDeReplanificacion.stream().filter(p -> p.getLotes().contains(entry.getValue())).findFirst().orElse(null);
             puntosDeReplanificacion.put(entry.getKey(), pdr);
         }
         return puntosDeReplanificacion;
@@ -155,10 +154,10 @@ public class Pedido {
         return fechaHoraExpiracion;
     }
 
-    public void setFechaHoraExpiracion() {
+    public void setFechaHoraExpiracion(Problematica problematica) {
         boolean tieneIntercontinental = this.obtenerSegementacionVigente().getLotesPorRuta().keySet().stream().anyMatch(r -> r.getTipo().equals(TipoRuta.INTERCONTINENTAL));
         TipoRuta tipo = tieneIntercontinental ? TipoRuta.INTERCONTINENTAL : TipoRuta.INTRACONTINENTAL;
-        this.fechaHoraExpiracion = this.fechaHoraGeneracion.plusMinutes(tipo.getMaxMinutosParaEntrega());
+        this.fechaHoraExpiracion = this.fechaHoraGeneracion.plusMinutes(tipo.getMaxMinutosParaEntrega(problematica));
     }
 
     public void setFechaHoraExpiracion(LocalDateTime fechaHoraExpiracion) {

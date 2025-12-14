@@ -9,6 +9,7 @@ package com.pucp.dp1.grupo4d.morapack.model.algorithm;
 import java.time.LocalDateTime;
 import java.util.Map;
 
+import com.pucp.dp1.grupo4d.morapack.algorithm.Problematica;
 import com.pucp.dp1.grupo4d.morapack.util.G4DUtility;
 
 public class Vuelo {
@@ -39,8 +40,8 @@ public class Vuelo {
         this.fechaHoraLlegada = dtr[1];
     }
 
-    public Boolean esProblematico() {
-        return this.plan.esProblematico(this.fechaHoraSalida, this.fechaHoraLlegada);
+    public Boolean esProblematico(Problematica problematica) {
+        return this.plan.esProblematico(problematica, this.fechaHoraSalida, this.fechaHoraLlegada);
     }
 
     @Override

@@ -22,10 +22,10 @@ import com.pucp.dp1.grupo4d.morapack.model.enumeration.EstadoEjecucion;
 import com.pucp.dp1.grupo4d.morapack.model.enumeration.EstadoFinalizacion;
 import com.pucp.dp1.grupo4d.morapack.model.enumeration.TipoEscenario;
 import com.pucp.dp1.grupo4d.morapack.model.exception.G4DException;
+import com.pucp.dp1.grupo4d.morapack.model.exception.G4DExceptionHandlerAsync;
 import com.pucp.dp1.grupo4d.morapack.service.model.*;
 import com.pucp.dp1.grupo4d.morapack.util.G4DUtility;
 import jakarta.transaction.Transactional;
-import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
@@ -52,7 +52,7 @@ public class G4DService {
         public Problematica problematic;
         public Solucion solution;
     }
-
+    private final G4DExceptionHandlerAsync asyncExceptionHandler;
     private final PedidoService pedidoService;
     private final PedidoAdapter pedidoAdapter;
     private final AeropuertoService aeropuertoService;
@@ -86,7 +86,7 @@ public class G4DService {
                       PedidoMapper pedidoMapper, PedidoAdapter pedidoAdapter, AeropuertoService aeropuertoService, AeropuertoAdapter aeropuertoAdapter,
                       UsuarioAdapter usuarioAdapter, PlanService planService, PlanAdapter planAdapter, LoteAdapter loteAdapter,
                       AeropuertoMapper aeropuertoMapper, RutaMapper rutaMapper, VueloMapper vueloMapper, RegistroAdapter registroAdapter,
-                      ParametrosMapper parametrosMapper, RutaService rutaService, VueloService vueloService, RutaAdapter rutaAdapter, VueloAdapter vueloAdapter, ParametrosService parametrosService, AdministradorService administradorService) {
+                      ParametrosMapper parametrosMapper, RutaService rutaService, VueloService vueloService, RutaAdapter rutaAdapter, VueloAdapter vueloAdapter, ParametrosService parametrosService, AdministradorService administradorService, G4DExceptionHandlerAsync asyncExceptionHandler) {
         this.clienteService = clienteService;
         this.pedidoService = pedidoService;
         this.segmentacionAdapter = segmentacionAdapter;
@@ -110,19 +110,16 @@ public class G4DService {
         this.vueloAdapter = vueloAdapter;
         this.parametrosService = parametrosService;
         this.administradorService = administradorService;
+        this.asyncExceptionHandler = asyncExceptionHandler;
     }
 
-    public GenericResponse iniciarImportacion(MultipartFile file, ImportFileRequest request) {
-        try {
-            GenericResponse response = new GenericResponse(true, "Importación iniciada!");
-            String idTransaccion = response.getToken();
-            Path archivo = Files.createTempFile("import-" + idTransaccion + "-", "-" + file.getOriginalFilename());
-            file.transferTo(archivo.toFile());
-            self.getObject().importar(idTransaccion.substring(4), archivo, request);
-            return response;
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+    public GenericResponse iniciarImportacion(MultipartFile file, ImportFileRequest request) throws IOException {
+        GenericResponse response = new GenericResponse(true, "Importación iniciada!");
+        String idTransaccion = response.getToken();
+        Path archivo = Files.createTempFile("import-" + idTransaccion + "-", "-" + file.getOriginalFilename());
+        file.transferTo(archivo.toFile());
+        self.getObject().importar(idTransaccion.substring(4), archivo, request).exceptionally(ex -> { asyncExceptionHandler.handleException("Importation-" + idTransaccion, ex); return null; });
+        return response;
     }
 
     @Async("importationExecutor")
@@ -144,7 +141,7 @@ public class G4DService {
         String idTransaccion = response.getToken().substring(4);
         G4DContext context = new G4DContext();
         simulationContexts.put(idTransaccion, context);
-        context.task = self.getObject().simular(idTransaccion, request).whenComplete((r, ex) -> { context.running = false; context.task = null; simulationContexts.remove(idTransaccion); });
+        context.task = self.getObject().simular(idTransaccion, request).whenComplete((r, ex) -> { context.running = false; context.task = null; simulationContexts.remove(idTransaccion); }).exceptionally(ex -> { asyncExceptionHandler.handleException("Simulation-" + idTransaccion, ex); return null; });;
         WebSocketService.enviar("/topic/simulation-status-" + idTransaccion, EstadoEjecucion.POR_INICIAR);
         return response;
     }
@@ -158,7 +155,6 @@ public class G4DService {
             LocalDateTime inicioDeSimulacion = G4DUtility.Convertor.toDateTime(request.getFechaHoraInicio());
             LocalDateTime finDeSimulacion = G4DUtility.Convertor.toAdmissible(request.getFechaHoraFin(), LocalDateTime.MAX);
             ParametrosDTO parametros = request.getParametros();
-            parametrosMapper.toAlgorithm(parametros);
             int multiplicadorTemporal = G4DUtility.Convertor.toAdmissible(request.getMultiplicadorTemporal(), 120);
             double saltoDeAlgoritmoEnMinutos = G4DUtility.Convertor.toAdmissible(request.getSaltoDeAlgoritmo(), 2.0);
             long saltoDeAlgoritmoEnMilisegundos = (long)(60000*saltoDeAlgoritmoEnMinutos);
@@ -172,7 +168,7 @@ public class G4DService {
             while(context.running && !Thread.currentThread().isInterrupted()) {
                 finDePlanificacion = (finDePlanificacion.plusMinutes(saltoDeConsumoEnMinutos).isAfter(finDeSimulacion)) ? finDeSimulacion : finDePlanificacion.plusMinutes(saltoDeConsumoEnMinutos);
                 Instant start = Instant.now();
-                SolucionDTO solucion = planificar(context, TipoEscenario.SIMULACION, inicioDePlanificacion, finDePlanificacion, umbralDeReplanificacion, umbralDeReplanificacion);
+                SolucionDTO solucion = planificar(context, parametros, TipoEscenario.SIMULACION, inicioDePlanificacion, finDePlanificacion, umbralDeReplanificacion, umbralDeReplanificacion);
                 GVNS.imprimirSolucion(context.solution, String.format("SIMU_SEMANAL__%s__%s__%s.txt", idTransaccion, G4DUtility.Convertor.toSystemString(inicioDeSimulacion), G4DUtility.Convertor.toSystemString(finDeSimulacion)));
                 if(solucion != null) {
                     WebSocketService.enviar(solutionDestination, new SolutionPayload(solucion));
@@ -242,7 +238,7 @@ public class G4DService {
         if(replanificationContext.task != null && replanificationContext.running) {
             throw new G4DException("Ya hay una replanificación en proceso!");
         }
-        replanificationContext.task = self.getObject().replanificar(request).whenComplete((r, ex) -> { replanificationContext.running = false; replanificationContext.problematic = null; replanificationContext.task = null; });
+        replanificationContext.task = self.getObject().replanificar(request).whenComplete((r, ex) -> { replanificationContext.running = false; replanificationContext.problematic = null; replanificationContext.task = null; }).exceptionally(ex -> { asyncExceptionHandler.handleException("Operation", ex); return null; });;
         WebSocketService.enviar("/topic/operation-status", EstadoEjecucion.INICIADO);
         return new GenericResponse(true, "Replanificación Iniciada!");
     }
@@ -260,14 +256,13 @@ public class G4DService {
                 importRequest.setDto(parametros);
                 parametrosService.importar(importRequest);
             }
-            parametrosMapper.toAlgorithm(parametros);
             long desfaseTemporal = 1440L*(Math.max(parametros.getMaxDiasEntregaIntracontinental(), parametros.getMaxDiasEntregaIntercontinental()));
             LocalDateTime fechaHoraActual = G4DUtility.Convertor.toAdmissible(request.getFechaHoraActual(), (LocalDateTime) null);
             LocalDateTime inicioPlanificacion = fechaHoraActual.minusMinutes(desfaseTemporal);
             LocalDateTime umbralDeReplanificacion = (this.segundosEstimadosDeReplanificacion != null) ? fechaHoraActual.plusSeconds(this.segundosEstimadosDeReplanificacion) : fechaHoraActual.plusMinutes(30L);
             LocalDateTime instanteDeProcesamiento = (this.segundosEstimadosDeReplanificacion != null) ? fechaHoraActual.plusSeconds(this.segundosEstimadosDeReplanificacion): fechaHoraActual.plusMinutes(5L);
             Instant start = Instant.now();
-            SolucionDTO solucion = planificar(replanificationContext, escenario, inicioPlanificacion, fechaHoraActual, umbralDeReplanificacion, instanteDeProcesamiento);
+            SolucionDTO solucion = planificar(replanificationContext, parametros, escenario, inicioPlanificacion, fechaHoraActual, umbralDeReplanificacion, instanteDeProcesamiento);
             if(replanificationContext.running && !Thread.currentThread().isInterrupted()) {
                 if(solucion != null) {
                     WebSocketService.enviar(solutionDestination, new SolutionPayload(solucion));
@@ -290,27 +285,28 @@ public class G4DService {
             return CompletableFuture.completedFuture(null);
         } catch (Exception e) {
             WebSocketService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.DETENIDO,  EstadoFinalizacion.ERRONEO));
-            e.printStackTrace();
             throw new RuntimeException(e);
         } finally {
             limpiarPools();
         }
     }
 
-    private SolucionDTO planificar(G4DContext context, TipoEscenario tipoEscenario, LocalDateTime inicioDePlanificacion, LocalDateTime finDePlanificacion, LocalDateTime umbralDeReplanificacion, LocalDateTime instanteDeProcesamiento) {
+    private SolucionDTO planificar(G4DContext context, ParametrosDTO parametros, TipoEscenario tipoEscenario, LocalDateTime inicioDePlanificacion, LocalDateTime finDePlanificacion, LocalDateTime umbralDeReplanificacion, LocalDateTime instanteDeProcesamiento) {
         boolean esSimulacion = tipoEscenario.equals(TipoEscenario.SIMULACION);
-        Problematica.INICIO_PLANIFICACION = inicioDePlanificacion;
-        Problematica.FIN_PLANIFICACION = finDePlanificacion;
-        Problematica.UMBRAL_REPLANIFICACION = umbralDeReplanificacion;
-        Problematica.INSTANTE_PROCESAMIENTO = instanteDeProcesamiento;
-        Problematica.ESCENARIO = tipoEscenario.toString().toUpperCase();
         Problematica problematica;
+        GVNS gvns = new GVNS();
         if(esSimulacion) {
             if(context.problematic == null) {
                 context.problematic = new Problematica();
+                parametrosMapper.toAlgorithm(context.problematic, parametros);
                 context.problematic.cargarAeropuertos(aeropuertoService, aeropuertoAdapter);
                 context.problematic.cargarPlanes(planService, planAdapter);
             }
+            context.problematic.inicioDePlanificacion = inicioDePlanificacion;
+            context.problematic.finDePlanificacion = finDePlanificacion;
+            context.problematic.umbralDeReplanificacion = umbralDeReplanificacion;
+            context.problematic.instanteDeProcesamiento = instanteDeProcesamiento;
+            context.problematic.tipoEscenario = tipoEscenario.toString().toUpperCase();
             context.problematic.cargarClientes(clienteService, usuarioAdapter);
             context.problematic.cargarPedidos(pedidoService, pedidoAdapter);
             context.problematic.cargarRutas(rutaService, rutaAdapter);
@@ -318,6 +314,12 @@ public class G4DService {
             System.out.printf("[*] SIMULANDO BLOQUE TEMPORAL! ['%s' - '%s']%n", G4DUtility.Convertor.toDisplayString(inicioDePlanificacion), G4DUtility.Convertor.toDisplayString(finDePlanificacion));
         } else {
             context.problematic = new Problematica();
+            parametrosMapper.toAlgorithm(context.problematic, parametros);
+            context.problematic.inicioDePlanificacion = inicioDePlanificacion;
+            context.problematic.finDePlanificacion = finDePlanificacion;
+            context.problematic.umbralDeReplanificacion = umbralDeReplanificacion;
+            context.problematic.instanteDeProcesamiento = instanteDeProcesamiento;
+            context.problematic.tipoEscenario = tipoEscenario.toString().toUpperCase();
             context.problematic.cargarAeropuertos(aeropuertoService, aeropuertoAdapter);
             context.problematic.cargarPlanes(planService, planAdapter);
             context.problematic.cargarClientes(clienteService, usuarioAdapter);
@@ -327,21 +329,21 @@ public class G4DService {
             problematica = context.problematic;
             System.out.printf("[*] OPERANDO BLOQUE TEMPORAL! ['%s' - '%s']%n", G4DUtility.Convertor.toDisplayString(inicioDePlanificacion), G4DUtility.Convertor.toDisplayString(finDePlanificacion));
         }
-        GVNS gvns = new GVNS();
-        gvns.resolver(problematica);
-        Solucion solucion = gvns.getSolucion();
+        parametrosMapper.toAlgorithm(gvns, parametros);
+        gvns.planificar(problematica);
+        Solucion solucion = gvns.solucion;
         System.out.printf("[*] BLOQUE TEMPORAL PLANIFICADO! ['%s' - '%s']%n", G4DUtility.Convertor.toDisplayString(inicioDePlanificacion), G4DUtility.Convertor.toDisplayString(finDePlanificacion));
         if(solucion == null) {
             return null;
         }
         if(!esSimulacion) {
-            almacenarSolucion(solucion);
+            almacenarSolucion(solucion, tipoEscenario.toString().toUpperCase());
             limpiarPools();
         } else context.solution = solucion;
-        return devolverSolucion(solucion);
+        return devolverSolucion(solucion, tipoEscenario.toString().toUpperCase());
     }
 
-    private void almacenarSolucion(Solucion solucion) {
+    private void almacenarSolucion(Solucion solucion, String tipoEscenario) {
         if (solucion == null || solucion.getPedidosAtendidos() == null) {
             return;
         }
@@ -373,7 +375,7 @@ public class G4DService {
         }
         // Pedidos (UP) & Segmentaciones (ADD/UP)
         for (Pedido pedido : solucion.getPedidosAtendidos()) {
-            PedidoEntity pedidoEntity = pedidoAdapter.toEntity(pedido);
+            PedidoEntity pedidoEntity = pedidoAdapter.toEntity(pedido, tipoEscenario);
             if(pedidoEntity != null) {
                 for(Segmentacion segmentacion : pedido.getSegmentaciones()) {
                     SegmentacionEntity segmentacionEntity = segmentacionAdapter.toEntity(segmentacion);
@@ -408,13 +410,13 @@ public class G4DService {
         System.out.println("\nSOLUCIÓN ALMACENADA!");
     }
 
-    private SolucionDTO devolverSolucion(Solucion solucion) {
+    private SolucionDTO devolverSolucion(Solucion solucion, String tipoEscenario) {
         SolucionDTO solucionDTO = new SolucionDTO();
         solucionDTO.setRatioPromedioDeUtilizacionTemporal(solucion.getRatioPromedioDeUtilizacionTemporal());
         solucionDTO.setRatioPromedioDeDesviacionEspacial(solucion.getRatioPromedioDeDesviacionEspacial());
         solucionDTO.setRatioPromedioDeDisposicionOperacional(solucion.getRatioPromedioDeDisposicionOperacional());
         List<PedidoDTO> pedidosAtendidos = new ArrayList<>();
-        solucion.getPedidosAtendidos().forEach(p -> pedidosAtendidos.add(pedidoMapper.toDTO(p)));
+        solucion.getPedidosAtendidos().forEach(p -> pedidosAtendidos.add(pedidoMapper.toDTO(p, tipoEscenario)));
         solucionDTO.setPedidosAtendidos(pedidosAtendidos);
         List<AeropuertoDTO> aeropuertosTransitados = new ArrayList<>();
         solucion.getAeropuertosTransitados().forEach(a ->  aeropuertosTransitados.add(aeropuertoMapper.toDTO(a)));

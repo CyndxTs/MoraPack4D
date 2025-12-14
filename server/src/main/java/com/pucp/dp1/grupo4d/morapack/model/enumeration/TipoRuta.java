@@ -11,19 +11,19 @@ public enum TipoRuta {
     INTRACONTINENTAL,
     INTERCONTINENTAL;
 
-    public Long getMaxMinutosParaEntrega() {
+    public Long getMaxMinutosParaEntrega(Problematica problematica) {
         if(this.equals(TipoRuta.INTERCONTINENTAL)) {
-            return 1440L*Problematica.MAX_DIAS_ENTREGA_INTERCONTINENTAL;
+            return 1440L*problematica.maxDiasDeEntregaIntercontinental;
         } else {
-            return 1440L*Problematica.MAX_DIAS_ENTREGA_INTRACONTINENTAL;
+            return 1440L*problematica.maxDiasDeEntregaIntracontinental;
         }
     }
 
-    public Double getMaxHorasParaEntrega() {
+    public Double getMaxHorasParaEntrega(Problematica problematica) {
         if(this.equals(TipoRuta.INTERCONTINENTAL)) {
-            return 24.0*Problematica.MAX_DIAS_ENTREGA_INTERCONTINENTAL;
+            return 24.0*problematica.maxDiasDeEntregaIntercontinental;
         } else {
-            return 24.0*Problematica.MAX_DIAS_ENTREGA_INTRACONTINENTAL;
+            return 24.0*problematica.maxDiasDeEntregaIntracontinental;
         }
     }
 }

@@ -6,7 +6,6 @@
 
 package com.pucp.dp1.grupo4d.morapack.model.algorithm;
 
-import com.pucp.dp1.grupo4d.morapack.algorithm.Problematica;
 import com.pucp.dp1.grupo4d.morapack.model.enumeration.EstadoLote;
 import com.pucp.dp1.grupo4d.morapack.util.G4DUtility;
 
@@ -27,12 +26,6 @@ public class Lote {
         lote.tamanio = this.tamanio;
         lote.estado = this.estado;
         return lote;
-    }
-
-    public Boolean esModificable(Ruta rutaAsignada) {
-        boolean loteReplanificado = this.getEstado() == EstadoLote.REPLANIFICADO;
-        boolean rutaPosterior = rutaAsignada.getFechaHoraSalida().isAfter(Problematica.UMBRAL_REPLANIFICACION);
-        return loteReplanificado || rutaPosterior;
     }
 
     @Override

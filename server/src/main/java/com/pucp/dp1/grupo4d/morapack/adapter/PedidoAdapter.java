@@ -61,11 +61,11 @@ public class PedidoAdapter {
         return algorithm;
     }
 
-    public PedidoEntity toEntity(Pedido algorithm) {
+    public PedidoEntity toEntity(Pedido algorithm, String tipoEscenario) {
         if(poolEntity.containsKey(algorithm.getCodigo())) {
             return poolEntity.get(algorithm.getCodigo());
         }
-        PedidoEntity entity = pedidoService.findByUniqueAttributes(algorithm.getCodigo(), Problematica.ESCENARIO).orElse(null);
+        PedidoEntity entity = pedidoService.findByUniqueAttributes(algorithm.getCodigo(), tipoEscenario).orElse(null);
         if (entity == null) {
             return null;
         }

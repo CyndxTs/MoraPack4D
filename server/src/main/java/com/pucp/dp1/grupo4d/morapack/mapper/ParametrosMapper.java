@@ -8,7 +8,6 @@ package com.pucp.dp1.grupo4d.morapack.mapper;
 
 import com.pucp.dp1.grupo4d.morapack.algorithm.GVNS;
 import com.pucp.dp1.grupo4d.morapack.algorithm.Problematica;
-import com.pucp.dp1.grupo4d.morapack.algorithm.Solucion;
 import com.pucp.dp1.grupo4d.morapack.model.dto.ParametrosDTO;
 import com.pucp.dp1.grupo4d.morapack.model.entity.ParametrosEntity;
 import com.pucp.dp1.grupo4d.morapack.util.G4DUtility;
@@ -18,49 +17,29 @@ import java.util.List;
 @Component
 public class ParametrosMapper {
 
-    public void toAlgorithm(ParametrosDTO dto) {
-        Problematica.MAX_DIAS_ENTREGA_INTRACONTINENTAL = G4DUtility.Convertor.toAdmissible(dto.getMaxDiasEntregaIntracontinental(), 2);
-        Problematica.MAX_DIAS_ENTREGA_INTERCONTINENTAL = G4DUtility.Convertor.toAdmissible(dto.getMaxDiasEntregaIntercontinental(), 3);
-        Problematica.MAX_HORAS_RECOJO = G4DUtility.Convertor.toAdmissible(dto.getMaxHorasRecojo(), 2.0);
-        Problematica.MAX_HORAS_ESTANCIA = G4DUtility.Convertor.toAdmissible(dto.getMaxHorasEstancia(), 12.0);
-        Problematica.MIN_HORAS_ESTANCIA = G4DUtility.Convertor.toAdmissible(dto.getMinHorasEstancia(), 1.0);
-        Problematica.PROBABILIDAD_REPLANIFICACION = G4DUtility.Convertor.toAdmissible(dto.getProbabilidadReplanificacion(), 0.0);
-        Problematica.CODIGOS_ORIGENES = G4DUtility.Convertor.toAdmissible(dto.getCodOrigenes(),() -> List.of("SPIM", "EBCI", "UBBB"));
-        GVNS.D_MIN = G4DUtility.Convertor.toAdmissible(dto.getDMin(), 0.005);
-        GVNS.I_MAX = G4DUtility.Convertor.toAdmissible(dto.getIMax(), 3);
-        GVNS.L_MIN = G4DUtility.Convertor.toAdmissible(dto.getEleMin(), 1);
-        GVNS.L_MAX = G4DUtility.Convertor.toAdmissible(dto.getEleMax(), 2);
-        GVNS.K_MIN = G4DUtility.Convertor.toAdmissible(dto.getKMin(), 3);
-        GVNS.K_MAX = G4DUtility.Convertor.toAdmissible(dto.getKMax(), 5);
-        GVNS.N_MAX = G4DUtility.Convertor.toAdmissible(dto.getNMax(), 6);
-        GVNS.T_MAX = G4DUtility.Convertor.toAdmissible(dto.getTMax(), 7);
-        Solucion.f_UA = G4DUtility.Convertor.toAdmissible(dto.getFactorDeUmbralDeAberracion(), 1.015);
-        Solucion.f_UT = G4DUtility.Convertor.toAdmissible(dto.getFactorDeUtilizacionTemporal(), 5000.0);
-        Solucion.f_DE = G4DUtility.Convertor.toAdmissible(dto.getFactorDeDesviacionEspacial(), 2000.0);
-        Solucion.f_DO = G4DUtility.Convertor.toAdmissible(dto.getFactorDeDisposicionOperacional(), 3000.0);
+    public void toAlgorithm(Problematica problematica, ParametrosDTO dto) {
+        problematica.maxDiasDeEntregaIntracontinental = G4DUtility.Convertor.toAdmissible(dto.getMaxDiasEntregaIntracontinental(), 2);
+        problematica.maxDiasDeEntregaIntercontinental = G4DUtility.Convertor.toAdmissible(dto.getMaxDiasEntregaIntercontinental(), 3);
+        problematica.maxHorasDeRecojo = G4DUtility.Convertor.toAdmissible(dto.getMaxHorasRecojo(), 2.0);
+        problematica.maxHorasDeEstancia = G4DUtility.Convertor.toAdmissible(dto.getMaxHorasEstancia(), 12.0);
+        problematica.minHorasDeEstancia = G4DUtility.Convertor.toAdmissible(dto.getMinHorasEstancia(), 1.0);
+        problematica.probabilidadDeReplanificacion = G4DUtility.Convertor.toAdmissible(dto.getProbabilidadReplanificacion(), 0.15);
+        G4DUtility.Convertor.toAdmissible(dto.getCodOrigenes(),() -> List.of("SPIM", "EBCI", "UBBB")).forEach(cod -> problematica.origenes.put(cod, null));
     }
 
-    public void toDTO() {
-        ParametrosDTO dto = new ParametrosDTO();
-        dto.setMaxDiasEntregaIntracontinental(Problematica.MAX_DIAS_ENTREGA_INTRACONTINENTAL);
-        dto.setMaxDiasEntregaIntercontinental(Problematica.MAX_DIAS_ENTREGA_INTERCONTINENTAL);
-        dto.setMaxHorasRecojo(Problematica.MAX_HORAS_RECOJO);
-        dto.setMaxHorasEstancia(Problematica.MAX_HORAS_ESTANCIA);
-        dto.setMinHorasEstancia(Problematica.MIN_HORAS_ESTANCIA);
-        dto.setProbabilidadReplanificacion(Problematica.PROBABILIDAD_REPLANIFICACION);
-        dto.setCodOrigenes(Problematica.CODIGOS_ORIGENES);
-        dto.setDMin(GVNS.D_MIN);
-        dto.setIMax(GVNS.I_MAX);
-        dto.setEleMin(GVNS.L_MIN);
-        dto.setEleMax(GVNS.L_MAX);
-        dto.setKMin(GVNS.K_MIN);
-        dto.setKMax(GVNS.K_MAX);
-        dto.setNMax(GVNS.N_MAX);
-        dto.setTMax(GVNS.T_MAX);
-        dto.setFactorDeUmbralDeAberracion(Solucion.f_UA);
-        dto.setFactorDeUtilizacionTemporal(Solucion.f_UT);
-        dto.setFactorDeDesviacionEspacial(Solucion.f_DE);
-        dto.setFactorDeDisposicionOperacional(Solucion.f_DO);
+    public void toAlgorithm(GVNS gvns, ParametrosDTO dto) {
+        gvns.dMin = G4DUtility.Convertor.toAdmissible(dto.getDMin(), 0.005);
+        gvns.iMax = G4DUtility.Convertor.toAdmissible(dto.getIMax(), 3);
+        gvns.eleMin = G4DUtility.Convertor.toAdmissible(dto.getEleMin(), 1);
+        gvns.eleMax = G4DUtility.Convertor.toAdmissible(dto.getEleMax(), 2);
+        gvns.kMin = G4DUtility.Convertor.toAdmissible(dto.getKMin(), 3);
+        gvns.kMax = G4DUtility.Convertor.toAdmissible(dto.getKMax(), 5);
+        gvns.nMax = G4DUtility.Convertor.toAdmissible(dto.getNMax(), 6);
+        gvns.tMax = G4DUtility.Convertor.toAdmissible(dto.getTMax(), 7);
+        gvns.solucion.f_UA = G4DUtility.Convertor.toAdmissible(dto.getFactorDeUmbralDeAberracion(), 1.015);
+        gvns.solucion.f_UT = G4DUtility.Convertor.toAdmissible(dto.getFactorDeUtilizacionTemporal(), 5000.0);
+        gvns.solucion.f_DE = G4DUtility.Convertor.toAdmissible(dto.getFactorDeDesviacionEspacial(), 2000.0);
+        gvns.solucion.f_DO = G4DUtility.Convertor.toAdmissible(dto.getFactorDeDisposicionOperacional(), 3000.0);
     }
 
     public ParametrosDTO toDTO(ParametrosEntity entity) {

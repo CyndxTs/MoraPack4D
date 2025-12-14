@@ -7,10 +7,7 @@
 package com.pucp.dp1.grupo4d.morapack.model.algorithm;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public class PuntoDeReplanificacion {
     private LocalDateTime umbralDeConexion;
@@ -36,6 +33,17 @@ public class PuntoDeReplanificacion {
         this.vueloReplanificado = pdr.vueloReplanificado;
         this.vuelosFijos = new ArrayList<>(pdr.vuelosFijos);
         this.lotes = new HashSet<>(pdr.lotes);
+    }
+
+    public PuntoDeReplanificacion replicar(Map<String, Aeropuerto> poolAeropuertos, Map<String, Lote> poolLotes, Map<String, Ruta> poolRutas, Map<String, Vuelo> poolVuelos, Map<String, Plan> poolPlanes) {
+        PuntoDeReplanificacion pdr = new PuntoDeReplanificacion();
+        pdr.umbralDeConexion = this.umbralDeConexion;
+        pdr.aeropuertoDeConexion = (this.aeropuertoDeConexion != null) ? poolAeropuertos.computeIfAbsent(this.aeropuertoDeConexion.getCodigo(), codigo -> this.aeropuertoDeConexion.replicar(poolLotes)) : null;
+        pdr.rutaInicial = (this.rutaInicial != null) ? poolRutas.computeIfAbsent(this.rutaInicial.getCodigo(), codigo -> this.rutaInicial.replicar(poolAeropuertos, poolLotes, poolVuelos, poolPlanes)) : null;
+        pdr.vueloReplanificado = (this.vueloReplanificado != null) ? poolVuelos.computeIfAbsent(this.vueloReplanificado.getCodigo(), codigo -> this.vueloReplanificado.replicar(poolAeropuertos, poolLotes, poolPlanes)) : null;
+        this.vuelosFijos.forEach(v -> pdr.vuelosFijos.add(poolVuelos.computeIfAbsent(v.getCodigo(), codigo -> v.replicar(poolAeropuertos, poolLotes, poolPlanes))));
+        this.lotes.forEach(l -> pdr.lotes.add(poolLotes.computeIfAbsent(l.getCodigo(), codigo -> l.replicar())));
+        return pdr;
     }
 
     public LocalDateTime getUmbralDeConexion() {

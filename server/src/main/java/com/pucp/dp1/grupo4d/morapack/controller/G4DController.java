@@ -16,6 +16,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.imageio.IIOException;
+import java.io.IOException;
+
 @RestController
 @RequestMapping("/api")
 public class G4DController {
@@ -31,7 +34,7 @@ public class G4DController {
     }
 
     @PostMapping("/importation-init")
-    public ResponseEntity<GenericResponse> iniciarImportacion(@RequestPart("file") MultipartFile file, @RequestPart("request") ImportFileRequest request) {
+    public ResponseEntity<GenericResponse> iniciarImportacion(@RequestPart("file") MultipartFile file, @RequestPart("request") ImportFileRequest request) throws IOException {
         GenericResponse response = g4dService.iniciarImportacion(file, request);
         return ResponseEntity.ok(response);
     }

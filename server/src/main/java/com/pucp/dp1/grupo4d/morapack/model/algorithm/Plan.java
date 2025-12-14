@@ -77,12 +77,12 @@ public class Plan {
         return vuelosPosibles.stream().filter(v -> instanteDeSalida.equals(v.getFechaHoraSalida()) && instanteDeLlegada.equals(v.getFechaHoraLlegada())).findFirst().orElse(null);
     }
 
-    public Boolean esAlcanzable(Vuelo vueloReplanificado, LocalDateTime instanteDeReferenciaInicial, LocalDateTime instanteDeReferenciaActual, LocalDateTime origInstanteMinimoDeEgreso, LocalDateTime origInstanteMaximoDeEgreso, LocalDateTime instanteLimite, Aeropuerto destino, Set<Vuelo> vuelosActivos) {
+    public Boolean esAlcanzable(Problematica problematica, Vuelo vueloReplanificado, LocalDateTime instanteDeReferenciaInicial, LocalDateTime instanteDeReferenciaActual, LocalDateTime origInstanteMinimoDeEgreso, LocalDateTime origInstanteMaximoDeEgreso, LocalDateTime instanteLimite, Aeropuerto destino, Set<Vuelo> vuelosActivos) {
         LocalDateTime[] dtr = G4DUtility.Convertor.toDateTimeRange(this.horaSalida, this.horaLlegada, instanteDeReferenciaActual);
         LocalDateTime vInstanteDeSalida = dtr[0], vInstanteDeLLegada = dtr[1];
         if(vInstanteDeSalida.isBefore(origInstanteMinimoDeEgreso) || (!this.origen.getEsSede() && vInstanteDeSalida.isAfter(origInstanteMaximoDeEgreso)) || vInstanteDeLLegada.isAfter(instanteLimite)) return false;
         int origCapDisp = this.origen.obtenerCapacidadDisponible(instanteDeReferenciaInicial, vInstanteDeSalida);
-        LocalDateTime destInstanteMaximoDeEgreso = vInstanteDeLLegada.plusMinutes((long)(60*((!this.destino.equals(destino)) ? Problematica.MAX_HORAS_ESTANCIA : Problematica.MAX_HORAS_RECOJO)));
+        LocalDateTime destInstanteMaximoDeEgreso = vInstanteDeLLegada.plusMinutes((long)(60*((!this.destino.equals(destino)) ? problematica.maxHorasDeEstancia : problematica.maxHorasDeRecojo)));
         int destCapDisp = this.destino.obtenerCapacidadDisponible(vInstanteDeLLegada, destInstanteMaximoDeEgreso);
         Vuelo vuelo = obtenerVueloActivo(instanteDeReferenciaActual, vuelosActivos);
         return origCapDisp > 0 && destCapDisp > 0 && (vuelo == null || (!vuelo.equals(vueloReplanificado) && vuelo.getCapacidadDisponible() > 0));
@@ -95,8 +95,8 @@ public class Plan {
                Objects.equals(horaLlegada, plan.horaLlegada);
     }
 
-    public Boolean esProblematico(LocalDateTime instanteDeReferenciaInicial, LocalDateTime instanteDeReferenciaFinal) {
-        return this.eventos.stream().filter(e -> !e.getFechaHoraInicio().isBefore(instanteDeReferenciaInicial) && !e.getFechaHoraFin().isAfter(instanteDeReferenciaFinal)).anyMatch(e -> !e.getFechaHoraInicio().isAfter(Problematica.FIN_PLANIFICACION) && e.getFechaHoraFin().isAfter(Problematica.UMBRAL_REPLANIFICACION));
+    public Boolean esProblematico(Problematica problematica, LocalDateTime instanteDeReferenciaInicial, LocalDateTime instanteDeReferenciaFinal) {
+        return this.eventos.stream().filter(e -> !e.getFechaHoraInicio().isBefore(instanteDeReferenciaInicial) && !e.getFechaHoraFin().isAfter(instanteDeReferenciaFinal)).anyMatch(e -> !e.getFechaHoraInicio().isAfter(problematica.finDePlanificacion) && e.getFechaHoraFin().isAfter(problematica.umbralDeReplanificacion));
     }
 
     @Override
