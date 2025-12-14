@@ -59,9 +59,7 @@ public class SegmentacionAdapter {
         SegmentacionEntity entity = new SegmentacionEntity();
         entity.setCodigo(algorithm.getCodigo());
         entity.setFechaHoraAplicacionUTC(algorithm.getFechaHoraAplicacion());
-        entity.setFechaHoraAplicacionLocal(G4DUtility.Convertor.toLocal(algorithm.getFechaHoraAplicacion(), entity.getPedido().getDestino().getHusoHorario()));
         entity.setFechaHoraSustitucionUTC(algorithm.getFechaHoraSustitucion());
-        entity.setFechaHoraSustitucionLocal(G4DUtility.Convertor.toLocal(algorithm.getFechaHoraSustitucion(), entity.getPedido().getDestino().getHusoHorario()));
         List<LoteEntity> lotesEntity = new ArrayList<>();
         Map<Ruta, Lote> lotesPorRuta = algorithm.getLotesPorRuta();
         for (Map.Entry<Ruta, Lote> entry : lotesPorRuta.entrySet()) {

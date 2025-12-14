@@ -380,6 +380,8 @@ public class G4DService {
                 for(Segmentacion segmentacion : pedido.getSegmentaciones()) {
                     SegmentacionEntity segmentacionEntity = segmentacionAdapter.toEntity(segmentacion);
                     if(segmentacionEntity != null) {
+                        segmentacionEntity.setFechaHoraAplicacionLocal(G4DUtility.Convertor.toLocal(segmentacionEntity.getFechaHoraAplicacionUTC(), pedidoEntity.getDestino().getHusoHorario()));
+                        segmentacionEntity.setFechaHoraSustitucionLocal((segmentacionEntity.getFechaHoraSustitucionUTC() != null)? (G4DUtility.Convertor.toLocal(segmentacionEntity.getFechaHoraSustitucionUTC(), pedidoEntity.getDestino().getHusoHorario())) : null);
                         if(pedidoEntity.getSegmentaciones().contains(segmentacionEntity)) {
                             pedidoEntity.getSegmentaciones().remove(segmentacionEntity);
                         }
@@ -397,6 +399,8 @@ public class G4DService {
                 for(Registro registro : aeropuerto.getRegistros()) {
                     RegistroEntity registroEntity = registroAdapter.toEntity(registro);
                     if(registroEntity != null) {
+                        registroEntity.setFechaHoraIngresoLocal(G4DUtility.Convertor.toLocal(registroEntity.getFechaHoraIngresoUTC(), aeropuertoEntity.getHusoHorario()));
+                        registroEntity.setFechaHoraEgresoLocal((registroEntity.getFechaHoraEgresoUTC() != null)? G4DUtility.Convertor.toLocal(registroEntity.getFechaHoraEgresoUTC(), aeropuertoEntity.getHusoHorario()): null);
                         if(aeropuertoEntity.getRegistros().contains(registroEntity)) {
                             aeropuertoEntity.getRegistros().remove(registroEntity);
                         }

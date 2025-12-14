@@ -58,9 +58,7 @@ public class RegistroAdapter {
         }
         entity.setSigueVigente(algorithm.getSigueVigente());
         entity.setFechaHoraIngresoUTC(algorithm.getFechaHoraIngreso());
-        entity.setFechaHoraIngresoLocal(G4DUtility.Convertor.toLocal(algorithm.getFechaHoraIngreso(), entity.getAeropuerto().getHusoHorario()));
         entity.setFechaHoraEgresoUTC(algorithm.getFechaHoraEgreso());
-        entity.setFechaHoraEgresoLocal(G4DUtility.Convertor.toLocal(algorithm.getFechaHoraEgreso(), entity.getAeropuerto().getHusoHorario()));
         String codLote = algorithm.getLote().getCodigo();
         LoteEntity loteEntity = loteService.findByCodigo(codLote).orElse(null);
         entity.setLote(loteEntity);
