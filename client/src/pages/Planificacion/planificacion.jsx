@@ -11,14 +11,10 @@ import {
 import "leaflet/dist/leaflet.css";
 
 // Servicios y Tipos
+import { onEvent, initOperationManager, disconnectOperationWS, connectOperatorWS } from "../../services/operationManager";
 import { listarParametros, importarParametros } from "../../services/parametrosService";
 import { listarAeropuertos } from "../../services/aeropuertoService";
-import {
-  connectSimulatorWS,
-  sendSimulationRequest,
-  sendStopSimulation,
-  disconnectWS,
-} from "../../services/planificarService";
+
 
 // Componentes UI
 import {
@@ -197,11 +193,6 @@ export default function Planificacion() {
 
   // -- Tiempo --
   const [realNow, setRealNow] = useState(new Date());
-  const [simStartMs, setSimStartMs] = useState(null);
-  const [simNowMs, setSimNowMs] = useState(() => Date.now());
-  const [seconds, setSeconds] = useState(0);
-  const [timerRunning, setTimerRunning] = useState(false);
-  const [timerActive, setTimerActive] = useState(false);
 
   // -- UI General --
   const [controlsOpen, setControlsOpen] = useState(false);
@@ -294,20 +285,41 @@ export default function Planificacion() {
     useState();
 
   // ------------------------------------------------------------------------
+  // NUEVO EFFECT: RECUPERAR DATOS TRAS F5
+  // ------------------------------------------------------------------------
+  useEffect(() => {
+    const backup = localStorage.getItem("SIMULATION_BACKUP");
+    
+    if (backup) {
+      try {
+        console.log("Recuperando sesión anterior tras F5...");
+        const solucionRecuperada = JSON.parse(backup);
+        
+        // Reconstruimos toda la simulación con los datos guardados
+        buildSimulationFromSolution(solucionRecuperada);
+        
+        // Opcional: Marcar estado visualmente
+        setEstadoEjecucionSim("RECUPERADO"); 
+        showNotification("info", "Datos restaurados de la sesión anterior.");
+        
+      } catch (error) {
+        console.error("Error al leer backup:", error);
+        // Si está corrupto, mejor borrarlo
+        localStorage.removeItem("SIMULATION_BACKUP");
+      }
+    }
+  }, []); // Array vacío para que solo corra al inicio (F5)
+
+  // ------------------------------------------------------------------------
   // B. REFS
   // ------------------------------------------------------------------------
-  const lastRealMsRef = useRef(null);
   const stopRequestedRef = useRef(false);
   const mapRef = useRef(null);
 
   // ------------------------------------------------------------------------
   // C. VALORES DERIVADOS (Calculados)
   // ------------------------------------------------------------------------
-
-  const simSpeed =
-    typeof multiplicadorTemporal === "number" && multiplicadorTemporal > 0
-      ? multiplicadorTemporal
-      : 500;
+  const nowMs = realNow.getTime();
 
   // Mapa de colores para Hubs
   const hubColorMap = useMemo(() => {
@@ -328,8 +340,8 @@ export default function Planificacion() {
       f &&
       typeof f.startMs === "number" &&
       typeof f.endMs === "number" &&
-      simNowMs >= f.startMs &&
-      simNowMs < f.endMs
+      nowMs >= f.startMs &&
+      nowMs < f.endMs
   );
 
   // Métricas de Flota
@@ -368,7 +380,7 @@ export default function Planificacion() {
       });
     });
     if (maxEndMs === null) return false;
-    return simNowMs >= maxEndMs;
+    return nowMs >= maxEndMs;
   };
 
   const getOrderGenerationMs = (pedido) => {
@@ -379,7 +391,7 @@ export default function Planificacion() {
   const isOrderGenerated = (pedido) => {
     const genMs = getOrderGenerationMs(pedido);
     if (!genMs) return true;
-    return simNowMs >= genMs;
+    return nowMs >= genMs;
   };
 
   const visibleOrders = orders.filter(
@@ -446,7 +458,7 @@ export default function Planificacion() {
         const egresoMs = reg.fechaHoraEgreso
           ? parseFechaHoraToMs(reg.fechaHoraEgreso)
           : null;
-        if (simNowMs >= ingresoMs && (!egresoMs || simNowMs < egresoMs)) {
+        if (nowMs >= ingresoMs && (!egresoMs || nowMs < egresoMs)) {
           stockActual += reg.tamLote || 0;
         }
       });
@@ -462,7 +474,7 @@ export default function Planificacion() {
           f.origin &&
           f.origin.code === selectedAirport.code &&
           typeof f.startMs === "number" &&
-          simNowMs < f.startMs
+          nowMs < f.startMs
       )
     : [];
 
@@ -473,7 +485,7 @@ export default function Planificacion() {
           f.destination &&
           f.destination.code === selectedAirport.code &&
           typeof f.endMs === "number" &&
-          simNowMs < f.endMs
+          nowMs < f.endMs
       )
     : [];
 
@@ -484,7 +496,7 @@ export default function Planificacion() {
       const f = flights.find((fl) => fl.code === codigoVuelo);
       if (!f || typeof f.startMs !== "number" || typeof f.endMs !== "number")
         return false;
-      return simNowMs >= f.startMs && simNowMs <= f.endMs;
+      return nowMs >= f.startMs && nowMs <= f.endMs;
     });
   });
 
@@ -707,6 +719,7 @@ export default function Planificacion() {
     });
 
     const vuelosNuevos = solution.vuelosEnTransito || [];
+    console.log("VUELOS EN TRANSITO (DTO):", vuelosNuevos);
     const codigosNuevos = new Set(vuelosNuevos.map((v) => v.codigo));
 
     setFlights((prevFlights) => {
@@ -749,16 +762,16 @@ export default function Planificacion() {
           let arrived = false;
           let rotation = 0;
 
-          if (simNowMs <= startMs) {
+          if (nowMs <= startMs) {
             progress = 0;
             position = path[0];
             arrived = false;
-          } else if (simNowMs >= endMs) {
+          } else if (nowMs >= endMs) {
             progress = 1;
             position = path[path.length - 1];
             arrived = true;
           } else {
-            const frac = (simNowMs - startMs) / total;
+            const frac = (nowMs - startMs) / total;
             progress = Math.min(Math.max(frac, 0), 1);
             const idx = Math.floor(progress * (path.length - 1));
             const pos = path[idx];
@@ -808,7 +821,7 @@ export default function Planificacion() {
         if (
           !codigosNuevos.has(prevFlight.code) &&
           !prevFlight.arrived &&
-          simNowMs < prevFlight.endMs
+          nowMs < prevFlight.endMs
         ) {
           nextFlights.push(prevFlight);
         }
@@ -821,6 +834,91 @@ export default function Planificacion() {
   // ------------------------------------------------------------------------
   // E. EFFECTS (Ciclos de Vida)
   // ------------------------------------------------------------------------
+  useEffect(() => {
+    initOperationManager()
+      .then(() => console.log("[OM] Operation Manager iniciado"))
+      .catch(err => console.error("[OM] Error init:", err));
+  }, []);
+
+  // 8. WebSocket Connection
+    useEffect(() => {
+      connectOperatorWS(
+        (payload) => {
+          console.log("SolutionPayload recibido por WS:", payload);
+          const solucion = payload.solucion || payload;
+          if (!solucion) {
+            console.warn("Payload de simulación sin 'solucion'");
+            return;
+          }
+          // 1. GUARDAR EN LOCALSTORAGE (Persistencia ante F5)
+          // -----------------------------------------------------
+          try {
+            localStorage.setItem("SIMULATION_BACKUP", JSON.stringify(solucion)); 
+            // También guarda el estado si viene separado, o asume que está corriendo
+            localStorage.setItem("SIMULATION_STATUS", "RECUPERADO"); 
+          } catch (e) {
+            console.error("No se pudo guardar backup local (quizás es muy grande)", e);
+          }
+          buildSimulationFromSolution(solucion);
+        },
+        (status) => {
+          console.log("Status simulador:", status);
+          const estadoEjecucion =
+            typeof status === "string" ? status : status.estadoEjecucion;
+          const estadoFinalizacion =
+            typeof status === "string" ? null : status.estadoFinalizacion;
+  
+          if (!estadoEjecucion) return;
+  
+          setEstadoEjecucionSim(estadoEjecucion);
+          if (estadoEjecucion === "POR_INICIAR") {
+            setShowLoadingSim(true);
+          } else {
+            setShowLoadingSim(false);
+          }
+  
+          if (estadoEjecucion === "POR_INICIAR") {
+            setShowLoadingSim(true);
+            showNotification("info", "Simulación por iniciar...");
+          } else if (estadoEjecucion === "INICIADO") {
+            showNotification("info", "Simulación iniciada");
+          } else if (estadoEjecucion === "POR_DETENER") {
+            if (!stopRequestedRef.current) {
+              showNotification("info", "Deteniendo simulación...");
+            }
+          } else if (estadoEjecucion === "DETENIDO") {
+            if (stopRequestedRef.current) {
+              stopRequestedRef.current = false;
+              return;
+            }
+            if (estadoFinalizacion === "EXITOSO") {
+              showNotification("success", "Simulación finalizada exitosamente");
+            } else if (estadoFinalizacion === "FORZADO") {
+              showNotification("info", "Simulación detenida por el usuario");
+            } else if (estadoFinalizacion === "COLAPSO") {
+              showNotification("danger", "COLAPSO logístico en simulación");
+            } else if (estadoFinalizacion === "ERRONEO") {
+              showNotification("danger", "Error en la simulación");
+            } else {
+              showNotification("info", "Simulación detenida");
+            }
+          }
+        }
+      );
+  
+      const handleBeforeUnload = () => {
+        stopRequestedRef.current = true;
+      };
+  
+      window.addEventListener("beforeunload", handleBeforeUnload);
+  
+      return () => {
+        window.removeEventListener("beforeunload", handleBeforeUnload);
+        stopRequestedRef.current = true;
+        disconnectOperationWS();
+      };
+    }, []);
+
 
   // 1. Reloj Real
   useEffect(() => {
@@ -831,44 +929,21 @@ export default function Planificacion() {
   }, []);
 
   // 2. Cronómetro y Loop de Animación
-  useEffect(() => {
-    let timer;
-    if (timerRunning) {
-      timer = setInterval(() => setSeconds((s) => s + 1), 1000);
-    }
-    return () => clearInterval(timer);
-  }, [timerRunning]);
 
-  useEffect(() => {
-    if (!timerRunning) return;
-    let rafId;
-
-    const tick = (now) => {
-      if (lastRealMsRef.current == null) lastRealMsRef.current = now;
-      const elapsedRealMs = now - lastRealMsRef.current;
-      lastRealMsRef.current = now;
-      setSimNowMs((prev) => prev + elapsedRealMs * simSpeed);
-      rafId = requestAnimationFrame(tick);
-    };
-
-    lastRealMsRef.current = performance.now();
-    rafId = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(rafId);
-  }, [timerRunning, simSpeed]);
 
   // 3. Actualización de Posición de Vuelos
   useEffect(() => {
-    if (!timerActive) return;
+    //if (!timerActive) return;
 
     setFlights((prev) =>
       prev.map((f) => {
         if (!f || !f.path || f.path.length === 0) return f;
         const total = Math.max(f.endMs - f.startMs, 60 * 1000);
 
-        if (simNowMs <= f.startMs) {
+        if (nowMs <= f.startMs) {
           return { ...f, progress: 0, position: f.path[0], arrived: false };
         }
-        if (simNowMs >= f.endMs) {
+        if (nowMs >= f.endMs) {
           return {
             ...f,
             progress: 1,
@@ -877,7 +952,7 @@ export default function Planificacion() {
           };
         }
 
-        const frac = Math.min((simNowMs - f.startMs) / total, 1);
+        const frac = Math.min((nowMs - f.startMs) / total, 1);
         const idx = Math.floor(frac * (f.path.length - 1));
         const pos = f.path[idx];
         const next = f.path[Math.min(idx + 1, f.path.length - 1)];
@@ -906,7 +981,7 @@ export default function Planificacion() {
         };
       })
     );
-  }, [simNowMs, timerActive]);
+  }, [nowMs]);
 
   // 4. Limpieza de Highlights
   useEffect(() => {
@@ -917,26 +992,16 @@ export default function Planificacion() {
           f.code === code &&
           typeof f.startMs === "number" &&
           typeof f.endMs === "number" &&
-          timerActive &&
-          simNowMs >= f.startMs &&
-          simNowMs < f.endMs
+          nowMs >= f.startMs &&
+          nowMs < f.endMs
       )
     );
     if (activos.length !== highlightedFlights.length) {
       setHighlightedFlights(activos);
     }
-  }, [flights, highlightedFlights, simNowMs, timerActive]);
+  }, [flights, highlightedFlights, nowMs]);
 
   // 5. Finalización Automática
-  useEffect(() => {
-    if (!timerActive || flights.length === 0) return;
-    const allArrivedByTime = flights.every((f) => simNowMs >= f.endMs);
-    if (allArrivedByTime) {
-      showNotification("info", "Todos los vuelos han llegado a su destino.");
-      setTimerRunning(false);
-      setTimerActive(false);
-    }
-  }, [simNowMs, flights, timerActive]);
 
   // 6. Carga de Aeropuertos Iniciales
   useEffect(() => {
@@ -1013,87 +1078,9 @@ export default function Planificacion() {
   }, [isModalOpen, loadedOnOpen]);
 
   // 8. WebSocket Connection
-  useEffect(() => {
-    connectSimulatorWS(
-      (payload) => {
-        console.log("SolutionPayload recibido por WS:", payload);
-        const solucion = payload.solucion || payload;
-        if (!solucion) {
-          console.warn("Payload de simulación sin 'solucion'");
-          return;
-        }
-        buildSimulationFromSolution(solucion);
-      },
-      (status) => {
-        console.log("Status simulador:", status);
-        const estadoEjecucion =
-          typeof status === "string" ? status : status.estadoEjecucion;
-        const estadoFinalizacion =
-          typeof status === "string" ? null : status.estadoFinalizacion;
-
-        if (!estadoEjecucion) return;
-
-        setEstadoEjecucionSim(estadoEjecucion);
-        if (estadoEjecucion === "POR_INICIAR") {
-          setShowLoadingSim(true);
-        } else {
-          setShowLoadingSim(false);
-        }
-
-        if (estadoEjecucion === "POR_INICIAR") {
-          setShowLoadingSim(true);
-          showNotification("info", "Simulación por iniciar...");
-        } else if (estadoEjecucion === "INICIADO") {
-          showNotification("info", "Simulación iniciada");
-        } else if (estadoEjecucion === "POR_DETENER") {
-          if (!stopRequestedRef.current) {
-            showNotification("info", "Deteniendo simulación...");
-          }
-        } else if (estadoEjecucion === "DETENIDO") {
-          if (stopRequestedRef.current) {
-            stopRequestedRef.current = false;
-            return;
-          }
-          if (estadoFinalizacion === "EXITOSO") {
-            showNotification("success", "Simulación finalizada exitosamente");
-          } else if (estadoFinalizacion === "FORZADO") {
-            showNotification("info", "Simulación detenida por el usuario");
-          } else if (estadoFinalizacion === "COLAPSO") {
-            showNotification("danger", "COLAPSO logístico en simulación");
-          } else if (estadoFinalizacion === "ERRONEO") {
-            showNotification("danger", "Error en la simulación");
-          } else {
-            showNotification("info", "Simulación detenida");
-          }
-        }
-      }
-    );
-
-    const handleBeforeUnload = () => {
-      stopRequestedRef.current = true;
-      sendStopSimulation().catch((err) =>
-        console.warn("Auto-stop on unload error:", err)
-      );
-    };
-
-    window.addEventListener("beforeunload", handleBeforeUnload);
-
-    return () => {
-      window.removeEventListener("beforeunload", handleBeforeUnload);
-      stopRequestedRef.current = true;
-      sendStopSimulation().catch((err) =>
-        console.warn("Auto-stop on unmount error:", err)
-      );
-      disconnectWS();
-    };
-  }, []);
+  
 
   // 9. Auto-Start
-  useEffect(() => {
-    if (!showLoadingSim && estadoEjecucionSim === "INICIADO") {
-      handleStart();
-    }
-  }, [showLoadingSim, estadoEjecucionSim]);
 
   // 10. Actualización Fechas Modal
   useEffect(() => {
@@ -1131,96 +1118,6 @@ export default function Planificacion() {
   // ------------------------------------------------------------------------
   // F. HANDLERS (Manejadores de Eventos)
   // ------------------------------------------------------------------------
-
-  // Control de Simulación
-  const handleStart = () => {
-    if (timerActive && !timerRunning) {
-      lastRealMsRef.current = performance.now();
-      setTimerRunning(true);
-      setStopDisabled(false);
-      return;
-    }
-    const base = fromInputsToMsUTC(inputDate, inputTime);
-    setSimNowMs(base);
-    setSimStartMs(base);
-    lastRealMsRef.current = performance.now();
-    setTimerRunning(true);
-    setTimerActive(true);
-    setStopDisabled(false);
-  };
-
-  const handleStop = async () => {
-    stopRequestedRef.current = true;
-    showNotification("info", "Deteniendo simulación...");
-    try {
-      await sendStopSimulation();
-    } catch (err) {
-      console.warn("Error interno al detener simulación:", err);
-    }
-    setTimerRunning(false);
-    setTimerActive(false);
-    setSeconds(0);
-    const now = new Date();
-    const nowDate = now.toISOString().split("T")[0];
-    const nowTime = now.toTimeString().slice(0, 5);
-    setInputDate(nowDate);
-    setInputTime(nowTime);
-    setSimNowMs(now.getTime());
-    setSimStartMs(null);
-    setFlights([]);
-    setSelectedItem(null);
-    setSelectedAirport(null);
-    setOrders([]);
-    setSidebarTab("flights");
-    setStopDisabled(true);
-    setRoutes([]);
-    setHighlightedRoute(null);
-    setHighlightedFlights([]);
-    setOpenAirportTooltipCode(null);
-    setOpenFlightTooltipCode(null);
-  };
-
-  const handlePlanear = async () => {
-    try {
-      setLoading(true);
-      if (!fechaI || !horaI || !fechaF || !horaF) {
-        showNotification("danger", "Completa las fechas antes de continuar");
-        setLoading(false);
-        return;
-      }
-      /** @type {SimulationRequest} */
-      const body = {
-        fechaHoraInicio: `${fechaI}T${horaI}:00`,
-        fechaHoraFin: `${fechaF}T${horaF}:00`,
-        parametros: {
-          ...parametrosCompletos,
-          maxDiasEntregaIntercontinental,
-          maxDiasEntregaIntracontinental,
-          maxHorasRecojo,
-          minHorasEstancia,
-          maxHorasEstancia,
-          codOrigenes,
-          probabilidadReplanificacion,
-        },
-        multiplicadorTemporal,
-        saltoDeAlgoritmo,
-      };
-      console.log("SimulationRequest enviado por HTTP:", body);
-      setInputDate(fechaI);
-      setInputTime(horaI);
-      const res = await sendSimulationRequest(body);
-      if (res && res.message) {
-        showNotification("info", res.message);
-      } else {
-        showNotification("info", "Simulación en iniciación");
-      }
-      closeModal();
-    } catch (err) {
-      showNotification("danger", err.message || "Error al iniciar simulación");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   //Guardar parametros
   const handleGuardarParametros = async () => {
@@ -1451,7 +1348,7 @@ export default function Planificacion() {
         setSidebarTab={setSidebarTab}
         isSidebarPinned={isSidebarPinned}
         setIsSidebarPinned={setIsSidebarPinned}
-        simNowMs={simNowMs}
+        simNowMs={nowMs}
         flights={flights}
         activeFlights={activeFlights}
         visibleOrders={visibleOrders}
@@ -1615,8 +1512,8 @@ export default function Planificacion() {
                       ? parseFechaHoraToMs(reg.fechaHoraEgreso)
                       : null;
                     if (
-                      simNowMs >= ingresoMs &&
-                      (!egresoMs || simNowMs < egresoMs)
+                      nowMs >= ingresoMs &&
+                      (!egresoMs || nowMs < egresoMs)
                     ) {
                       stockActual += reg.tamLote || 0;
                     }
@@ -1632,7 +1529,7 @@ export default function Planificacion() {
                         f.origin &&
                         f.origin.code === ap.code &&
                         typeof f.startMs === "number" &&
-                        simNowMs < f.startMs
+                        nowMs < f.startMs
                     )
                     .slice()
                     .sort((a, b) => a.startMs - b.startMs);
@@ -1642,7 +1539,7 @@ export default function Planificacion() {
                         f.destination &&
                         f.destination.code === ap.code &&
                         typeof f.endMs === "number" &&
-                        simNowMs < f.endMs
+                        nowMs < f.endMs
                     )
                     .slice()
                     .sort((a, b) => a.endMs - b.endMs);
@@ -1700,11 +1597,10 @@ export default function Planificacion() {
                   return null;
                 }
                 const enVentanaVuelo =
-                  timerActive &&
                   typeof flight.startMs === "number" &&
                   typeof flight.endMs === "number" &&
-                  simNowMs >= flight.startMs &&
-                  simNowMs < flight.endMs;
+                  nowMs >= flight.startMs &&
+                  nowMs < flight.endMs;
 
                 if (!enVentanaVuelo) return null;
 

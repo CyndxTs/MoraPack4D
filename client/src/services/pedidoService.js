@@ -1,6 +1,7 @@
 import axios from "axios";
 
 const API_URL = "/api/pedidos";
+const API_URL2 = "/api";
 
 // Listar solo los aeropuertos básicos
 export const listarPedidos = async (pagina, tamanio) => {
@@ -13,6 +14,33 @@ export const listarPedidos = async (pagina, tamanio) => {
   } catch (error) {
     console.error("Error al listar pedidos:", error);
     throw error;
+  }
+};
+
+export const iniciarImportacion = async (file, importFileRequest) => {
+  try {
+    const formData = new FormData();
+
+    formData.append("file", file);
+    formData.append(
+      "request",
+      new Blob([JSON.stringify(importFileRequest)], {
+        type: "application/json",
+      })
+    );
+
+    const response = await axios.post(
+      `${API_URL2}/importation-init`,
+      formData,
+      {
+        headers: { "Content-Type": "multipart/form-data" },
+      }
+    );
+
+    return response.data; // GenericResponse
+  } catch (error) {
+    if (error.response) return error.response.data;
+    return { exito: false, mensaje: "Error en la conexión con el servidor" };
   }
 };
 

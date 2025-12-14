@@ -27,7 +27,7 @@ export function DataProvider({ children }) {
     async function loadAll() {
       try {
         const [clientesData, aeropuertosData] = await Promise.all([
-          listarClientes(0, 300),
+          listarClientes(0, 1000000),
           listarAeropuertos(),
         ]);
 

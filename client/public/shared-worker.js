@@ -16,6 +16,41 @@ let log10minTimer = null;
 
 const REPLANIFICACION_MINUTOS = 15;
 
+function connectWS() {
+  if (stompClient && stompClient.active) return;
+
+  stompClient = new StompJs.Client({
+    brokerURL: wsEndpoint,
+    reconnectDelay: 5000,
+    debug: () => {},
+    onConnect: () => {
+      console.log("[SW][WS] Conectado");
+
+      stompClient.subscribe("/topic/operation-status", msg => {
+        const payload = JSON.parse(msg.body);
+        broadcast({
+          type: "operation-status",
+          payload
+        });
+      });
+
+      stompClient.subscribe("/topic/operation", msg => {
+        const payload = JSON.parse(msg.body);
+        broadcast({
+          type: "operation-solution",
+          payload
+        });
+      });
+    },
+    onStompError: frame => {
+      console.error("[SW][WS] Error", frame.headers["message"]);
+    }
+  });
+
+  stompClient.activate();
+}
+
+
 // -----------------------------------------------------------
 function broadcast(msg) {
   ports.forEach(p => { try { p.postMessage(msg); } catch {} });
@@ -111,7 +146,17 @@ function clearAllTimers() {
 // REPLANIFICAR
 // -----------------------------------------------------------
 async function runReplanification() {
-  if (!listoParaReplanificar || !parametros) return;
+  if (!listoParaReplanificar) return;
+
+  if (!parametros) {
+    console.error("[SW] Replanificación cancelada: parametros = null");
+    broadcast({
+      type: "notification-global",
+      variant: "danger",
+      message: "No se puede replanificar: parámetros no cargados"
+    });
+    return;
+  }
 
   broadcast({
     type: "notification-global",
@@ -127,36 +172,36 @@ async function runReplanification() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         fechaHoraActual: fechaHoraUTC(),
+        almacenarParametrizacion: false, // 🔴 NUEVO
         parametros
       })
     });
 
-    // 🔍 LOG EXACTO DEL BACKEND
-    console.log("[SW][BACKEND][status]", resp.status);
-    console.log("[SW][BACKEND][headers]", [...resp.headers.entries()]);
-
     const json = await resp.json();
 
-    
-    // 🔍 LOG EXACTO DEL BODY DEVUELTO
-    console.log("[SW][BACKEND][response-body]", json);
+    console.log("[SW][BACKEND][response]", json);
+
+    if (!json.exito) {
+      throw new Error(json.mensaje || "Error en replanificación");
+    }
 
     broadcast({
       type: "notification-global",
       variant: "success",
-      message: `${pendingOrders} pedidos replanificados`
+      message: json.mensaje || "Replanificación iniciada"
     });
 
+    // ⚠️ YA NO HAY PAYLOAD AQUÍ
     broadcast({
       type: "replanificacion-iniciada",
-      payload: json,
+      token: json.token,
       pendingOrders
     });
 
     pendingOrders = 0;
     fechaHoraPrimerPedido = null;
     listoParaReplanificar = false;
-    clearAllTimers(replanTimer);
+    clearAllTimers();
 
     logEstado("runReplanification-FIN");
 
@@ -164,11 +209,12 @@ async function runReplanification() {
     broadcast({
       type: "notification-global",
       variant: "danger",
-      message: "Error durante la replanificación"
+      message: e.message || "Error durante la replanificación"
     });
     console.error("[SW] Error:", e);
   }
 }
+
 
 // -----------------------------------------------------------
 // PORTS
@@ -186,9 +232,15 @@ onconnect = e => {
         apiBaseUrl = msg.apiBaseUrl;
         parametros = msg.parametros;
         console.log("[SW] INIT", parametros);
+        connectWS();
         break;
 
       case "notify-new-order":
+        if (!parametros) {
+          console.warn("[SW] Pedido recibido pero parámetros aún no cargados");
+          return;
+        }
+
         pendingOrders++;
         if (!fechaHoraPrimerPedido) {
           fechaHoraPrimerPedido = fechaHoraPeru(); // ⬅️ SIEMPRE AHORA

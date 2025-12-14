@@ -246,6 +246,7 @@ public class G4DService {
         if(replanificationContext.task != null && replanificationContext.running) {
             throw new G4DException("Ya hay una replanificación en proceso!");
         }
+        replanificationContext.running = true;
         replanificationContext.task = self.getObject().replanificar(request).whenComplete((r, ex) -> { replanificationContext.running = false; replanificationContext.problematic = null; replanificationContext.task = null; }).exceptionally(ex -> { asyncExceptionHandler.handleException("Operation", ex); return null; });;
         WebSocketService.enviar("/topic/operation-status", EstadoEjecucion.INICIADO);
         return new GenericResponse(true, "Replanificación Iniciada!");

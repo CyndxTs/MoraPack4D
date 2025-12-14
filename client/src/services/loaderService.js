@@ -7,33 +7,65 @@ const SOCKET_URL =
   "/ws";
 
 let client = null;
+let connectPromise = null;
 
 function ensureClient() {
-  return new Promise((resolve, reject) => {
-    if (client && client.active) return resolve();
+  if (client && client.connected) {
+    return Promise.resolve();
+  }
 
+  if (connectPromise) {
+    return connectPromise;
+  }
+
+  connectPromise = new Promise((resolve, reject) => {
     client = new Client({
       brokerURL: SOCKET_URL,
       reconnectDelay: 1000,
-      debug: () => {},
-      onConnect: () => resolve(),
+      debug: (msg) => console.log("[STOMP]", msg),
+
+      onConnect: () => {
+        resolve();
+      },
+
       onStompError: (frame) => {
         reject(new Error(frame.headers["message"] || "STOMP error"));
+      },
+
+      onWebSocketClose: () => {
+        connectPromise = null;
       },
     });
 
     client.activate();
   });
+
+  return connectPromise;
 }
 
-export async function subscribeLoader(callback) {
+/**
+ * Suscripción a progreso de una importación específica
+ */
+export async function subscribeImportation(importId, onProgress, onStatus) {
   await ensureClient();
 
-  const subscription = client.subscribe("/topic/loader", (msg) => {
-    callback(JSON.parse(msg.body));
+  const progressTopic = `/topic/importation-${importId}`;
+  const statusTopic = `/topic/importation-status-${importId}`;
+
+  const progressSub = client.subscribe(progressTopic, (msg) => {
+    console.log("RAW PROGRESS WS:", msg.body);
+    onProgress(JSON.parse(msg.body));
   });
 
-  return () => subscription.unsubscribe();
+  const statusSub = client.subscribe(statusTopic, (msg) => {
+    console.log("RAW STATUS WS:", msg.body);
+    onStatus(JSON.parse(msg.body));
+  });
+
+  return () => {
+    progressSub.unsubscribe();
+    statusSub.unsubscribe();
+  };
 }
 
 export function disconnectLoaderWS() {

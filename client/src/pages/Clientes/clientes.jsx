@@ -4,6 +4,7 @@ import { ButtonAdd, Input, Radio, Table, LoadingOverlay, Pagination, Notificatio
 import plus from "../../assets/icons/plus.svg";
 import hideIcon from "../../assets/icons/hide-sidebar.png";
 import { listarClientes, importarClientes  } from "../../services/clienteService";
+import { iniciarImportacion } from "../../services/pedidoService";
 
 export default function Clientes() {
   const [collapsed, setCollapsed] = useState(true);
@@ -22,6 +23,7 @@ export default function Clientes() {
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false); 
   const [notification, setNotification] = useState(null);
+  const [importToken, setImportToken] = useState(null);
 
   const showNotification = (type, message) => {
     setNotification({ type, message });
@@ -143,8 +145,22 @@ export default function Clientes() {
 
       if (archivo) {
         //  Usamos AlgorithmController
-        await importarClientes(archivo);
-        showNotification("success", "Clientes importados correctamente");
+        const req = {
+          tipoArchivo: "CLIENTES", // 👈 OBLIGATORIO
+          tipoEscenario: null,
+          fechaHoraInicio: null,
+          fechaHoraFin: null,
+        };
+
+        const respuesta = await iniciarImportacion(archivo, req);
+        if (respuesta.exito) {
+          showNotification("success", respuesta.mensaje || "Importación iniciada");
+          console.log("Token de importación:", respuesta.token);
+          setImportToken(respuesta.token); // ✅ CLAVE
+        } else {
+          showNotification("danger", respuesta.mensaje || "Error al iniciar importación");
+        }
+
       } else {
         showNotification("success", "Cliente agregado correctamente");
       }
@@ -164,11 +180,16 @@ export default function Clientes() {
 
   return (
     <div className="page">
-      {(loading || processing) && (
+      {importToken && (
         <LoadingOverlay
-          text={processing ? "Procesando archivo..." : "Cargando clientes..."}
+          token={importToken}
+          onFinish={() => {
+            setImportToken(null);   // ❌ overlay
+            fetchClientes(1);       // 🔄 refrescar tabla
+          }}
         />
       )}
+
 
       {notification && (
         <Notification

@@ -10,8 +10,8 @@ import plus from '../../assets/icons/plus.svg';
 import hideIcon from '../../assets/icons/hide-sidebar.png';
 
 import { useAppData } from "../../dataProvider";
-import { listarPedidos, importarPedido, importarPedidos, filtrarPedidos } from "../../services/pedidoService";
-import { notifyNewOrder, onEvent } from "../../services/operationManager";
+import { listarPedidos, importarPedido, importarPedidos, filtrarPedidos, iniciarImportacion } from "../../services/pedidoService";
+import { notifyNewOrder, onEvent, initOperationManager } from "../../services/operationManager";
 
 export default function Pedidos() {
 
@@ -46,6 +46,7 @@ export default function Pedidos() {
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
   const [notification, setNotification] = useState(null);
+  const [importToken, setImportToken] = useState(null);
 
   const [pedidos,setPedidos]=useState([]);
   const [pedidosOriginales,setPedidosOriginales]=useState([]);
@@ -131,6 +132,12 @@ export default function Pedidos() {
   const isOperacion = tipoEscenario === "OPERACION";
   const hayArchivo = !!archivo;
 
+  useEffect(() => {
+    initOperationManager().catch(err => {
+      console.error("Error iniciando OperationManager", err);
+    });
+  }, []);
+
   const handleAdd = async () => {
     try {
       setProcessing(true);
@@ -140,44 +147,28 @@ export default function Pedidos() {
         return;
       }
 
-      // --- ARCHIVO ---
+      // ================= ARCHIVO =================
       if (hayArchivo) {
-        /*if (archivo.name !== "Pedidos.txt") {
-          showNotification("warning", "El archivo debe llamarse 'Pedidos.txt'.");
-          return;
-        }*/
-
-        console.log(fechaArchivoFechaI);
-        console.log(fechaArchivoHoraI);
-        console.log(fechaArchivoFechaF);
-        console.log(fechaArchivoHoraF);
-
-        console.log("Final Inicio:", unirFechaHoraUTC(fechaArchivoFechaI, fechaArchivoHoraI));
-        console.log("Final Fin:", unirFechaHoraUTC(fechaArchivoFechaF, fechaArchivoHoraF));
-
         const req = {
+          tipoArchivo: "PEDIDOS", // 👈 OBLIGATORIO
           tipoEscenario: tipoEscenario,
           fechaHoraInicio: unirFechaHoraUTC(fechaArchivoFechaI, fechaArchivoHoraI),
-          fechaHoraFin: unirFechaHoraUTC(fechaArchivoFechaF, fechaArchivoHoraF)
+          fechaHoraFin: unirFechaHoraUTC(fechaArchivoFechaF, fechaArchivoHoraF),
         };
 
-        console.log(archivo);
-        console.log(req);
+        const respuesta = await iniciarImportacion(archivo, req);
 
-        const respuesta = await importarPedidos(archivo, req);
-        console.log(respuesta);
-
-        if (respuesta.exito && tipoEscenario === "OPERACION") {
-          notifyNewOrder();
-        }
         if (respuesta.exito) {
-          showNotification("success", respuesta.mensaje || "Pedidos importados correctamente");
+          if(tipoEscenario=="OPERACION") notifyNewOrder();
+          showNotification("success", respuesta.mensaje || "Importación iniciada");
+          console.log("Token de importación:", respuesta.token);
+          setImportToken(respuesta.token); // ✅ CLAVE
         } else {
-          showNotification("danger", respuesta.mensaje || "Ocurrió un error al importar los pedidos");
+          showNotification("danger", respuesta.mensaje || "Error al iniciar importación");
         }
-      } 
+      }
 
-      // --- MANUAL ---
+      // ================= MANUAL =================
       else if (isOperacion && !hayArchivo) {
         if (!selectedCliente || !selectedDestino || !fecha || !hora || !cantidad) {
           showNotification("warning", "Completa todos los campos del pedido manual.");
@@ -193,27 +184,47 @@ export default function Pedidos() {
           fechaHoraGeneracion: fechaGeneracion,
           cantidadSolicitada: Number(cantidad),
           lotesPorRuta: [],
-          tipoEscenario: tipoEscenario
+          tipoEscenario: tipoEscenario,
         };
 
-        console.log(dto);
         await importarPedido(dto);
-        notifyNewOrder({ fechaHoraISO: fechaGeneracion });
+        notifyNewOrder();
         showNotification("success", "Pedido manual registrado correctamente");
       }
 
-      // Recargar tabla DESDE BACKEND
+      // Recargar tabla
       await fetchPedidos(1);
-
+      limpiar();
       setIsModalOpen(false);
       setArchivo(null);
 
-    } catch {
+    } catch (error) {
+      console.error(error);
       showNotification("danger", "Error al agregar pedido");
     } finally {
       setProcessing(false);
     }
   };
+
+  useEffect(() => {
+    const off = onEvent(msg => {
+      if (msg.type === "operation-status") {
+        console.log("[WS][STATUS]", msg.payload);
+      }
+
+      if (msg.type === "operation-solution") {
+        console.log("[WS][SOLUTION]", msg.payload);
+      }
+
+      if (msg.type === "notification-global") {
+        showNotification(msg.variant, msg.message);
+      }
+    });
+
+    return off;
+  }, []);
+
+
 
   const handleCantidadChange = (e) => {
     const value = e.target.value;
@@ -367,6 +378,7 @@ export default function Pedidos() {
       setPedidos(lista);
       setCurrentPage(paginaVisual);
       setHasMorePages(lista.length === itemsPerPage);
+      
 
     } catch (err) {
       console.error(err);
@@ -375,6 +387,12 @@ export default function Pedidos() {
     }
   };
 
+  const limpiar = () => {
+    setCantidad("");
+    setSelectedCliente(null);
+    setSelectedDestino(null);
+  }
+
 
   // =============================
   // RENDER
@@ -382,9 +400,13 @@ export default function Pedidos() {
   return (
     <div className="page">
 
-      {(loading || processing) && (
+      {importToken && (
         <LoadingOverlay
-          text={processing ? "Procesando pedidos..." : "Cargando pedidos..."}
+          token={importToken}
+          onFinish={() => {
+            setImportToken(null);   // ❌ overlay
+            fetchPedidos(1);       // 🔄 refrescar tabla
+          }}
         />
       )}
 

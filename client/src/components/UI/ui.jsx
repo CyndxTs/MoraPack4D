@@ -17,7 +17,7 @@ import filterIcon from "../../assets/icons/filter.svg";
 import cleanIcon from "../../assets/icons/clean.svg";
 
 import { Client } from "@stomp/stompjs";
-import { subscribeLoader } from "../../services/loaderService";
+import { subscribeImportation } from "../../services/loaderService";
 
 export function Button({ icon, label, onClick, type = "button" }) {
   return (
@@ -800,84 +800,129 @@ export function Legend({ items }) {
   );
 }*/
 
-export function useLoaderProgress() {
+export function getImportationId(token) {
+  if (!token || !token.startsWith("TOK-")) return null;
+  return token.substring(4); // TODO el id
+}
+
+export function useLoaderProgress(token) {
   const [payload, setPayload] = useState(null);
+  const [status, setStatus] = useState(null);
 
   useEffect(() => {
-    let unsubscribe = null;
+    if (!token) return;
 
-    subscribeLoader((data) => {
-      setPayload(data);
-    }).then((unsub) => (unsubscribe = unsub));
+    const importId = getImportationId(token);
+    if (!importId) return;
+
+    let unsubscribe;
+
+    subscribeImportation(
+      importId,
+      (progress) => setPayload(progress),
+      (status) => setStatus(status)
+    ).then((unsub) => (unsubscribe = unsub));
 
     return () => {
       if (unsubscribe) unsubscribe();
     };
-  }, []);
+  }, [token]);
 
-  return payload;
+  return { payload, status };
 }
 
 
-
-export function LoadingOverlay() {
+export function LoadingOverlay({ token, onFinish }) {
   const [seconds, setSeconds] = useState(0);
-  const payload = useLoaderProgress();
+  const { payload, status } = useLoaderProgress(token);
 
-  // Mapa de todos los procesos
   const [procesos, setProcesos] = useState({});
+  const [detenido, setDetenido] = useState(false);
 
+  // contador visual
   useEffect(() => {
     const timer = setInterval(() => {
-      setSeconds((prev) => prev + 1);
+      setSeconds(prev => prev + 1);
     }, 1000);
+
     return () => clearInterval(timer);
   }, []);
 
+  // progreso por proceso
   useEffect(() => {
     if (!payload) return;
 
     const { proceso, completado, total } = payload;
+    if (!proceso || total == null || completado == null) return;
 
-    setProcesos(prev => {
-      const copia = { ...prev };
-
-      // si es la primera vez que aparece este proceso, lo creamos
-      if (!copia[proceso]) {
-        copia[proceso] = { completado: 0, total };
-      }
-
-      // siempre actualizar completado
-      copia[proceso].completado = completado;
-
-      // si el backend manda un total diferente, actualízalo
-      if (total !== copia[proceso].total) {
-        copia[proceso].total = total;
-      }
-
-      return copia;
-    });
-
+    setProcesos(prev => ({
+      ...prev,
+      [proceso]: { completado, total }
+    }));
   }, [payload]);
 
-  // Calcular progreso global
+  // marcar detenido
+  useEffect(() => {
+    if (status?.estadoEjecucion === "DETENIDO") {
+      setDetenido(true);
+    }
+  }, [status]);
+
+  // totales globales
   const totalGlobal = Object.values(procesos)
-    .reduce((acc, p) => acc + p.total, 0);
+    .reduce((acc, p) => acc + (p.total || 0), 0);
 
   const completadoGlobal = Object.values(procesos)
-    .reduce((acc, p) => acc + p.completado, 0);
+    .reduce((acc, p) => acc + (p.completado || 0), 0);
 
-  const porcentaje = totalGlobal > 0
-    ? Math.floor((completadoGlobal / totalGlobal) * 100)
-    : 0;
+  const porcentaje =
+    totalGlobal > 0
+      ? Math.floor((completadoGlobal / totalGlobal) * 100)
+      : 0;
 
+  // cerrar cuando ya no puede cambiar
+  useEffect(() => {
+    if (!detenido) return;
+
+    // caso normal: hubo progreso
+    if (totalGlobal > 0 && porcentaje === 100) {
+      onFinish?.(status);
+    }
+
+    // caso extremo: nunca llegó progreso
+    if (totalGlobal === 0) {
+      onFinish?.(status);
+    }
+  }, [detenido, porcentaje, totalGlobal, status, onFinish]);
+
+  // texto X / TOTAL
   const texto = payload
-    ? `${payload.proceso} (${payload.completado}/${payload.total})`
+    ? `${payload.proceso} (${completadoGlobal}/${totalGlobal})`
     : `Cargando... (${seconds}s)`;
 
+  // estado final visible
+  if (status?.estadoEjecucion === "DETENIDO") {
+    return (
+      <div className="loading-overlay">
+        <p>
+          {status.estadoFinalizacion === "EXITOSO"
+            ? "Importación finalizada"
+            : "Error en la importación"}
+        </p>
+
+        <div className="progress-bar">
+          <div className="progress-fill" style={{ width: "100%" }} />
+        </div>
+
+        <p className="percent">100%</p>
+      </div>
+    );
+  }
+
+  // progreso normal
   return (
     <div className="loading-overlay">
-      <div className="spinner"></div>
+      <div className="spinner" />
 
       <p>{texto}</p>
 
@@ -892,6 +937,9 @@ export function LoadingOverlay() {
     </div>
   );
 }
+
+
+
 
 
 
