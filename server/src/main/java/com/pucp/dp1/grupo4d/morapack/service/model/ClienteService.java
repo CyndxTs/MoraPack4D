@@ -15,7 +15,6 @@ import com.pucp.dp1.grupo4d.morapack.model.dto.request.FilterRequest;
 import com.pucp.dp1.grupo4d.morapack.model.dto.request.ListRequest;
 import com.pucp.dp1.grupo4d.morapack.model.dto.response.GenericResponse;
 import com.pucp.dp1.grupo4d.morapack.model.dto.response.ListResponse;
-import com.pucp.dp1.grupo4d.morapack.model.entity.AdministradorEntity;
 import com.pucp.dp1.grupo4d.morapack.model.entity.ClienteEntity;
 import com.pucp.dp1.grupo4d.morapack.model.enumeration.EstadoEjecucion;
 import com.pucp.dp1.grupo4d.morapack.model.enumeration.EstadoFinalizacion;
@@ -33,9 +32,10 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Service
 public class ClienteService {
@@ -89,12 +89,12 @@ public class ClienteService {
         return clienteRepository.findByCorreo(correo).isPresent();
     }
 
-    public List<ClienteEntity> findAllByDateTimeRange(LocalDateTime fechaHoraInicio, LocalDateTime fechaHoraFin, String tipoEscenario) {
-        return clienteRepository.findAllByDateTimeRange(fechaHoraInicio, fechaHoraFin, tipoEscenario);
+    public List<ClienteEntity> findAllInRangeByScenario(LocalDateTime fechaHoraInicio, LocalDateTime fechaHoraFin, String tipoEscenario, List<String> codOrigenes) {
+        return clienteRepository.findAllInRangeByScenario(fechaHoraInicio, fechaHoraFin, tipoEscenario, codOrigenes);
     }
 
-    public Integer findMaxCodigo() {
-        return G4DUtility.Convertor.toAdmissible(clienteRepository.findMaxCodigo(), 0);
+    public Integer findMaxCode() {
+        return G4DUtility.Convertor.toAdmissible(clienteRepository.findMaxCode(), 0);
     }
 
     public ListResponse listar(ListRequest request) {
@@ -117,10 +117,11 @@ public class ClienteService {
         return new ListResponse(true, String.format("Clientes filtrados correctamente! ('%d')", dtos.size()), dtos);
     }
 
-    public GenericResponse importar(MultipartFile archivo) {
+    public GenericResponse importar(String idTransaccion, Path archivo) {
+        String progressDestination = String.format("/topic/importation-%s", idTransaccion), statusDestination = String.format("/topic/importation-status-%s", idTransaccion);
         try {
-            System.out.printf("Importando clientes desde '%s'..%n", archivo.getName());
-            BufferedReader br = new BufferedReader(new InputStreamReader(archivo.getInputStream(), G4DUtility.Reader.getFileCharset(archivo)));
+            System.out.printf("Importando clientes desde '%s'..%n", archivo.getFileName());
+            BufferedReader br = Files.newBufferedReader(archivo, G4DUtility.Reader.getFileCharset(archivo));
             List<ClienteEntity> clientes = new ArrayList<>();
             Map<String, ClienteEntity> poolClientes = new LinkedHashMap<>(16, 0.75f, true) {
                 @Override
@@ -129,12 +130,12 @@ public class ClienteService {
                 }
             };
             this.findAll(PageRequest.of(0, 250)).forEach(c -> poolClientes.put(c.getCorreo(), c));
-            int maxCodigo = this.findMaxCodigo();
+            int maxCodigo = this.findMaxCode();
             int lTotales = (int) G4DUtility.Reader.getLineCount(archivo);
             int lProcesadas = 0;
             String linea;
-            WebSocketService.enviar("/topic/loader", new ProgressPayload("Leyendo archivo", lProcesadas, lTotales));
-            WebSocketService.enviar("/topic/loader-status", new StatusPayload(EstadoEjecucion.INICIADO));
+            WebSocketService.enviar(progressDestination, new ProgressPayload("Leyendo archivo", lProcesadas, lTotales));
+            WebSocketService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.INICIADO));
             while ((linea = br.readLine()) != null) {
                 linea = linea.trim();
                 if (!linea.isEmpty()) {
@@ -152,7 +153,7 @@ public class ClienteService {
                     }
                 }
                 lProcesadas++;
-                WebSocketService.enviar("/topic/loader", new ProgressPayload("Leyendo archivo", lProcesadas, lTotales));
+                WebSocketService.enviar(progressDestination, new ProgressPayload("Leyendo archivo", lProcesadas, lTotales));
                 if (lProcesadas % 500 == 0 || lProcesadas == lTotales) {
                     importService.batchSave(clientes, "clientes");
                     System.out.printf("[<] CLIENTES IMPORTADOS! ('%d')%n", clientes.size());
@@ -161,14 +162,14 @@ public class ClienteService {
             }
             poolClientes.clear();
             br.close();
-            WebSocketService.enviar("/topic/loader-status", new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.EXITOSO));
+            WebSocketService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.EXITOSO));
             return new GenericResponse(true, "Clientes importados correctamente!");
         } catch (ArrayIndexOutOfBoundsException e) {
-            WebSocketService.enviar("/topic/loader-status", new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.ERRONEO));
-            throw new G4DException(String.format("El archivo '%s' no sigue el formato esperado.", archivo.getName()));
+            WebSocketService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.ERRONEO));
+            throw new G4DException(String.format("El archivo '%s' no sigue el formato esperado.", archivo.getFileName()));
         } catch (IOException e) {
-            WebSocketService.enviar("/topic/loader-status", new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.ERRONEO));
-            throw new G4DException(String.format("No se pudo cargar el archivo '%s'.", archivo.getName()));
+            WebSocketService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.ERRONEO));
+            throw new G4DException(String.format("No se pudo cargar el archivo '%s'.", archivo.getFileName()));
         }
     }
 }

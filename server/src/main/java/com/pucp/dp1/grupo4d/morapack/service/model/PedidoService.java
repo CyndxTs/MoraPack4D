@@ -33,6 +33,8 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.*;
@@ -78,24 +80,20 @@ public class PedidoService {
         return pedidoRepository.existsById(id);
     }
 
-    public Map<String, Integer> findAllMaxCodigoByEscenario(String tipoEscenario) {
-        return pedidoRepository.findAllMaxCodigoByTipoEscenario(tipoEscenario).stream().collect(Collectors.toMap(row -> (String) row[0], row -> row[1] != null ? ((Number) row[1]).intValue() : 0));
+    public Map<String, Integer> findAllMaxCodesByScenario(String tipoEscenario) {
+        return pedidoRepository.findAllMaxCodesByScenario(tipoEscenario).stream().collect(Collectors.toMap(row -> (String) row[0], row -> row[1] != null ? ((Number) row[1]).intValue() : 0));
     }
 
-    public Integer findMaxCodigoByDestinoEscenario(String codDestino, String tipoEscenario) {
-        return G4DUtility.Convertor.toAdmissible(pedidoRepository.findMaxCodigoByDestinoEscenario(codDestino, tipoEscenario), 0);
+    public Integer findMaxCodeOfDestinationByScenario(String codDestino, String tipoEscenario) {
+        return G4DUtility.Convertor.toAdmissible(pedidoRepository.findMaxCodeOfDestinationByScenario(codDestino, tipoEscenario), 0);
     }
 
-    public Optional<PedidoEntity> findByCodigoEscenario(String codigo, String tipoEscenario) {
-        return pedidoRepository.findByCodigoEscenario(codigo, tipoEscenario);
+    public Optional<PedidoEntity> findByUniqueAttributes(String codigo, String tipoEscenario) {
+        return pedidoRepository.findByUniqueAttributes(codigo, tipoEscenario);
     }
 
-    public boolean existsByCodigoEscenario(String codigo, String tipoEscenario) {
-        return pedidoRepository.findByCodigoEscenario(codigo, tipoEscenario).isPresent();
-    }
-
-    public List<PedidoEntity> findAllByDateTimeRange(LocalDateTime fechaHoraInicio, LocalDateTime fechaHoraFin, String tipoEscenario) {
-        return pedidoRepository.findAllByDateTimeRange(fechaHoraInicio, fechaHoraFin, tipoEscenario);
+    public List<PedidoEntity> findAllInRangeByScenario(LocalDateTime fechaHoraInicio, LocalDateTime fechaHoraFin, String tipoEscenario, List<String> codOrigenes) {
+        return pedidoRepository.findAllInRangeByScenario(fechaHoraInicio, fechaHoraFin, tipoEscenario, codOrigenes);
     }
 
     public List<PedidoEntity> findAllByDestino(AeropuertoEntity destino) {
@@ -147,7 +145,7 @@ public class PedidoService {
                 pedido.setFechaHoraExpiracionUTC(G4DUtility.Convertor.toAdmissible(dto.getFechaHoraExpiracion(), (LocalDateTime) null));
                 pedido.setFechaHoraExpiracionLocal(pedido.getFechaHoraExpiracionUTC() != null ? G4DUtility.Convertor.toLocal(pedido.getFechaHoraExpiracionUTC(), destino.getHusoHorario()) : null);
                 pedido.setFueAtendido(dto.getFueAtendido() != null ? dto.getFueAtendido() : false);
-                pedido.setCodigo(String.format("%s%09d", destino.getCodigo(), 1 + this.findMaxCodigoByDestinoEscenario(codDestino, dto.getTipoEscenario())));
+                pedido.setCodigo(String.format("%s%09d", destino.getCodigo(), 1 + this.findMaxCodeOfDestinationByScenario(codDestino, dto.getTipoEscenario())));
                 this.save(pedido);
             } else throw new G4DException(String.format("El cliente ('%s') del pedido es inválido.", codCliente));
         } else throw new G4DException(String.format("El destino ('%s') del pedido es inválido.", codDestino));
@@ -155,15 +153,16 @@ public class PedidoService {
         return new GenericResponse(true, "Pedido importado correctamente!");
     }
 
-    public GenericResponse importar(MultipartFile archivo, ImportFileRequest request) {
+    public GenericResponse importar(String idTransaccion, Path archivo, ImportFileRequest request) {
+        String progressDestination = String.format("/topic/importation-%s", idTransaccion), statusDestination = String.format("/topic/importation-status-%s", idTransaccion);
         try {
-            System.out.printf("Importando pedidos desde '%s'.. (batch 500)%n", archivo.getName());
+            System.out.printf("Importando pedidos desde '%s'.. (batch 500)%n", archivo.getFileName());
             LocalDateTime fechaHoraInicio = G4DUtility.Convertor.toAdmissible(request.getFechaHoraInicio(), LocalDateTime.MIN);
             LocalDateTime fechaHoraFin = G4DUtility.Convertor.toAdmissible(request.getFechaHoraFin(), LocalDateTime.MAX);
             if (fechaHoraFin.isBefore(fechaHoraInicio)) throw new G4DException("Rango de tiempo inválido.");
             TipoEscenario tipoEscenario = G4DUtility.Convertor.toAdmissible(request.getTipoEscenario(), TipoEscenario.class);
-            boolean tieneNumeroDePedido = tipoEscenario.equals(TipoEscenario.SIMULACION);
-            BufferedReader br = new BufferedReader(new InputStreamReader(archivo.getInputStream(), G4DUtility.Reader.getFileCharset(archivo)));
+            boolean esSimulacion = tipoEscenario.equals(TipoEscenario.SIMULACION);
+            BufferedReader br = Files.newBufferedReader(archivo, G4DUtility.Reader.getFileCharset(archivo));
             List<PedidoEntity> pedidos = new ArrayList<>();
             List<ClienteEntity> clientes = new ArrayList<>();
             Map<String, ClienteEntity> poolClientes = new LinkedHashMap<>(16, 0.75f, true) {
@@ -174,18 +173,18 @@ public class PedidoService {
             };
             clienteService.findAll(PageRequest.of(0, 250)).forEach(c -> poolClientes.put(c.getCodigo(), c));
             Map<String, AeropuertoEntity> poolAeropuertos = aeropuertoService.findAll().stream().collect(Collectors.toMap(AeropuertoEntity::getCodigo, a -> a));
-            Map<String, Integer> poolMaxCodigos = this.findAllMaxCodigoByEscenario(tipoEscenario.toString().toUpperCase());
+            Map<String, Integer> poolMaxCodigos = this.findAllMaxCodesByScenario(tipoEscenario.toString().toUpperCase());
             int lTotales = (int) G4DUtility.Reader.getLineCount(archivo);
             int lProcesadas = 0;
             String linea;
-            WebSocketService.enviar("/topic/loader", new ProgressPayload("Leyendo archivo", lProcesadas, lTotales));
-            WebSocketService.enviar("/topic/loader-status", new StatusPayload(EstadoEjecucion.INICIADO));
+            WebSocketService.enviar(progressDestination, new ProgressPayload("Leyendo archivo", lProcesadas, lTotales));
+            WebSocketService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.INICIADO));
             while ((linea = br.readLine()) != null) {
                 linea = linea.trim();
                 if (!linea.isBlank()) {
                     String[] partes = linea.split("-");
                     int idx = 0;
-                    String numPed = tieneNumeroDePedido ? partes[idx++] : null;
+                    String numPed = esSimulacion ? partes[idx++] : null;
                     int fechaStr = Integer.parseInt(partes[idx++]);
                     int hora = Integer.parseInt(partes[idx++]);
                     int minuto = Integer.parseInt(partes[idx++]);
@@ -221,19 +220,23 @@ public class PedidoService {
                             }
                             PedidoEntity pedido = new PedidoEntity();
                             poolMaxCodigos.merge(codDestino, 1, Integer::sum);
-                            pedido.setCodigo(numPed != null ? destino.getCodigo() + numPed : String.format("%s%09d", destino.getCodigo(), poolMaxCodigos.get(codDestino)));
                             pedido.setDestino(destino);
                             pedido.setCliente(cliente);
                             pedido.setCantidadSolicitada(cantidad);
                             pedido.setFechaHoraGeneracionLocal(fechaHoraGeneracionLocal);
                             pedido.setFechaHoraGeneracionUTC(fechaHoraGeneracionUTC);
+                            if(esSimulacion) {
+                                pedido.setCodigo(destino.getCodigo() + numPed);
+                                pedido.setFechaHoraProcesamientoLocal(fechaHoraGeneracionLocal);
+                                pedido.setFechaHoraProcesamientoUTC(fechaHoraGeneracionUTC);
+                            } else pedido.setCodigo(String.format("%s%09d", destino.getCodigo(), poolMaxCodigos.get(codDestino)));
                             pedido.setTipoEscenario(tipoEscenario);
                             pedidos.add(pedido);
                         }
                     } else throw new G4DException(String.format("Destino '%s' inválido en línea #%d", codDestino, lProcesadas + 1));
                 }
                 lProcesadas++;
-                WebSocketService.enviar("/topic/loader", new ProgressPayload("Leyendo archivo", lProcesadas, lTotales));
+                WebSocketService.enviar(progressDestination, new ProgressPayload("Leyendo archivo", lProcesadas, lTotales));
                 if (pedidos.size() % 500 == 0 || lProcesadas == lTotales) {
                     importService.batchSave(clientes, "clientes");
                     System.out.printf("[<] CLIENTES IMPORTADOS! ('%d')%n", clientes.size());
@@ -247,14 +250,14 @@ public class PedidoService {
             poolAeropuertos.clear();
             poolClientes.clear();
             br.close();
-            WebSocketService.enviar("/topic/loader-status", new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.EXITOSO));
+            WebSocketService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.EXITOSO));
             return new GenericResponse(true, "Pedidos importados correctamente!");
         } catch (ArrayIndexOutOfBoundsException | NoSuchElementException e) {
-            WebSocketService.enviar("/topic/loader-status", new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.ERRONEO));
-            throw new G4DException(String.format("El archivo '%s' no sigue el formato esperado.", archivo.getName()));
+            WebSocketService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.ERRONEO));
+            throw new G4DException(String.format("El archivo '%s' no sigue el formato esperado.", archivo.getFileName()));
         } catch (IOException e) {
-            WebSocketService.enviar("/topic/loader-status", new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.ERRONEO));
-            throw new G4DException(String.format("No se pudo cargar el archivo '%s'.", archivo.getName()));
+            WebSocketService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.ERRONEO));
+            throw new G4DException(String.format("No se pudo cargar el archivo '%s'.", archivo.getFileName()));
         }
     }
 }

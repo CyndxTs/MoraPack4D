@@ -82,24 +82,25 @@ public class Aeropuerto {
         return this.registros.stream().filter(Registro::getSigueVigente).filter(r -> r.getLote().equals(lote)).findFirst().orElse(null);
     }
 
-    public void agregarRegistroDeLoteDeProductos(Lote lote, LocalDateTime fechaHoraIngreso, LocalDateTime fechaHoraEgreso) {
+    public void agregarRegistroDeLoteDeProductos(Lote lote, LocalDateTime fechaHoraIngreso, LocalDateTime fechaHoraEgreso, boolean softInsert) {
         Registro registro = new Registro();
         registro.setFechaHoraIngreso(fechaHoraIngreso);
         registro.setFechaHoraEgreso(fechaHoraEgreso);
         registro.setLote(lote);
-        this.registros.add(registro);
+        if(softInsert) {
+            Registro rLoteNoVigente = this.registros.stream().filter(r -> !r.getSigueVigente() && r.esEquivalente(registro)).findFirst().orElse(null);
+            if(rLoteNoVigente != null) {
+                rLoteNoVigente.setSigueVigente(true);
+            }
+        } else this.registros.add(registro);
     }
 
     public void eliminarRegistroDeLoteDeProductos(Lote lote, boolean softDelete) {
-        List<Registro> registrosVigentes = this.registros.stream().filter(Registro::getSigueVigente).sorted(Comparator.comparing(Registro::getFechaHoraIngreso).thenComparing(Registro::getFechaHoraEgreso)).toList();
-        for(Registro rVigente : registrosVigentes) {
-            if(rVigente.getLote().equals(lote)) {
-                rVigente.setSigueVigente(false);
-                if(!softDelete) {
-                    this.registros.remove(rVigente);
-                }
-                return;
-            }
+        Registro rLoteVigente = this.registros.stream().filter(r -> r.getSigueVigente() && r.getLote().equals(lote)).findFirst().orElse(null);
+        if(rLoteVigente != null) {
+            if(softDelete) {
+                rLoteVigente.setSigueVigente(false);
+            } else this.registros.remove(rLoteVigente);
         }
     }
 

@@ -62,15 +62,6 @@ public class Plan {
         return plan;
     }
 
-    public void instanciarAtributos() {
-        if(this.origen != null && this.destino != null) {
-            this.setDistancia();
-        }
-        if(this.horaSalida != null && this.horaLlegada != null) {
-            this.setDuracion();
-        }
-    }
-
     public Double obtenerLejania(LocalDateTime instanteDeReferencia, Aeropuerto destino) {
         LocalDateTime[] dtr = G4DUtility.Convertor.toDateTimeRange(this.horaSalida, this.horaLlegada, instanteDeReferencia);
         LocalDateTime instanteDeLlegada = dtr[1];

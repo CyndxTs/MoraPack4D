@@ -43,10 +43,4 @@ public class ClienteController {
         ListResponse response = clienteService.filtrar(request);
         return ResponseEntity.ok(response);
     }
-
-    @PostMapping("/importar-archivo")
-    public ResponseEntity<GenericResponse> importar(@RequestParam("file") MultipartFile file) {
-        GenericResponse response = clienteService.importar(file);
-        return ResponseEntity.ok(response);
-    }
 }

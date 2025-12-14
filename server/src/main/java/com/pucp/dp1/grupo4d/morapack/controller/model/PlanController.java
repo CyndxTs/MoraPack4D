@@ -43,10 +43,4 @@ public class PlanController {
         GenericResponse response = planService.importar(request);
         return ResponseEntity.ok(response);
     }
-
-    @PostMapping("/importar-archivo")
-    public ResponseEntity<GenericResponse> importar(@RequestParam("file") MultipartFile file) {
-        GenericResponse response = planService.importar(file);
-        return ResponseEntity.ok(response);
-    }
 }

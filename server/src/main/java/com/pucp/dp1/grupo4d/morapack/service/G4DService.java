@@ -14,10 +14,7 @@ import com.pucp.dp1.grupo4d.morapack.mapper.*;
 import com.pucp.dp1.grupo4d.morapack.model.algorithm.*;
 import com.pucp.dp1.grupo4d.morapack.model.dto.*;
 import com.pucp.dp1.grupo4d.morapack.model.dto.payload.StatusPayload;
-import com.pucp.dp1.grupo4d.morapack.model.dto.request.ExportationRequest;
-import com.pucp.dp1.grupo4d.morapack.model.dto.request.ImportRequest;
-import com.pucp.dp1.grupo4d.morapack.model.dto.request.ReplanificationRequest;
-import com.pucp.dp1.grupo4d.morapack.model.dto.request.SimulationRequest;
+import com.pucp.dp1.grupo4d.morapack.model.dto.request.*;
 import com.pucp.dp1.grupo4d.morapack.model.dto.response.GenericResponse;
 import com.pucp.dp1.grupo4d.morapack.model.dto.payload.SolutionPayload;
 import com.pucp.dp1.grupo4d.morapack.model.entity.*;
@@ -28,19 +25,34 @@ import com.pucp.dp1.grupo4d.morapack.model.exception.G4DException;
 import com.pucp.dp1.grupo4d.morapack.service.model.*;
 import com.pucp.dp1.grupo4d.morapack.util.G4DUtility;
 import jakarta.transaction.Transactional;
+import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
 
 @Service
 public class G4DService {
+    private static class G4DContext {
+        public volatile boolean running = true;
+        public Future<?> task;
+        public Problematica problematic;
+        public Solucion solution;
+    }
+
     private final PedidoService pedidoService;
     private final PedidoAdapter pedidoAdapter;
     private final AeropuertoService aeropuertoService;
@@ -63,13 +75,9 @@ public class G4DService {
     private final SegmentacionAdapter segmentacionAdapter;
     private final ObjectProvider<G4DService> self;
     private final ParametrosService parametrosService;
-    private volatile boolean simulationFlag = false;
-    private Future<?> simulationTask = null;
-    private Solucion simulationSolution = null;
-    private Problematica simulationContext = null;
-    private Future<?> operationTask = null;
-    private Problematica operationContext = null;
-    private Future<?> exportationTask = null;
+    private final AdministradorService administradorService;
+    private final Map<String, G4DContext> simulationContexts = new ConcurrentHashMap<>();
+    private final G4DContext replanificationContext = new G4DContext();
     private Long segundosEstimadosDeReplanificacion = null;
 
 
@@ -78,7 +86,7 @@ public class G4DService {
                       PedidoMapper pedidoMapper, PedidoAdapter pedidoAdapter, AeropuertoService aeropuertoService, AeropuertoAdapter aeropuertoAdapter,
                       UsuarioAdapter usuarioAdapter, PlanService planService, PlanAdapter planAdapter, LoteAdapter loteAdapter,
                       AeropuertoMapper aeropuertoMapper, RutaMapper rutaMapper, VueloMapper vueloMapper, RegistroAdapter registroAdapter,
-                      ParametrosMapper parametrosMapper, RutaService rutaService, VueloService vueloService, RutaAdapter rutaAdapter, VueloAdapter vueloAdapter, ParametrosService parametrosService) {
+                      ParametrosMapper parametrosMapper, RutaService rutaService, VueloService vueloService, RutaAdapter rutaAdapter, VueloAdapter vueloAdapter, ParametrosService parametrosService, AdministradorService administradorService) {
         this.clienteService = clienteService;
         this.pedidoService = pedidoService;
         this.segmentacionAdapter = segmentacionAdapter;
@@ -101,21 +109,52 @@ public class G4DService {
         this.rutaAdapter = rutaAdapter;
         this.vueloAdapter = vueloAdapter;
         this.parametrosService = parametrosService;
+        this.administradorService = administradorService;
+    }
+
+    public GenericResponse iniciarImportacion(MultipartFile file, ImportFileRequest request) {
+        try {
+            GenericResponse response = new GenericResponse(true, "Importación iniciada!");
+            String idTransaccion = response.getToken();
+            Path archivo = Files.createTempFile("import-" + idTransaccion + "-", "-" + file.getOriginalFilename());
+            file.transferTo(archivo.toFile());
+            self.getObject().importar(idTransaccion.substring(4), archivo, request);
+            return response;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Async("importationExecutor")
+    @Transactional
+    public CompletableFuture<Void> importar(String idTransaccion, Path archivo, ImportFileRequest request) {
+        switch (request.getTipoArchivo().toUpperCase()) {
+            case "ADMINISTRADORES" -> administradorService.importar(idTransaccion, archivo);
+            case "CLIENTES" -> clienteService.importar(idTransaccion, archivo);
+            case "AEROPUERTOS" -> aeropuertoService.importar(idTransaccion, archivo);
+            case "PLANES" -> planService.importar(idTransaccion, archivo);
+            case "PEDIDOS" -> pedidoService.importar(idTransaccion, archivo, request);
+            default -> throw new G4DException("Tipo de archivo invalido");
+        }
+        return CompletableFuture.completedFuture(null);
     }
 
     public GenericResponse iniciarSimulacion(SimulationRequest request) {
-        if(simulationTask != null) {
-            throw new G4DException("Ya hay una simulación en proceso!");
-        } else simulationFlag = true;
-        simulationTask = self.getObject().simular(request).whenComplete((r, ex) -> { simulationFlag = false; simulationTask = null; });
-        WebSocketService.enviar("/topic/simulator-status", EstadoEjecucion.POR_INICIAR);
-        return new GenericResponse(true, "Simulación en iniciación!");
+        GenericResponse response  = new GenericResponse(true, "Simulacion iniciada!");
+        String idTransaccion = response.getToken().substring(4);
+        G4DContext context = new G4DContext();
+        simulationContexts.put(idTransaccion, context);
+        context.task = self.getObject().simular(idTransaccion, request).whenComplete((r, ex) -> { context.running = false; context.task = null; simulationContexts.remove(idTransaccion); });
+        WebSocketService.enviar("/topic/simulation-status-" + idTransaccion, EstadoEjecucion.POR_INICIAR);
+        return response;
     }
 
-    @Async
+    @Async("simulationExecutor")
     @Transactional
-    public CompletableFuture<Void> simular(SimulationRequest request) {
+    public CompletableFuture<Void> simular(String idTransaccion, SimulationRequest request) {
+        String solutionDestination = String.format("/topic/simulation-%s", idTransaccion), statusDestination = String.format("/topic/simulation-status-%s", idTransaccion);
         try {
+            G4DContext context = simulationContexts.get(idTransaccion);
             LocalDateTime inicioDeSimulacion = G4DUtility.Convertor.toDateTime(request.getFechaHoraInicio());
             LocalDateTime finDeSimulacion = G4DUtility.Convertor.toAdmissible(request.getFechaHoraFin(), LocalDateTime.MAX);
             ParametrosDTO parametros = request.getParametros();
@@ -130,19 +169,20 @@ public class G4DService {
             LocalDateTime finDePlanificacion = inicioDeSimulacion.plusMinutes(saltoDeConsumoEnMinutos).isAfter(finDeSimulacion) ? finDeSimulacion : inicioDeSimulacion.plusMinutes(saltoDeConsumoEnMinutos);
             long minutosPlanificados = 0L;
             boolean esPrimeraIteracion = true;
-            while(simulationFlag && !Thread.currentThread().isInterrupted()) {
+            while(context.running && !Thread.currentThread().isInterrupted()) {
                 finDePlanificacion = (finDePlanificacion.plusMinutes(saltoDeConsumoEnMinutos).isAfter(finDeSimulacion)) ? finDeSimulacion : finDePlanificacion.plusMinutes(saltoDeConsumoEnMinutos);
                 Instant start = Instant.now();
-                SolucionDTO solucion = planificar(TipoEscenario.SIMULACION, inicioDePlanificacion, finDePlanificacion, umbralDeReplanificacion, umbralDeReplanificacion);
+                SolucionDTO solucion = planificar(context, TipoEscenario.SIMULACION, inicioDePlanificacion, finDePlanificacion, umbralDeReplanificacion, umbralDeReplanificacion);
+                GVNS.imprimirSolucion(context.solution, String.format("SIMU_SEMANAL__%s__%s__%s.txt", idTransaccion, G4DUtility.Convertor.toSystemString(inicioDeSimulacion), G4DUtility.Convertor.toSystemString(finDeSimulacion)));
                 if(solucion != null) {
-                    WebSocketService.enviar("/topic/simulator", new SolutionPayload(solucion));
+                    WebSocketService.enviar(solutionDestination, new SolutionPayload(solucion));
                 } else {
-                    WebSocketService.enviar("/topic/simulator-status", new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.COLAPSO));
+                    WebSocketService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.COLAPSO));
                     System.out.println("[*] COLAPSO LOGÍSTICO!");
                     return CompletableFuture.completedFuture(null);
                 }
                 if(esPrimeraIteracion) {
-                    WebSocketService.enviar("/topic/simulator-status", new StatusPayload(EstadoEjecucion.INICIADO));
+                    WebSocketService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.INICIADO));
                     esPrimeraIteracion = false;
                 }
                 Instant end = Instant.now();
@@ -155,59 +195,62 @@ public class G4DService {
                 if(!inicioDePlanificacion.isBefore(finDeSimulacion)) {
                     break;
                 }
-                try {
-                    Thread.sleep(saltoDeAlgoritmoEnMilisegundos - milisegundosRealesTranscurridos); // provisional hasta implementarexceutors periodicos
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    break;
+                if(G4DUtility.Calculator.isProximatelyFewer(milisegundosRealesTranscurridos, saltoDeAlgoritmoEnMilisegundos, 0.25)) {
+                    try {
+                        Thread.sleep(saltoDeAlgoritmoEnMilisegundos - milisegundosRealesTranscurridos); // provisional hasta implementarexceutors periodicos
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        break;
+                    }
                 }
             }
-            if(simulationFlag && !Thread.currentThread().isInterrupted()) {
+            if(context.running && !Thread.currentThread().isInterrupted()) {
                 if(finDeSimulacion.equals(LocalDateTime.MAX)) {
-                    GVNS.imprimirSolucion(simulationSolution, String.format("SIMU_COLAPSO_%s-%s.txt", G4DUtility.Convertor.toDisplayString(inicioDeSimulacion).replace(" ", "_"), G4DUtility.Convertor.toDisplayString(finDePlanificacion).replace(" ", "_")));
-                } else GVNS.imprimirSolucion(simulationSolution, String.format("SIMU_SEMANAL_%s-%s.txt", G4DUtility.Convertor.toDisplayString(inicioDeSimulacion).replace(" ", "_"), G4DUtility.Convertor.toDisplayString(finDeSimulacion).replace(" ", "_")));
-                WebSocketService.enviar("/topic/simulator-status", new StatusPayload(EstadoEjecucion.DETENIDO,  EstadoFinalizacion.EXITOSO));
+                    GVNS.imprimirSolucion(context.solution, String.format("SIMU_COLAPSO__%s.txt", G4DUtility.Convertor.toSystemString(inicioDeSimulacion)));
+                } else GVNS.imprimirSolucion(context.solution, String.format("SIMU_SEMANAL__%s__%s.txt", G4DUtility.Convertor.toSystemString(inicioDeSimulacion), G4DUtility.Convertor.toSystemString(finDeSimulacion)));
+                WebSocketService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.DETENIDO,  EstadoFinalizacion.EXITOSO));
                 System.out.println("[>] SIMULACION CONLCUIDA!");
             } else {
-                WebSocketService.enviar("/topic/simulator-status", new StatusPayload(EstadoEjecucion.DETENIDO,  EstadoFinalizacion.FORZADO));
+                WebSocketService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.DETENIDO,  EstadoFinalizacion.FORZADO));
                 System.out.println("[X] SIMULACION DETENIDA FORZOSAMENTE!");
             }
             return CompletableFuture.completedFuture(null);
         } catch (Exception e) {
-            WebSocketService.enviar("/topic/simulator-status", new StatusPayload(EstadoEjecucion.DETENIDO,  EstadoFinalizacion.ERRONEO));
-            e.printStackTrace();
+            WebSocketService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.DETENIDO,  EstadoFinalizacion.ERRONEO));
             throw new RuntimeException(e);
         } finally {
-            simulationContext = null;
+            simulationContexts.remove(idTransaccion);
             limpiarPools();
         }
     }
 
-    public GenericResponse detenerSimulacion() {
-        if(simulationTask == null) {
-            throw new G4DException("No hay ninguna simulación en proceso!");
+    public GenericResponse detenerSimulacion(String idTransaccion) {
+        G4DContext context = simulationContexts.get(idTransaccion);
+        if(context == null || !context.running) {
+            throw new G4DException(String.format("No hay ninguna simulación con el id '%s' en proceso!", idTransaccion));
         }
-        simulationFlag = false;
-        simulationTask.cancel(true);
-        simulationTask = null;
-        simulationContext = null;
+        context.running = false;
+        context.task.cancel(true);
+        context.task = null;
+        simulationContexts.remove(idTransaccion);
         limpiarPools();
-        WebSocketService.enviar("/topic/simulator-status", new StatusPayload(EstadoEjecucion.POR_DETENER));
+        WebSocketService.enviar("/topic/simulation-status-" + idTransaccion, new StatusPayload(EstadoEjecucion.POR_DETENER));
         return new GenericResponse(true, "Simulación en detenimiento!");
     }
 
     public GenericResponse replanificarOperacion(ReplanificationRequest request) {
-        if(operationTask != null) {
+        if(replanificationContext.task != null && replanificationContext.running) {
             throw new G4DException("Ya hay una replanificación en proceso!");
         }
-        operationTask = self.getObject().replanificar(request).whenComplete((r, ex) -> operationTask = null);
-        WebSocketService.enviar("/topic/operator-status", EstadoEjecucion.INICIADO);
+        replanificationContext.task = self.getObject().replanificar(request).whenComplete((r, ex) -> { replanificationContext.running = false; replanificationContext.problematic = null; replanificationContext.task = null; });
+        WebSocketService.enviar("/topic/operation-status", EstadoEjecucion.INICIADO);
         return new GenericResponse(true, "Replanificación Iniciada!");
     }
 
-    @Async
+    @Async("operationExecutor")
     @Transactional
     public CompletableFuture<Void> replanificar(ReplanificationRequest request) {
+        String solutionDestination = "/topic/operation", statusDestination = "/topic/operation-status";
         try {
             TipoEscenario escenario = TipoEscenario.OPERACION;
             boolean almacenarParametrizacion = (request.getAlmacenarParametrizacion() != null) ?  request.getAlmacenarParametrizacion() : false ;
@@ -224,60 +267,37 @@ public class G4DService {
             LocalDateTime umbralDeReplanificacion = (this.segundosEstimadosDeReplanificacion != null) ? fechaHoraActual.plusSeconds(this.segundosEstimadosDeReplanificacion) : fechaHoraActual.plusMinutes(30L);
             LocalDateTime instanteDeProcesamiento = (this.segundosEstimadosDeReplanificacion != null) ? fechaHoraActual.plusSeconds(this.segundosEstimadosDeReplanificacion): fechaHoraActual.plusMinutes(5L);
             Instant start = Instant.now();
-            SolucionDTO solucion = planificar(escenario, inicioPlanificacion, fechaHoraActual, umbralDeReplanificacion, instanteDeProcesamiento);
-            if(solucion != null) {
-                WebSocketService.enviar("/topic/operator", new SolutionPayload(solucion));
-            } else {
-                WebSocketService.enviar("/topic/operator-status", new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.COLAPSO));
-                System.out.println("[*] COLAPSO LOGÍSTICO!");
-                return CompletableFuture.completedFuture(null);
+            SolucionDTO solucion = planificar(replanificationContext, escenario, inicioPlanificacion, fechaHoraActual, umbralDeReplanificacion, instanteDeProcesamiento);
+            if(replanificationContext.running && !Thread.currentThread().isInterrupted()) {
+                if(solucion != null) {
+                    WebSocketService.enviar(solutionDestination, new SolutionPayload(solucion));
+                } else {
+                    WebSocketService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.COLAPSO));
+                    System.out.println("[*] COLAPSO LOGÍSTICO!");
+                    return CompletableFuture.completedFuture(null);
+                }
             }
             Instant end = Instant.now();
             long segundosTranscurridos = Duration.between(start, end).toMillis()/1000;
             this.segundosEstimadosDeReplanificacion = (this.segundosEstimadosDeReplanificacion != null) ? Math.min(this.segundosEstimadosDeReplanificacion, segundosTranscurridos) : segundosTranscurridos;
-            if(operationTask != null) {
-                WebSocketService.enviar("/topic/operator-status", new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.EXITOSO));
+            if(replanificationContext.running && !Thread.currentThread().isInterrupted()) {
+                WebSocketService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.EXITOSO));
                 System.out.println("[>] OPERACION ACTUALIZADA!");
             } else {
-                WebSocketService.enviar("/topic/operator-status", new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.FORZADO));
+                WebSocketService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.FORZADO));
                 System.out.println("[X] REPLANIFICACIÓN DETENIDA FORZOSAMENTE!");
             }
             return CompletableFuture.completedFuture(null);
         } catch (Exception e) {
-            WebSocketService.enviar("/topic/operator-status", new StatusPayload(EstadoEjecucion.DETENIDO,  EstadoFinalizacion.ERRONEO));
+            WebSocketService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.DETENIDO,  EstadoFinalizacion.ERRONEO));
             e.printStackTrace();
             throw new RuntimeException(e);
         } finally {
-            operationContext = null;
             limpiarPools();
         }
     }
 
-    public GenericResponse exportarSolucion(ExportationRequest request) {
-        if(exportationTask != null) {
-            throw new G4DException("Ya hay una exportación en proceso!");
-        }
-        exportationTask = self.getObject().exportar(request).whenComplete((r, ex) -> exportationTask = null);
-        WebSocketService.enviar("/topic/generator-status", new StatusPayload(EstadoEjecucion.INICIADO));
-        return new GenericResponse(true, "Exportación iniciada!");
-    }
-
-    @Async
-    @Transactional
-    public CompletableFuture<Void> exportar(ExportationRequest request) {
-        try {
-            WebSocketService.enviar("/topic/generator-status", new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.EXITOSO));
-        } catch (Exception e) {
-            WebSocketService.enviar("/topic/generator-status", new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.ERRONEO));
-            e.printStackTrace();
-            throw new RuntimeException(e);
-        } finally {
-
-        }
-        return CompletableFuture.completedFuture(null);
-    }
-
-    private SolucionDTO planificar(TipoEscenario tipoEscenario, LocalDateTime inicioDePlanificacion, LocalDateTime finDePlanificacion, LocalDateTime umbralDeReplanificacion, LocalDateTime instanteDeProcesamiento) {
+    private SolucionDTO planificar(G4DContext context, TipoEscenario tipoEscenario, LocalDateTime inicioDePlanificacion, LocalDateTime finDePlanificacion, LocalDateTime umbralDeReplanificacion, LocalDateTime instanteDeProcesamiento) {
         boolean esSimulacion = tipoEscenario.equals(TipoEscenario.SIMULACION);
         Problematica.INICIO_PLANIFICACION = inicioDePlanificacion;
         Problematica.FIN_PLANIFICACION = finDePlanificacion;
@@ -286,28 +306,29 @@ public class G4DService {
         Problematica.ESCENARIO = tipoEscenario.toString().toUpperCase();
         Problematica problematica;
         if(esSimulacion) {
-            if(simulationContext == null) {
-                simulationContext = new Problematica();
-                simulationContext.cargarAeropuertos(aeropuertoService, aeropuertoAdapter);
-                simulationContext.cargarPlanes(planService, planAdapter);
+            if(context.problematic == null) {
+                context.problematic = new Problematica();
+                context.problematic.cargarAeropuertos(aeropuertoService, aeropuertoAdapter);
+                context.problematic.cargarPlanes(planService, planAdapter);
             }
-            simulationContext.cargarClientes(clienteService, usuarioAdapter);
-            simulationContext.cargarPedidos(pedidoService, pedidoAdapter);
-            simulationContext.cargarRutas(rutaService, rutaAdapter);
-            problematica = simulationContext;
+            context.problematic.cargarClientes(clienteService, usuarioAdapter);
+            context.problematic.cargarPedidos(pedidoService, pedidoAdapter);
+            context.problematic.cargarRutas(rutaService, rutaAdapter);
+            problematica = context.problematic;
+            System.out.printf("[*] SIMULANDO BLOQUE TEMPORAL! ['%s' - '%s']%n", G4DUtility.Convertor.toDisplayString(inicioDePlanificacion), G4DUtility.Convertor.toDisplayString(finDePlanificacion));
         } else {
-            operationContext = new Problematica();
-            operationContext.cargarAeropuertos(aeropuertoService, aeropuertoAdapter);
-            operationContext.cargarPlanes(planService, planAdapter);
-            operationContext.cargarClientes(clienteService, usuarioAdapter);
-            operationContext.cargarPedidos(pedidoService, pedidoAdapter);
-            operationContext.cargarVuelos(vueloService, vueloAdapter);
-            operationContext.cargarRutas(rutaService, rutaAdapter);
-            problematica = operationContext;
+            context.problematic = new Problematica();
+            context.problematic.cargarAeropuertos(aeropuertoService, aeropuertoAdapter);
+            context.problematic.cargarPlanes(planService, planAdapter);
+            context.problematic.cargarClientes(clienteService, usuarioAdapter);
+            context.problematic.cargarPedidos(pedidoService, pedidoAdapter);
+            context.problematic.cargarVuelos(vueloService, vueloAdapter);
+            context.problematic.cargarRutas(rutaService, rutaAdapter);
+            problematica = context.problematic;
+            System.out.printf("[*] OPERANDO BLOQUE TEMPORAL! ['%s' - '%s']%n", G4DUtility.Convertor.toDisplayString(inicioDePlanificacion), G4DUtility.Convertor.toDisplayString(finDePlanificacion));
         }
-        System.out.printf("[*] SIMULANDO BLOQUE TEMPORAL! ['%s' - '%s']%n", G4DUtility.Convertor.toDisplayString(inicioDePlanificacion), G4DUtility.Convertor.toDisplayString(finDePlanificacion));
         GVNS gvns = new GVNS();
-        gvns.planificar(problematica);
+        gvns.resolver(problematica);
         Solucion solucion = gvns.getSolucion();
         System.out.printf("[*] BLOQUE TEMPORAL PLANIFICADO! ['%s' - '%s']%n", G4DUtility.Convertor.toDisplayString(inicioDePlanificacion), G4DUtility.Convertor.toDisplayString(finDePlanificacion));
         if(solucion == null) {
@@ -316,7 +337,7 @@ public class G4DService {
         if(!esSimulacion) {
             almacenarSolucion(solucion);
             limpiarPools();
-        } else simulationSolution = solucion;
+        } else context.solution = solucion;
         return devolverSolucion(solucion);
     }
 

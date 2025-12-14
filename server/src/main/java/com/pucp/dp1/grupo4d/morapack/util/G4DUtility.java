@@ -15,6 +15,8 @@ import java.io.*;
 import java.math.BigInteger;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -187,21 +189,20 @@ public class G4DUtility {
     }
     // Clase 'Auxiliar' para realizar conversiones
     public static class Convertor {
-        private static final DateTimeFormatter dtf_ui = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+        private static final DateTimeFormatter dtf_ds = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
         private static final DateTimeFormatter dtf_db = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-        private static final DateTimeFormatter dtf_js = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
-        private static final DateTimeFormatter tf_ui = DateTimeFormatter.ofPattern("HH:mm");
+        private static final DateTimeFormatter dtf_os = DateTimeFormatter.ofPattern("yyyyMMdd_HH-mm");
+        private static final DateTimeFormatter tf_ds = DateTimeFormatter.ofPattern("HH:mm");
         private static final DateTimeFormatter tf_db = DateTimeFormatter.ofPattern("HH:mm:ss");
-        private static final DateTimeFormatter tf_js = DateTimeFormatter.ofPattern("HH:mm:ss");
-        private static final DateTimeFormatter df_ui = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+        private static final DateTimeFormatter tf_os = DateTimeFormatter.ofPattern("HH-mm");
+        private static final DateTimeFormatter df_ds = DateTimeFormatter.ofPattern("dd/MM/yyyy");
         private static final DateTimeFormatter df_db = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-        private static final DateTimeFormatter df_js = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-
+        private static final DateTimeFormatter df_os = DateTimeFormatter.ofPattern("yyyyMMdd");
 
         // Obtener 'DisplayString' a partir de 'DateTime'
         public static String toDisplayString(LocalDateTime dt) {
             try {
-                return dt.format(dtf_ui);
+                return dt.format(dtf_ds);
             } catch (Exception e) {
                 return null;
             }
@@ -209,7 +210,15 @@ public class G4DUtility {
         // Obtener 'DisplayString' a partir de 'Time'
         public static String toDisplayString(LocalTime t) {
             try {
-                return t.format(tf_ui);
+                return t.format(tf_ds);
+            } catch (Exception e) {
+                return null;
+            }
+        }
+        // Obtener 'DisplayString' a partir de 'Date'
+        public static String toDisplayString(LocalDate d) {
+            try {
+                return d.format(df_ds);
             } catch (Exception e) {
                 return null;
             }
@@ -240,6 +249,38 @@ public class G4DUtility {
                 return null;
             }
         }
+        // Obtener 'DatabaseString' a partir de 'Date'
+        public static String toDatabaseString(LocalDate d) {
+            try {
+                return d.format(df_db);
+            } catch (Exception e) {
+                return null;
+            }
+        }
+        // Obtener 'SystemString' a partir de 'DateTime'
+        public static String toSystemString(LocalDateTime dt) {
+            try {
+                return dt.format(dtf_os);
+            } catch (Exception e) {
+                return null;
+            }
+        }
+        // Obtener 'SystemString' a partir de 'Time'
+        public static String toSystemString(LocalTime t) {
+            try {
+                return t.format(tf_os);
+            } catch (Exception e) {
+                return null;
+            }
+        }
+        // Obtener 'SystemString' a partir de 'Date'
+        public static String toSystemString(LocalDate d) {
+            try {
+                return d.format(df_os);
+            } catch (Exception e) {
+                return null;
+            }
+        }
         // Obtener 'DateTimeRange' a partir de 2 'Time' con referencia a 'DateTime'
         public static LocalDateTime[] toDateTimeRange(LocalTime t_departure, LocalTime t_arrival, LocalDateTime dt_ref) {
             LocalDateTime departure = toDateTime(t_departure, dt_ref);
@@ -256,15 +297,15 @@ public class G4DUtility {
         // Obtener 'DateTime' a partir de 'DateTimeString'
         public static LocalDateTime toDateTime(String dts) {
             try {
-                return LocalDateTime.parse(dts, dtf_ui);
+                return LocalDateTime.parse(dts, dtf_ds);
             } catch (Exception e) {
                 try {
                     return LocalDateTime.parse(dts, dtf_db);
                 } catch (Exception ex) {
                     try {
-                        return LocalDateTime.parse(dts, dtf_js);
+                        return LocalDateTime.parse(dts, dtf_os);
                     } catch (Exception exc) {
-                        throw new RuntimeException(exc);
+                        throw new RuntimeException();
                     }
                 }
             }
@@ -292,15 +333,15 @@ public class G4DUtility {
         // Obtener 'Date' a partir de 'DateString'
         public static LocalDate toDate(String ds) {
             try {
-                return LocalDate.parse(ds, df_ui);
+                return LocalDate.parse(ds, df_ds);
             } catch (Exception e) {
                 try {
                     return LocalDate.parse(ds, df_db);
                 } catch (Exception ex) {
                     try {
-                        return LocalDate.parse(ds, df_js);
+                        return LocalDate.parse(ds, df_os);
                     } catch (Exception exc) {
-                        throw new RuntimeException(exc);
+                        throw new RuntimeException();
                     }
                 }
             }
@@ -315,15 +356,15 @@ public class G4DUtility {
         // Obtener 'Time' a partir de 'TimeString'
         public static LocalTime toTime(String ts) {
             try {
-                return LocalTime.parse(ts, tf_ui);
+                return LocalTime.parse(ts, tf_ds);
             } catch (Exception e) {
                 try {
                     return LocalTime.parse(ts, tf_db);
                 } catch (Exception ex) {
                     try {
-                        return LocalTime.parse(ts, tf_js);
+                        return LocalTime.parse(ts, tf_os);
                     } catch (Exception exc) {
-                        throw new RuntimeException(exc);
+                        throw new RuntimeException();
                     }
                 }
             }
@@ -422,14 +463,6 @@ public class G4DUtility {
                 return defaultValue;
             }
         }
-        // Obtener 'AdmissibleTimeString' de 'TimeString'
-        public static String toAdmissibleTimeString(String ts) {
-            try {
-                return toDatabaseString(toTime(ts));
-            } catch (Exception e) {
-                return null;
-            }
-        }
     }
     // Clase 'Auxiliar' para contener enteros
     public static class IntegerWrapper {
@@ -473,6 +506,9 @@ public class G4DUtility {
 
         // Obtener 'Charset' de un archivo
         public static Charset getFileCharset(Object file) throws IOException {
+            if (file instanceof Path p) {
+                return getFileCharset(Files.newInputStream(p));
+            }
             if (file instanceof File f) {
                 return getFileCharset(new FileInputStream(f));
             }
@@ -502,6 +538,9 @@ public class G4DUtility {
         }
         // Obtener recuento de lineas de un archivo
         public static long getLineCount(Object file) throws IOException {
+            if (file instanceof Path p) {
+                return getLineCount(Files.newInputStream(p));
+            }
             if (file instanceof File f) {
                 return getLineCount(new FileInputStream(f));
             }
@@ -515,11 +554,19 @@ public class G4DUtility {
             byte[] buffer = new byte[8192];
             int read;
             long lines = 0;
-
+            boolean endsWithNewLine = false;
             while ((read = is.read(buffer)) != -1) {
                 for (int i = 0; i < read; i++) {
-                    if (buffer[i] == '\n') lines++;
+                    if (buffer[i] == '\n') {
+                        lines++;
+                        endsWithNewLine = true;
+                    } else {
+                        endsWithNewLine = false;
+                    }
                 }
+            }
+            if (!endsWithNewLine && lines > 0) {
+                lines++;
             }
             return lines;
         }

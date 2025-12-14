@@ -79,7 +79,7 @@ public class Problematica {
     }
 
     public void cargarAeropuertos(AeropuertoService aeropuertoService, AeropuertoAdapter aeropuertoAdapter) {
-        System.out.println(">> Cargando aeropuertos desde la base de datos..");
+        System.out.println(">> Cargando aeropuertos..");
         List<AeropuertoEntity> aeropuertosEntity = aeropuertoService.findAll();
         aeropuertosEntity.forEach(entity -> {
             Aeropuerto aeropuerto = aeropuertoAdapter.toAlgorithm(entity);
@@ -95,7 +95,7 @@ public class Problematica {
     }
 
     public void cargarPlanes(PlanService planService, PlanAdapter planAdapter) {
-        System.out.println(">> Cargando planes desde la base de datos..");
+        System.out.println(">> Cargando planes..");
         List<PlanEntity> planesEntity = planService.findAll();
         planesEntity.forEach(entity -> {
             Plan plan = planAdapter.toAlgorithm(entity);
@@ -105,8 +105,8 @@ public class Problematica {
     }
 
     public void cargarClientes(ClienteService clienteService, UsuarioAdapter usuarioAdapter) {
-        System.out.println(">> Cargando clientes desde la base de datos..");
-        List<ClienteEntity> clientesEntity = clienteService.findAllByDateTimeRange(INICIO_PLANIFICACION, FIN_PLANIFICACION, ESCENARIO);
+        System.out.println(">> Cargando clientes..");
+        List<ClienteEntity> clientesEntity = clienteService.findAllInRangeByScenario(INICIO_PLANIFICACION, FIN_PLANIFICACION, ESCENARIO, CODIGOS_ORIGENES);
         clientesEntity.forEach(entity -> {
             if(clientes.stream().noneMatch(c -> c.getCodigo().equals(entity.getCodigo()))) {
                 Cliente cliente = usuarioAdapter.toAlgorithm(entity);
@@ -117,10 +117,9 @@ public class Problematica {
     }
 
     public void cargarPedidos(PedidoService pedidoService, PedidoAdapter pedidoAdapter) {
-        System.out.println(">> Cargando pedidos desde la base de datos..");
-        List<PedidoEntity> pedidosEntity = pedidoService.findAllByDateTimeRange(INICIO_PLANIFICACION, FIN_PLANIFICACION, ESCENARIO);
-        List<PedidoEntity> pedidosFiltrados = pedidosEntity.stream().filter(entity -> !CODIGOS_ORIGENES.contains(entity.getDestino().getCodigo())).toList();
-        pedidosFiltrados.forEach(entity -> {
+        System.out.println(">> Cargando pedidos..");
+        List<PedidoEntity> pedidosEntity = pedidoService.findAllInRangeByScenario(INICIO_PLANIFICACION, FIN_PLANIFICACION, ESCENARIO, CODIGOS_ORIGENES);
+        pedidosEntity.forEach(entity -> {
             if(pedidos.stream().noneMatch(p -> p.getCodigo().equals(entity.getCodigo()))) {
                 Pedido pedido = pedidoAdapter.toAlgorithm(entity);
                 if (pedido.getFechaHoraProcesamiento() == null) {
@@ -130,12 +129,12 @@ public class Problematica {
             }
         });
         int cantAtendidos = pedidos.stream().filter(Pedido::getFueAtendido).toList().size();
-        System.out.printf("[:] PEDIDOS CARGADOS! | '%d' por atender! & '%d' ya atendidos! & '%d' descartados por 'destino is origen'!%n", pedidos.size() - cantAtendidos, cantAtendidos, pedidosEntity.size() - pedidosFiltrados.size());
+        System.out.printf("[:] PEDIDOS CARGADOS! | '%d' por atender! & '%d' ya atendidos!%n", pedidos.size() - cantAtendidos, cantAtendidos);
     }
 
     public void cargarVuelos(VueloService vueloService, VueloAdapter vueloAdapter) {
-        System.out.println(">> Cargando vuelos desde la base de datos..");
-        List<VueloEntity> vuelosEntity = vueloService.findAllByDateTimeRange(INICIO_PLANIFICACION, FIN_PLANIFICACION, ESCENARIO);
+        System.out.println(">> Cargando vuelos..");
+        List<VueloEntity> vuelosEntity = vueloService.findAllInRangeByScenario(INICIO_PLANIFICACION, FIN_PLANIFICACION, ESCENARIO, CODIGOS_ORIGENES);
         vuelosEntity.forEach(entity -> {
             Vuelo vuelo = vueloAdapter.toAlgorithm(entity);
             vuelos.add(vuelo);
@@ -144,8 +143,8 @@ public class Problematica {
     }
 
     public void cargarRutas(RutaService rutaService, RutaAdapter rutaAdapter) {
-        System.out.println(">> Cargando rutas desde la base de datos..");
-        List<RutaEntity> rutasEntity = rutaService.findAllByDateTimeRange(INICIO_PLANIFICACION, FIN_PLANIFICACION, ESCENARIO);
+        System.out.println(">> Cargando rutas..");
+        List<RutaEntity> rutasEntity = rutaService.findAllInRangeByScenario(INICIO_PLANIFICACION, FIN_PLANIFICACION, ESCENARIO, CODIGOS_ORIGENES);
         rutasEntity.forEach(entity -> {
             Ruta ruta = rutaAdapter.toAlgorithm(entity);
             rutas.add(ruta);

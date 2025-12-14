@@ -20,7 +20,7 @@ import java.util.Optional;
 public interface VueloRepository extends JpaRepository<VueloEntity, Integer> {
     Optional<VueloEntity> findByCodigo(String codigo);
 
-    // Listar todos los vuelos pertenecientes a rutas pertenecientes a pedidos dentro de rango temporal
+    // Listar todos los vuelos pertenecientes a rutas pertenecientes a pedidos de un escenario dentro de cierto rango temporal
     @Query(
         value = """
         SELECT DISTINCT v.*
@@ -30,13 +30,17 @@ public interface VueloRepository extends JpaRepository<VueloEntity, Integer> {
         JOIN lote l ON l.id_ruta = r.id
         JOIN segmentacion s ON s.id = l.id_segmentacion
         JOIN pedido p ON p.id = s.id_pedido
-        WHERE (p.fh_generacion_utc BETWEEN :fechaHoraInicio AND :fechaHoraFin) AND p.tipo_escenario = :tipoEscenario
+        JOIN aeropuerto a ON a.id = p.id_aeropuerto_destino
+        WHERE p.fh_generacion_utc BETWEEN :fechaHoraInicio AND :fechaHoraFin
+          AND p.tipo_escenario = :tipoEscenario
+          AND a.codigo NOT IN (:codOrigenes)
         """,
         nativeQuery = true
     )
-    List<VueloEntity> findAllByDateTimeRange(
+    List<VueloEntity> findAllInRangeByScenario(
             @Param("fechaHoraInicio") LocalDateTime fechaHoraInicio,
             @Param("fechaHoraFin") LocalDateTime fechaHoraFin,
-            @Param("tipoEscenario") String tipoEscenario
+            @Param("tipoEscenario") String tipoEscenario,
+            @Param("codOrigenes") List<String> codOrigenes
     );
 }

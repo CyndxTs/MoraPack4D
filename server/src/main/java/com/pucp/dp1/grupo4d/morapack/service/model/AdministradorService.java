@@ -16,7 +16,6 @@ import com.pucp.dp1.grupo4d.morapack.model.dto.request.ListRequest;
 import com.pucp.dp1.grupo4d.morapack.model.dto.response.GenericResponse;
 import com.pucp.dp1.grupo4d.morapack.model.dto.response.ListResponse;
 import com.pucp.dp1.grupo4d.morapack.model.entity.AdministradorEntity;
-import com.pucp.dp1.grupo4d.morapack.model.entity.ClienteEntity;
 import com.pucp.dp1.grupo4d.morapack.model.enumeration.EstadoEjecucion;
 import com.pucp.dp1.grupo4d.morapack.model.enumeration.EstadoFinalizacion;
 import com.pucp.dp1.grupo4d.morapack.model.enumeration.EstadoUsuario;
@@ -29,12 +28,14 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.multipart.MultipartFile;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Service
 public class AdministradorService {
@@ -88,8 +89,8 @@ public class AdministradorService {
         return administradorRepository.findByCorreo(correo).isPresent();
     }
 
-    public Integer findMaxCodigo() {
-        return G4DUtility.Convertor.toAdmissible(administradorRepository.findMaxCodigo(), 0);
+    public Integer findMaxCode() {
+        return G4DUtility.Convertor.toAdmissible(administradorRepository.findMaxCode(), 0);
     }
 
     public ListResponse listar(ListRequest request) {
@@ -112,10 +113,19 @@ public class AdministradorService {
         return new ListResponse(true, String.format("Administradores filtrados correctamente! ('%d')", dtos.size()), dtos);
     }
 
-    public GenericResponse importar(MultipartFile archivo) {
+    public GenericResponse importar(String idTransaccion, Path archivo) {
+        System.out.println(
+                "THREAD = " + Thread.currentThread().getName()
+        );
+        System.out.println(
+                "TX ACTIVE (AdministradorService) = " +
+                        TransactionSynchronizationManager.isActualTransactionActive()
+        );
+
+        String progressDestination = String.format("/topic/importation-%s", idTransaccion), statusDestination = String.format("/topic/importation-status-%s", idTransaccion);
         try {
-            System.out.printf("Importando administradores desde '%s'..%n", archivo.getName());
-            BufferedReader br = new BufferedReader(new InputStreamReader(archivo.getInputStream(), G4DUtility.Reader.getFileCharset(archivo)));
+            System.out.printf("Importando administradores desde '%s'..%n", archivo.getFileName().toString());
+            BufferedReader br = Files.newBufferedReader(archivo, G4DUtility.Reader.getFileCharset(archivo));
             List<AdministradorEntity> administradores = new ArrayList<>();
             Map<String, AdministradorEntity> poolAdministradores = new LinkedHashMap<>(16, 0.75f, true) {
                 @Override
@@ -124,12 +134,12 @@ public class AdministradorService {
                 }
             };
             this.findAll(PageRequest.of(0, 250)).forEach(c -> poolAdministradores.put(c.getCorreo(), c));
-            int maxCodigo = this.findMaxCodigo();
+            int maxCodigo = this.findMaxCode();
             int lTotales = (int) G4DUtility.Reader.getLineCount(archivo);
             int lProcesadas = 0;
             String linea;
-            WebSocketService.enviar("/topic/loader", new ProgressPayload("Leyendo archivo", lProcesadas, lTotales));
-            WebSocketService.enviar("/topic/loader-status", new StatusPayload(EstadoEjecucion.INICIADO));
+            WebSocketService.enviar(progressDestination, new ProgressPayload("Leyendo archivo", lProcesadas, lTotales));
+            WebSocketService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.INICIADO));
             while ((linea = br.readLine()) != null) {
                 linea = linea.trim();
                 if (!linea.isEmpty()) {
@@ -147,8 +157,11 @@ public class AdministradorService {
                     }
                 }
                 lProcesadas++;
-                WebSocketService.enviar("/topic/loader", new ProgressPayload("Leyendo archivo", lProcesadas, lTotales));
+                WebSocketService.enviar(progressDestination, new ProgressPayload("Leyendo archivo", lProcesadas, lTotales));
                 if (lProcesadas % 500 == 0 || lProcesadas == lTotales) {
+                    System.out.println(
+                            "BATCH SIZE = " + administradores.size()
+                    );
                     importService.batchSave(administradores, "administradores");
                     System.out.printf("[<] ADMINISTRADORES IMPORTADOS! ('%d')%n", administradores.size());
                     administradores.clear();
@@ -156,14 +169,14 @@ public class AdministradorService {
             }
             poolAdministradores.clear();
             br.close();
-            WebSocketService.enviar("/topic/loader-status", new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.EXITOSO));
+            WebSocketService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.EXITOSO));
             return new GenericResponse(true, "Administradores importados correctamente!");
         } catch (ArrayIndexOutOfBoundsException e) {
-            WebSocketService.enviar("/topic/loader-status", new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.ERRONEO));
-            throw new G4DException(String.format("El archivo '%s' no sigue el formato esperado.", archivo.getName()));
+            WebSocketService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.ERRONEO));
+            throw new G4DException(String.format("El archivo '%s' no sigue el formato esperado.", archivo.getFileName()));
         } catch (IOException e) {
-            WebSocketService.enviar("/topic/loader-status", new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.ERRONEO));
-            throw new G4DException(String.format("No se pudo cargar el archivo '%s'.", archivo.getName()));
+            WebSocketService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.ERRONEO));
+            throw new G4DException(String.format("No se pudo cargar el archivo '%s'.", archivo.getFileName()));
         }
     }
 }

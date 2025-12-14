@@ -7,12 +7,14 @@
 package com.pucp.dp1.grupo4d.morapack.controller;
 
 import com.pucp.dp1.grupo4d.morapack.model.dto.request.ExportationRequest;
+import com.pucp.dp1.grupo4d.morapack.model.dto.request.ImportFileRequest;
 import com.pucp.dp1.grupo4d.morapack.model.dto.request.ReplanificationRequest;
 import com.pucp.dp1.grupo4d.morapack.model.dto.request.SimulationRequest;
 import com.pucp.dp1.grupo4d.morapack.model.dto.response.GenericResponse;
 import com.pucp.dp1.grupo4d.morapack.service.G4DService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api")
@@ -28,6 +30,12 @@ public class G4DController {
         return "SERVER INICIADO \uD83D\uDDE3\uFE0F\uD83D\uDD25\uD83D\uDD25\uD83D\uDD25\n";
     }
 
+    @PostMapping("/importation-init")
+    public ResponseEntity<GenericResponse> iniciarImportacion(@RequestPart("file") MultipartFile file, @RequestPart("request") ImportFileRequest request) {
+        GenericResponse response = g4dService.iniciarImportacion(file, request);
+        return ResponseEntity.ok(response);
+    }
+
     @PostMapping("/simulation-init")
     public ResponseEntity<GenericResponse> iniciarSimulacion(@RequestBody SimulationRequest request) {
         GenericResponse response = g4dService.iniciarSimulacion(request);
@@ -35,20 +43,14 @@ public class G4DController {
     }
 
     @PostMapping("/simulation-stop")
-    public ResponseEntity<GenericResponse> detenerSimulacion() {
-        GenericResponse response = g4dService.detenerSimulacion();
+    public ResponseEntity<GenericResponse> detenerSimulacion(@RequestParam String idTransaccion) {
+        GenericResponse response = g4dService.detenerSimulacion(idTransaccion);
         return ResponseEntity.ok(response);
     }
 
     @PostMapping("/operation-replanificate")
     public ResponseEntity<GenericResponse> replanificarOperacion(@RequestBody ReplanificationRequest request) {
         GenericResponse response = g4dService.replanificarOperacion(request);
-        return ResponseEntity.ok(response);
-    }
-
-    @PostMapping("/solution-export")
-    public ResponseEntity<GenericResponse> exportarSolucion(@RequestBody ExportationRequest request) {
-        GenericResponse response = g4dService.exportarSolucion(request);
         return ResponseEntity.ok(response);
     }
 }

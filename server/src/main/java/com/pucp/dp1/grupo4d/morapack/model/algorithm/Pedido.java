@@ -7,11 +7,10 @@
 package com.pucp.dp1.grupo4d.morapack.model.algorithm;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
+
 import com.pucp.dp1.grupo4d.morapack.algorithm.Problematica;
+import com.pucp.dp1.grupo4d.morapack.model.enumeration.EstadoLote;
 import com.pucp.dp1.grupo4d.morapack.model.enumeration.TipoRuta;
 import com.pucp.dp1.grupo4d.morapack.util.G4DUtility;
 
@@ -59,34 +58,27 @@ public class Pedido {
         this.segmentaciones = new ArrayList<>(pedido.segmentaciones);
     }
 
-    public void cargarRestriccionesDeReplanificacion(Map<Ruta, Lote> segmentacionModificable, Map<Ruta, List<Aeropuerto>> secuenciasInalterables) {
+    public Map<Ruta, Lote> obtenerSegmentacionModificable() {
         Map<Ruta, Lote> segmentacion = this.obtenerSegementacionVigente().getLotesPorRuta();
+        Map<Ruta, Lote> segmentacionModificable = new HashMap<>();
         for (Map.Entry<Ruta, Lote> entry : segmentacion.entrySet()) {
             Ruta ruta = entry.getKey();
             Lote lote = entry.getValue();
-            if (!lote.esModificable(ruta)) {
+            if (lote.getEstado().equals(EstadoLote.ENTREGADO)) {
                 continue;
-            }
-            List<Aeropuerto> saInalterable = this.obtenerSecuenciaInalterable(ruta, lote);
-            if(!saInalterable.isEmpty()) {
-                secuenciasInalterables.put(ruta, saInalterable);
             }
             segmentacionModificable.put(ruta, lote);
         }
+        return segmentacionModificable;
     }
 
-    public List<Aeropuerto> obtenerSecuenciaInalterable(Ruta ruta, Lote lote) {
-        PuntoDeReplanificacion pdr = Problematica.PUNTOS_REPLANIFICACION.stream().filter(p -> ruta.equals(p.getRutaInicial()) && p.getLotes().contains(lote)).findFirst().orElse(null);
-        if (pdr == null) {
-            return new ArrayList<>();
+    public Map<Ruta, PuntoDeReplanificacion> obtenerPuntosDeReplanificacion(Map<Ruta, Lote> segmentacionModificable) {
+        Map<Ruta, PuntoDeReplanificacion> puntosDeReplanificacion = new HashMap<>();
+        for (Map.Entry<Ruta, Lote> entry : segmentacionModificable.entrySet()) {
+            PuntoDeReplanificacion pdr = Problematica.PUNTOS_REPLANIFICACION.stream().filter(p -> p.getLotes().contains(entry.getValue())).findFirst().orElse(null);
+            puntosDeReplanificacion.put(entry.getKey(), pdr);
         }
-        List<Vuelo> vuelosFijos = pdr.getVuelosFijos();
-        List<Aeropuerto> saInalterable = new ArrayList<>();
-        if(!vuelosFijos.isEmpty()) {
-            vuelosFijos.forEach(v -> saInalterable.add(v.getPlan().getOrigen()));
-            saInalterable.add(vuelosFijos.getLast().getPlan().getDestino());
-        }
-        return saInalterable;
+        return puntosDeReplanificacion;
     }
 
     public Integer obtenerCantidadDeProductosEnRuta(Ruta ruta) {

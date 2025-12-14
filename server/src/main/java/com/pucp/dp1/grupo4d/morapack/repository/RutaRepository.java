@@ -21,21 +21,25 @@ import java.util.Optional;
 public interface RutaRepository extends JpaRepository<RutaEntity, Integer> {
     Optional<RutaEntity> findByCodigo(String codigo);
 
-    // Listar todas las rutas pertenecientes a pedidos dentro de de rango temporal
+    // Listar todas las rutas pertenecientes a pedidos de un escenario dentro de cierto rango temporal
     @Query(
         value = """
-            SELECT DISTINCT r.*
-            FROM ruta r
-            JOIN lote l ON l.id_ruta = r.id
-            JOIN segmentacion s ON s.id = l.id_segmentacion
-            JOIN pedido p ON p.id = s.id_pedido
-            WHERE (p.fh_generacion_utc BETWEEN :fechaHoraInicio AND :fechaHoraFin) AND p.tipo_escenario = :tipoEscenario
-            """,
+        SELECT DISTINCT r.*
+        FROM ruta r
+        JOIN lote l ON l.id_ruta = r.id
+        JOIN segmentacion s ON s.id = l.id_segmentacion
+        JOIN pedido p ON p.id = s.id_pedido
+        JOIN aeropuerto a ON a.id = p.id_aeropuerto_destino
+        WHERE p.fh_generacion_utc BETWEEN :fechaHoraInicio AND :fechaHoraFin
+          AND p.tipo_escenario = :tipoEscenario
+          AND a.codigo NOT IN (:codOrigenes)
+        """,
         nativeQuery = true
     )
-    List<RutaEntity> findAllByDateTimeRange(
+    List<RutaEntity> findAllInRangeByScenario(
             @Param("fechaHoraInicio") LocalDateTime fechaHoraInicio,
             @Param("fechaHoraFin") LocalDateTime fechaHoraFin,
-            @Param("tipoEscenario") String tipoEscenario
+            @Param("tipoEscenario") String tipoEscenario,
+            @Param("codOrigenes") List<String> codOrigenes
     );
 }

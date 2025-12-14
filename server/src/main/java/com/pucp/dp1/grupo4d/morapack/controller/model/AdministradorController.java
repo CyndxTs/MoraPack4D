@@ -42,10 +42,4 @@ public class AdministradorController {
         ListResponse response = administradorService.filtrar(request);
         return ResponseEntity.ok(response);
     }
-
-    @PostMapping("/importar-archivo")
-    public ResponseEntity<GenericResponse> importar(@RequestParam("file") MultipartFile file) {
-        GenericResponse response = administradorService.importar(file);
-        return ResponseEntity.ok(response);
-    }
 }

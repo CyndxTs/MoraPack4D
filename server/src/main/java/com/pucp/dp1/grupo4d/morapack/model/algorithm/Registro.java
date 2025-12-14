@@ -8,6 +8,8 @@ package com.pucp.dp1.grupo4d.morapack.model.algorithm;
 
 import java.time.LocalDateTime;
 import java.util.Map;
+import java.util.Objects;
+
 import com.pucp.dp1.grupo4d.morapack.util.G4DUtility;
 
 public class Registro {
@@ -30,6 +32,12 @@ public class Registro {
         registro.fechaHoraEgreso = this.fechaHoraEgreso;
         registro.lote = (this.lote != null) ? poolLotes.computeIfAbsent(this.lote.getCodigo(), codigo -> this.lote.replicar()) : null;
         return registro;
+    }
+
+    public Boolean esEquivalente(Registro registro) {
+        return Objects.equals(fechaHoraIngreso, registro.fechaHoraIngreso) &&
+                Objects.equals(fechaHoraEgreso, registro.fechaHoraEgreso) &&
+                Objects.equals(lote, registro.lote);
     }
 
     @Override

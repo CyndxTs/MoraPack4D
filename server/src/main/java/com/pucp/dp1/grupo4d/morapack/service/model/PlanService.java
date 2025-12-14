@@ -31,6 +31,8 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.LocalTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -116,17 +118,18 @@ public class PlanService {
         return new GenericResponse(true, "Plan importado correctamente!");
     }
 
-    public GenericResponse importar(MultipartFile archivo) {
+    public GenericResponse importar(String idTransaccion, Path archivo) {
+        String progressDestination = String.format("/topic/importation-%s", idTransaccion), statusDestination = String.format("/topic/importation-status-%s", idTransaccion);
         try {
-            System.out.printf("Importando planes de vuelo desde '%s'..%n", archivo.getName());
-            BufferedReader br = new BufferedReader(new InputStreamReader(archivo.getInputStream(), G4DUtility.Reader.getFileCharset(archivo)));
+            System.out.printf("Importando planes de vuelo desde '%s'..%n", archivo.getFileName());
+            BufferedReader br = Files.newBufferedReader(archivo, G4DUtility.Reader.getFileCharset(archivo));
             List<PlanEntity> planes = new ArrayList<>();
             Map<String, AeropuertoEntity> poolAeropuertos = aeropuertoService.findAll().stream().collect(Collectors.toMap(AeropuertoEntity::getCodigo, a -> a));
             int lTotales = (int) G4DUtility.Reader.getLineCount(archivo);
             int lProcesadas = 0;
             String linea;
-            WebSocketService.enviar("/topic/loader", new ProgressPayload("Leyendo archivo", lProcesadas, lTotales));
-            WebSocketService.enviar("/topic/loader-status", new StatusPayload(EstadoEjecucion.INICIADO));
+            WebSocketService.enviar(progressDestination, new ProgressPayload("Leyendo archivo", lProcesadas, lTotales));
+            WebSocketService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.INICIADO));
             while ((linea = br.readLine()) != null) {
                 linea = linea.trim();
                 if(!linea.isBlank()) {
@@ -156,7 +159,7 @@ public class PlanService {
                     } else throw new G4DException(String.format("Origen '%s' inválido en línea #%d", codOrigen, lProcesadas + 1));
                 }
                 lProcesadas++;
-                WebSocketService.enviar("/topic/loader", new ProgressPayload("Leyendo archivo", lProcesadas, lTotales));
+                WebSocketService.enviar(progressDestination, new ProgressPayload("Leyendo archivo", lProcesadas, lTotales));
                 if(planes.size() % 500 == 0 || lProcesadas == lTotales) {
                     importService.batchSave(planes, "planes de vuelo");
                     System.out.printf("[<] PLANES IMPORTADOS! ('%d')%n", planes.size());
@@ -165,14 +168,14 @@ public class PlanService {
             }
             poolAeropuertos.clear();
             br.close();
-            WebSocketService.enviar("/topic/loader-status", new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.EXITOSO));
+            WebSocketService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.EXITOSO));
             return new GenericResponse(true, "Planes de vuelo importados correctamente!");
         } catch (ArrayIndexOutOfBoundsException | NoSuchElementException e) {
-            WebSocketService.enviar("/topic/loader-status", new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.ERRONEO));
-            throw new G4DException(String.format("El archivo '%s' no sigue el formato esperado.", archivo.getName()));
+            WebSocketService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.ERRONEO));
+            throw new G4DException(String.format("El archivo '%s' no sigue el formato esperado.", archivo.getFileName()));
         } catch (IOException e) {
-            WebSocketService.enviar("/topic/loader-status", new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.ERRONEO));
-            throw new G4DException(String.format("No se pudo cargar el archivo '%s'.", archivo.getName()));
+            WebSocketService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.ERRONEO));
+            throw new G4DException(String.format("No se pudo cargar el archivo '%s'.", archivo.getFileName()));
         }
     }
 }

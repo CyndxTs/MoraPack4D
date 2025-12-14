@@ -50,10 +50,4 @@ public class AeropuertoController {
         GenericResponse response = aeropuertoService.importar(request);
         return ResponseEntity.ok(response);
     }
-
-    @PostMapping("/importar-archivo")
-    public ResponseEntity<GenericResponse> importar(@RequestParam("file") MultipartFile file) {
-        GenericResponse response = aeropuertoService.importar(file);
-        return ResponseEntity.ok(response);
-    }
 }

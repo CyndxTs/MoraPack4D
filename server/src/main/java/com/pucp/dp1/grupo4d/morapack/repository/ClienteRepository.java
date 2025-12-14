@@ -26,51 +26,55 @@ public interface ClienteRepository extends JpaRepository<ClienteEntity, Integer>
     // Filtrar pagina de clientes por sus atributos
     @Query(
         value = """
-            SELECT *
-            FROM cliente
-            WHERE (:nombre IS NULL OR LOWER(nombre) LIKE LOWER(CONCAT('%', :nombre, '%')))
-              AND (:correo IS NULL OR LOWER(correo) LIKE LOWER(CONCAT('%', :correo, '%')))
-              AND (:estado IS NULL OR estado = :estado)
+        SELECT *
+        FROM cliente
+        WHERE (:nombre IS NULL OR LOWER(nombre) LIKE LOWER(CONCAT('%', :nombre, '%')))
+          AND (:correo IS NULL OR LOWER(correo) LIKE LOWER(CONCAT('%', :correo, '%')))
+          AND (:estado IS NULL OR estado = :estado)
         """,
         countQuery = """
-            SELECT COUNT(*)
-            FROM cliente
-            WHERE (:nombre IS NULL OR LOWER(nombre) LIKE LOWER(CONCAT('%', :nombre, '%')))
-              AND (:correo IS NULL OR LOWER(correo) LIKE LOWER(CONCAT('%', :correo, '%')))
-              AND (:estado IS NULL OR estado = :estado)
-            """,
+        SELECT COUNT(*)
+        FROM cliente
+        WHERE (:nombre IS NULL OR LOWER(nombre) LIKE LOWER(CONCAT('%', :nombre, '%')))
+          AND (:correo IS NULL OR LOWER(correo) LIKE LOWER(CONCAT('%', :correo, '%')))
+          AND (:estado IS NULL OR estado = :estado)
+        """,
         nativeQuery = true
     )
     Page<ClienteEntity> filterBy(
-            @Param("nombre") String nombre,
-            @Param("correo") String correo,
-            @Param("estado") String estado,
-            Pageable pageable
+        @Param("nombre") String nombre,
+        @Param("correo") String correo,
+        @Param("estado") String estado,
+        Pageable pageable
     );
 
-    // Listar todos los clientes con pedidos dentro de rango temporal
+    // Listar todos los clientes con pedidos de de un escenario dentro de cierto rango temporal
     @Query(
         value = """
-            SELECT DISTINCT c.*
-            FROM cliente c
-            INNER JOIN pedido p ON p.id_cliente = c.id
-            WHERE (p.fh_generacion_utc BETWEEN :fechaHoraInicio AND :fechaHoraFin) AND p.tipo_escenario = :tipoEscenario
-            """,
+        SELECT DISTINCT c.*
+        FROM cliente c
+        JOIN pedido p ON p.id_cliente = c.id
+        JOIN aeropuerto a ON a.id = p.id_aeropuerto_destino
+        WHERE p.fh_generacion_utc BETWEEN :fechaHoraInicio AND :fechaHoraFin
+          AND p.tipo_escenario = :tipoEscenario
+          AND a.codigo NOT IN (:codOrigenes)
+        """,
         nativeQuery = true
     )
-    List<ClienteEntity> findAllByDateTimeRange(
-            @Param("fechaHoraInicio") LocalDateTime fechaHoraInicio,
-            @Param("fechaHoraFin") LocalDateTime fechaHoraFin,
-            @Param("tipoEscenario") String tipoEscenario
+    List<ClienteEntity> findAllInRangeByScenario(
+        @Param("fechaHoraInicio") LocalDateTime fechaHoraInicio,
+        @Param("fechaHoraFin") LocalDateTime fechaHoraFin,
+        @Param("tipoEscenario") String tipoEscenario,
+        @Param("codOrigenes") List<String> codOrigenes
     );
 
     // Obtener el máximo código de cliente como número
     @Query(
-            value = """
+        value = """
         SELECT MAX(CAST(c.codigo AS UNSIGNED))
         FROM cliente c
         """,
-            nativeQuery = true
+        nativeQuery = true
     )
-    Integer findMaxCodigo();
+    Integer findMaxCode();
 }

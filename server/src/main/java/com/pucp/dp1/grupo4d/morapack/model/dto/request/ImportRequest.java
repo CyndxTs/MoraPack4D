@@ -11,5 +11,6 @@ import lombok.Data;
 
 @Data
 public class ImportRequest<T extends DTO> {
+    private String tipoDto;
     private T dto;
 }

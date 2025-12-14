@@ -7,7 +7,6 @@
 package com.pucp.dp1.grupo4d.morapack.repository;
 
 import com.pucp.dp1.grupo4d.morapack.model.entity.AdministradorEntity;
-import com.pucp.dp1.grupo4d.morapack.model.enumeration.EstadoUsuario;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -24,35 +23,35 @@ public interface AdministradorRepository extends JpaRepository<AdministradorEnti
     // Filtrar pagina de administradores por sus atributos
     @Query(
         value = """
-            SELECT *
-            FROM ADMINISTRADOR a
-            WHERE (:nombre IS NULL OR LOWER(a.nombre) LIKE LOWER(CONCAT('%', :nombre, '%')))
-              AND (:correo IS NULL OR LOWER(a.correo) LIKE LOWER(CONCAT('%', :correo, '%')))
-              AND (:estado IS NULL OR a.estado = :estado)
-            """,
+        SELECT *
+        FROM ADMINISTRADOR a
+        WHERE (:nombre IS NULL OR LOWER(a.nombre) LIKE LOWER(CONCAT('%', :nombre, '%')))
+          AND (:correo IS NULL OR LOWER(a.correo) LIKE LOWER(CONCAT('%', :correo, '%')))
+          AND (:estado IS NULL OR a.estado = :estado)
+        """,
         countQuery = """
-            SELECT COUNT(*)
-            FROM ADMINISTRADOR a
-            WHERE (:nombre IS NULL OR LOWER(a.nombre) LIKE LOWER(CONCAT('%', :nombre, '%')))
-              AND (:correo IS NULL OR LOWER(a.correo) LIKE LOWER(CONCAT('%', :correo, '%')))
-              AND (:estado IS NULL OR a.estado = :estado)
-            """,
+        SELECT COUNT(*)
+        FROM ADMINISTRADOR a
+        WHERE (:nombre IS NULL OR LOWER(a.nombre) LIKE LOWER(CONCAT('%', :nombre, '%')))
+          AND (:correo IS NULL OR LOWER(a.correo) LIKE LOWER(CONCAT('%', :correo, '%')))
+          AND (:estado IS NULL OR a.estado = :estado)
+        """,
         nativeQuery = true
     )
     Page<AdministradorEntity> filterBy(
-            @Param("nombre") String nombre,
-            @Param("correo") String correo,
-            @Param("estado") String estado,
-            Pageable pageable
+        @Param("nombre") String nombre,
+        @Param("correo") String correo,
+        @Param("estado") String estado,
+        Pageable pageable
     );
 
     // Obtener el máximo número de administrador
     @Query(
-            value = """
+        value = """
         SELECT MAX(CAST(SUBSTRING(a.codigo, 6) AS UNSIGNED))
         FROM administrador a
         """,
-            nativeQuery = true
+        nativeQuery = true
     )
-    Integer findMaxCodigo();
+    Integer findMaxCode();
 }

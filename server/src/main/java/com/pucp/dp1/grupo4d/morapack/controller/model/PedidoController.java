@@ -51,10 +51,4 @@ public class PedidoController {
         GenericResponse response = pedidoService.importar(request);
         return ResponseEntity.ok(response);
     }
-
-    @PostMapping("/importar-archivo")
-    public ResponseEntity<GenericResponse> importar(@RequestPart("file") MultipartFile file, @RequestPart("request") ImportFileRequest request) {
-        GenericResponse response = pedidoService.importar(file, request);
-        return ResponseEntity.ok(response);
-    }
 }
