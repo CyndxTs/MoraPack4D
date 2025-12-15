@@ -5,6 +5,7 @@
  * @property {number} distancia
  * @property {string} fechaHoraSalida
  * @property {string} fechaHoraLlegada
+ * @property {string} estado
  * @property {string} tipo
  * @property {string} codOrigen
  * @property {string} codDestino

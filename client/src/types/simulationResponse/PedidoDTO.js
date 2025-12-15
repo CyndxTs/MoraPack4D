@@ -9,10 +9,11 @@
  * @property {number} cantidadSolicitada
  * @property {boolean} fueAtendido
  * @property {string} fechaHoraGeneracion
+ * @property {string} fechaHoraProcesamiento
  * @property {string} fechaHoraExpiracion
  * @property {string} codDestino
  * @property {string} tipoEscenario
- * @property {SegmentacionDTO[]} segmentaciones
+ * @property {SegmentacionDTO} segmentacionVigente
  */
 
 export {};
