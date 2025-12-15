@@ -11,7 +11,7 @@ import {
 import "leaflet/dist/leaflet.css";
 
 // Servicios y Tipos
-import { onEvent, initOperationManager, disconnectOperationWS, connectOperatorWS } from "../../services/operationManager";
+import { onEvent, initOperationManager, disconnectOperationWS, connectOperatorWS, forceReplanification } from "../../services/operationManager";
 import { listarParametros, importarParametros } from "../../services/parametrosService";
 import { listarAeropuertos } from "../../services/aeropuertoService";
 
@@ -309,6 +309,12 @@ export default function Planificacion() {
       }
     }
   }, []); // Array vacío para que solo corra al inicio (F5)
+
+  const limpiarSimulacion = () => {
+      localStorage.removeItem("SIMULATION_BACKUP");
+      localStorage.removeItem("SIMULATION_STATUS");
+      window.location.reload(); // Recarga limpia
+  };
 
   // ------------------------------------------------------------------------
   // B. REFS
@@ -1409,7 +1415,7 @@ export default function Planificacion() {
                     <ButtonAdd
                       icon={run}
                       label="Replanificar"
-                      onClick={openModal}
+                      onClick={forceReplanification}
                     />
                     <ButtonAdd
                       icon={run}
@@ -1419,8 +1425,8 @@ export default function Planificacion() {
                     <ButtonAdd
                       icon={stopIcon}
                       className="btn-stop"
-                      label="Detener replanificación"
-                      onClick={openModal}
+                      label="Limpiar mapa"
+                      onClick={limpiarSimulacion}
                     />
                   </div>
                 </div>

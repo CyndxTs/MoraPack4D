@@ -1,4 +1,5 @@
 import { Client } from "@stomp/stompjs";
+import axios from "axios"; // <--- 1. IMPORTANTE: FALTABA ESTO
 import { listarParametros } from "./parametrosService";
 
 /**
@@ -6,11 +7,6 @@ import { listarParametros } from "./parametrosService";
  */
 /**
  * @typedef {import("../types/simulationResponse/SolutionPayload").SolutionPayload} SolutionPayload
- */
-
-/**
- * @param {SolutionPayload} onSolution         // SolutionResponse de /topic/simulator
- * @param {(status: any) => void} onStatus             // ProcessStatusResponse de /topic/simulator-status
  */
 
 /* ===============================
@@ -23,40 +19,40 @@ const SOCKET_URL =
   window.location.host +
   "/ws";
 
-// 2. API URL (AQUÍ ESTÁ LA CORRECCIÓN CLAVE)
-// Esto detecta automáticamente si estás en localhost o en 1inf54...
-const API_BASE_URL = 
-  window.location.protocol + "//" + 
-  window.location.hostname + 
-  ":8080/api";
+// 2. CORRECCIÓN: Usamos ruta relativa directamente.
+// Axios usará el host actual automáticamente.
+const API_OP_REPLANIFICATE = "/api/operation-replanificate";
 
 /* ===============================
    ESTADO
 ================================ */
 let client = null;
 let parametros = null;
-
 let listeners = [];
 
 let pendingOrders = 0;
 let fechaHoraPrimerPedido = null;
 let listoParaReplanificar = false;
 
+// Variables de Timers
 let replanTimer = null;
 let log5minTimer = null;
 let log10minTimer = null;
+
+// Flag para saber si esta pestaña es la que inició el timer
+let isMasterTab = false; 
 
 /* ===============================
    EVENTOS
 ================================ */
 function broadcast(msg) {
-  listeners.forEach(fn => fn(msg));
+  listeners.forEach((fn) => fn(msg));
 }
 
 export function onEvent(fn) {
   listeners.push(fn);
   return () => {
-    listeners = listeners.filter(l => l !== fn);
+    listeners = listeners.filter((l) => l !== fn);
   };
 }
 
@@ -65,7 +61,7 @@ export function onEvent(fn) {
 ================================ */
 function fechaHoraUTC() {
   const d = new Date();
-  const pad = n => n.toString().padStart(2, "0");
+  const pad = (n) => n.toString().padStart(2, "0");
 
   return (
     d.getUTCFullYear() + "-" +
@@ -80,25 +76,21 @@ function fechaHoraUTC() {
 /* ===============================
    SINCRONIZACIÓN ENTRE PESTAÑAS
 ================================ */
-// Creamos un canal de radio para que las pestañas se hablen
-const tabChannel = new BroadcastChannel('om_sync_channel');
+const tabChannel = new BroadcastChannel("om_sync_channel");
 
 tabChannel.onmessage = (event) => {
   const { action, payload } = event.data;
-  
-  if (action === 'NEW_ORDER_TRIGGERED') {
+
+  if (action === "NEW_ORDER_TRIGGERED") {
     console.log("[OM] Recibido aviso de pedido desde otra pestaña.");
-    // Ejecutamos la lógica localmente para que aparezca el log y el timer visual
-    // Pasamos true para indicar que es un evento remoto y no volver a emitir
-    triggerLocalOrderLogic(payload, true); 
+    // isRemote = true. Esta pestaña NO hará la llamada a la API, solo UI.
+    triggerLocalOrderLogic(payload, true);
   }
 };
 
 /* ===============================
-   STOMP (MISMO PATRÓN QUE FUNCIONA)
+   STOMP
 ================================ */
-
-
 export function connectOperatorWS(onSolution, onStatus) {
   if (client && client.active) return;
 
@@ -108,13 +100,10 @@ export function connectOperatorWS(onSolution, onStatus) {
     debug: () => {},
     onConnect: () => {
       console.log("STOMP conectado a", SOCKET_URL);
-
       client.subscribe("/topic/operation", (message) => {
-        console.log("RAW WS MESSAGE:", message.body);
         const payload = JSON.parse(message.body);
         onSolution(payload);
       });
-
       client.subscribe("/topic/operation-status", (message) => {
         const status = JSON.parse(message.body);
         onStatus(status);
@@ -144,7 +133,6 @@ export async function initOperationManager() {
   if (!dtos || dtos.length === 0) {
     throw new Error("No se encontraron parámetros");
   }
-
   parametros = dtos[0];
 }
 
@@ -164,72 +152,101 @@ function clearAllTimers() {
 function scheduleTimer(startTimeMs) {
   clearAllTimers();
 
-  // Calculamos el objetivo sumando 3 minutos al momento de inicio
-  const targetTimeMs = startTimeMs + (REPLANIFICACION_MINUTOS * 60000);
+  const targetTimeMs = startTimeMs + REPLANIFICACION_MINUTOS * 60000;
   const nowMs = Date.now();
-  
-  // Calculamos la diferencia
   const totalMs = Math.max(0, targetTimeMs - nowMs);
 
-  console.log(`[OM] Timer programado para ejecutarse en ${totalMs / 1000} segundos`);
+  console.log(`[OM] Timer programado para ejecutarse en ${totalMs / 1000} s`);
 
-  // Timers de log (opcional, ajustados para ser relativos)
+  // Logs visuales
   log5minTimer = setTimeout(() => {
-    console.log("[OM] Han pasado 2 minutos");
-  }, 2 * 60 * 1000); // Esto cuenta desde AHORA, no desde el inicio, ajustar si es necesario
+    console.log(`[OM] Han pasado ${REPLANIFICACION_MINUTOS} minutos`);
+  }, REPLANIFICACION_MINUTOS * 60 * 1000);
 
   broadcast({
     type: "notification-global",
     variant: "info",
-    message: `Iniciando replanificación (ejecución en ${REPLANIFICACION_MINUTOS} min)`
+    message: `Iniciando replanificación (ejecución en ${REPLANIFICACION_MINUTOS} min)`,
   });
 
+  // Ejecutamos la replanificación cuando el tiempo acabe
   replanTimer = setTimeout(runReplanification, totalMs);
 }
 
 /* ===============================
-   API BACKEND
+   API BACKEND (Service Layer)
 ================================ */
+export async function sendReplanificationRequest(requestPayload) {
+  try {
+    const { data } = await axios.post(API_OP_REPLANIFICATE, requestPayload);
+
+    if (data.exito === false) {
+      throw new Error(data.mensaje || "La operación no tuvo éxito");
+    }
+    return data;
+  } catch (error) {
+    if (error.response && error.response.data) {
+      throw new Error(
+        error.response.data.message || "Error al procesar la replanificación"
+      );
+    }
+    if (error.message && !error.response) {
+      throw error;
+    }
+    throw new Error("No se pudo conectar con el servidor de operaciones");
+  }
+}
+
 async function runReplanification() {
   console.log("Intentando replanificar...", { listoParaReplanificar, parametros });
+
   if (!listoParaReplanificar || !parametros) return;
+
+  // 3. CORRECCIÓN LÓGICA:
+  // Si esta pestaña NO es la "Master" (la que inició la acción),
+  // no debe llamar a la API, solo limpiar su estado visual.
+  if (!isMasterTab) {
+      console.log("[OM] Saltando llamada API (Pestaña remota)");
+      // Limpiamos estado visual local
+      pendingOrders = 0;
+      fechaHoraPrimerPedido = null;
+      listoParaReplanificar = false;
+      clearAllTimers();
+      return; 
+  }
 
   broadcast({
     type: "notification-global",
     variant: "info",
-    message: `Se están replanificando ${pendingOrders} pedidos`
+    message: `Se están replanificando ${pendingOrders} pedidos`,
   });
 
   try {
-    const resp = await fetch(`${API_BASE_URL}/operation-replanificate`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        fechaHoraActual: fechaHoraUTC(),
-        almacenarParametrizacion: true,
-        parametros
-      })
-    });
+    const payload = {
+      fechaHoraActual: fechaHoraUTC(),
+      almacenarParametrizacion: true,
+      parametros,
+    };
 
-    const json = await resp.json();
-    if (!json.exito) throw new Error(json.mensaje);
+    const json = await sendReplanificationRequest(payload);
 
     broadcast({
       type: "replanificacion-iniciada",
       token: json.token,
-      pendingOrders
+      pendingOrders,
     });
 
+    // Reset de estado
     pendingOrders = 0;
     fechaHoraPrimerPedido = null;
     listoParaReplanificar = false;
+    isMasterTab = false; // Reset del flag
     clearAllTimers();
-
   } catch (e) {
     broadcast({
       type: "notification-global",
       variant: "danger",
-      message: e.message || "Error durante la replanificación"
+      message: e.message || "Error durante la replanificación",
     });
   }
 }
@@ -238,21 +255,19 @@ async function runReplanification() {
    PUBLIC API
 ================================ */
 
-// Esta función se llama cuando el usuario hace la acción
 export function notifyNewOrder() {
   const now = Date.now();
-  
-  // 1. Ejecutar lógica en ESTA pestaña
+
+  // 1. Ejecutar lógica LOCAL (esta pestaña es la Master)
   triggerLocalOrderLogic(now, false);
 
   // 2. Avisar a las OTRAS pestañas
   tabChannel.postMessage({
-    action: 'NEW_ORDER_TRIGGERED',
-    payload: now
+    action: "NEW_ORDER_TRIGGERED",
+    payload: now,
   });
 }
 
-// Esta función contiene la lógica real (Logs + Timer)
 function triggerLocalOrderLogic(timeReference, isRemote) {
   if (!parametros) {
     console.warn("[OM] Pedido recibido pero parámetros no cargados");
@@ -262,22 +277,42 @@ function triggerLocalOrderLogic(timeReference, isRemote) {
   pendingOrders++;
 
   if (!fechaHoraPrimerPedido) {
-    fechaHoraPrimerPedido = fechaHoraUTC(); // O usar timeReference para formatear
+    fechaHoraPrimerPedido = fechaHoraUTC();
     listoParaReplanificar = true;
+    
+    // Aquí decidimos quién es el responsable de llamar a la API al final del timer
+    isMasterTab = !isRemote; 
 
     console.log(
-      `[OM] Se comienza replanificación. Primer pedido registrado: ${fechaHoraPrimerPedido}`
+      `[OM] Se comienza replanificación. Primer pedido: ${fechaHoraPrimerPedido}. MasterTab: ${isMasterTab}`
     );
 
-    // Si es remoto (Planificación), solo queremos ver el log y el timer visual, 
-    // pero idealmente solo UNA pestaña debería hacer el POST al backend.
-    // Para simplificar, dejaremos que ambas inicien el timer, pero ten cuidado con duplicar el POST.
-    
-    // TRUCO: Si es remoto, podemos programar el timer solo visualmente o 
-    // dejar que corra. Si ambas hacen POST, el backend recibirá dos peticiones.
-    // Lo ideal: Solo la pestaña activa hace el POST.
-    
-    // Para tu caso de uso (ver los logs):
-    scheduleTimer(Date.now()); 
+    scheduleTimer(Date.now());
   }
+}
+
+/* ===============================
+   REPLANIFICACIÓN MANUAL (BOTÓN)
+================================ */
+export function forceReplanification() {
+  console.log("[OM] Replanificación manual solicitada");
+
+  if (!parametros) {
+    console.warn("[OM] No hay parámetros cargados");
+    return;
+  }
+
+  if (!listoParaReplanificar) {
+    console.warn("[OM] No hay pedidos pendientes");
+    return;
+  }
+
+  // Esta pestaña pasa a ser la Master
+  isMasterTab = true;
+
+  // Cancelamos cualquier timer activo
+  clearAllTimers();
+
+  // Ejecutamos inmediatamente
+  runReplanification();
 }
