@@ -18,6 +18,7 @@ import {
   sendSimulationRequest,
   sendStopSimulation,
   disconnectWS,
+  subscribeToSimulation,
 } from "../../services/planificarService";
 
 // Componentes UI
@@ -27,7 +28,7 @@ import {
   DateTimeInline,
   Dropdown2,
   Input,
-  LoadingOverlay,
+  SimulationLoadingOverlay,
 } from "../../components/UI/ui";
 import SimulationSidebar from "./SimulationSidebar";
 import { AirportTooltipContent, PlaneTooltipContent } from "./MapTooltips";
@@ -196,6 +197,7 @@ export default function Simulacion() {
   const [realNow, setRealNow] = useState(new Date());
   const [simStartMs, setSimStartMs] = useState(null);
   const [simNowMs, setSimNowMs] = useState(() => Date.now());
+  const [simEndMs, setSimEndMs] = useState(null);
   const [seconds, setSeconds] = useState(0);
   const [timerRunning, setTimerRunning] = useState(false);
   const [timerActive, setTimerActive] = useState(false);
@@ -270,7 +272,8 @@ export default function Simulacion() {
   const [saltoDeAlgoritmo, setTamanioDeSaltoTemporal] = useState();
   const [probabilidadReplanificacion, setProbabilidadReplanificacion] =
     useState();
-
+  const [simulationId, setSimulationId] = useState(null); //  Guardar ID actual
+  const subscriptionsRef = useRef(null); //  Para limpiar suscripción
   // ------------------------------------------------------------------------
   // B. REFS
   // ------------------------------------------------------------------------
@@ -280,7 +283,7 @@ export default function Simulacion() {
 
   // ------------------------------------------------------------------------
   // C. VALORES DERIVADOS (Calculados)
-  // ------------------------------------------------------------------------
+  // --------------------------------------------------F----------------------
 
   const simSpeed =
     typeof multiplicadorTemporal === "number" && multiplicadorTemporal > 0
@@ -560,6 +563,8 @@ export default function Simulacion() {
 
   const buildSimulationFromSolution = (solution) => {
     if (!solution) return;
+
+    // Helper para obtener etiquetas de rutas de un vuelo
     const getRutasDeVuelo = (flightCode) => {
       const labels = (solution.rutasEnOperacion || [])
         .filter((r) => (r.codVuelos || []).includes(flightCode))
@@ -567,6 +572,7 @@ export default function Simulacion() {
       return Array.from(new Set(labels));
     };
 
+    // 1. Mapear Aeropuertos
     const airportMap = {};
     (solution.aeropuertosTransitados || []).forEach((a) => {
       airportMap[a.codigo] = {
@@ -578,19 +584,25 @@ export default function Simulacion() {
         country: a.pais,
         capacidad: a.capacidad,
         esSede: a.esSede,
+        // Filtramos solo registros vigentes
         registros: (a.registros || []).filter(
           (reg) => reg.sigueVigente === true
         ),
       };
     });
+
+    // 2. Mapa de Llegadas de Lotes (para saber dónde está cada lote)
     const loteArrivalMap = {};
     Object.values(airportMap).forEach((ap) => {
       (ap.registros || []).forEach((reg) => {
         if (!reg.sigueVigente) return;
         if (!reg.codLote || !reg.fechaHoraIngreso) return;
+
         const loteCode = reg.codLote;
         const ingresoMs = parseFechaHoraToMs(reg.fechaHoraIngreso);
         const prev = loteArrivalMap[loteCode];
+
+        // Nos quedamos con el registro más reciente
         if (!prev || ingresoMs > prev.ingresoMs) {
           loteArrivalMap[loteCode] = {
             ingreso: reg.fechaHoraIngreso,
@@ -603,6 +615,7 @@ export default function Simulacion() {
       });
     });
 
+    // 3. Mapear Rutas
     const rutasPorCodigo = {};
     (solution.rutasEnOperacion || []).forEach((r) => {
       rutasPorCodigo[r.codigo] = r;
@@ -621,40 +634,62 @@ export default function Simulacion() {
       });
     setRoutes(rutasFiltradas);
 
+    // 4. Mapear Pedidos (AQUÍ ESTÁ EL CAMBIO PRINCIPAL)
     const pedidosAtendidos = (solution.pedidosAtendidos || []).map((p) => {
-      const segmentaciones = (p.segmentaciones || []).map((seg) => {
+      // Adaptador: El backend nuevo manda 'segmentacionVigente' (objeto),
+      // pero el frontend espera un array de segmentaciones.
+      let sourceSegmentaciones = [];
+      if (p.segmentaciones && p.segmentaciones.length > 0) {
+        sourceSegmentaciones = p.segmentaciones;
+      } else if (p.segmentacionVigente) {
+        sourceSegmentaciones = [p.segmentacionVigente];
+      }
+
+      const segmentaciones = sourceSegmentaciones.map((seg) => {
         const lotes = (seg.lotesPorRuta || []).map((lpr) => {
           const ruta = rutasPorCodigo[lpr.codRuta];
           const origen = ruta ? airportMap[ruta.codOrigen] : null;
           const destino = ruta ? airportMap[ruta.codDestino] : null;
+
+          // En el nuevo JSON, 'codVuelos' es un array de strings directo
           const vuelosLote =
             Array.isArray(lpr.codVuelos) && lpr.codVuelos.length > 0
               ? lpr.codVuelos
-              : ruta?.codVuelos || [];
-          const loteCodigo = lpr.lote.codigo;
-          const arrivalInfo = loteArrivalMap[loteCodigo];
+              : ruta?.codVuelos || []; // Fallback a la ruta
+
+          // Datos del lote anidado (lpr.lote)
+          const loteData = lpr.lote || {};
+          const loteCodigo = loteData.codigo;
+          const arrivalInfo = loteCodigo ? loteArrivalMap[loteCodigo] : null;
+
           return {
             codRuta: lpr.codRuta,
-            loteCodigo,
-            loteTamanio: lpr.lote.tamanio,
-            loteEstado: lpr.lote.estado,
+            loteCodigo: loteCodigo,
+            loteTamanio: loteData.tamanio,
+            loteEstado: loteData.estado,
             vuelos: vuelosLote,
+
+            // Info geográfica derivada de la ruta
             origenCode: ruta?.codOrigen,
             destinoCode: ruta?.codDestino,
             origenNombre: origen?.city || ruta?.codOrigen,
             destinoNombre: destino?.city || ruta?.codDestino,
+
+            // Info de llegada real (si existe registro en aeropuerto)
             arrivalAirportCode: arrivalInfo?.airportCode || null,
             arrivalAirportCity: arrivalInfo?.airportCity || null,
             arrivalFechaHoraIngreso: arrivalInfo?.ingreso || null,
           };
         });
+
         return {
           codigo: seg.codigo,
           fechaHoraAplicacion: seg.fechaHoraAplicacion,
-          fechaHoraSustitucion: seg.fechaHoraSustitucion,
+          fechaHoraSustitucion: seg.fechaHoraSustitucion || null,
           lotes,
         };
       });
+
       return {
         codigo: p.codigo,
         codCliente: p.codCliente,
@@ -667,14 +702,17 @@ export default function Simulacion() {
     });
     setOrders(pedidosAtendidos);
 
+    // 5. Actualizar Stock de Aeropuertos
     setAirports((prevAirports) => {
       const merged = { ...(prevAirports || {}) };
       Object.entries(airportMap).forEach(([code, data]) => {
         const prev = merged[code] || {};
+        // Preservar flag esSede si ya existía
         const esSedeFinal =
           data.esSede !== undefined && data.esSede !== null
             ? data.esSede
             : prev.esSede ?? false;
+
         merged[code] = {
           ...prev,
           ...data,
@@ -684,6 +722,7 @@ export default function Simulacion() {
       return merged;
     });
 
+    // 6. Procesar Vuelos (Interpolación de movimiento)
     const vuelosNuevos = solution.vuelosEnTransito || [];
     const codigosNuevos = new Set(vuelosNuevos.map((v) => v.codigo));
 
@@ -694,15 +733,17 @@ export default function Simulacion() {
       vuelosNuevos.forEach((v) => {
         const origin = airportMap[v.codOrigen];
         const dest = airportMap[v.codDestino];
+
         if (!origin || !dest) {
-          console.warn(
-            `Vuelo ${v.codigo} omitido: no se encontró aeropuerto ${v.codOrigen} o ${v.codDestino}`
-          );
+          // Si faltan datos de aeropuertos, saltamos para evitar crash
           return;
         }
+
         const startMs = parseFechaHoraToMs(v.fechaHoraSalida);
         const endMs = parseFechaHoraToMs(v.fechaHoraLlegada);
         const durationSec = Math.max((endMs - startMs) / 1000, 60);
+
+        // Generar curva geodésica
         const path = generateGeodesicPath(
           origin.lat,
           origin.lng,
@@ -714,6 +755,7 @@ export default function Simulacion() {
         const prev = prevByCode.get(v.codigo);
 
         if (prev) {
+          // Si el vuelo ya existía, actualizamos datos dinámicos (carga)
           nextFlights.push({
             ...prev,
             capacity: v.capacidadOcupada,
@@ -721,7 +763,7 @@ export default function Simulacion() {
             rutas: rutasVuelo,
           });
         } else {
-          const total = Math.max(endMs - startMs, 60 * 1000);
+          // Si es vuelo nuevo, inicializamos posición
           let progress = 0;
           let position = path[0];
           let arrived = false;
@@ -736,12 +778,16 @@ export default function Simulacion() {
             position = path[path.length - 1];
             arrived = true;
           } else {
+            // Calcular posición interpolada inicial
+            const total = Math.max(endMs - startMs, 60 * 1000);
             const frac = (simNowMs - startMs) / total;
             progress = Math.min(Math.max(frac, 0), 1);
+
             const idx = Math.floor(progress * (path.length - 1));
             const pos = path[idx];
             const next = path[Math.min(idx + 1, path.length - 1)];
 
+            // Calcular rotación del avión
             const toRad = (d) => (d * Math.PI) / 180;
             const toDeg = (r) => (r * 180) / Math.PI;
             const lat1 = toRad(pos.lat),
@@ -755,7 +801,7 @@ export default function Simulacion() {
                 Math.sin(lat1) * Math.cos(lat2) * Math.cos(lon2 - lon1)
             );
             bearing = (toDeg(bearing) + 360) % 360;
-            rotation = bearing - 45;
+            rotation = bearing - 45; // Ajuste por icono del avión
             position = pos;
           }
 
@@ -782,6 +828,7 @@ export default function Simulacion() {
         }
       });
 
+      // Mantener vuelos antiguos que aún no terminan (visualización suave)
       prevFlights.forEach((prevFlight) => {
         if (
           !codigosNuevos.has(prevFlight.code) &&
@@ -907,14 +954,16 @@ export default function Simulacion() {
 
   // 5. Finalización Automática
   useEffect(() => {
-    if (!timerActive || flights.length === 0) return;
-    const allArrivedByTime = flights.every((f) => simNowMs >= f.endMs);
-    if (allArrivedByTime) {
-      showNotification("info", "Todos los vuelos han llegado a su destino.");
+    if (!timerActive) return;
+
+    // CONDICIÓN: Solo detener si la hora actual SUPERÓ la hora fin configurada
+    // Agregamos (seconds > 1) como "colchón" de seguridad por si acaso
+    if (simEndMs && simNowMs >= simEndMs && seconds > 1) {
+      showNotification("info", "Fin del periodo de simulación.");
       setTimerRunning(false);
       setTimerActive(false);
     }
-  }, [simNowMs, flights, timerActive]);
+  }, [simNowMs, simEndMs, timerActive, seconds]);
 
   // 6. Carga de Aeropuertos Iniciales
   useEffect(() => {
@@ -975,78 +1024,18 @@ export default function Simulacion() {
     }
   }, [isModalOpen, loadedOnOpen]);
 
-  // 8. WebSocket Connection
+  // 8. WebSocket Connection (Solo Conexión Inicial)
   useEffect(() => {
-    connectSimulatorWS(
-      (payload) => {
-        console.log("SolutionPayload recibido por WS:", payload);
-        const solucion = payload.solucion || payload;
-        if (!solucion) {
-          console.warn("Payload de simulación sin 'solucion'");
-          return;
-        }
-        buildSimulationFromSolution(solucion);
-      },
-      (status) => {
-        console.log("Status simulador:", status);
-        const estadoEjecucion =
-          typeof status === "string" ? status : status.estadoEjecucion;
-        const estadoFinalizacion =
-          typeof status === "string" ? null : status.estadoFinalizacion;
+    // Conectamos al socket al entrar a la página
+    connectSimulatorWS(() => {
+      console.log("Socket listo esperando simulación...");
+    });
 
-        if (!estadoEjecucion) return;
-
-        setEstadoEjecucionSim(estadoEjecucion);
-        if (estadoEjecucion === "POR_INICIAR") {
-          setShowLoadingSim(true);
-        } else {
-          setShowLoadingSim(false);
-        }
-
-        if (estadoEjecucion === "POR_INICIAR") {
-          setShowLoadingSim(true);
-          showNotification("info", "Simulación por iniciar...");
-        } else if (estadoEjecucion === "INICIADO") {
-          showNotification("info", "Simulación iniciada");
-        } else if (estadoEjecucion === "POR_DETENER") {
-          if (!stopRequestedRef.current) {
-            showNotification("info", "Deteniendo simulación...");
-          }
-        } else if (estadoEjecucion === "DETENIDO") {
-          if (stopRequestedRef.current) {
-            stopRequestedRef.current = false;
-            return;
-          }
-          if (estadoFinalizacion === "EXITOSO") {
-            showNotification("success", "Simulación finalizada exitosamente");
-          } else if (estadoFinalizacion === "FORZADO") {
-            showNotification("info", "Simulación detenida por el usuario");
-          } else if (estadoFinalizacion === "COLAPSO") {
-            showNotification("danger", "COLAPSO logístico en simulación");
-          } else if (estadoFinalizacion === "ERRONEO") {
-            showNotification("danger", "Error en la simulación");
-          } else {
-            showNotification("info", "Simulación detenida");
-          }
-        }
-      }
-    );
-
-    const handleBeforeUnload = () => {
-      stopRequestedRef.current = true;
-      sendStopSimulation().catch((err) =>
-        console.warn("Auto-stop on unload error:", err)
-      );
-    };
-
-    window.addEventListener("beforeunload", handleBeforeUnload);
-
+    // Cleanup al salir
     return () => {
-      window.removeEventListener("beforeunload", handleBeforeUnload);
-      stopRequestedRef.current = true;
-      sendStopSimulation().catch((err) =>
-        console.warn("Auto-stop on unmount error:", err)
-      );
+      if (subscriptionsRef.current) {
+        subscriptionsRef.current.unsubscribe(); // Limpiar suscripción si hay una activa
+      }
       disconnectWS();
     };
   }, []);
@@ -1096,16 +1085,25 @@ export default function Simulacion() {
   // ------------------------------------------------------------------------
 
   // Control de Simulación
-  const handleStart = () => {
+  const handleStart = (overrideDate, overrideTime) => {
     if (timerActive && !timerRunning) {
       lastRealMsRef.current = performance.now();
       setTimerRunning(true);
       setStopDisabled(false);
       return;
     }
-    const base = fromInputsToMsUTC(inputDate, inputTime);
+
+    // TRUCO: Usar la fecha que llega por parámetro (fresca)
+    // o caer en el estado (inputDate) si no se pasan argumentos.
+    const d = overrideDate || inputDate;
+    const t = overrideTime || inputTime;
+
+    // Convertimos esa fecha específica a milisegundos
+    const base = fromInputsToMsUTC(d, t);
+
     setSimNowMs(base);
     setSimStartMs(base);
+
     lastRealMsRef.current = performance.now();
     setTimerRunning(true);
     setTimerActive(true);
@@ -1113,48 +1111,90 @@ export default function Simulacion() {
   };
 
   const handleStop = async () => {
+    // 1. Marcar bandera para evitar notificaciones de "error" al cortar la conexión
     stopRequestedRef.current = true;
     showNotification("info", "Deteniendo simulación...");
+
     try {
-      await sendStopSimulation();
+      // 2. Enviar petición al backend usando el ID guardado (sin el "TOK-")
+      if (simulationId) {
+        await sendStopSimulation(simulationId);
+      } else {
+        console.warn("⚠️ No se encontró ID de simulación para detener.");
+      }
     } catch (err) {
-      console.warn("Error interno al detener simulación:", err);
+      console.warn("Error al intentar detener la simulación en servidor:", err);
+      // No lanzamos error visual crítico porque igual vamos a limpiar el front
     }
+
+    // 3. Limpieza de Lógica de Simulación
     setTimerRunning(false);
     setTimerActive(false);
     setSeconds(0);
-    const now = new Date();
-    const nowDate = now.toISOString().split("T")[0];
-    const nowTime = now.toTimeString().slice(0, 5);
-    setInputDate(nowDate);
-    setInputTime(nowTime);
-    setSimNowMs(now.getTime());
-    setSimStartMs(null);
+
+    // Limpiar datos del mapa
     setFlights([]);
+    setOrders([]);
+    setRoutes([]);
+    setAirports((prev) => {
+      // Opcional: Si quieres resetear el stock visual de los aeropuertos
+      // podrías volver a cargar la lista inicial o dejarlos como están.
+      return prev;
+    });
+
+    // 4. Limpieza de Selección de UI
     setSelectedItem(null);
     setSelectedAirport(null);
-    setOrders([]);
     setSidebarTab("flights");
-    setStopDisabled(true);
-    setRoutes([]);
     setHighlightedRoute(null);
     setHighlightedFlights([]);
     setOpenAirportTooltipCode(null);
     setOpenFlightTooltipCode(null);
+    setStopDisabled(true);
+
+    // 5. Resetear Fechas Visuales a "Ahora"
+    const now = new Date();
+    setInputDate(now.toISOString().split("T")[0]);
+    setInputTime(now.toTimeString().slice(0, 5));
+    setSimNowMs(now.getTime());
+    setSimStartMs(null);
+    setSimEndMs(null);
+    // 6. IMPORTANTE: Limpiar Suscripción WebSocket y borrar el ID
+    if (subscriptionsRef.current) {
+      console.log("🔌 Desuscribiendo canales WebSocket...");
+      subscriptionsRef.current.unsubscribe();
+      subscriptionsRef.current = null;
+    }
+    setSimulationId(null);
+  };
+  const formatDateForBackend = (dateStr, timeStr) => {
+    if (!dateStr || !timeStr) return null;
+    const [year, month, day] = dateStr.split("-");
+    return `${day}/${month}/${year} ${timeStr}`;
   };
 
   const handlePlanear = async () => {
     try {
       setLoading(true);
+      setShowLoadingSim(true);
       if (!fechaI || !horaI || !fechaF || !horaF) {
         showNotification("danger", "Completa las fechas antes de continuar");
         setLoading(false);
+        setShowLoadingSim(false);
         return;
+      }
+
+      // 1. ACTUALIZAR ESTADO LOCAL PARA EL RELOJ (¡ESTO FALTABA!)
+      // Esto asegura que cuando handleStart() se ejecute, use estas fechas
+      setInputDate(fechaI);
+      setInputTime(horaI);
+      if (fechaF && horaF) {
+        setSimEndMs(fromInputsToMsUTC(fechaF, horaF));
       }
       /** @type {SimulationRequest} */
       const body = {
-        fechaHoraInicio: `${fechaI}T${horaI}:00`,
-        fechaHoraFin: `${fechaF}T${horaF}:00`,
+        fechaHoraInicio: formatDateForBackend(fechaI, horaI), // Antes: `${fechaI}T${horaI}:00`
+        fechaHoraFin: formatDateForBackend(fechaF, horaF),
         parametros: {
           ...parametrosCompletos,
           maxDiasEntregaIntercontinental,
@@ -1168,18 +1208,64 @@ export default function Simulacion() {
         multiplicadorTemporal,
         saltoDeAlgoritmo,
       };
+      // 1.2. Enviar Petición
       console.log("SimulationRequest enviado por HTTP:", body);
-      setInputDate(fechaI);
-      setInputTime(horaI);
       const res = await sendSimulationRequest(body);
-      if (res && res.message) {
-        showNotification("info", res.message);
-      } else {
-        showNotification("info", "Simulación en iniciación");
+
+      // 2. Procesar Token y Suscribirse
+      if (res && res.token) {
+        // Extraer ID (quitar "TOK-")
+        const idTransaccion = res.token.replace("TOK-", "");
+        setSimulationId(idTransaccion); // Guardar en estado
+
+        console.log("🆔 ID Simulación:", idTransaccion);
+
+        // Limpiar suscripción anterior si existe
+        if (subscriptionsRef.current) subscriptionsRef.current.unsubscribe();
+
+        // SUSCRIBIRSE DINÁMICAMENTE
+        subscriptionsRef.current = subscribeToSimulation(
+          idTransaccion,
+          (payload) => {
+            // Callback de DATOS (Solución)
+            console.log("📦 DATA WebSocket Recibida:", payload);
+            const solucion = payload.solucion || payload;
+            if (solucion) buildSimulationFromSolution(solucion);
+          },
+          (status) => {
+            // Callback de ESTADO (Status)
+            console.log("🚦 STATUS WebSocket Recibido:", status);
+            const estado = status.estadoEjecucion || status;
+            const fin = status.estadoFinalizacion;
+
+            setEstadoEjecucionSim(estado);
+
+            // Tu lógica de notificaciones movida aquí:
+            if (estado === "POR_INICIAR") {
+              setShowLoadingSim(true);
+              showNotification("info", "Iniciando motores...");
+            } else if (estado === "INICIADO") {
+              setShowLoadingSim(false);
+              showNotification("success", "¡Simulación en curso!");
+              handleStart(fechaI, horaI); // <--- IMPORTANTE: Iniciar reloj visual
+            } else if (estado === "DETENIDO") {
+              setShowLoadingSim(false);
+              if (fin === "EXITOSO")
+                showNotification("success", "Finalizado con éxito");
+              else if (fin === "COLAPSO")
+                showNotification("danger", "¡Colapso Logístico!");
+              else if (fin === "FORZADO")
+                showNotification("info", "Detenido por usuario");
+            }
+          }
+        );
       }
+
       closeModal();
     } catch (err) {
-      showNotification("danger", err.message || "Error al iniciar simulación");
+      console.error("❌ Error en handlePlanear:", err);
+      setShowLoadingSim(false);
+      showNotification("danger", err.message || "Error al iniciar");
     } finally {
       setLoading(false);
     }
@@ -1357,7 +1443,9 @@ export default function Simulacion() {
   return (
     <div className="page">
       {/* Overlay de carga */}
-      {showLoadingSim && <LoadingOverlay text="Cargando Simulación..." />}
+      {showLoadingSim && (
+        <SimulationLoadingOverlay text="Iniciando entorno de simulación..." />
+      )}
 
       {/* Notificaciones */}
       {notification && (

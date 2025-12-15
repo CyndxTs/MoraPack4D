@@ -1,14 +1,10 @@
 // src/services/planificarService.js
 import { Client } from "@stomp/stompjs";
-import axios from "axios"; // 👈 nuevo  
-/**
- * @typedef {import("../types/simulationRequest/SimulationRequest").SimulationRequest} SimulationRequest
- */
-/**
- * @typedef {import("../types/simulationResponse/SolutionPayload").SolutionPayload} SolutionPayload
- */
+import axios from "axios";
+
 const API_SIM_INIT = "/api/simulation-init";
 const API_SIM_STOP = "/api/simulation-stop";
+
 const SOCKET_URL =
   (window.location.protocol === "https:" ? "wss://" : "ws://") +
   window.location.host +
@@ -17,31 +13,24 @@ const SOCKET_URL =
 let client = null;
 
 /**
- * @param {SolutionPayload} onSolution         // SolutionResponse de /topic/simulator
- * @param {(status: any) => void} onStatus             // ProcessStatusResponse de /topic/simulator-status
+ * 1. Conecta al servidor WebSocket (Solo conexión, sin suscribirse a nada aún)
  */
-export function connectSimulatorWS(onSolution, onStatus) {
-  if (client && client.active) return;
+export function connectSimulatorWS(onConnected) {
+  if (client && client.active) {
+    if (onConnected) onConnected();
+    return;
+  }
 
   client = new Client({
     brokerURL: SOCKET_URL,
     reconnectDelay: 5000,
-    debug: () => {},
+    // debug: () => console.log(str), // Descomenta para ver logs del socket
     onConnect: () => {
-      console.log("STOMP conectado a", SOCKET_URL);
-
-      client.subscribe("/topic/simulator", (message) => {
-        const payload = JSON.parse(message.body);
-        onSolution(payload);
-      });
-
-      client.subscribe("/topic/simulator-status", (message) => {
-        const status = JSON.parse(message.body);
-        onStatus(status);
-      });
+      console.log("✅ STOMP conectado a", SOCKET_URL);
+      if (onConnected) onConnected();
     },
     onStompError: (frame) => {
-      console.error("Error STOMP:", frame.headers["message"], frame.body);
+      console.error("❌ Error STOMP:", frame.headers["message"], frame.body);
     },
   });
 
@@ -49,31 +38,70 @@ export function connectSimulatorWS(onSolution, onStatus) {
 }
 
 /**
- * Iniciar simulación por HTTP
- * @param {SimulationRequest} request
+ * 2. Suscribe a una simulación ESPECÍFICA usando el ID de transacción
+ * Retorna una función para desuscribirse limpiamente.
+ */
+export function subscribeToSimulation(idTransaccion, onSolution, onStatus) {
+  if (!client || !client.connected) {
+    console.warn("⚠️ No hay conexión STOMP activa para suscribirse.");
+    return null;
+  }
+
+  console.log(`📡 Suscribiendo a canales: ${idTransaccion}`);
+
+  // Canal de Datos (Solución)
+  const solSub = client.subscribe(
+    `/topic/simulation-${idTransaccion}`,
+    (message) => {
+      const payload = JSON.parse(message.body);
+      onSolution(payload);
+    }
+  );
+
+  // Canal de Estado (Status)
+  const statSub = client.subscribe(
+    `/topic/simulation-status-${idTransaccion}`,
+    (message) => {
+      const status = JSON.parse(message.body);
+      onStatus(status);
+    }
+  );
+
+  // Retornamos un objeto con la función 'unsubscribe' para limpiar después
+  return {
+    unsubscribe: () => {
+      console.log(`🔌 Desuscribiendo de ${idTransaccion}`);
+      solSub.unsubscribe();
+      statSub.unsubscribe();
+    },
+  };
+}
+
+/**
+ * 3. Inicia la simulación (POST) y retorna el TOKEN
  */
 export async function sendSimulationRequest(request) {
   try {
     const { data } = await axios.post(API_SIM_INIT, request);
-    return data; // GenericResponse
+    return data; // Retorna { exito: true, token: "TOK-12345", ... }
   } catch (error) {
-    if (error.response && error.response.data) {
-      throw new Error(error.response.data.message || "Error al iniciar simulación");
-    }
-    throw new Error("No se pudo conectar con el servidor de simulación");
+    throw new Error(error.response?.data?.message || "Error al iniciar simulación");
   }
 }
 
-/** Pedir al back que detenga la simulación por HTTP */
-export async function sendStopSimulation() {
+/**
+ * 4. Detiene la simulación (POST) enviando el ID
+ */
+export async function sendStopSimulation(idTransaccion) {
+  if (!idTransaccion) return;
   try {
-    const { data } = await axios.post(API_SIM_STOP);
-    return data; // GenericResponse
+    // El backend espera ?idTransaccion=XYZ
+    const { data } = await axios.post(API_SIM_STOP, null, {
+      params: { idTransaccion },
+    });
+    return data;
   } catch (error) {
-    if (error.response && error.response.data) {
-      throw new Error(error.response.data.message || "Error al detener simulación");
-    }
-    throw new Error("No se pudo conectar con el servidor de simulación");
+    console.warn("Error al detener:", error);
   }
 }
 

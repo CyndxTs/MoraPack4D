@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef } from "react";
 import "./ui.scss";
 import StatusBadge from "../Status/status";
 
-import planeMora from "../../assets/icons/planeMora.svg"; 
+import planeMora from "../../assets/icons/planeMora.svg";
 import viewIcon from "../../assets/icons/view.svg";
 import editIcon from "../../assets/icons/edit.svg";
 import deleteIcon from "../../assets/icons/delete.svg";
@@ -51,8 +51,13 @@ export function ButtonAdd({
   );
 }
 
-
-export function Input({ placeholder, value, onChange, disabled = false, type = "text" }) {
+export function Input({
+  placeholder,
+  value,
+  onChange,
+  disabled = false,
+  type = "text",
+}) {
   return (
     <input
       type={type}
@@ -65,9 +70,14 @@ export function Input({ placeholder, value, onChange, disabled = false, type = "
   );
 }
 
-
 // INPUT DE FECHA + HORA EN LÍNEA
-export function DateTimeInline({ dateValue, timeValue, onDateChange, onTimeChange, disabled = false }) {
+export function DateTimeInline({
+  dateValue,
+  timeValue,
+  onDateChange,
+  onTimeChange,
+  disabled = false,
+}) {
   return (
     <div className="datetime-inline">
       <input
@@ -90,7 +100,13 @@ export function DateTimeInline({ dateValue, timeValue, onDateChange, onTimeChang
 }
 
 // INPUT DE FECHA + HORA EN COLUMNA
-export function DateTimeColumn({ dateValue, timeValue, onDateChange, onTimeChange, disabled = false }) {
+export function DateTimeColumn({
+  dateValue,
+  timeValue,
+  onDateChange,
+  onTimeChange,
+  disabled = false,
+}) {
   return (
     <div className="datetime-column">
       <input
@@ -112,15 +128,17 @@ export function DateTimeColumn({ dateValue, timeValue, onDateChange, onTimeChang
   );
 }
 
-
-
 export function RangeSelector({ min, max, step, value, onChange }) {
   const sliderRef = useRef(null);
 
-  const isDecimal = String(min).includes(".") || String(max).includes(".") || String(step).includes(".");
+  const isDecimal =
+    String(min).includes(".") ||
+    String(max).includes(".") ||
+    String(step).includes(".");
   const decimals = isDecimal ? 3 : 0;
 
-  const format = (n) => (isDecimal ? Number(n).toFixed(3) : String(Math.round(n)));
+  const format = (n) =>
+    isDecimal ? Number(n).toFixed(3) : String(Math.round(n));
 
   const safeValue = typeof value === "number" ? value : min;
 
@@ -208,7 +226,7 @@ export function RangeSelector({ min, max, step, value, onChange }) {
         <div
           className="range-track-fill"
           style={{
-            width: `${((safeValue - min) / (max - min)) * 100}%`
+            width: `${((safeValue - min) / (max - min)) * 100}%`,
           }}
         />
 
@@ -227,12 +245,7 @@ export function RangeSelector({ min, max, step, value, onChange }) {
   );
 }
 
-
-export function TriPieSelector({ 
-  labels,
-  valores,
-  setters
-}) {
+export function TriPieSelector({ labels, valores, setters }) {
   const allowedValues = [1000, 2000, 3000, 4000, 5000];
   const total = 10000;
 
@@ -241,7 +254,7 @@ export function TriPieSelector({
     newVals[index] = newValue;
 
     const remaining = total - newValue;
-    const otherIdx = [0, 1, 2].filter(i => i !== index);
+    const otherIdx = [0, 1, 2].filter((i) => i !== index);
 
     let combinations = [];
 
@@ -256,10 +269,12 @@ export function TriPieSelector({
     if (combinations.length === 0) return;
 
     combinations.sort((a, b) => {
-      const diffA = Math.abs(a[0] - valores[otherIdx[0]]) +
-                    Math.abs(a[1] - valores[otherIdx[1]]);
-      const diffB = Math.abs(b[0] - valores[otherIdx[0]]) +
-                    Math.abs(b[1] - valores[otherIdx[1]]);
+      const diffA =
+        Math.abs(a[0] - valores[otherIdx[0]]) +
+        Math.abs(a[1] - valores[otherIdx[1]]);
+      const diffB =
+        Math.abs(b[0] - valores[otherIdx[0]]) +
+        Math.abs(b[1] - valores[otherIdx[1]]);
       return diffA - diffB;
     });
 
@@ -271,10 +286,10 @@ export function TriPieSelector({
     setters[2](newVals[2]);
   };
 
-  const angles = valores.map(v => (v / total) * 360);
+  const angles = valores.map((v) => (v / total) * 360);
 
   const buildArcPath = (startAngle, endAngle) => {
-    const rad = deg => (deg * Math.PI) / 180;
+    const rad = (deg) => (deg * Math.PI) / 180;
     const r = 80;
     const x0 = 100 + r * Math.cos(rad(startAngle));
     const y0 = 100 + r * Math.sin(rad(startAngle));
@@ -298,7 +313,6 @@ export function TriPieSelector({
       </div>
 
       <div className="tri-pie-container">
-        
         {/* COLUMNA IZQUIERDA */}
         <div className="tri-pie-left">
           <div className="tri-pie-inputs">
@@ -307,7 +321,7 @@ export function TriPieSelector({
                 <label className="tri-pie-label">{lbl}</label>
                 <input
                   type="text"
-                  className="custom-tri-pie-input" 
+                  className="custom-tri-pie-input"
                   value={valores[i]}
                 />
               </div>
@@ -317,7 +331,6 @@ export function TriPieSelector({
 
         {/* COLUMNA DERECHA - PIE */}
         <div className="tri-pie-right">
-
           <svg width="200" height="200">
             {angles.map((ang, i) => {
               const start = cumulative;
@@ -335,7 +348,8 @@ export function TriPieSelector({
                   onClick={() => {
                     const curr = valores[i];
                     const idx = allowedValues.indexOf(curr);
-                    const next = allowedValues[(idx + 1) % allowedValues.length];
+                    const next =
+                      allowedValues[(idx + 1) % allowedValues.length];
                     adjustValues(i, next);
                   }}
                 >
@@ -345,28 +359,28 @@ export function TriPieSelector({
               );
             })}
           </svg>
-
         </div>
       </div>
     </>
   );
 }
 
-
-
-
-
 export function Checkbox({ label, value, checked, onChange }) {
   return (
     <label className="checkbox-item">
-      <input type="checkbox" value={value} checked={checked} onChange={onChange} />
+      <input
+        type="checkbox"
+        value={value}
+        checked={checked}
+        onChange={onChange}
+      />
       <span className="checkmark"></span>
       {label}
     </label>
   );
 }
 
-export function Radio({ name, value, checked, onChange, label,disabled }) {
+export function Radio({ name, value, checked, onChange, label, disabled }) {
   return (
     <label className={`radio-item ${disabled ? "radio-disabled" : ""}`}>
       <input
@@ -375,7 +389,7 @@ export function Radio({ name, value, checked, onChange, label,disabled }) {
         value={value}
         checked={checked}
         onChange={onChange}
-        disabled={disabled} 
+        disabled={disabled}
       />
       <span className="radiomark"></span>
       {label}
@@ -400,8 +414,12 @@ export function RemoveFileButton({ label = "❌", onClick }) {
   );
 }
 
-
-export function Dropdown({ options = [], onSelect, placeholder = "Seleccionar...", value }) {
+export function Dropdown({
+  options = [],
+  onSelect,
+  placeholder = "Seleccionar...",
+  value,
+}) {
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState("");
 
@@ -427,7 +445,9 @@ export function Dropdown({ options = [], onSelect, placeholder = "Seleccionar...
     <div className={`custom-dropdown ${open ? "open" : ""}`}>
       <div
         className="selected"
-        style={{ color: selected ? "var(--color-negro)" : "var(--color-light-grey)" }}
+        style={{
+          color: selected ? "var(--color-negro)" : "var(--color-light-grey)",
+        }}
         onClick={() => setOpen(!open)}
       >
         {selected || placeholder}
@@ -449,7 +469,13 @@ export function Dropdown({ options = [], onSelect, placeholder = "Seleccionar...
   );
 }
 
-export function Dropdown2({ options = [], value = [], onChange, placeholder = "Seleccionar...", multiple = false }) {
+export function Dropdown2({
+  options = [],
+  value = [],
+  onChange,
+  placeholder = "Seleccionar...",
+  multiple = false,
+}) {
   const [open, setOpen] = useState(false);
 
   const handleSelect = (opt) => {
@@ -457,7 +483,7 @@ export function Dropdown2({ options = [], value = [], onChange, placeholder = "S
       let newValue;
 
       if (value.includes(opt.value)) {
-        newValue = value.filter(v => v !== opt.value);
+        newValue = value.filter((v) => v !== opt.value);
       } else {
         newValue = [...value, opt.value];
       }
@@ -471,7 +497,7 @@ export function Dropdown2({ options = [], value = [], onChange, placeholder = "S
 
   const getLabel = () => {
     if (!multiple) {
-      const opt = options.find(o => o.value === value);
+      const opt = options.find((o) => o.value === value);
       return opt ? opt.label : placeholder;
     }
 
@@ -481,10 +507,7 @@ export function Dropdown2({ options = [], value = [], onChange, placeholder = "S
 
   return (
     <div className={`custom-dropdown ${open ? "open" : ""}`}>
-      <div
-        className="selected"
-        onClick={() => setOpen(!open)}
-      >
+      <div className="selected" onClick={() => setOpen(!open)}>
         {getLabel()}
       </div>
 
@@ -506,16 +529,15 @@ export function Dropdown2({ options = [], value = [], onChange, placeholder = "S
   );
 }
 
-
 export function Dropdown3({
   options = [],
   onSelect,
   placeholder = "Seleccionar...",
   value,
-  disabled = false
+  disabled = false,
 }) {
   const [open, setOpen] = useState(false);
-  const [inputValue, setInputValue] = useState(""); 
+  const [inputValue, setInputValue] = useState("");
   const [selected, setSelected] = useState("");
 
   const dropdownRef = useRef(null); // 👈 REFERENCIA AL DROPDOWN
@@ -567,7 +589,9 @@ export function Dropdown3({
   return (
     <div
       ref={dropdownRef} // 👈 APLICAR EL REF
-      className={`custom-dropdown ${open ? "open" : ""} ${disabled ? "disabled" : ""}`}
+      className={`custom-dropdown ${open ? "open" : ""} ${
+        disabled ? "disabled" : ""
+      }`}
     >
       {/* Input editable */}
       <input
@@ -586,7 +610,7 @@ export function Dropdown3({
             ? "gray"
             : selected
             ? "var(--color-negro)"
-            : "var(--color-light-grey)"
+            : "var(--color-light-grey)",
         }}
       />
 
@@ -607,7 +631,6 @@ export function Dropdown3({
     </div>
   );
 }
-
 
 export function Table({ headers = [], data = [], statusColors = {} }) {
   return (
@@ -640,15 +663,29 @@ export function Table({ headers = [], data = [], statusColors = {} }) {
             data.map((row, i) => (
               <tr key={i}>
                 {headers.map((h, j) => {
-
                   // Columna de acciones
                   if (h.key === "acciones") {
                     return (
                       <td key={j} className="acciones">
                         <div className="acciones-container">
-                          <img src={viewIcon} alt="Ver" title="Ver" className="icon" />
-                          <img src={editIcon} alt="Editar" title="Editar" className="icon" />
-                          <img src={deleteIcon} alt="Eliminar" title="Eliminar" className="icon" />
+                          <img
+                            src={viewIcon}
+                            alt="Ver"
+                            title="Ver"
+                            className="icon"
+                          />
+                          <img
+                            src={editIcon}
+                            alt="Editar"
+                            title="Editar"
+                            className="icon"
+                          />
+                          <img
+                            src={deleteIcon}
+                            alt="Eliminar"
+                            title="Eliminar"
+                            className="icon"
+                          />
                         </div>
                       </td>
                     );
@@ -658,7 +695,10 @@ export function Table({ headers = [], data = [], statusColors = {} }) {
                   if (h.useStatusColors) {
                     return (
                       <td key={j}>
-                        <StatusBadge value={row[h.key]} colorMap={statusColors} />
+                        <StatusBadge
+                          value={row[h.key]}
+                          colorMap={statusColors}
+                        />
                       </td>
                     );
                   }
@@ -696,10 +736,8 @@ export function Table({ headers = [], data = [], statusColors = {} }) {
   );
 }
 
-
 //          PAGINACIÓN REUTILIZABLE
 export function Pagination({ currentPage, onPageChange, hasMorePages }) {
-
   const handleClick = (page) => {
     if (page < 1) return;
     if (page > currentPage + 1) return;
@@ -738,7 +776,9 @@ export function Pagination({ currentPage, onPageChange, hasMorePages }) {
 
       {pages.map((p, i) =>
         p === "dots" ? (
-          <span key={`dots-${i}`} className="page-dots">…</span>
+          <span key={`dots-${i}`} className="page-dots">
+            …
+          </span>
         ) : (
           <button
             key={`page-${p}-${i}`}
@@ -749,7 +789,6 @@ export function Pagination({ currentPage, onPageChange, hasMorePages }) {
           </button>
         )
       )}
-
 
       <button
         className="page-btn"
@@ -831,7 +870,6 @@ export function useLoaderProgress(token) {
   return { payload, status };
 }
 
-
 export function LoadingOverlay({ token, onFinish }) {
   const [seconds, setSeconds] = useState(0);
   const { payload, status } = useLoaderProgress(token);
@@ -842,7 +880,7 @@ export function LoadingOverlay({ token, onFinish }) {
   // contador visual
   useEffect(() => {
     const timer = setInterval(() => {
-      setSeconds(prev => prev + 1);
+      setSeconds((prev) => prev + 1);
     }, 1000);
 
     return () => clearInterval(timer);
@@ -855,9 +893,9 @@ export function LoadingOverlay({ token, onFinish }) {
     const { proceso, completado, total } = payload;
     if (!proceso || total == null || completado == null) return;
 
-    setProcesos(prev => ({
+    setProcesos((prev) => ({
       ...prev,
-      [proceso]: { completado, total }
+      [proceso]: { completado, total },
     }));
   }, [payload]);
 
@@ -869,16 +907,18 @@ export function LoadingOverlay({ token, onFinish }) {
   }, [status]);
 
   // totales globales
-  const totalGlobal = Object.values(procesos)
-    .reduce((acc, p) => acc + (p.total || 0), 0);
+  const totalGlobal = Object.values(procesos).reduce(
+    (acc, p) => acc + (p.total || 0),
+    0
+  );
 
-  const completadoGlobal = Object.values(procesos)
-    .reduce((acc, p) => acc + (p.completado || 0), 0);
+  const completadoGlobal = Object.values(procesos).reduce(
+    (acc, p) => acc + (p.completado || 0),
+    0
+  );
 
   const porcentaje =
-    totalGlobal > 0
-      ? Math.floor((completadoGlobal / totalGlobal) * 100)
-      : 0;
+    totalGlobal > 0 ? Math.floor((completadoGlobal / totalGlobal) * 100) : 0;
 
   // cerrar cuando ya no puede cambiar
   useEffect(() => {
@@ -927,10 +967,7 @@ export function LoadingOverlay({ token, onFinish }) {
       <p>{texto}</p>
 
       <div className="progress-bar">
-        <div
-          className="progress-fill"
-          style={{ width: `${porcentaje}%` }}
-        />
+        <div className="progress-fill" style={{ width: `${porcentaje}%` }} />
       </div>
 
       <p className="percent">{porcentaje}%</p>
@@ -938,11 +975,47 @@ export function LoadingOverlay({ token, onFinish }) {
   );
 }
 
+// === NUEVO COMPONENTE PARA SIMULACIÓN ===
+// src/components/ui/ui.jsx
 
+export function SimulationLoadingOverlay({ text = "Cargando..." }) {
+  const [seconds, setSeconds] = useState(0);
 
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setSeconds((prev) => prev + 1);
+    }, 1000);
 
+    return () => clearInterval(timer);
+  }, []);
 
+  return (
+    <div className="loading-overlay">
+      <div className="spinner"></div>
+      <p
+        style={{
+          marginTop: "24px",
+          fontWeight: 600,
+          fontSize: "20px",
+          color: "#ffffff",
+          textShadow: "0 2px 10px rgba(0,0,0,0.5)",
+          letterSpacing: "0.5px",
+          display: "flex", // Para alinear texto y segundos
+          alignItems: "center", // Centrado vertical
+          justifyContent: "center",
+          gap: "8px", // Espacio entre el texto y el número
+        }}
+      >
+        <span>{text}</span>
 
+        {/* Ahora los segundos tienen el mismo estilo visual */}
+        <span style={{ minWidth: "60px", textAlign: "left" }}>
+          ({seconds}s)
+        </span>
+      </p>
+    </div>
+  );
+}
 
 //NOTIFICACIONES
 export function Notification({ type = "success", message = "", onClose }) {
