@@ -107,7 +107,7 @@ public class GVNS {
                         break;
                     }
                 } else {
-                    boolean pedidoReatendido = reatenderPedido(pAux, pedido, origenes, planes, vuelosEnTransito, rutasEnOperacion);
+                    boolean pedidoReatendido = true; // reatenderPedido(pAux, pedido, origenes, planes, vuelosEnTransito, rutasEnOperacion);
                     if(!pedidoReatendido) {
                         G4DUtility.Logger.Stats.log_err_stat();
                         errorDeEnrutamiento = true;
@@ -592,7 +592,7 @@ public class GVNS {
                         huboMejora = LSCompactar(pAux, sAux, ele);
                         break;
                     case 2:
-                        huboMejora = LSFusionar(pAux, sAux, ele);
+                        // huboMejora = LSFusionar(pAux, sAux, ele);
                         break;
                     case 3:
                         huboMejora = LSRealocar(pAux, sAux, ele);
@@ -693,8 +693,12 @@ public class GVNS {
         for(Ruta rOrig : rutasOrig) {
             Lote lOrig = segmentacion.get(rOrig);
             int restante = lOrig.getTamanio();
-            rOrig.eliminarRegistroDeLoteDeProductos(lOrig);
-            if(puntosDeReplanificacion.get(rOrig) != null) puntosDeReplanificacion.get(rOrig).getLotes().remove(lOrig);
+            Aeropuerto aConexion = null;
+            if(puntosDeReplanificacion.get(rOrig) != null) {
+                puntosDeReplanificacion.get(rOrig).getLotes().remove(lOrig);
+                aConexion = puntosDeReplanificacion.get(rOrig).getAeropuertoDeConexion();
+            }
+            rOrig.eliminarRegistroDeLoteDeProductosDesdeAeropuerto(lOrig, aConexion, true);
             segmentacion.remove(rOrig);
             // Compactación en destinos seleccionados
             for(Ruta rDest : rutasDest) {
@@ -704,10 +708,10 @@ public class GVNS {
                 int asignable = Math.min(restante, rDestCapDisp);
                 Lote lOld = segmentacion.get(rDest);
                 int consolidado = lOld.getTamanio() + asignable;
-                rDest.eliminarRegistroDeLoteDeProductos(lOld);
+                rDest.eliminarRegistroDeLoteDeProductosDesdeAeropuerto(lOld, aConexion, true);
                 segmentacion.remove(rDest);
                 Lote lNew = rDest.getOrigen().generarLoteDeProductos(consolidado);
-                rDest.agregarRegistroDeLoteDeProductos(problematica, lNew, vuelosEnTransito, rutasEnOperacion);
+                rDest.agregarRegistroDeLoteDeProductosDesdeAeropuerto(problematica, lNew, aConexion, vuelosEnTransito, rutasEnOperacion);
                 if(puntosDeReplanificacion.get(rOrig) != null) puntosDeReplanificacion.get(rOrig).getLotes().add(lNew);
                 segmentacion.put(rDest, lNew);
                 restante -= asignable;
@@ -719,22 +723,26 @@ public class GVNS {
         // Eliminación de registros actualizados
         for (Ruta r : segmentacion.keySet()) {
             Lote l = segmentacion.get(r);
-            r.eliminarRegistroDeLoteDeProductos(l);
+            Aeropuerto aConexion = null;
             for(PuntoDeReplanificacion pdr : puntosDeReplanificacion.values()) {
                 if(pdr != null && pdr.getLotes().remove(l)) {
+                    aConexion = pdr.getAeropuertoDeConexion();
                     break;
                 }
             }
+            r.eliminarRegistroDeLoteDeProductosDesdeAeropuerto(l, aConexion);
         }
         segmentacion.clear();
         // Agregación de registros antiguos
         segmentacion.putAll(segmentacionAux);
         for (Ruta r : segmentacion.keySet()) {
             Lote l = segmentacion.get(r);
-            r.agregarRegistroDeLoteDeProductos(problematica, l, vuelosEnTransito, rutasEnOperacion);
+            Aeropuerto aConexion = null;
             if(puntosDeReplanificacion.containsKey(r) && puntosDeReplanificacion.get(r) != null) {
                 puntosDeReplanificacion.get(r).getLotes().add(l);
+                aConexion = puntosDeReplanificacion.get(r).getAeropuertoDeConexion();
             }
+            r.agregarRegistroDeLoteDeProductosDesdeAeropuerto(problematica, l, aConexion, vuelosEnTransito, rutasEnOperacion, true);
         }
     }
 
@@ -945,8 +953,12 @@ public class GVNS {
         for(Ruta rOrig : rutasOrig) {
             Lote lOrig = segmentacion.get(rOrig);
             int restante = lOrig.getTamanio();
-            rOrig.eliminarRegistroDeLoteDeProductos(lOrig);
-            if(puntosDeReplanificacion.get(rOrig) != null) puntosDeReplanificacion.get(rOrig).getLotes().remove(lOrig);
+            Aeropuerto aConexion = null;
+            if(puntosDeReplanificacion.get(rOrig) != null) {
+                puntosDeReplanificacion.get(rOrig).getLotes().remove(lOrig);
+                aConexion = puntosDeReplanificacion.get(rOrig).getAeropuertoDeConexion();
+            }
+            rOrig.eliminarRegistroDeLoteDeProductosDesdeAeropuerto(lOrig, aConexion, true);
             segmentacion.remove(rOrig);
             // Realocación en destinos seleccionados
             for(Ruta rDest : rutasDest) {
@@ -954,7 +966,7 @@ public class GVNS {
                 int rDestCapDisp = rDest.obtenerCapacidadDisponible(problematica);
                 int asignable = Math.min(restante, rDestCapDisp);
                 Lote lNew = rDest.getOrigen().generarLoteDeProductos(asignable);
-                rDest.agregarRegistroDeLoteDeProductos(problematica, lNew, vuelosEnTransito, rutasEnOperacion);
+                rDest.agregarRegistroDeLoteDeProductosDesdeAeropuerto(problematica, lNew, aConexion, vuelosEnTransito, rutasEnOperacion);
                 if(puntosDeReplanificacion.get(rOrig) != null) puntosDeReplanificacion.get(rOrig).getLotes().add(lNew);
                 segmentacion.put(rDest, lNew);
                 restante -= asignable;
@@ -1047,7 +1059,7 @@ public class GVNS {
                     TCompactar(problematica, solucion, ele);
                     break;
                 case 1:
-                    TFusionar(problematica, solucion, ele);
+                    // TFusionar(problematica, solucion, ele);
                     break;
                 case 2:
                     TRealocar(problematica, solucion, ele);

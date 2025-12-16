@@ -121,7 +121,7 @@ public class PlanService {
     public GenericResponse importar(String idTransaccion, Path archivo) {
         String progressDestination = String.format("/topic/importation-%s", idTransaccion), statusDestination = String.format("/topic/importation-status-%s", idTransaccion);
         try {
-            System.out.printf("Importando planes de vuelo desde '%s'..%n", archivo.getFileName());
+            System.out.printf(">> Importando planes de vuelo desde '%s'..%n", archivo.getFileName());
             BufferedReader br = Files.newBufferedReader(archivo, G4DUtility.Reader.getFileCharset(archivo));
             List<PlanEntity> planes = new ArrayList<>();
             Map<String, AeropuertoEntity> poolAeropuertos = aeropuertoService.findAll().stream().collect(Collectors.toMap(AeropuertoEntity::getCodigo, a -> a));

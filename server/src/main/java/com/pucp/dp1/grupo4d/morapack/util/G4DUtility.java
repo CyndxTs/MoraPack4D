@@ -174,6 +174,14 @@ public class G4DUtility {
                 }
             }
         }
+        // Obtener valor maximo entre 2 valores 'Comparables'
+        public static <T extends Comparable<T>> T getMax(T a, T b) {
+            return a.compareTo(b) >= 0 ? a : b;
+        }
+        // Obtener valor mínimo entre 2 valores 'Comparables'
+        public static <T extends Comparable<T>> T getMin(T a, T b) {
+            return a.compareTo(b) <= 0 ? a : b;
+        }
         // Validar si 2 'Number' son aproximadamente iguales
         public static <N extends Number> boolean areProximatelyEqual(N n1, N n2, double epsilon) {
             return Math.abs(n1.doubleValue() - n2.doubleValue()) < epsilon;
@@ -578,11 +586,17 @@ public class G4DUtility {
         public static void open(String archDIR) {
             close();
             try {
+                File f = new File(archDIR);
+                File pDir = f.getParentFile();
+                if (pDir != null && !pDir.exists()) {
+                    if (!pDir.mkdirs()) {
+                        throw new G4DException("[*] No se pudieron crear los directorios para: " + archDIR);
+                    }
+                }
                 FileWriter arch = new FileWriter(archDIR);
                 pw = new PrintWriter(arch);
             } catch (IOException e) {
                 pw = null;
-                e.printStackTrace();
             }
         }
 

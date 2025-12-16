@@ -114,17 +114,9 @@ public class AdministradorService {
     }
 
     public GenericResponse importar(String idTransaccion, Path archivo) {
-        System.out.println(
-                "THREAD = " + Thread.currentThread().getName()
-        );
-        System.out.println(
-                "TX ACTIVE (AdministradorService) = " +
-                        TransactionSynchronizationManager.isActualTransactionActive()
-        );
-
         String progressDestination = String.format("/topic/importation-%s", idTransaccion), statusDestination = String.format("/topic/importation-status-%s", idTransaccion);
         try {
-            System.out.printf("Importando administradores desde '%s'..%n", archivo.getFileName().toString());
+            System.out.printf(">> Importando administradores desde '%s'..%n", archivo.getFileName().toString());
             BufferedReader br = Files.newBufferedReader(archivo, G4DUtility.Reader.getFileCharset(archivo));
             List<AdministradorEntity> administradores = new ArrayList<>();
             Map<String, AdministradorEntity> poolAdministradores = new LinkedHashMap<>(16, 0.75f, true) {
@@ -159,9 +151,6 @@ public class AdministradorService {
                 lProcesadas++;
                 WebSocketService.enviar(progressDestination, new ProgressPayload("Leyendo archivo", lProcesadas, lTotales));
                 if (lProcesadas % 500 == 0 || lProcesadas == lTotales) {
-                    System.out.println(
-                            "BATCH SIZE = " + administradores.size()
-                    );
                     importService.batchSave(administradores, "administradores");
                     System.out.printf("[<] ADMINISTRADORES IMPORTADOS! ('%d')%n", administradores.size());
                     administradores.clear();

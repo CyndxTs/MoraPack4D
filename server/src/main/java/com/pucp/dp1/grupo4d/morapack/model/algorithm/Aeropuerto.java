@@ -89,7 +89,7 @@ public class Aeropuerto {
             Registro rLoteNoVigente = this.registros.stream().filter(r -> !r.getSigueVigente() && r.esEquivalente(registro)).findFirst().orElse(null);
             if(rLoteNoVigente != null) {
                 rLoteNoVigente.setSigueVigente(true);
-            }
+            } else this.registros.add(registro);
         } else this.registros.add(registro);
     }
 

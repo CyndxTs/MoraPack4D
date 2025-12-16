@@ -17,6 +17,10 @@ public class GenericResponse {
     private Boolean exito;
     private String mensaje;
 
+    public GenericResponse() {
+        this.token = G4DUtility.Generator.getUniqueString("TOK");
+    }
+
     public GenericResponse(Boolean exito, String mensaje) {
         this.token = G4DUtility.Generator.getUniqueString("TOK");
         this.exito = exito;

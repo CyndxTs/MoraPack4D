@@ -120,7 +120,7 @@ public class ClienteService {
     public GenericResponse importar(String idTransaccion, Path archivo) {
         String progressDestination = String.format("/topic/importation-%s", idTransaccion), statusDestination = String.format("/topic/importation-status-%s", idTransaccion);
         try {
-            System.out.printf("Importando clientes desde '%s'..%n", archivo.getFileName());
+            System.out.printf(">> Importando clientes desde '%s'..%n", archivo.getFileName());
             BufferedReader br = Files.newBufferedReader(archivo, G4DUtility.Reader.getFileCharset(archivo));
             List<ClienteEntity> clientes = new ArrayList<>();
             Map<String, ClienteEntity> poolClientes = new LinkedHashMap<>(16, 0.75f, true) {
