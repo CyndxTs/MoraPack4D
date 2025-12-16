@@ -11,7 +11,7 @@ import {
 import "leaflet/dist/leaflet.css";
 
 // Servicios y Tipos
-import { onEvent, initOperationManager, disconnectOperationWS, connectOperatorWS } from "../../services/operationManager";
+import { onEvent, initOperationManager, disconnectOperationWS, connectOperatorWS, forceReplanification } from "../../services/operationManager";
 import { listarParametros, importarParametros } from "../../services/parametrosService";
 import { listarAeropuertos } from "../../services/aeropuertoService";
 
@@ -309,6 +309,12 @@ export default function Planificacion() {
       }
     }
   }, []); // Array vacío para que solo corra al inicio (F5)
+
+  const limpiarSimulacion = () => {
+      localStorage.removeItem("SIMULATION_BACKUP");
+      localStorage.removeItem("SIMULATION_STATUS");
+      window.location.reload(); // Recarga limpia
+  };
 
   // ------------------------------------------------------------------------
   // B. REFS
@@ -655,40 +661,62 @@ export default function Planificacion() {
       });
     setRoutes(rutasFiltradas);
 
+    // 4. Mapear Pedidos (AQUÍ ESTÁ EL CAMBIO PRINCIPAL)
     const pedidosAtendidos = (solution.pedidosAtendidos || []).map((p) => {
-      const segmentaciones = (p.segmentaciones || []).map((seg) => {
+      // Adaptador: El backend nuevo manda 'segmentacionVigente' (objeto),
+      // pero el frontend espera un array de segmentaciones.
+      let sourceSegmentaciones = [];
+      if (p.segmentaciones && p.segmentaciones.length > 0) {
+        sourceSegmentaciones = p.segmentaciones;
+      } else if (p.segmentacionVigente) {
+        sourceSegmentaciones = [p.segmentacionVigente];
+      }
+
+      const segmentaciones = sourceSegmentaciones.map((seg) => {
         const lotes = (seg.lotesPorRuta || []).map((lpr) => {
           const ruta = rutasPorCodigo[lpr.codRuta];
           const origen = ruta ? airportMap[ruta.codOrigen] : null;
           const destino = ruta ? airportMap[ruta.codDestino] : null;
+
+          // En el nuevo JSON, 'codVuelos' es un array de strings directo
           const vuelosLote =
             Array.isArray(lpr.codVuelos) && lpr.codVuelos.length > 0
               ? lpr.codVuelos
-              : ruta?.codVuelos || [];
-          const loteCodigo = lpr.lote.codigo;
-          const arrivalInfo = loteArrivalMap[loteCodigo];
+              : ruta?.codVuelos || []; // Fallback a la ruta
+
+          // Datos del lote anidado (lpr.lote)
+          const loteData = lpr.lote || {};
+          const loteCodigo = loteData.codigo;
+          const arrivalInfo = loteCodigo ? loteArrivalMap[loteCodigo] : null;
+
           return {
             codRuta: lpr.codRuta,
-            loteCodigo,
-            loteTamanio: lpr.lote.tamanio,
-            loteEstado: lpr.lote.estado,
+            loteCodigo: loteCodigo,
+            loteTamanio: loteData.tamanio,
+            loteEstado: loteData.estado,
             vuelos: vuelosLote,
+
+            // Info geográfica derivada de la ruta
             origenCode: ruta?.codOrigen,
             destinoCode: ruta?.codDestino,
             origenNombre: origen?.city || ruta?.codOrigen,
             destinoNombre: destino?.city || ruta?.codDestino,
+
+            // Info de llegada real (si existe registro en aeropuerto)
             arrivalAirportCode: arrivalInfo?.airportCode || null,
             arrivalAirportCity: arrivalInfo?.airportCity || null,
             arrivalFechaHoraIngreso: arrivalInfo?.ingreso || null,
           };
         });
+
         return {
           codigo: seg.codigo,
           fechaHoraAplicacion: seg.fechaHoraAplicacion,
-          fechaHoraSustitucion: seg.fechaHoraSustitucion,
+          fechaHoraSustitucion: seg.fechaHoraSustitucion || null,
           lotes,
         };
       });
+
       return {
         codigo: p.codigo,
         codCliente: p.codCliente,
@@ -1409,7 +1437,7 @@ export default function Planificacion() {
                     <ButtonAdd
                       icon={run}
                       label="Replanificar"
-                      onClick={openModal}
+                      onClick={forceReplanification}
                     />
                     <ButtonAdd
                       icon={run}
@@ -1419,8 +1447,8 @@ export default function Planificacion() {
                     <ButtonAdd
                       icon={stopIcon}
                       className="btn-stop"
-                      label="Detener replanificación"
-                      onClick={openModal}
+                      label="Limpiar mapa"
+                      onClick={limpiarSimulacion}
                     />
                   </div>
                 </div>

@@ -1,7 +1,7 @@
 import React from 'react'
 import './home.scss'
 
-import moraBanner from '../../assets/images/moraBanner.png'
+import moraBanner from '../../assets/images/moraBanner2.jpeg'
 import limaMora from '../../assets/images/limaMora.png'
 import bruselasMora from '../../assets/images/bruselasMora.webp'
 import arzeMora from '../../assets/images/arzeMora.webp'
