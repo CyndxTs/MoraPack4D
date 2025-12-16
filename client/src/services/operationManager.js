@@ -12,7 +12,7 @@ import { listarParametros } from "./parametrosService";
 /* ===============================
    CONFIG
 ================================ */
-const REPLANIFICACION_MINUTOS = 5;
+const REPLANIFICACION_MINUTOS = 20;
 
 const SOCKET_URL =
   (window.location.protocol === "https:" ? "wss://" : "ws://") +
@@ -159,6 +159,10 @@ function scheduleTimer(startTimeMs) {
   console.log(`[OM] Timer programado para ejecutarse en ${totalMs / 1000} s`);
 
   // Logs visuales
+  log10minTimer = setTimeout(() => {
+    console.log(`[OM] Han pasado 10 minutos`);
+  }, 10 * 60 * 1000);
+
   log5minTimer = setTimeout(() => {
     console.log(`[OM] Han pasado ${REPLANIFICACION_MINUTOS} minutos`);
   }, REPLANIFICACION_MINUTOS * 60 * 1000);
@@ -260,6 +264,10 @@ export function notifyNewOrder() {
 
   // 1. Ejecutar lógica LOCAL (esta pestaña es la Master)
   triggerLocalOrderLogic(now, false);
+
+  broadcast({
+    type: "order-created", // 👈 CLAVE
+  });
 
   // 2. Avisar a las OTRAS pestañas
   tabChannel.postMessage({

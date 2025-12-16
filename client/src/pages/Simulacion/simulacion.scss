@@ -736,3 +736,35 @@ select.filter-select {
 .plane-tooltip__row { display: flex; justify-content: space-between; margin-bottom: 2px; color: #4b5563; }
 .plane-tooltip__progress { height: 4px; background: #e5e7eb; border-radius: 2px; margin-top: 6px; overflow: hidden; }
 .plane-tooltip__progress-fill { height: 100%; background: #3b82f6; }
+
+/////////////////////
+// OPERACION ///////////
+///////////////////
+
+.flight-toggle-row {
+  display: flex;
+  gap: 80px;
+  margin-bottom: 8px;
+}
+
+.flight-toggle-btn {
+  flex: 1;
+  padding: 6px;
+  font-size: 12px;
+  border-radius: 6px;
+  border: 1px solid #cbd5f5;
+  background: #f8fafc;
+  cursor: pointer;
+}
+
+.flight-toggle-btn.active {
+  background: #2563eb;
+  color: white;
+  border-color: #2563eb;
+}
+
+.flight-toggle-btn:hover {
+  background: #2563eb;
+  color: white;
+  border-color: #2563eb;
+}

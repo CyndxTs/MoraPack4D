@@ -27,7 +27,7 @@ import {
   RangeSelector,
   TriPieSelector,
 } from "../../components/UI/ui";
-import SimulationSidebar from "../Simulacion/SimulationSidebar";
+import OperationSidebar from "../Simulacion/OperationSidebar";
 import { AirportTooltipContent, PlaneTooltipContent } from "../Simulacion/MapTooltips";
 
 // Assets y Estilos
@@ -348,6 +348,16 @@ export default function Planificacion() {
       typeof f.endMs === "number" &&
       nowMs >= f.startMs &&
       nowMs < f.endMs
+  );
+
+  // Vuelos NO activos
+  const nonActiveFlights = flights.filter(
+    (f) =>
+      !f ||
+      typeof f.startMs !== "number" ||
+      typeof f.endMs !== "number" ||
+      nowMs < f.startMs ||
+      nowMs >= f.endMs
   );
 
   // Métricas de Flota
@@ -1369,7 +1379,7 @@ export default function Planificacion() {
       )}
 
       {/* Sidebar */}
-      <SimulationSidebar
+      <OperationSidebar
         collapsed={collapsed}
         setCollapsed={setCollapsed}
         sidebarTab={sidebarTab}
@@ -1379,6 +1389,7 @@ export default function Planificacion() {
         simNowMs={nowMs}
         flights={flights}
         activeFlights={activeFlights}
+        nonActiveFlights={nonActiveFlights}
         visibleOrders={visibleOrders}
         visibleAirports={visibleAirportsEnriched}
         routesInCurrentTime={routesInCurrentTime}
