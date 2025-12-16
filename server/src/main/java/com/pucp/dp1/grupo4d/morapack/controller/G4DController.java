@@ -68,7 +68,7 @@ public class G4DController {
 
     @PostMapping("/exportation-preview")
     public ResponseEntity<Resource> previsualizarExportacion(@RequestBody FileRequest request) throws IOException {
-        Path ruta = Paths.get(request.getDirectorio()).resolve(request.getNombre()).normalize().toAbsolutePath();
+        Path ruta = Paths.get(request.getRuta()).resolve(request.getNombre()).normalize().toAbsolutePath();
         if (!Files.exists(ruta)) {
             throw new G4DException(String.format("No se encontró el archivo'%s'", request.getNombre()));
         }
@@ -90,7 +90,7 @@ public class G4DController {
 
     @PostMapping("/exportation-download")
     public ResponseEntity<Resource> descargarExportacion(@RequestBody FileRequest request) throws IOException {
-        Path ruta = Paths.get(request.getDirectorio()).resolve(request.getNombre()).normalize().toAbsolutePath();
+        Path ruta = Paths.get(request.getRuta()).resolve(request.getNombre()).normalize().toAbsolutePath();
         if (!Files.exists(ruta)) {
             throw new G4DException(String.format("No se encontró el archivo'%s'", request.getNombre()));
         }
@@ -110,7 +110,7 @@ public class G4DController {
 
     @PostMapping("/exportation-delete")
     public ResponseEntity<GenericResponse> eliminarExportacion(@RequestBody FileRequest request) throws IOException {
-        Path ruta = Paths.get(request.getDirectorio()).resolve(request.getNombre()).normalize().toAbsolutePath();
+        Path ruta = Paths.get(request.getRuta()).resolve(request.getNombre()).normalize().toAbsolutePath();
         if (!Files.exists(ruta)) {
             throw new G4DException(String.format("No se encontró el archivo'%s'", request.getNombre()));
         }
