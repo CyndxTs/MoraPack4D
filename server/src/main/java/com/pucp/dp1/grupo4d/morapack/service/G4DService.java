@@ -235,8 +235,7 @@ public class G4DService {
                     break;
                 }
                 if(G4DUtility.Calculator.isProximatelyFewer(milisegundosRealesTranscurridos, saltoDeAlgoritmoEnMilisegundos, 0.125)) {
-                    // Thread.sleep(saltoDeAlgoritmoEnMilisegundos - milisegundosRealesTranscurridos);
-                    Thread.sleep(1500L);
+                    Thread.sleep(saltoDeAlgoritmoEnMilisegundos - milisegundosRealesTranscurridos);
                 }
             }
             if(context.running && !Thread.currentThread().isInterrupted()) {

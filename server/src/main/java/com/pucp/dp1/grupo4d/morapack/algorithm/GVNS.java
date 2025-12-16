@@ -341,7 +341,7 @@ public class GVNS {
                                                    .filter(p -> !p.getDestino().getEsSede())
                                                    .filter(p -> !aeropuertosVisitados.contains(p.getDestino())).toList();
         LocalDateTime instanteDeReferenciaActual = instanteActual;
-        while(instanteDeReferenciaActual.isBefore(instanteLimite)) {
+        while(instanteDeReferenciaActual.isBefore(instanteLimite) && instanteDeReferenciaActual.isBefore(origInstanteMaximoDeEgreso)) {
             for(Plan plan : planesPosibles) {
                 if(!plan.esAlcanzable(problematica, vueloReplanificado, instanteActual, instanteDeReferenciaActual, origInstanteMinimoDeEgreso, origInstanteMaximoDeEgreso, instanteLimite, destino, vuelosActivados)) continue;
                 double lejania = plan.obtenerLejania(instanteActual, destino);
@@ -363,7 +363,7 @@ public class GVNS {
             vuelo = new Vuelo();
             vuelo.setPlan(planMasProximo);
             vuelo.setCapacidadDisponible(vuelo.getPlan().getCapacidad());
-            vuelo.instanciarAtributos(instanteActual);
+            vuelo.instanciarAtributos(instanteDeReferenciaActual);
         }
         return vuelo;
     }
@@ -398,6 +398,9 @@ public class GVNS {
                 instanteMinimoDeEgreso = rReplanificar.getFechaHoraIngreso().plusMinutes((long)(60*problematica.minHorasDeEstancia));
                 instanteMaximoDeEgreso = rReplanificar.getFechaHoraIngreso().plusMinutes((long)(60*problematica.maxHorasDeEstancia));
             }
+            System.out.printf("Replanificando lote %s(%d) desde '%s' - Ruta inicial: '%s'", lReplanificar.getCodigo(), lReplanificar.getTamanio(), aeropuertoDeConexion.getCodigo(), rutaInicial.getOrigen().getCodigo());
+            rutaInicial.getVuelos().forEach(v -> System.out.printf(" '%s'", v.getPlan().getDestino().getCodigo()));
+            System.out.println();
             rutaInicial.eliminarRegistroDeLoteDeProductosDesdeAeropuerto(lReplanificar, aeropuertoDeConexion, true);
             enrutamientosOld.put(lReplanificar, rutaInicial);
             conexionesOld.put(lReplanificar, aeropuertoDeConexion);
@@ -413,7 +416,7 @@ public class GVNS {
                             System.out.println("Reutilizando ruta inicial..");
                             lotesPorReplanificar.forEach(l -> l.setEstado(EstadoLote.PLANIFICADO));
                             enrutamientosNew.forEach((l, r) -> {
-                                r.eliminarRegistroDeLoteDeProductosDesdeAeropuerto(l, conexionesNew.get(l), false);
+                                r.eliminarRegistroDeLoteDeProductosDesdeAeropuerto(l, conexionesNew.get(l));
                                 sNew.getLotesPorRuta().remove(r);
                             });
                             enrutamientosOld.forEach((l, r) -> {
@@ -510,7 +513,11 @@ public class GVNS {
                 if(!ruta.esAlcanzableDesdeAeropuerto(problematica, aeropuertoDeConexion, umbralDeConexion, instanteMinimoDeEgreso, instanteMaximoDeEgreso, instanteLimite)) continue;
                 ruta.setTipo(tipoRuta);
                 System.out.printf("Se encontró la ruta '%s': '%s'", ruta.getCodigo(), ruta.getOrigen().getCodigo());
-                ruta.getVuelos().forEach(v -> System.out.printf(" '%s'", v.getPlan().getDestino().getCodigo()));
+                for(int i = 0;i < ruta.getVuelos().size();i++) {
+                    Vuelo v = ruta.getVuelos().get(i);
+                    LocalDateTime destInstanteDeIngreso = v.getFechaHoraLlegada(), destInstanteDeEgreso =  (i + 1 < ruta.getVuelos().size()) ? ruta.getVuelos().get(i+1).getFechaHoraSalida() : destInstanteDeIngreso.plusMinutes((long)(60*problematica.maxHorasDeRecojo));
+                    System.out.printf(" '%s(%d)'", v.getPlan().getDestino().getCodigo(), v.getPlan().getDestino().obtenerCapacidadDisponible(destInstanteDeIngreso, destInstanteDeEgreso));
+                }
                 System.out.println();
                 return ruta;
             }
@@ -567,7 +574,11 @@ public class GVNS {
         ruta.setDuracion();
         ruta.setDistancia();
         System.out.printf("Nueva ruta construida '%s': '%s'", ruta.getCodigo(), ruta.getOrigen().getCodigo());
-        ruta.getVuelos().forEach(v -> System.out.printf(" '%s'", v.getPlan().getDestino().getCodigo()));
+        for(int i = 0;i < ruta.getVuelos().size();i++) {
+            Vuelo v = ruta.getVuelos().get(i);
+            LocalDateTime destInstanteDeIngreso = v.getFechaHoraLlegada(), destInstanteDeEgreso =  (i + 1 < ruta.getVuelos().size()) ? ruta.getVuelos().get(i+1).getFechaHoraSalida() : destInstanteDeIngreso.plusMinutes((long)(60*problematica.maxHorasDeRecojo));
+            System.out.printf(" '%s(%d)'", v.getPlan().getDestino().getCodigo(), v.getPlan().getDestino().obtenerCapacidadDisponible(destInstanteDeIngreso, destInstanteDeEgreso));
+        }
         System.out.println();
         return ruta;
     }
@@ -788,7 +799,7 @@ public class GVNS {
                     List<Vuelo> svIni = new ArrayList<>(rIni.getVuelos().subList(0, posConexionIni));
                     LocalDateTime fechaHoraLlegadaAConexion = svIni.getLast().getFechaHoraLlegada();
                     List<Vuelo> svFin = new ArrayList<>(rFin.getVuelos().subList(posConexionFin, rFin.getVuelos().size()));
-                    LocalDateTime fechaHoraSalidaDesdeConexion = svIni.getFirst().getFechaHoraSalida();
+                    LocalDateTime fechaHoraSalidaDesdeConexion = svFin.getFirst().getFechaHoraSalida();
                     if(fechaHoraLlegadaAConexion.isAfter(fechaHoraSalidaDesdeConexion) || fechaHoraLlegadaAConexion.plusMinutes((long)(60*problematica.maxHorasDeEstancia)).isAfter(fechaHoraSalidaDesdeConexion)) {
                         G4DUtility.Logger.logln(" [INVALIDA]");
                         continue;
