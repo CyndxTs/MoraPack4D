@@ -19,6 +19,9 @@ import {
   sendStopSimulation,
   disconnectWS,
   subscribeToSimulation,
+  downloadExportationFile,
+  getExportationPreview,
+  deleteExportationFile,
 } from "../../services/planificarService";
 
 // Componentes UI
@@ -193,6 +196,10 @@ export default function Simulacion() {
   // A. ESTADOS (States)
   // ------------------------------------------------------------------------
 
+  //reportes
+  const [reporteListo, setReporteListo] = useState(null);
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+  const [reportPreviewContent, setReportPreviewContent] = useState("");
   // -- Tiempo --
   const [realNow, setRealNow] = useState(new Date());
   const [simStartMs, setSimStartMs] = useState(null);
@@ -274,6 +281,7 @@ export default function Simulacion() {
     useState();
   const [simulationId, setSimulationId] = useState(null); //  Guardar ID actual
   const subscriptionsRef = useRef(null); //  Para limpiar suscripción
+
   // ------------------------------------------------------------------------
   // B. REFS
   // ------------------------------------------------------------------------
@@ -953,18 +961,91 @@ export default function Simulacion() {
   }, [flights, highlightedFlights, simNowMs, timerActive]);
 
   // 5. Finalización Automática
+  // 5. Finalización Automática Inteligente (Espera a TODOS los vuelos)
   useEffect(() => {
+    // Si el reloj no está corriendo, no hacemos nada
     if (!timerActive) return;
+    // 1. ¿Ya llegamos a la fecha fin configurada?
+    // (Esto es solo una referencia mínima, no un límite estricto)
+    const fechaFinAlcanzada = simEndMs && simNowMs >= simEndMs;
+    // 2. ¿Hay vuelos en el aire AHORA MISMO?
+    const hayVuelosActivos = activeFlights.length > 0;
+    // 3. ¿Hay vuelos programados par EL FUTURO?
+    // Buscamos si existe algún vuelo cuyo inicio sea mayor a "ahora"
+    const hayVuelosPendientes = flights.some((f) => f.startMs > simNowMs);
+    // CASO A: Aún no llegamos a la fecha fin -> Seguimos
+    if (!fechaFinAlcanzada) return;
 
-    // CONDICIÓN: Solo detener si la hora actual SUPERÓ la hora fin configurada
-    // Agregamos (seconds > 1) como "colchón" de seguridad por si acaso
-    if (simEndMs && simNowMs >= simEndMs && seconds > 1) {
-      showNotification("info", "Fin del periodo de simulación.");
-      setTimerRunning(false);
-      setTimerActive(false);
+    // CASO B: Ya pasamos la fecha fin, PERO hay actividad -> Seguimos
+    if (hayVuelosActivos || hayVuelosPendientes) {
+      return;
     }
-  }, [simNowMs, simEndMs, timerActive, seconds]);
 
+    // CASO C: Pasó la fecha fin Y no hay nadie volando Y no viene nadie más
+    // -> AHORA SÍ PARAMOS
+    console.log(
+      "✅ Fin Visual: Tiempo cumplido y sin actividad aérea pendiente."
+    );
+    setTimerRunning(false);
+    setTimerActive(false);
+    showNotification("success", "Visualización completada.");
+  }, [simNowMs, simEndMs, timerActive, activeFlights.length, flights]);
+
+  // 4. NUEVO EFECTO: ABRIR MODAL CUANDO HAYA REPORTE Y LA SIMULACIÓN HAYA TERMINADO
+  useEffect(() => {
+    // Si ya terminó el tiempo (timerActive false) y tenemos el reporte listo...
+    if (!timerActive && reporteListo && !isReportModalOpen) {
+      const abrirModalAutomaticamente = async () => {
+        try {
+          // Traemos el contenido del archivo
+          const texto = await getExportationPreview(reporteListo);
+          setReportPreviewContent(texto);
+          setIsReportModalOpen(true);
+        } catch (err) {
+          showNotification(
+            "warning",
+            "No se pudo cargar la vista previa del reporte"
+          );
+        }
+      };
+      abrirModalAutomaticamente();
+    }
+  }, [timerActive, reporteListo, isReportModalOpen]);
+
+  // 5. FUNCIONES PARA LOS BOTONES DEL MODAL
+
+  // Opción A: Descargar (Baja el archivo y cierra conexión)
+  const handleModalDownload = async () => {
+    if (reporteListo) {
+      await downloadExportationFile(reporteListo);
+      showNotification("success", "Archivo descargado. Cerrando sesión.");
+      cerrarTodoYDesconectar();
+    }
+  };
+
+  // Opción B: Cerrar (Borra el archivo del server y cierra conexión)
+  const handleModalClose = async () => {
+    if (reporteListo) {
+      await deleteExportationFile(reporteListo); // Borrar del server
+      showNotification("info", "Reporte descartado. Cerrando sesión.");
+      cerrarTodoYDesconectar();
+    }
+  };
+
+  const cerrarTodoYDesconectar = () => {
+    setIsReportModalOpen(false);
+    setReporteListo(null);
+    setReportPreviewContent("");
+
+    // Desconectar WebSocket
+    if (subscriptionsRef.current) {
+      subscriptionsRef.current.unsubscribe();
+      subscriptionsRef.current = null;
+    }
+    setSimulationId(null);
+    // Limpiar mapa si quieres (opcional)
+    // handleStop();
+  };
   // 6. Carga de Aeropuertos Iniciales
   useEffect(() => {
     const fetchAeropuertosIniciales = async () => {
@@ -1051,7 +1132,8 @@ export default function Simulacion() {
   useEffect(() => {
     if (fechaI && horaI) {
       const start = new Date(`${fechaI}T${horaI}:00Z`);
-      const end = new Date(start.getTime() + 7 * 24 * 60 * 60 * 1000);
+      const end = new Date(start.getTime() + 1 * 24 * 60 * 60 * 1000);
+
       setFechaF(end.toISOString().slice(0, 10));
       setHoraF(end.toISOString().slice(11, 16));
     }
@@ -1117,14 +1199,15 @@ export default function Simulacion() {
 
     try {
       // 2. Enviar petición al backend usando el ID guardado (sin el "TOK-")
-      if (simulationId) {
+      if (simulationId && estadoEjecucionSim !== "DETENIDO") {
         await sendStopSimulation(simulationId);
       } else {
-        console.warn("⚠️ No se encontró ID de simulación para detener.");
+        console.log(
+          "ℹ️ La simulación ya había terminado en el servidor, solo limpiamos localmente."
+        );
       }
     } catch (err) {
       console.warn("Error al intentar detener la simulación en servidor:", err);
-      // No lanzamos error visual crítico porque igual vamos a limpiar el front
     }
 
     // 3. Limpieza de Lógica de Simulación
@@ -1137,8 +1220,6 @@ export default function Simulacion() {
     setOrders([]);
     setRoutes([]);
     setAirports((prev) => {
-      // Opcional: Si quieres resetear el stock visual de los aeropuertos
-      // podrías volver a cargar la lista inicial o dejarlos como están.
       return prev;
     });
 
@@ -1160,13 +1241,15 @@ export default function Simulacion() {
     setSimStartMs(null);
     setSimEndMs(null);
     // 6. IMPORTANTE: Limpiar Suscripción WebSocket y borrar el ID
+    /*
     if (subscriptionsRef.current) {
       console.log("🔌 Desuscribiendo canales WebSocket...");
       subscriptionsRef.current.unsubscribe();
       subscriptionsRef.current = null;
     }
-    setSimulationId(null);
+    setSimulationId(null);*/
   };
+
   const formatDateForBackend = (dateStr, timeStr) => {
     if (!dateStr || !timeStr) return null;
     const [year, month, day] = dateStr.split("-");
@@ -1222,7 +1305,8 @@ export default function Simulacion() {
 
         // Limpiar suscripción anterior si existe
         if (subscriptionsRef.current) subscriptionsRef.current.unsubscribe();
-
+        // Resetear reporte anterior al iniciar nueva simulación
+        setReporteListo(null);
         // SUSCRIBIRSE DINÁMICAMENTE
         subscriptionsRef.current = subscribeToSimulation(
           idTransaccion,
@@ -1239,7 +1323,9 @@ export default function Simulacion() {
             const fin = status.estadoFinalizacion;
 
             setEstadoEjecucionSim(estado);
-
+            console.log(
+              `🎫 [TOKEN: ${idTransaccion}] Estado: "${estado}" | Fin: "${fin}"`
+            );
             // Tu lógica de notificaciones movida aquí:
             if (estado === "POR_INICIAR") {
               setShowLoadingSim(true);
@@ -1250,13 +1336,41 @@ export default function Simulacion() {
               handleStart(fechaI, horaI); // <--- IMPORTANTE: Iniciar reloj visual
             } else if (estado === "DETENIDO") {
               setShowLoadingSim(false);
-              if (fin === "EXITOSO")
+              if (fin === "EXITOSO") {
+                console.log(`✅ [${idTransaccion}] Terminó con ÉXITO`);
                 showNotification("success", "Finalizado con éxito");
-              else if (fin === "COLAPSO")
-                showNotification("danger", "¡Colapso Logístico!");
-              else if (fin === "FORZADO")
-                showNotification("info", "Detenido por usuario");
+              } else if (fin === "COLAPSO") {
+                console.warn(
+                  `💥 [${idTransaccion}] COLAPSÓ. Esperando reporte parcial...`
+                );
+                showNotification(
+                  "danger",
+                  "¡Colapso Logístico! (Generando reporte de error...)"
+                );
+              } else {
+                if (fin === "FORZADO") {
+                  console.log(
+                    `🛑 [${idTransaccion}] Detenido FORZOSAMENTE (Confirmado por Backend)`
+                  );
+                }
+                if (subscriptionsRef.current) {
+                  console.log(
+                    `🔌 [${idTransaccion}] Cerrando conexión WebSocket.`
+                  );
+                  subscriptionsRef.current.unsubscribe();
+                  subscriptionsRef.current = null;
+                }
+                setSimulationId(null);
+              }
             }
+          },
+          (fileData) => {
+            console.log("📄 Reporte generado:", fileData);
+            setReporteListo(fileData);
+            showNotification(
+              "success",
+              "Reporte disponible para descargar al finalizar 📥"
+            );
           }
         );
       }
@@ -2100,6 +2214,57 @@ export default function Simulacion() {
               </button>
               <button className="btn green" onClick={handlePlanear}>
                 Planear
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {isReportModalOpen && (
+        <div className="report-modal-overlay">
+          <div className="report-modal-content">
+            {/* HEADER */}
+            <div className="report-modal-header">
+              <h3 className="report-modal-title">
+                <span>📋</span> Reporte de Simulación
+              </h3>
+            </div>
+
+            {/* BODY */}
+            <div className="report-modal-body">
+              <div className="report-info-text">
+                <p style={{ margin: 0 }}>
+                  La simulación ha finalizado exitosamente.
+                </p>
+                <p
+                  style={{ margin: "4px 0 0", fontSize: "12px", opacity: 0.8 }}
+                >
+                  Archivo generado:{" "}
+                  <span className="report-filename">
+                    {reporteListo?.nombre}
+                  </span>
+                </p>
+              </div>
+
+              {/* PREVIEW BOX */}
+              <div className="report-preview-box">
+                {reportPreviewContent || "Cargando vista previa..."}
+              </div>
+            </div>
+
+            {/* FOOTER */}
+            <div className="report-modal-footer">
+              <button
+                className="btn-report-action btn-report-close"
+                onClick={handleModalClose}
+              >
+                🗑️ Descartar y Cerrar
+              </button>
+
+              <button
+                className="btn-report-action btn-report-download"
+                onClick={handleModalDownload}
+              >
+                📥 Descargar Reporte
               </button>
             </div>
           </div>

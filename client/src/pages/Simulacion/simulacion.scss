@@ -769,12 +769,168 @@ select.filter-select {
   border-color: #2563eb;
 }
 
-//////////////
-/// REPORTE OPERACION
-//////////////
-.report-overlay {
-  position: absolute;
-  bottom: 16px;
-  right: 16px;
-  z-index: 1000;
+/* ==========================================================================
+   8. MODAL DE REPORTE (DISEÑO MEJORADO)
+   ========================================================================== */
+
+/* Fondo oscuro con desenfoque */
+.report-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(15, 23, 42, 0.6); /* Slate 900 con opacidad */
+  backdrop-filter: blur(4px); /* Efecto moderno */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999; /* Por encima de todo */
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* Contenedor del Modal */
+.report-modal-content {
+  background: #ffffff;
+  width: 90%;
+  max-width: 650px;
+  border-radius: 16px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  overflow: hidden; /* Para que el header respete bordes redondeados */
+  display: flex;
+  flex-direction: column;
+  animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  border: 1px solid #e2e8f0;
+}
+
+/* Header */
+.report-modal-header {
+  background: #0f172a; /* Slate 900 */
+  padding: 20px 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid #1e293b;
+}
+
+.report-modal-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: #f8fafc; /* Slate 50 */
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Cuerpo */
+.report-modal-body {
+  padding: 24px;
+  background: #fff;
+}
+
+.report-info-text {
+  font-size: 14px;
+  color: #475569; /* Slate 600 */
+  margin-bottom: 16px;
+  line-height: 1.5;
+}
+
+.report-filename {
+  font-weight: 600;
+  color: #0f172a;
+  background: #f1f5f9;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: monospace;
+}
+
+/* Área de Previsualización (Consola/Papel) */
+.report-preview-box {
+  background-color: #f8fafc; /* Slate 50 */
+  border: 1px solid #cbd5e1; /* Slate 300 */
+  border-radius: 8px;
+  padding: 16px;
+  height: 320px;
+  overflow-y: auto;
+  font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
+  font-size: 12px;
+  line-height: 1.6;
+  color: #334155; /* Slate 700 */
+  white-space: pre-wrap; /* Mantiene saltos de línea */
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.03);
+}
+
+/* Scrollbar personalizado para el preview */
+.report-preview-box::-webkit-scrollbar {
+  width: 8px;
+}
+.report-preview-box::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+.report-preview-box::-webkit-scrollbar-thumb {
+  background-color: #cbd5e1;
+  border-radius: 4px;
+}
+
+/* Footer de botones */
+.report-modal-footer {
+  padding: 16px 24px;
+  background: #f8fafc;
+  border-top: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Botones Base */
+.btn-report-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.btn-report-action:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.btn-report-action:active {
+  transform: translateY(0);
+}
+
+/* Variantes de botones */
+.btn-report-close {
+  background-color: #fff;
+  color: #ef4444; /* Rojo */
+  border: 1px solid #fecaca;
+}
+.btn-report-close:hover {
+  background-color: #fef2f2;
+  border-color: #ef4444;
+}
+
+.btn-report-download {
+  background-color: #0f172a; /* Azul oscuro */
+  color: white;
+}
+.btn-report-download:hover {
+  background-color: #1e293b;
+}
+
+/* Animaciones */
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px) scale(0.95); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
