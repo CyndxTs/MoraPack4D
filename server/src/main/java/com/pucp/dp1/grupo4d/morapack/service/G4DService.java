@@ -208,7 +208,9 @@ public class G4DService {
                 finDePlanificacion = (LocalDateTime) G4DUtility.Calculator.getMin(finDePlanificacion.plusMinutes(saltoDeConsumoEnMinutos),finDeSimulacion);
                 Instant start = Instant.now();
                 SolucionDTO solucion = planificar(context, parametros, TipoEscenario.SIMULACION, inicioDePlanificacion, finDePlanificacion, umbralDeReplanificacion, null);
+                GVNS.imprimirSolucion(context.solution, "SimuSemanal.txt");
                 if(solucion != null) {
+                    System.out.println("[>] SOLUCIÓN ENVIADA!");
                     WebSocketService.enviar(solutionDestination, new SolutionPayload(solucion));
                 } else {
                     System.out.println("[*] COLAPSO LOGÍSTICO!");
@@ -233,7 +235,8 @@ public class G4DService {
                     break;
                 }
                 if(G4DUtility.Calculator.isProximatelyFewer(milisegundosRealesTranscurridos, saltoDeAlgoritmoEnMilisegundos, 0.125)) {
-                    Thread.sleep(saltoDeAlgoritmoEnMilisegundos - milisegundosRealesTranscurridos);
+                    // Thread.sleep(saltoDeAlgoritmoEnMilisegundos - milisegundosRealesTranscurridos);
+                    Thread.sleep(1500L);
                 }
             }
             if(context.running && !Thread.currentThread().isInterrupted()) {
