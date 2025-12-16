@@ -1132,7 +1132,7 @@ export default function Simulacion() {
   useEffect(() => {
     if (fechaI && horaI) {
       const start = new Date(`${fechaI}T${horaI}:00Z`);
-      const end = new Date(start.getTime() + 7 * 24 * 60 * 60 * 1000);
+      const end = new Date(start.getTime() + 1 * 24 * 60 * 60 * 1000);
 
       setFechaF(end.toISOString().slice(0, 10));
       setHoraF(end.toISOString().slice(11, 16));
@@ -1199,10 +1199,12 @@ export default function Simulacion() {
 
     try {
       // 2. Enviar petición al backend usando el ID guardado (sin el "TOK-")
-      if (simulationId) {
+      if (simulationId && estadoEjecucionSim !== "DETENIDO") {
         await sendStopSimulation(simulationId);
       } else {
-        console.warn("⚠️ No se encontró ID de simulación para detener.");
+        console.log(
+          "ℹ️ La simulación ya había terminado en el servidor, solo limpiamos localmente."
+        );
       }
     } catch (err) {
       console.warn("Error al intentar detener la simulación en servidor:", err);
@@ -1365,7 +1367,10 @@ export default function Simulacion() {
           (fileData) => {
             console.log("📄 Reporte generado:", fileData);
             setReporteListo(fileData);
-            showNotification("success", "Reporte disponible para descargar 📥");
+            showNotification(
+              "success",
+              "Reporte disponible para descargar al finalizar 📥"
+            );
           }
         );
       }
