@@ -154,7 +154,7 @@ public class PedidoService {
     public GenericResponse importar(String idTransaccion, Path archivo, ImportFileRequest request) {
         String progressDestination = String.format("/topic/importation-%s", idTransaccion), statusDestination = String.format("/topic/importation-status-%s", idTransaccion);
         try {
-            System.out.printf("Importando pedidos desde '%s'.. (batch 500)%n", archivo.getFileName());
+            System.out.printf(">> Importando pedidos desde '%s'.. (batch 500)%n", archivo.getFileName());
             LocalDateTime fechaHoraInicio = G4DUtility.Convertor.toAdmissible(request.getFechaHoraInicio(), LocalDateTime.MIN);
             LocalDateTime fechaHoraFin = G4DUtility.Convertor.toAdmissible(request.getFechaHoraFin(), LocalDateTime.MAX);
             if (fechaHoraFin.isBefore(fechaHoraInicio)) throw new G4DException("Rango de tiempo inválido.");
@@ -236,9 +236,11 @@ public class PedidoService {
                 lProcesadas++;
                 WebSocketService.enviar(progressDestination, new ProgressPayload("Leyendo archivo", lProcesadas, lTotales));
                 if (pedidos.size() % 500 == 0 || lProcesadas == lTotales) {
-                    importService.batchSave(clientes, "clientes");
-                    System.out.printf("[<] CLIENTES IMPORTADOS! ('%d')%n", clientes.size());
-                    clientes.clear();
+                    if(!clientes.isEmpty()) {
+                        importService.batchSave(clientes, "clientes");
+                        System.out.printf("[<] CLIENTES IMPORTADOS! ('%d')%n", clientes.size());
+                        clientes.clear();
+                    }
                     importService.batchSave(pedidos, "pedidos");
                     System.out.printf("[<] PEDIDOS IMPORTADOS! ('%d')%n", pedidos.size());
                     pedidos.clear();

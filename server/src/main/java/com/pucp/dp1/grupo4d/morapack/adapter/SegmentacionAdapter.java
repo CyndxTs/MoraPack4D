@@ -12,6 +12,7 @@ import com.pucp.dp1.grupo4d.morapack.model.algorithm.Segmentacion;
 import com.pucp.dp1.grupo4d.morapack.model.entity.LoteEntity;
 import com.pucp.dp1.grupo4d.morapack.model.entity.RutaEntity;
 import com.pucp.dp1.grupo4d.morapack.model.entity.SegmentacionEntity;
+import com.pucp.dp1.grupo4d.morapack.service.model.SegmentacionService;
 import com.pucp.dp1.grupo4d.morapack.util.G4DUtility;
 import org.springframework.stereotype.Component;
 import java.util.ArrayList;
@@ -25,10 +26,12 @@ public class SegmentacionAdapter {
     private final RutaAdapter rutaAdapter;
     private final Map<String, Segmentacion> poolAlgorithm = new HashMap<>();
     private final Map<String, SegmentacionEntity> poolEntity = new HashMap<>();
+    private final SegmentacionService segmentacionService;
 
-    public SegmentacionAdapter(LoteAdapter loteAdapter, RutaAdapter rutaAdapter) {
+    public SegmentacionAdapter(LoteAdapter loteAdapter, RutaAdapter rutaAdapter, SegmentacionService segmentacionService, SegmentacionService segmentacionService1) {
         this.loteAdapter = loteAdapter;
         this.rutaAdapter = rutaAdapter;
+        this.segmentacionService = segmentacionService1;
     }
 
     public Segmentacion toAlgorithm(SegmentacionEntity entity) {
@@ -56,9 +59,12 @@ public class SegmentacionAdapter {
         if (poolEntity.containsKey(algorithm.getCodigo())) {
             return poolEntity.get(algorithm.getCodigo());
         }
-        SegmentacionEntity entity = new SegmentacionEntity();
-        entity.setCodigo(algorithm.getCodigo());
-        entity.setFechaHoraAplicacionUTC(algorithm.getFechaHoraAplicacion());
+        SegmentacionEntity entity = segmentacionService.findByCodigo(algorithm.getCodigo()).orElse(null);
+        if(entity == null) {
+            entity = new SegmentacionEntity();
+            entity.setCodigo(algorithm.getCodigo());
+            entity.setFechaHoraAplicacionUTC(algorithm.getFechaHoraAplicacion());
+        }
         entity.setFechaHoraSustitucionUTC(algorithm.getFechaHoraSustitucion());
         List<LoteEntity> lotesEntity = new ArrayList<>();
         Map<Ruta, Lote> lotesPorRuta = algorithm.getLotesPorRuta();

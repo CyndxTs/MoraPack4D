@@ -137,7 +137,7 @@ public class AeropuertoService {
     public GenericResponse importar(String idTransaccion, Path archivo) {
         String progressDestination = String.format("/topic/importation-%s", idTransaccion), statusDestination = String.format("/topic/importation-status-%s", idTransaccion);
         try {
-            System.out.printf("Importando aeropuertos desde '%s'..%n", archivo.getFileName());
+            System.out.printf(">> Importando aeropuertos desde '%s'..%n", archivo.getFileName());
             BufferedReader br = Files.newBufferedReader(archivo, G4DUtility.Reader.getFileCharset(archivo));
             List<AeropuertoEntity> aeropuertos = new ArrayList<>();
             int lTotales = (int) G4DUtility.Reader.getLineCount(archivo);
