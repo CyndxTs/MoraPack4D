@@ -15,5 +15,5 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class FileRequest {
     String nombre;
-    String directorio;
+    String ruta;
 }
