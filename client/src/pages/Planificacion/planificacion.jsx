@@ -315,10 +315,30 @@ export default function Planificacion() {
       }
     }
   }, []); // Array vacío para que solo corra al inicio (F5)
+  // ------------------------------------------------------------------------
+  // NUEVO EFFECT: RECUPERAR REPORTE TRAS F5
+  // ------------------------------------------------------------------------
+  useEffect(() => {
+    const backupReporte = localStorage.getItem("REPORTE_DISPONIBLE_BACKUP");
+
+    if (backupReporte) {
+      try {
+        console.log("Recuperando reporte tras F5...");
+        const reporte = JSON.parse(backupReporte);
+        setReporteDisponible(reporte);
+      } catch (e) {
+        console.error("Backup de reporte corrupto", e);
+        localStorage.removeItem("REPORTE_DISPONIBLE_BACKUP");
+      }
+    }
+  }, []);
+
 
   const limpiarSimulacion = () => {
       localStorage.removeItem("SIMULATION_BACKUP");
       localStorage.removeItem("SIMULATION_STATUS");
+      // ✅ BORRAR REPORTE SOLO AQUÍ
+      localStorage.removeItem("REPORTE_DISPONIBLE_BACKUP");
       window.location.reload(); // Recarga limpia
   };
 
@@ -978,11 +998,29 @@ export default function Planificacion() {
         connectOperatorExportWS(
           tokenExportacion,
           (payload) => {
-            console.log("SolutionPayload recibido por WS:", payload);
+            console.log("SolutionPayload recibido por WS (OPERACION):", payload);
             setReporteDisponible(payload);
+            // ✅ PERSISTIR REPORTE HASTA limpiarSimulacion
+            try {
+              localStorage.setItem(
+                "REPORTE_DISPONIBLE_BACKUP",
+                JSON.stringify(payload)
+              );
+            } catch (e) {
+              console.error("No se pudo guardar el reporte en localStorage", e);
+            }
           },
           (status) => {
             console.log("Status exportación:", status);
+            const estadoEjecucion =
+              typeof status === "string" ? status : status.estadoEjecucion;
+            const estadoFinalizacion =
+              typeof status === "string" ? null : status.estadoFinalizacion;
+    
+            if (!estadoEjecucion) return;
+            if (estadoEjecucion === "DETENIDO" && estadoFinalizacion === "EXITOSO") {
+              showNotification("success", "Reporte generado");
+            }
           }
         );
       }

@@ -29,3 +29,45 @@
   color: #d00;
 }
 
+
+/////////////////////
+// OPERACION ///////////
+///////////////////
+
+.flight-toggle-row {
+  display: flex;
+  gap: 80px;
+  margin-bottom: 8px;
+}
+
+.flight-toggle-btn {
+  flex: 1;
+  padding: 6px;
+  font-size: 12px;
+  border-radius: 6px;
+  border: 1px solid #cbd5f5;
+  background: #f8fafc;
+  cursor: pointer;
+}
+
+.flight-toggle-btn.active {
+  background: #2563eb;
+  color: white;
+  border-color: #2563eb;
+}
+
+.flight-toggle-btn:hover {
+  background: #2563eb;
+  color: white;
+  border-color: #2563eb;
+}
+
+//////////////
+/// REPORTE OPERACION
+//////////////
+.report-overlay {
+  position: absolute;
+  bottom: 16px;
+  right: 16px;
+  z-index: 1000;
+}
