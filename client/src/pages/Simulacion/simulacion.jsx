@@ -953,17 +953,30 @@ export default function Simulacion() {
   }, [flights, highlightedFlights, simNowMs, timerActive]);
 
   // 5. Finalización Automática
+  // 5. Finalización Automática Inteligente
   useEffect(() => {
+    // Si el timer no está activo, no hacemos nada
     if (!timerActive) return;
+    const tiempoLimiteAlcanzado =
+      simEndMs && simNowMs >= simEndMs && seconds > 1;
 
-    // CONDICIÓN: Solo detener si la hora actual SUPERÓ la hora fin configurada
-    // Agregamos (seconds > 1) como "colchón" de seguridad por si acaso
-    if (simEndMs && simNowMs >= simEndMs && seconds > 1) {
-      showNotification("info", "Fin del periodo de simulación.");
+    if (tiempoLimiteAlcanzado) {
+      const hayVuelosActivos = activeFlights.length > 0; // ¿Hay aviones volando en este instante?
+      const hayVuelosPendientes = flights.some((f) => f.startMs > simNowMs); //C. ¿Hay aviones que saldrán en el futuro?
+      if (hayVuelosActivos || hayVuelosPendientes) {
+        return;
+      }
+      console.log(
+        "✅ Fin de simulación: Tiempo cumplido y sin actividad pendiente."
+      );
       setTimerRunning(false);
       setTimerActive(false);
+      showNotification(
+        "success",
+        "Simulación completada (Todas las operaciones finalizaron)."
+      );
     }
-  }, [simNowMs, simEndMs, timerActive, seconds]);
+  }, [simNowMs, simEndMs, timerActive, seconds, activeFlights.length, flights]);
 
   // 6. Carga de Aeropuertos Iniciales
   useEffect(() => {
@@ -1051,7 +1064,7 @@ export default function Simulacion() {
   useEffect(() => {
     if (fechaI && horaI) {
       const start = new Date(`${fechaI}T${horaI}:00Z`);
-      const end = new Date(start.getTime() + 7 * 24 * 60 * 60 * 1000);
+      const end = new Date(start.getTime() + 1 * 24 * 60 * 60 * 1000);
       setFechaF(end.toISOString().slice(0, 10));
       setHoraF(end.toISOString().slice(11, 16));
     }
@@ -1167,6 +1180,7 @@ export default function Simulacion() {
     }
     setSimulationId(null);
   };
+
   const formatDateForBackend = (dateStr, timeStr) => {
     if (!dateStr || !timeStr) return null;
     const [year, month, day] = dateStr.split("-");
@@ -1239,7 +1253,9 @@ export default function Simulacion() {
             const fin = status.estadoFinalizacion;
 
             setEstadoEjecucionSim(estado);
-
+            console.log(
+              `🎫 [TOKEN: ${idTransaccion}] Estado: "${estado}" | Fin: "${fin}"`
+            );
             // Tu lógica de notificaciones movida aquí:
             if (estado === "POR_INICIAR") {
               setShowLoadingSim(true);
@@ -1250,12 +1266,26 @@ export default function Simulacion() {
               handleStart(fechaI, horaI); // <--- IMPORTANTE: Iniciar reloj visual
             } else if (estado === "DETENIDO") {
               setShowLoadingSim(false);
-              if (fin === "EXITOSO")
+              if (fin === "EXITOSO") {
+                console.log(`✅ [${idTransaccion}] Terminó con ÉXITO`);
                 showNotification("success", "Finalizado con éxito");
-              else if (fin === "COLAPSO")
+              } else if (fin === "COLAPSO") {
+                console.warn(`💥 [${idTransaccion}] COLAPSÓ`);
                 showNotification("danger", "¡Colapso Logístico!");
-              else if (fin === "FORZADO")
-                showNotification("info", "Detenido por usuario");
+              } else if (fin === "FORZADO") {
+                console.log(
+                  `🛑 [${idTransaccion}] Detenido FORZOSAMENTE (Confirmado por Backend)`
+                );
+                // No notificamos nada extra porque handleStop ya limpió la UI visualmente
+              }
+              if (subscriptionsRef.current) {
+                console.log(
+                  `🔌 [${idTransaccion}] Cerrando conexión WebSocket.`
+                );
+                subscriptionsRef.current.unsubscribe();
+                subscriptionsRef.current = null;
+              }
+              setSimulationId(null);
             }
           }
         );
