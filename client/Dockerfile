@@ -1,7 +1,7 @@
 # Etapa 1: Construcción del proyecto
 FROM node:18 AS build
 
-# Crear y entrar al directorio
+# Crear y entrar al ruta
 WORKDIR /app
 
 # Copiar package.json e instalar dependencias

@@ -49,4 +49,15 @@ public class AsyncConfig implements AsyncConfigurer {
         executor.initialize();
         return executor;
     }
+
+    @Bean("exportationExecutor")
+    public Executor exportationExecutor() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(5);
+        executor.setMaxPoolSize(20);
+        executor.setQueueCapacity(20);
+        executor.setThreadNamePrefix("exportation-");
+        executor.initialize();
+        return executor;
+    }
 }

@@ -8,6 +8,7 @@ package com.pucp.dp1.grupo4d.morapack.adapter;
 
 import com.pucp.dp1.grupo4d.morapack.model.algorithm.Evento;
 import com.pucp.dp1.grupo4d.morapack.model.entity.EventoEntity;
+import com.pucp.dp1.grupo4d.morapack.service.model.EventoService;
 import com.pucp.dp1.grupo4d.morapack.util.G4DUtility;
 import org.springframework.stereotype.Component;
 import java.util.HashMap;
@@ -15,8 +16,13 @@ import java.util.Map;
 
 @Component
 public class EventoAdapter {
+    private final EventoService eventoService;
     private final Map<String, Evento> poolAlgorithm = new HashMap<>();
     private final Map<String, EventoEntity> poolEntity = new HashMap<>();
+
+    public EventoAdapter(EventoService eventoService) {
+        this.eventoService = eventoService;
+    }
 
     public Evento toAlgorithm(EventoEntity entity) {
         if(poolAlgorithm.containsKey(entity.getCodigo())) {
@@ -37,13 +43,10 @@ public class EventoAdapter {
         if(poolEntity.containsKey(algorithm.getCodigo())) {
             return poolEntity.get(algorithm.getCodigo());
         }
-        EventoEntity entity = new EventoEntity();
-        entity.setCodigo(algorithm.getCodigo());
-        entity.setTipo(algorithm.getTipo());
-        entity.setFechaHoraSalidaUTC(algorithm.getFechaHoraSalida());
-        entity.setFechaHoraSalidaLocal(G4DUtility.Convertor.toLocal(algorithm.getFechaHoraSalida(), entity.getPlan().getOrigen().getHusoHorario()));
-        entity.setFechaHoraLlegadaUTC(algorithm.getFechaHoraLlegada());
-        entity.setFechaHoraLlegadaLocal(G4DUtility.Convertor.toLocal(algorithm.getFechaHoraLlegada(), entity.getPlan().getDestino().getHusoHorario()));
+        EventoEntity entity = eventoService.findByCodigo(algorithm.getCodigo()).orElse(null);
+        if(entity == null) {
+            return null;
+        }
         poolEntity.put(algorithm.getCodigo(), entity);
         return entity;
     }
