@@ -30,6 +30,9 @@ let client = null;
 let parametros = null;
 let listeners = [];
 
+// 🔴 NUEVO: token de la última replanificación
+let lastReplanificationToken = null;
+
 let pendingOrders = 0;
 let fechaHoraPrimerPedido = null;
 let listoParaReplanificar = false;
@@ -54,6 +57,14 @@ export function onEvent(fn) {
   return () => {
     listeners = listeners.filter((l) => l !== fn);
   };
+}
+
+/* ===============================
+   GETTERS PÚBLICOS
+================================ */
+// ✅ Esto permitirá usar el token en exportación
+export function getLastReplanificationToken() {
+  return lastReplanificationToken;
 }
 
 /* ===============================
@@ -102,6 +113,7 @@ export function connectOperatorWS(onSolution, onStatus) {
       console.log("STOMP conectado a", SOCKET_URL);
       client.subscribe("/topic/operation", (message) => {
         const payload = JSON.parse(message.body);
+        console.log("PAYLOAD DE REPLANIFICAR:",payload);
         onSolution(payload);
       });
       client.subscribe("/topic/operation-status", (message) => {
@@ -233,6 +245,9 @@ async function runReplanification() {
     };
 
     const json = await sendReplanificationRequest(payload);
+
+    // ✅ GUARDAMOS TOKEN
+    lastReplanificationToken = json.token;
 
     broadcast({
       type: "replanificacion-iniciada",

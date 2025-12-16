@@ -1,0 +1,208 @@
+==============                                           UTILIZACION TEMPORAL                DESVIACION ESPACIAL                DISPOSICION OPERACIONAL
+=============================================================================                                                   21.81%                             18.31%                                5.42%
+==============================================================================================================================================
+                                                                               FITNESS DE LA SOLUCIÓN
+==                                                                                       1619.12
+=
+================                                           UTILIZACION TEMPORAL                DESVIACION ESPACIAL                DISPOSICION OPERACIONAL
+===============================================                                                   21.81%                             18.31%                                5.42%
+======================================================================================================================================================================================================================================
+==============
+                                                                                      PEDIDO #1
+                                                                                      PEDIDO #1
+        ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+---    CLIENTE                                                   DESTINO                               CANT. PRODUCTOS MPE        INSTANTE DE REGISTRO        INSTANTE DE EXPIRACION
+-------------------------
+    CLIENTE                                                   DESTINO                               CANT. PRODUCTOS MPE        INSTANTE DE REGISTRO        INSTANTE DE EXPIRACION
+    0000024 - Da-eun Ha                                       SVMI - Caracas, Venezuela                     999                  16/12/2025 17:06             18/12/2025 17:06
+    0000024 - Da-eun Ha                                       SVMI - Caracas, Venezuela                     999                  16/12/2025 17:06             18/12/2025 17:06
+
+
+                                                                       >> RUTAS PLANIFICADAS PARA EL PEDIDO <<
+
+        ***************************                                                                       >> RUTAS PLANIFICADAS PARA EL PEDIDO <<
+*
+* * * * * * * * *************************************************************************************************************************************************************************************************************************************************************************************************
+*****
+        >> RUTA #001 | ORIGEN: SPIM - Lima, Perú              | TIPO DE ENVIO: INTRACONTINENTAL | INSTANTE DE ENTREGA: 16/12/2025 22:41 | CANTIDAD ASIGNADA DE PRODUCTOS: 320
+        >> RUTA #001 | ORIGEN: SPIM - Lima, Perú              | TIPO DE ENVIO: INTRACONTINENTAL | INSTANTE DE ENTREGA: 16/12/2025 22:41 | CANTIDAD ASIGNADA DE PRODUCTOS: 320
+
+
+                     INSTANTE DE SALIDA    ORIGEN                                                           INSTANTE DE LLEGADA   DESTINO
+                     INSTANTE DE SALIDA    ORIGEN                                                           INSTANTE DE LLEGADA   DESTINO
+                     [16/12/2025 17:15]    SPIM - Lima, Perú                         > > > > > >            [16/12/2025 22:41]    SVMI - Caracas, Venezuela     
+        ..............                     [16/12/2025 17:15]    SPIM - Lima, Perú                         > > > > > >            [16/12/2025 22:41]    SVMI - Caracas, Venezuela     
+        ......................................................................................................................................................................................................................................................................................................
+.        Resumen de la ruta:            INDIVIDUAL            LOTE
+.....................
+        Resumen de la ruta:            INDIVIDUAL            LOTE
+        >> Duración 'Activa':              5h 26m         72d 10h 40m
+        >> Duración 'Activa':              5h 26m         72d 10h 40m
+        >> Duración 'Pasiva':              0h  9m          2d  0h  0m
+        >> Duración 'Pasiva':              0h  9m          2d  0h  0m
+        >> Tiempo optimizado:          1d 18h 25m        565d 13h 19m
+        >> Tiempo optimizado:          1d 18h 25m        565d 13h 19m
+                ******************************************************************************************************************************************************************************************************************************************************************************************
+************************************************
+        >> RUTA #002 | ORIGEN: EBCI - Bruselas, Belgica       | TIPO DE ENVIO: INTERCONTINENTAL | INSTANTE DE ENTREGA: 17/12/2025 04:03 | CANTIDAD ASIGNADA DE PRODUCTOS: 359
+        >> RUTA #002 | ORIGEN: EBCI - Bruselas, Belgica       | TIPO DE ENVIO: INTERCONTINENTAL | INSTANTE DE ENTREGA: 17/12/2025 04:03 | CANTIDAD ASIGNADA DE PRODUCTOS: 359
+
+                     INSTANTE DE SALIDA    ORIGEN                                                           INSTANTE DE LLEGADA   DESTINO
+
+                     INSTANTE DE SALIDA    ORIGEN                                                           INSTANTE DE LLEGADA   DESTINO
+                     [16/12/2025 17:20]    EBCI - Bruselas, Belgica                  > > > > > >            [17/12/2025 04:03]    SVMI - Caracas, Venezuela     
+        ......................                     [16/12/2025 17:20]    EBCI - Bruselas, Belgica                  > > > > > >            [17/12/2025 04:03]    SVMI - Caracas, Venezuela     
+. . . . . .  . ....................................................................................................................................................................................................................................................................................................
+.        Resumen de la ruta:            INDIVIDUAL            LOTE
+........
+        Resumen de la ruta:            INDIVIDUAL            LOTE
+        >> Duración 'Activa':             10h 43m        160d  7h 17m
+        >> Duración 'Activa':             10h 43m        160d  7h 17m
+        >> Duración 'Pasiva':              0h 14m          3d 11h 46m
+        >> Duración 'Pasiva':              0h 14m          3d 11h 46m
+        >> Tiempo optimizado:          1d 13h  3m        554d  4h 56m
+        >> Tiempo optimizado:          1d 13h  3m        554d  4h 56m
+        *************************** * *      ************************************************************************************************************************************************************************************************************************************************************************************************************
+*
+        >> RUTA #003 | ORIGEN: UBBB - Baku, Azerbaiyan        | TIPO DE ENVIO: INTERCONTINENTAL | INSTANTE DE ENTREGA: 17/12/2025 10:50 | CANTIDAD ASIGNADA DE PRODUCTOS: 320
+
+                     INSTANTE DE SALIDA    ORIGEN                                                           INSTANTE DE LLEGADA   DESTINO
+        >> RUTA #003 | ORIGEN: UBBB - Baku, Azerbaiyan        | TIPO DE ENVIO: INTERCONTINENTAL | INSTANTE DE ENTREGA: 17/12/2025 10:50 | CANTIDAD ASIGNADA DE PRODUCTOS: 320
+                     [16/12/2025 18:29]    UBBB - Baku, Azerbaiyan                   > > > > > >            [17/12/2025 10:50]    SVMI - Caracas, Venezuela     
+        ..........................................................
+....                     INSTANTE DE SALIDA    ORIGEN                                                           INSTANTE DE LLEGADA   DESTINO
+................................................                     [16/12/2025 18:29]    UBBB - Baku, Azerbaiyan                   > > > > > >            [17/12/2025 10:50]    SVMI - Caracas, Venezuela     
+. . . . . . . . ....................................................................................................................................
+.        Resumen de la ruta:            INDIVIDUAL            LOTE
+..............................................................        >> Duración 'Activa':             16h 21m        218d  0h  0m
+.................
+        Resumen de la ruta:            INDIVIDUAL            LOTE
+        >> Duración 'Pasiva':              1h 23m         18d 10h 39m
+        >> Duración 'Activa':             16h 21m        218d  0h  0m
+        >> Duración 'Pasiva':              1h 23m         18d 10h 39m
+        >> Tiempo optimizado:          1d  6h 16m        403d 13h 19m
+        >> Tiempo optimizado:          1d  6h 16m        403d 13h 19m
+        ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    Resumen del pedido:                  TOTAL
+---------    >> Duración 'Activa':            450d 17h 57m
+-------
+    Resumen del pedido:                  TOTAL
+    >> Duración 'Pasiva':             23d 22h 26m
+    >> Duración 'Activa':            450d 17h 57m
+    >> Tiempo optimizado:           1523d  7h 37m
+    >> Duración 'Pasiva':             23d 22h 26m
+=========    >> Tiempo optimizado:           1523d  7h 37m
+=========================================================================================================================================================================================================================================================================================================
+================                                                                                      PEDIDO #2
+= = = = =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+-------------------                                                                                      PEDIDO #2
+    ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+--    CLIENTE                                                   DESTINO                               CANT. PRODUCTOS MPE        INSTANTE DE REGISTRO        INSTANTE DE EXPIRACION
+-    0000001 - Bruno Felipe João Pereira Cardoso               EDDI - Berlin, Alemania                       999                  16/12/2025 17:19             18/12/2025 17:19
+-
+---                                                                       >> RUTAS PLANIFICADAS PARA EL PEDIDO <<
+-
+- - -   - - - -*
+****    CLIENTE                                                   DESTINO                               CANT. PRODUCTOS MPE        INSTANTE DE REGISTRO        INSTANTE DE EXPIRACION
+    0000001 - Bruno Felipe João Pereira Cardoso               EDDI - Berlin, Alemania                       999                  16/12/2025 17:19             18/12/2025 17:19
+
+                                                                       >> RUTAS PLANIFICADAS PARA EL PEDIDO <<
+*
+* * * * * * * * ******************************************************************************************************************************************************************************************************************************************************************************************************
+**********************
+        >> RUTA #001 | ORIGEN: SPIM - Lima, Perú              | TIPO DE ENVIO: INTERCONTINENTAL | INSTANTE DE ENTREGA: 17/12/2025 08:52 | CANTIDAD ASIGNADA DE PRODUCTOS: 160
+        >> RUTA #001 | ORIGEN: SPIM - Lima, Perú              | TIPO DE ENVIO: INTERCONTINENTAL | INSTANTE DE ENTREGA: 17/12/2025 08:52 | CANTIDAD ASIGNADA DE PRODUCTOS: 160
+
+
+                     INSTANTE DE SALIDA    ORIGEN                                                           INSTANTE DE LLEGADA   DESTINO
+                     INSTANTE DE SALIDA    ORIGEN                                                           INSTANTE DE LLEGADA   DESTINO
+                     [16/12/2025 17:58]    SPIM - Lima, Perú                         > > > > > >            [17/12/2025 08:52]    EDDI - Berlin, Alemania       
+        ..............................................                     [16/12/2025 17:58]    SPIM - Lima, Perú                         > > > > > >            [17/12/2025 08:52]    EDDI - Berlin, Alemania       
+        ................................................................................................................................................................................................................................................................
+.        Resumen de la ruta:            INDIVIDUAL            LOTE
+...........................
+        Resumen de la ruta:            INDIVIDUAL            LOTE
+        >> Duración 'Activa':             14h 54m         99d  8h  0m
+        >> Duración 'Activa':             14h 54m         99d  8h  0m
+        >> Duración 'Pasiva':              0h 39m          4d  8h  0m
+        >> Duración 'Pasiva':              0h 39m          4d  8h  0m
+        >> Tiempo optimizado:          1d  8h 27m        216d  8h  0m
+         >> Tiempo optimizado:          1d  8h 27m        216d  8h  0m
+           * * ** * **********************************************************************************************************************************************************************************************************************************************************************************************************************************
+***
+        >> RUTA #002 | ORIGEN: SPIM - Lima, Perú              | TIPO DE ENVIO: INTERCONTINENTAL | INSTANTE DE ENTREGA: 17/12/2025 13:30 | CANTIDAD ASIGNADA DE PRODUCTOS: 159
+        >> RUTA #002 | ORIGEN: SPIM - Lima, Perú              | TIPO DE ENVIO: INTERCONTINENTAL | INSTANTE DE ENTREGA: 17/12/2025 13:30 | CANTIDAD ASIGNADA DE PRODUCTOS: 159
+
+                     INSTANTE DE SALIDA    ORIGEN                                                           INSTANTE DE LLEGADA   DESTINO
+
+                     INSTANTE DE SALIDA    ORIGEN                                                           INSTANTE DE LLEGADA   DESTINO
+                     [16/12/2025 18:25]    SPIM - Lima, Perú                         > > > > > >            [17/12/2025 09:18]    EKCH - Copenhague, Dinamarca  
+                     [16/12/2025 18:25]    SPIM - Lima, Perú                         > > > > > >            [17/12/2025 09:18]    EKCH - Copenhague, Dinamarca  
+                     [17/12/2025 11:05]    EKCH - Copenhague, Dinamarca              > > > > > >            [17/12/2025 13:30]    EDDI - Berlin, Alemania       
+                     [17/12/2025 11:05]    EKCH - Copenhague, Dinamarca              > > > > > >            [17/12/2025 13:30]    EDDI - Berlin, Alemania       
+        ............... . . . . . . . .......................................................................................................................................................................................................................................................................................................
+.        Resumen de la ruta:            INDIVIDUAL            LOTE
+............
+        Resumen de la ruta:            INDIVIDUAL            LOTE
+        >> Duración 'Activa':             17h 18m        114d 14h 42m
+        >> Duración 'Activa':             17h 18m        114d 14h 42m
+        >> Duración 'Pasiva':              2h 53m         19d  2h 27m
+        >> Duración 'Pasiva':              2h 53m         19d  2h 27m
+        >> Tiempo optimizado:          1d  3h 49m        184d  6h 51m
+        >> Tiempo optimizado:          1d  3h 49m        184d  6h 51m
+                *****************************************************************************************************************************************************************************************************************************************************************************************************************
+*************************
+        >> RUTA #003 | ORIGEN: EBCI - Bruselas, Belgica       | TIPO DE ENVIO: INTRACONTINENTAL | INSTANTE DE ENTREGA: 17/12/2025 09:41 | CANTIDAD ASIGNADA DE PRODUCTOS: 320
+        >> RUTA #003 | ORIGEN: EBCI - Bruselas, Belgica       | TIPO DE ENVIO: INTRACONTINENTAL | INSTANTE DE ENTREGA: 17/12/2025 09:41 | CANTIDAD ASIGNADA DE PRODUCTOS: 320
+
+                     INSTANTE DE SALIDA    ORIGEN                                                           INSTANTE DE LLEGADA   DESTINO
+
+                     INSTANTE DE SALIDA    ORIGEN                                                           INSTANTE DE LLEGADA   DESTINO
+                     [16/12/2025 18:55]    EBCI - Bruselas, Belgica                  > > > > > >            [16/12/2025 20:53]    EKCH - Copenhague, Dinamarca  
+                     [16/12/2025 18:55]    EBCI - Bruselas, Belgica                  > > > > > >            [16/12/2025 20:53]    EKCH - Copenhague, Dinamarca  
+                     [16/12/2025 23:47]    EKCH - Copenhague, Dinamarca              > > > > > >            [17/12/2025 01:30]    LKPR - Praga, Checa           
+                     [16/12/2025 23:47]    EKCH - Copenhague, Dinamarca              > > > > > >            [17/12/2025 01:30]    LKPR - Praga, Checa           
+                     [17/12/2025 07:24]    LKPR - Praga, Checa                       > > > > > >            [17/12/2025 09:41]    EDDI - Berlin, Alemania       
+                     [17/12/2025 07:24]    LKPR - Praga, Checa                       > > > > > >            [17/12/2025 09:41]    EDDI - Berlin, Alemania       
+              .... . ......................................................................................................................................................................................................................................................................................
+.        Resumen de la ruta:            INDIVIDUAL            LOTE
+..............................................
+        Resumen de la ruta:            INDIVIDUAL            LOTE
+        >> Duración 'Activa':              5h 57m         79d 13h 19m
+        >> Duración 'Activa':              5h 57m         79d 13h 19m
+        >> Duración 'Pasiva':             10h 24m        138d 16h  0m
+        >> Tiempo optimizado:          1d  7h 38m        421d 18h 40m
+        >> Duración 'Pasiva':             10h 24m        138d 16h  0m
+        ********************        >> Tiempo optimizado:          1d  7h 38m        421d 18h 40m
+* * * * * * * * ******************************************************************************************************************************************************************************************************************************************************************************
+****************************        >> RUTA #004 | ORIGEN: EBCI - Bruselas, Belgica       | TIPO DE ENVIO: INTRACONTINENTAL | INSTANTE DE ENTREGA: 16/12/2025 21:11 | CANTIDAD ASIGNADA DE PRODUCTOS: 360
+*
+*                     INSTANTE DE SALIDA    ORIGEN                                                           INSTANTE DE LLEGADA   DESTINO
+**
+                     [16/12/2025 19:21]    EBCI - Bruselas, Belgica                  > > > > > >            [16/12/2025 21:11]    EDDI - Berlin, Alemania       
+        ...........................        >> RUTA #004 | ORIGEN: EBCI - Bruselas, Belgica       | TIPO DE ENVIO: INTRACONTINENTAL | INSTANTE DE ENTREGA: 16/12/2025 21:11 | CANTIDAD ASIGNADA DE PRODUCTOS: 360
+.
+.                     INSTANTE DE SALIDA    ORIGEN                                                           INSTANTE DE LLEGADA   DESTINO
+............................                     [16/12/2025 19:21]    EBCI - Bruselas, Belgica                  > > > > > >            [16/12/2025 21:11]    EDDI - Berlin, Alemania       
+        .......................................................................................................................................................................................................................................................................
+.        Resumen de la ruta:            INDIVIDUAL            LOTE
+.........
+        Resumen de la ruta:            INDIVIDUAL            LOTE
+        >> Duración 'Activa':              1h 50m         27d 12h  0m
+        >> Duración 'Activa':              1h 50m         27d 12h  0m
+        >> Duración 'Pasiva':              2h  2m         30d 12h  0m
+        >> Duración 'Pasiva':              2h  2m         30d 12h  0m
+        >> Tiempo optimizado:          1d 20h  8m        662d  0h  0m
+        >> Tiempo optimizado:          1d 20h  8m        662d  0h  0m
+        ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+-    Resumen del pedido:                  TOTAL
+----------------    >> Duración 'Activa':            321d  0h  2m
+-----------
+    >> Duración 'Pasiva':            192d 14h 27m
+    Resumen del pedido:                  TOTAL
+    >> Tiempo optimizado:           1484d  9h 31m
+============================    >> Duración 'Activa':            321d  0h  2m
+==============================    >> Duración 'Pasiva':            192d 14h 27m
+============    >> Tiempo optimizado:           1484d  9h 31m
+==================================================================================================================================================================================================
+========================

@@ -768,3 +768,13 @@ select.filter-select {
   color: white;
   border-color: #2563eb;
 }
+
+//////////////
+/// REPORTE OPERACION
+//////////////
+.report-overlay {
+  position: absolute;
+  bottom: 16px;
+  right: 16px;
+  z-index: 1000;
+}

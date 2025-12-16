@@ -11,10 +11,10 @@ import {
 import "leaflet/dist/leaflet.css";
 
 // Servicios y Tipos
-import { onEvent, initOperationManager, disconnectOperationWS, connectOperatorWS, forceReplanification } from "../../services/operationManager";
+import { onEvent, initOperationManager, disconnectOperationWS, connectOperatorWS, forceReplanification, getLastReplanificationToken } from "../../services/operationManager";
 import { listarParametros, importarParametros } from "../../services/parametrosService";
 import { listarAeropuertos } from "../../services/aeropuertoService";
-
+import { descargarExportacion, iniciarExportacion, connectOperatorExportWS, disconnectExportWS } from "../../services/exportOpService";
 
 // Componentes UI
 import {
@@ -34,6 +34,8 @@ import { AirportTooltipContent, PlaneTooltipContent } from "../Simulacion/MapToo
 import "../Simulacion/simulacion.scss";
 import "./planificacion.scss";
 import run from "../../assets/icons/run.svg";
+import config from "../../assets/icons/config.svg";
+import download from "../../assets/icons/download.svg";
 import stopIcon from "../../assets/icons/stop.svg";
 import airportIconImg from "../../assets/icons/airport.svg";
 import sedeIconImg from "../../assets/icons/sede.svg";
@@ -270,6 +272,10 @@ export default function Planificacion() {
   const [inputTime, setInputTime] = useState(
     new Date().toTimeString().slice(0, 5)
   );
+
+  // Reporte
+  const [reportPanelCollapsed, setReportPanelCollapsed] = useState(true);
+  const [reporteDisponible, setReporteDisponible] = useState(null);
 
   // Parámetros numéricos
   const [maxDiasEntregaIntercontinental, setMaxDiasEntregaIntercontinental] =
@@ -885,7 +891,7 @@ export default function Planificacion() {
           console.log("SolutionPayload recibido por WS:", payload);
           const solucion = payload.solucion || payload;
           if (!solucion) {
-            console.warn("Payload de simulación sin 'solucion'");
+            console.warn("Payload de operacion sin 'solucion'");
             return;
           }
           // 1. GUARDAR EN LOCALSTORAGE (Persistencia ante F5)
@@ -900,7 +906,7 @@ export default function Planificacion() {
           buildSimulationFromSolution(solucion);
         },
         (status) => {
-          console.log("Status simulador:", status);
+          console.log("Status operacion:", status);
           const estadoEjecucion =
             typeof status === "string" ? status : status.estadoEjecucion;
           const estadoFinalizacion =
@@ -930,18 +936,18 @@ export default function Planificacion() {
               return;
             }
             if (estadoFinalizacion === "EXITOSO") {
-              showNotification("success", "Simulación finalizada exitosamente");
+              showNotification("success", "Operación finalizada exitosamente");
             } else if (estadoFinalizacion === "FORZADO") {
-              showNotification("info", "Simulación detenida por el usuario");
+              showNotification("info", "Operación detenida por el usuario");
             } else if (estadoFinalizacion === "COLAPSO") {
-              showNotification("danger", "COLAPSO logístico en simulación");
+              showNotification("danger", "COLAPSO logístico en operación");
             } else if (estadoFinalizacion === "ERRONEO") {
-              showNotification("danger", "Error en la simulación");
+              showNotification("danger", "Error en la operación");
             } else {
-              showNotification("info", "Simulación detenida");
+              showNotification("info", "Operación detenida");
             }
           }
-        }
+        },
       );
   
       const handleBeforeUnload = () => {
@@ -957,7 +963,85 @@ export default function Planificacion() {
       };
     }, []);
 
+  useEffect(() => {
+    const unsubscribe = onEvent(async (evt) => {
+      console.log("EVENTO:", evt);
 
+      if (evt.type === "replanificacion-iniciada") {
+        const token = evt.token;
+
+        const data = await iniciarExportacion(token, "OPERACION");
+        console.log("EXPORT INICIADA:", data);
+
+        const tokenExportacion = data.token;
+        console.log("TOKEN PARA EXPORTACION: ",tokenExportacion);
+        connectOperatorExportWS(
+          tokenExportacion,
+          (payload) => {
+            console.log("SolutionPayload recibido por WS:", payload);
+            setReporteDisponible(payload);
+          },
+          (status) => {
+            console.log("Status exportación:", status);
+          }
+        );
+      }
+    });
+
+    return () => {
+      if (unsubscribe) unsubscribe();
+      disconnectExportWS();
+    };
+  }, []);
+
+
+  // ------------------------------------------------------------------------
+  // ... REPORTE
+  // ------------------------------------------------------------------------
+  const descargandoRef = useRef(false);
+
+  const descargarReporte = async () => {
+    if (!reporteDisponible) {
+      showNotification("info", "El reporte aún no está listo");
+      return;
+    }
+
+    if (descargandoRef.current) return;
+    descargandoRef.current = true;
+
+    try {
+      const fileRequest = {
+        nombre: reporteDisponible.nombre,
+        ruta: reporteDisponible.ruta
+      };
+      const blob = await descargarExportacion(fileRequest);
+
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+
+      a.href = url;
+      a.download = reporteDisponible.nombre;
+      document.body.appendChild(a);
+      a.click();
+
+      a.remove();
+      window.URL.revokeObjectURL(url);
+
+    } catch (e) {
+      console.error(e);
+      showNotification(
+        "danger",
+        e.message || "Error al descargar el reporte"
+      );
+    } finally {
+      descargandoRef.current = false;
+    }
+  };
+
+
+  // ------------------------------------------------------------------------
+  // ... USE EFFECT
+  // ------------------------------------------------------------------------
   // 1. Reloj Real
   useEffect(() => {
     const interval = setInterval(() => {
@@ -1437,7 +1521,7 @@ export default function Planificacion() {
               className="controls-toggle"
               onClick={() => setControlsOpen((open) => !open)}
             >
-              {controlsOpen ? "Ocultar controles ▲" : "Mostrar controles ▼"}
+              {controlsOpen ? "Ocultaccr controles ▲" : "Mostrar controles ▼"}
             </button>
 
             {controlsOpen && (
@@ -1451,7 +1535,7 @@ export default function Planificacion() {
                       onClick={forceReplanification}
                     />
                     <ButtonAdd
-                      icon={run}
+                      icon={config}
                       label="Configurar parámetros"
                       onClick={openModal}
                     />
@@ -1884,6 +1968,50 @@ export default function Planificacion() {
                 )}
               </div>
             </div>
+            {/* REPORTES */}
+            <div className="report-overlay">
+              <div
+                className={`legend-card ${
+                  reportPanelCollapsed ? "legend-card--collapsed" : ""
+                }`}
+              >
+                <button
+                  type="button"
+                  className="legend-card-header"
+                  onClick={() => setReportPanelCollapsed(!reportPanelCollapsed)}
+                >
+                  <span className="legend-card-info-icon">📄</span>
+                  <span className="legend-card-title">Reporte</span>
+                  <span className="legend-card-toggle">
+                    {reportPanelCollapsed ? "▲" : "▼"}
+                  </span>
+                </button>
+
+                {!reportPanelCollapsed && (
+                  <div
+                    className="legend-card-body"
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "8px",
+                    }}
+                  >
+                    <span style={{ fontSize: "12px", color: "#6b7280" }}>
+                      {reporteDisponible
+                        ? "Reporte listo para descarga"
+                        : "Generando reporte..."}
+                    </span>
+
+                    <ButtonAdd
+                      label="Descarga reporte"
+                      icon={download} // o un icono de descarga si tienes
+                      onClick={descargarReporte}
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+
           </div>
         </div>
       </section>
