@@ -124,10 +124,10 @@ public class G4DService {
 
     public GenericResponse iniciarImportacion(MultipartFile file, ImportFileRequest request) throws IOException {
         GenericResponse response = new GenericResponse(true, "Importación iniciada!");
-        String idTransaccion = response.getToken();
+        String idTransaccion = response.getToken().substring(4);
         Path archivo = Files.createTempFile("import-" + idTransaccion + "-", "-" + file.getOriginalFilename());
         file.transferTo(archivo.toFile());
-        self.getObject().importar(idTransaccion.substring(4), archivo, request).exceptionally(ex -> { asyncExceptionHandler.handleException("Importation-" + idTransaccion, ex); return null; });
+        self.getObject().importar(idTransaccion, archivo, request).exceptionally(ex -> { asyncExceptionHandler.handleException("Importation-" + idTransaccion, ex); return null; });
         return response;
     }
 
@@ -153,18 +153,17 @@ public class G4DService {
         context.task = self.getObject().simular(idTransaccion, request)
                                        .thenCompose((exito) -> {
                                            if(exito) {
-                                               String idTransaccionDeExportacion = new GenericResponse().getToken().substring(4);
                                                G4DContext contextoDeExportacion = new G4DContext();
-                                               exportationContexts.put(idTransaccionDeExportacion, contextoDeExportacion);
-                                               WebSocketService.enviar(String.format("/topic/exportation-status-%s", idTransaccionDeExportacion), EstadoEjecucion.INICIADO);
-                                               return exportar(idTransaccionDeExportacion, new ExportationRequest(idTransaccion, "SIMULACION"))
+                                               exportationContexts.put(idTransaccion, contextoDeExportacion);
+                                               WebSocketService.enviar(String.format("/topic/exportation-status-%s", idTransaccion), EstadoEjecucion.INICIADO);
+                                               return exportar(idTransaccion, new ExportationRequest(idTransaccion, "SIMULACION"))
                                                        .whenComplete((r, ex) -> {
                                                            contextoDeExportacion.running = false;
                                                            contextoDeExportacion.task = null;
-                                                           exportationContexts.remove(idTransaccionDeExportacion);
+                                                           exportationContexts.remove(idTransaccion);
                                                        })
                                                        .exceptionally(ex -> {
-                                                           asyncExceptionHandler.handleException("Exportation-" + idTransaccionDeExportacion, ex);
+                                                           asyncExceptionHandler.handleException("Exportation-" + idTransaccion, ex);
                                                            return null;
                                                        });
                                            }
