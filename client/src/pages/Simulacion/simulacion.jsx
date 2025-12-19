@@ -1132,7 +1132,7 @@ export default function Simulacion() {
   useEffect(() => {
     if (fechaI && horaI) {
       const start = new Date(`${fechaI}T${horaI}:00Z`);
-      const end = new Date(start.getTime() + 1 * 24 * 60 * 60 * 1000);
+      const end = new Date(start.getTime() + 7 * 24 * 60 * 60 * 1000);
 
       setFechaF(end.toISOString().slice(0, 10));
       setHoraF(end.toISOString().slice(11, 16));

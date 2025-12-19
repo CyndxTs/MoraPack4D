@@ -1559,7 +1559,7 @@ export default function Planificacion() {
               className="controls-toggle"
               onClick={() => setControlsOpen((open) => !open)}
             >
-              {controlsOpen ? "Ocultaccr controles ▲" : "Mostrar controles ▼"}
+              {controlsOpen ? "Ocultar controles ▲" : "Mostrar controles ▼"}
             </button>
 
             {controlsOpen && (
