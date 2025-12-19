@@ -11,9 +11,7 @@ import com.pucp.dp1.grupo4d.morapack.model.dto.DTO;
 import com.pucp.dp1.grupo4d.morapack.model.dto.PlanDTO;
 import com.pucp.dp1.grupo4d.morapack.model.dto.payload.ProgressPayload;
 import com.pucp.dp1.grupo4d.morapack.model.dto.payload.StatusPayload;
-import com.pucp.dp1.grupo4d.morapack.model.dto.request.ImportRequest;
 import com.pucp.dp1.grupo4d.morapack.model.dto.request.ListRequest;
-import com.pucp.dp1.grupo4d.morapack.model.dto.response.GenericResponse;
 import com.pucp.dp1.grupo4d.morapack.model.dto.response.ListResponse;
 import com.pucp.dp1.grupo4d.morapack.model.entity.AeropuertoEntity;
 import com.pucp.dp1.grupo4d.morapack.model.entity.PlanEntity;
@@ -21,16 +19,14 @@ import com.pucp.dp1.grupo4d.morapack.model.enumeration.EstadoEjecucion;
 import com.pucp.dp1.grupo4d.morapack.model.enumeration.EstadoFinalizacion;
 import com.pucp.dp1.grupo4d.morapack.model.exception.G4DException;
 import com.pucp.dp1.grupo4d.morapack.repository.PlanRepository;
-import com.pucp.dp1.grupo4d.morapack.service.ImportService;
-import com.pucp.dp1.grupo4d.morapack.service.WebSocketService;
+import com.pucp.dp1.grupo4d.morapack.service.CommunicationService;
+import com.pucp.dp1.grupo4d.morapack.service.ImportationService;
 import com.pucp.dp1.grupo4d.morapack.util.G4DUtility;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalTime;
@@ -40,15 +36,21 @@ import java.util.stream.Collectors;
 @Service
 public class PlanService {
     private final PlanRepository planRepository;
-    private final AeropuertoService aeropuertoService;
     private final PlanMapper planMapper;
-    private final ImportService importService;
+    private final AeropuertoService aeropuertoService;
+    private final CommunicationService communicationService;
+    private final ImportationService importationService;
 
-    public PlanService(PlanRepository planRepository, AeropuertoService aeropuertoService, PlanMapper planMapper, ImportService importService) {
+    public PlanService(PlanRepository planRepository, PlanMapper planMapper, AeropuertoService aeropuertoService, CommunicationService communicationService, ImportationService importationService) {
         this.planRepository = planRepository;
-        this.aeropuertoService = aeropuertoService;
         this.planMapper = planMapper;
-        this.importService = importService;
+        this.aeropuertoService = aeropuertoService;
+        this.communicationService = communicationService;
+        this.importationService = importationService;
+    }
+
+    public PlanEntity save(PlanEntity plan) {
+        return planRepository.save(plan);
     }
 
     public List<PlanEntity> findAll() {
@@ -63,16 +65,12 @@ public class PlanService {
         return planRepository.findById(id);
     }
 
-    public PlanEntity save(PlanEntity plan) {
-        return planRepository.save(plan);
+    public boolean existsById(Integer id) {
+        return planRepository.existsById(id);
     }
 
     public void deleteById(Integer id) {
         planRepository.deleteById(id);
-    }
-
-    public boolean existsById(Integer id) {
-        return planRepository.existsById(id);
     }
 
     public Optional<PlanEntity> findByCodigo(String codigo) {
@@ -91,45 +89,59 @@ public class PlanService {
         return new ListResponse(true, String.format("Planes listados correctamente! ('%d')", dtos.size()), dtos);
     }
 
-    public GenericResponse importar(ImportRequest<PlanDTO> request) {
-        System.out.println("Importando plan..");
-        Map<String, AeropuertoEntity> poolAeropuertos = aeropuertoService.findAll().stream().collect(Collectors.toMap(AeropuertoEntity::getCodigo, a -> a));
-        PlanDTO dto = request.getDto();
-        PlanEntity plan =  new PlanEntity();
-        plan.setCodigo(dto.getCodigo());
-        plan.setDistancia(dto.getDistancia());
-        plan.setDuracion(dto.getDuracion());
-        String codOrigen = dto.getCodOrigen();
-        AeropuertoEntity origen = poolAeropuertos.getOrDefault(codOrigen, null);
-        if(origen != null) {
-            String codDestino = dto.getCodDestino();
-            AeropuertoEntity destino = poolAeropuertos.getOrDefault(codDestino, null);
-            if(destino != null) {
-                plan.setOrigen(origen);
-                plan.setDestino(destino);
-                plan.setHoraSalidaUTC(G4DUtility.Convertor.toTime(dto.getHoraSalida()));
-                plan.setHoraSalidaLocal(G4DUtility.Convertor.toLocal(plan.getHoraSalidaUTC(), origen.getHusoHorario()));
-                plan.setHoraLlegadaUTC(G4DUtility.Convertor.toTime(dto.getHoraLlegada()));
-                plan.setHoraLlegadaLocal(G4DUtility.Convertor.toLocal(plan.getHoraLlegadaUTC(), destino.getHusoHorario()));
-                this.save(plan);
-            } else throw new G4DException(String.format("El destino ('%s') del plan es inválido.", codDestino));
-        } else throw new G4DException(String.format("El origen ('%s') del plan es inválido.", codOrigen));
-        System.out.println("[<] PLAN DE VUELO IMPORTADO!");
-        return new GenericResponse(true, "Plan importado correctamente!");
+    public void importar(String idTransaccion, PlanDTO dto) {
+        String progressDestination = String.format("/topic/importation-%s", idTransaccion), statusDestination = String.format("/topic/importation-status-%s", idTransaccion);
+        try {
+            System.out.println("Importando plan..");
+            communicationService.enviar(progressDestination, new ProgressPayload("Cargando recursos de importación", 0, 1));
+            Map<String, AeropuertoEntity> poolAeropuertos = aeropuertoService.findAll().stream().collect(Collectors.toMap(AeropuertoEntity::getCodigo, a -> a));
+            communicationService.enviar(progressDestination, new ProgressPayload("Cargando recursos de importación", 1, 1));
+            communicationService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.INICIADO));
+            communicationService.enviar(progressDestination, new ProgressPayload("Cargando plan", 0, 1));
+            PlanEntity plan =  new PlanEntity();
+            plan.setCodigo(dto.getCodigo());
+            plan.setDistancia(dto.getDistancia());
+            plan.setDuracion(dto.getDuracion());
+            String codOrigen = dto.getCodOrigen();
+            AeropuertoEntity origen = poolAeropuertos.getOrDefault(codOrigen, null);
+            if(origen != null) {
+                String codDestino = dto.getCodDestino();
+                AeropuertoEntity destino = poolAeropuertos.getOrDefault(codDestino, null);
+                if(destino != null) {
+                    plan.setOrigen(origen);
+                    plan.setDestino(destino);
+                    plan.setHoraSalidaUTC(G4DUtility.Convertor.toTime(dto.getHoraSalida()));
+                    plan.setHoraSalidaLocal(G4DUtility.Convertor.toLocal(plan.getHoraSalidaUTC(), origen.getHusoHorario()));
+                    plan.setHoraLlegadaUTC(G4DUtility.Convertor.toTime(dto.getHoraLlegada()));
+                    plan.setHoraLlegadaLocal(G4DUtility.Convertor.toLocal(plan.getHoraLlegadaUTC(), destino.getHusoHorario()));
+                    this.save(plan);
+                } else throw new G4DException(String.format("El destino ('%s') del plan es inválido.", codDestino));
+            } else throw new G4DException(String.format("El origen ('%s') del plan es inválido.", codOrigen));
+            System.out.println("[<] PLAN DE VUELO IMPORTADO!");
+            communicationService.enviar(progressDestination, new ProgressPayload("Cargando plan", 1, 1));
+            communicationService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.EXITOSO));
+        } catch (Exception e) {
+            communicationService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.ERRONEO));
+            throw new RuntimeException(e);
+        }
     }
 
-    public GenericResponse importar(String idTransaccion, Path archivo) {
+    public void importar(String idTransaccion, Path archivo) {
         String progressDestination = String.format("/topic/importation-%s", idTransaccion), statusDestination = String.format("/topic/importation-status-%s", idTransaccion);
         try {
             System.out.printf(">> Importando planes de vuelo desde '%s'..%n", archivo.getFileName());
+            communicationService.enviar(progressDestination, new ProgressPayload("Cargando recursos de importación", 0, 3));
             BufferedReader br = Files.newBufferedReader(archivo, G4DUtility.Reader.getFileCharset(archivo));
-            List<PlanEntity> planes = new ArrayList<>();
+            communicationService.enviar(progressDestination, new ProgressPayload("Cargando recursos de importación", 1, 3));
             Map<String, AeropuertoEntity> poolAeropuertos = aeropuertoService.findAll().stream().collect(Collectors.toMap(AeropuertoEntity::getCodigo, a -> a));
+            communicationService.enviar(progressDestination, new ProgressPayload("Cargando recursos de importación", 2, 3));
             int lTotales = (int) G4DUtility.Reader.getLineCount(archivo);
             int lProcesadas = 0;
+            communicationService.enviar(progressDestination, new ProgressPayload("Cargando recursos de importación", 3, 3));
+            List<PlanEntity> planes = new ArrayList<>();
             String linea;
-            WebSocketService.enviar(progressDestination, new ProgressPayload("Leyendo archivo", lProcesadas, lTotales));
-            WebSocketService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.INICIADO));
+            communicationService.enviar(progressDestination, new ProgressPayload("Leyendo archivo", lProcesadas, lTotales));
+            communicationService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.INICIADO));
             while ((linea = br.readLine()) != null) {
                 linea = linea.trim();
                 if(!linea.isBlank()) {
@@ -159,22 +171,21 @@ public class PlanService {
                     } else throw new G4DException(String.format("Origen '%s' inválido en línea #%d", codOrigen, lProcesadas + 1));
                 }
                 lProcesadas++;
-                WebSocketService.enviar(progressDestination, new ProgressPayload("Leyendo archivo", lProcesadas, lTotales));
+                communicationService.enviar(progressDestination, new ProgressPayload("Leyendo archivo", lProcesadas, lTotales));
                 if(planes.size() % 500 == 0 || lProcesadas == lTotales) {
-                    importService.batchSave(planes, "planes de vuelo");
+                    importationService.batchSave(planes, "planes de vuelo");
                     System.out.printf("[<] PLANES IMPORTADOS! ('%d')%n", planes.size());
                     planes.clear();
                 }
             }
             poolAeropuertos.clear();
             br.close();
-            WebSocketService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.EXITOSO));
-            return new GenericResponse(true, "Planes de vuelo importados correctamente!");
+            communicationService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.EXITOSO));
         } catch (ArrayIndexOutOfBoundsException | NoSuchElementException e) {
-            WebSocketService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.ERRONEO));
+            communicationService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.ERRONEO));
             throw new G4DException(String.format("El archivo '%s' no sigue el formato esperado.", archivo.getFileName()));
         } catch (IOException e) {
-            WebSocketService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.ERRONEO));
+            communicationService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.ERRONEO));
             throw new G4DException(String.format("No se pudo cargar el archivo '%s'.", archivo.getFileName()));
         }
     }

@@ -28,6 +28,10 @@ public class SegmentacionService {
         this.segmentacionMapper = segmentacionMapper;
     }
 
+    public SegmentacionEntity save(SegmentacionEntity administrador) {
+        return segmentacionRepository.save(administrador);
+    }
+
     public List<SegmentacionEntity> findAll() {
         return segmentacionRepository.findAll();
     }
@@ -40,16 +44,12 @@ public class SegmentacionService {
         return segmentacionRepository.findById(id);
     }
 
-    public SegmentacionEntity save(SegmentacionEntity administrador) {
-        return segmentacionRepository.save(administrador);
+    public boolean existsById(Integer id) {
+        return segmentacionRepository.existsById(id);
     }
 
     public void deleteById(Integer id) {
         segmentacionRepository.deleteById(id);
-    }
-
-    public boolean existsById(Integer id) {
-        return segmentacionRepository.existsById(id);
     }
 
     public Optional<SegmentacionEntity> findByCodigo(String codigo) {

@@ -30,6 +30,10 @@ public class RegistroService {
         this.registroMapper = registroMapper;
     }
 
+    public RegistroEntity save(RegistroEntity registro) {
+        return registroRepository.save(registro);
+    }
+
     public List<RegistroEntity> findAll() {
         return registroRepository.findAll();
     }
@@ -42,16 +46,12 @@ public class RegistroService {
         return registroRepository.findById(id);
     }
 
-    public RegistroEntity save(RegistroEntity registro) {
-        return registroRepository.save(registro);
+    public boolean existsById(Integer id) {
+        return registroRepository.existsById(id);
     }
 
     public void deleteById(Integer id) {
         registroRepository.deleteById(id);
-    }
-
-    public boolean existsById(Integer id) {
-        return registroRepository.existsById(id);
     }
 
     public Optional<RegistroEntity> findByCodigo(String codigo) {

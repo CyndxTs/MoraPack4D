@@ -1,7 +1,7 @@
 /**]
  >> Project:    MoraPack
  >> Author:     Grupo 4D
- >> File:       WebSocketService.java
+ >> File:       CommunicationService.java
  [**/
 
 package com.pucp.dp1.grupo4d.morapack.service;
@@ -10,14 +10,14 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
 @Service
-public class WebSocketService {
+public class CommunicationService {
     private static SimpMessagingTemplate template;
 
-    public WebSocketService(SimpMessagingTemplate template) {
-        WebSocketService.template = template;
+    public CommunicationService(SimpMessagingTemplate template) {
+        CommunicationService.template = template;
     }
 
-    public static void enviar(String destino, Object objeto) {
+    public void enviar(String destino, Object objeto) {
         template.convertAndSend(destino, objeto);
     }
 }

@@ -45,10 +45,4 @@ public class PedidoController {
         ListResponse response = pedidoService.filtrar(request);
         return ResponseEntity.ok(response);
     }
-
-    @PostMapping("/importar")
-    public ResponseEntity<GenericResponse> importar(@RequestBody ImportRequest<PedidoDTO> request) {
-        GenericResponse response = pedidoService.importar(request);
-        return ResponseEntity.ok(response);
-    }
 }

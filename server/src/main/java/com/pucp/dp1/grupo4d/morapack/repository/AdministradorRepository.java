@@ -20,7 +20,7 @@ public interface AdministradorRepository extends JpaRepository<AdministradorEnti
     Optional<AdministradorEntity> findByCodigo(String codigo);
     Optional<AdministradorEntity> findByCorreo(String correo);
 
-    // Filtrar pagina de administradores por sus atributos
+    // Listar pagina de administradores por sus atributos
     @Query(
         value = """
         SELECT *
@@ -38,18 +38,18 @@ public interface AdministradorRepository extends JpaRepository<AdministradorEnti
         """,
         nativeQuery = true
     )
-    Page<AdministradorEntity> filterBy(
+    Page<AdministradorEntity> findAllByAttributes(
         @Param("nombre") String nombre,
         @Param("correo") String correo,
         @Param("estado") String estado,
         Pageable pageable
     );
 
-    // Obtener el máximo número de administrador
+    // Obtener el máximo número de administrador asignado actualmente
     @Query(
         value = """
         SELECT MAX(CAST(SUBSTRING(a.codigo, 6) AS UNSIGNED))
-        FROM administrador a
+        FROM ADMINISTRADOR a
         """,
         nativeQuery = true
     )

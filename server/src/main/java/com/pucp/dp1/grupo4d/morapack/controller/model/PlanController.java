@@ -37,10 +37,4 @@ public class PlanController {
         ListResponse response = planService.listar(request);
         return ResponseEntity.ok(response);
     }
-
-    @PostMapping("/importar")
-    public ResponseEntity<GenericResponse> importar(@RequestBody ImportRequest<PlanDTO> request) {
-        GenericResponse response = planService.importar(request);
-        return ResponseEntity.ok(response);
-    }
 }
