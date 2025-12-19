@@ -30,7 +30,7 @@ export const iniciarImportacion = async (file, importFileRequest) => {
     );
 
     const response = await axios.post(
-      `${API_URL2}/importation-init`,
+      `${API_URL2}/importation-init-file`,
       formData,
       {
         headers: { "Content-Type": "multipart/form-data" },
@@ -47,11 +47,12 @@ export const iniciarImportacion = async (file, importFileRequest) => {
 export const importarPedido = async (pedidoDTO) => {
   try {
     const requestBody = {
+      tipoDto: "PEDIDO",
       dto: pedidoDTO
     };
 
     // Ruta correcta: /api/pedidos/importar
-    const response = await axios.post(`${API_URL}/importar`, requestBody);
+    const response = await axios.post(`${API_URL2}/importation-init`, requestBody);
 
     return response.data; // GenericResponse
   } catch (error) {

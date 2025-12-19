@@ -5,6 +5,7 @@ import axios from "axios";
  */
 
 const API_URL = "/api/parametros";
+const API_URL2 = "/api";
 
 /**
  * Obtiene los parámetros globales de planificación.
@@ -31,16 +32,20 @@ export const listarParametros = async () => {
  */
 export const importarParametros = async (dto) => {
   try {
-    const payload = { dto };
+    const payload = {
+      tipoDto: "PARAMETROS",
+      dto: dto,
+    };
 
-    const response = await axios.post(`${API_URL}/importar`, payload);
+    const response = await axios.post(
+      `${API_URL2}/importation-init`,
+      payload
+    );
 
-    /** @type {GenericResponse} */
-    const data = response.data;
-
-    return data;
+    return response.data;
   } catch (error) {
     console.error("Error al importar parámetros:", error);
     throw error;
   }
 };
+
