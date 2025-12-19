@@ -31,6 +31,10 @@ public class RutaService {
         this.rutaMapper = rutaMapper;
     }
 
+    public RutaEntity save(RutaEntity ruta) {
+        return rutaRepository.save(ruta);
+    }
+
     public List<RutaEntity> findAll() {
         return rutaRepository.findAll();
     }
@@ -39,20 +43,20 @@ public class RutaService {
         return rutaRepository.findAll(pageable).getContent();
     }
 
+    public List<RutaEntity> findAllInRangeByScenario(LocalDateTime fechaHoraInicio, LocalDateTime fechaHoraFin, String tipoEscenario, List<String> codOrigenes) {
+        return rutaRepository.findAllInRangeByScenario(fechaHoraInicio, fechaHoraFin, tipoEscenario, codOrigenes);
+    }
+
     public Optional<RutaEntity> findById(Integer id) {
         return rutaRepository.findById(id);
     }
 
-    public RutaEntity save(RutaEntity ruta) {
-        return rutaRepository.save(ruta);
+    public boolean existsById(Integer id) {
+        return rutaRepository.existsById(id);
     }
 
     public void deleteById(Integer id) {
         rutaRepository.deleteById(id);
-    }
-
-    public boolean existsById(Integer id) {
-        return rutaRepository.existsById(id);
     }
 
     public Optional<RutaEntity> findByCodigo(String codigo) {
@@ -61,10 +65,6 @@ public class RutaService {
 
     public boolean existsByCodigo(String codigo) {
         return rutaRepository.findByCodigo(codigo).isPresent();
-    }
-
-    public List<RutaEntity> findAllInRangeByScenario(LocalDateTime fechaHoraInicio, LocalDateTime fechaHoraFin, String tipoEscenario, List<String> codOrigenes) {
-        return rutaRepository.findAllInRangeByScenario(fechaHoraInicio, fechaHoraFin, tipoEscenario, codOrigenes);
     }
     
     public ListResponse listar(ListRequest request) {

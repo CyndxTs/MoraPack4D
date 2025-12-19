@@ -23,25 +23,25 @@ public interface ClienteRepository extends JpaRepository<ClienteEntity, Integer>
     Optional<ClienteEntity> findByCodigo(String codigo);
     Optional<ClienteEntity> findByCorreo(String correo);
 
-    // Filtrar pagina de clientes por sus atributos
+    // Listar pagina de clientes por sus atributos
     @Query(
         value = """
         SELECT *
-        FROM cliente
+        FROM CLIENTE
         WHERE (:nombre IS NULL OR LOWER(nombre) LIKE LOWER(CONCAT('%', :nombre, '%')))
           AND (:correo IS NULL OR LOWER(correo) LIKE LOWER(CONCAT('%', :correo, '%')))
           AND (:estado IS NULL OR estado = :estado)
         """,
         countQuery = """
         SELECT COUNT(*)
-        FROM cliente
+        FROM CLIENTE
         WHERE (:nombre IS NULL OR LOWER(nombre) LIKE LOWER(CONCAT('%', :nombre, '%')))
           AND (:correo IS NULL OR LOWER(correo) LIKE LOWER(CONCAT('%', :correo, '%')))
           AND (:estado IS NULL OR estado = :estado)
         """,
         nativeQuery = true
     )
-    Page<ClienteEntity> filterBy(
+    Page<ClienteEntity> findAllByAttributes(
         @Param("nombre") String nombre,
         @Param("correo") String correo,
         @Param("estado") String estado,
@@ -52,9 +52,9 @@ public interface ClienteRepository extends JpaRepository<ClienteEntity, Integer>
     @Query(
         value = """
         SELECT DISTINCT c.*
-        FROM cliente c
-        JOIN pedido p ON p.id_cliente = c.id
-        JOIN aeropuerto a ON a.id = p.id_aeropuerto_destino
+        FROM CLIENTE c
+        JOIN PEDIDO p ON p.id_cliente = c.id
+        JOIN AEROPUERTO a ON a.id = p.id_aeropuerto_destino
         WHERE p.fh_generacion_utc BETWEEN :fechaHoraInicio AND :fechaHoraFin
           AND p.tipo_escenario = :tipoEscenario
           AND a.codigo NOT IN (:codOrigenes)

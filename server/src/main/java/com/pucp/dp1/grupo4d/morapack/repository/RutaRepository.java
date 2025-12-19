@@ -25,11 +25,11 @@ public interface RutaRepository extends JpaRepository<RutaEntity, Integer> {
     @Query(
         value = """
         SELECT DISTINCT r.*
-        FROM ruta r
-        JOIN lote l ON l.id_ruta = r.id
-        JOIN segmentacion s ON s.id = l.id_segmentacion
-        JOIN pedido p ON p.id = s.id_pedido
-        JOIN aeropuerto a ON a.id = p.id_aeropuerto_destino
+        FROM RUTA r
+        JOIN LOTE l ON l.id_ruta = r.id
+        JOIN SEGMENTACION s ON s.id = l.id_segmentacion
+        JOIN PEDIDO p ON p.id = s.id_pedido
+        JOIN AEROPUERTO a ON a.id = p.id_aeropuerto_destino
         WHERE p.fh_generacion_utc BETWEEN :fechaHoraInicio AND :fechaHoraFin
           AND p.tipo_escenario = :tipoEscenario
           AND a.codigo NOT IN (:codOrigenes)

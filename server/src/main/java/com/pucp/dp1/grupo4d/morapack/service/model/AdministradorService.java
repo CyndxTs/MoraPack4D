@@ -13,7 +13,6 @@ import com.pucp.dp1.grupo4d.morapack.model.dto.payload.ProgressPayload;
 import com.pucp.dp1.grupo4d.morapack.model.dto.payload.StatusPayload;
 import com.pucp.dp1.grupo4d.morapack.model.dto.request.FilterRequest;
 import com.pucp.dp1.grupo4d.morapack.model.dto.request.ListRequest;
-import com.pucp.dp1.grupo4d.morapack.model.dto.response.GenericResponse;
 import com.pucp.dp1.grupo4d.morapack.model.dto.response.ListResponse;
 import com.pucp.dp1.grupo4d.morapack.model.entity.AdministradorEntity;
 import com.pucp.dp1.grupo4d.morapack.model.enumeration.EstadoEjecucion;
@@ -21,32 +20,35 @@ import com.pucp.dp1.grupo4d.morapack.model.enumeration.EstadoFinalizacion;
 import com.pucp.dp1.grupo4d.morapack.model.enumeration.EstadoUsuario;
 import com.pucp.dp1.grupo4d.morapack.model.exception.G4DException;
 import com.pucp.dp1.grupo4d.morapack.repository.AdministradorRepository;
-import com.pucp.dp1.grupo4d.morapack.service.ImportService;
-import com.pucp.dp1.grupo4d.morapack.service.WebSocketService;
+import com.pucp.dp1.grupo4d.morapack.service.ImportationService;
+import com.pucp.dp1.grupo4d.morapack.service.CommunicationService;
 import com.pucp.dp1.grupo4d.morapack.util.G4DUtility;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
-import org.springframework.web.multipart.MultipartFile;
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 
 @Service
 public class AdministradorService {
-    private final ImportService importService;
     private final AdministradorRepository administradorRepository;
     private final UsuarioMapper usuarioMapper;
+    private final CommunicationService communicationService;
+    private final ImportationService importationService;
 
-    public AdministradorService(AdministradorRepository administradorRepository, UsuarioMapper usuarioMapper, ImportService importService) {
+    public AdministradorService(AdministradorRepository administradorRepository, UsuarioMapper usuarioMapper, CommunicationService communicationService, ImportationService importationService) {
         this.administradorRepository = administradorRepository;
         this.usuarioMapper = usuarioMapper;
-        this.importService = importService;
+        this.communicationService = communicationService;
+        this.importationService = importationService;
+    }
+
+    public AdministradorEntity save(AdministradorEntity administrador) {
+        return administradorRepository.save(administrador);
     }
 
     public List<AdministradorEntity> findAll() {
@@ -57,20 +59,20 @@ public class AdministradorService {
         return administradorRepository.findAll(pageable).getContent();
     }
 
+    public List<AdministradorEntity> findAllByAttributes(String nombre, String correo, String estado, Pageable pageable) {
+        return administradorRepository.findAllByAttributes(nombre, correo, estado, pageable).getContent();
+    }
+
     public Optional<AdministradorEntity> findById(Integer id) {
         return administradorRepository.findById(id);
     }
 
-    public AdministradorEntity save(AdministradorEntity administrador) {
-        return administradorRepository.save(administrador);
+    public boolean existsById(Integer id) {
+        return administradorRepository.existsById(id);
     }
 
     public void deleteById(Integer id) {
         administradorRepository.deleteById(id);
-    }
-
-    public boolean existsById(Integer id) {
-        return administradorRepository.existsById(id);
     }
 
     public Optional<AdministradorEntity> findByCodigo(String codigo) {
@@ -108,30 +110,30 @@ public class AdministradorService {
         String correo = G4DUtility.Convertor.toAdmissible(modelo.getCorreo());
         String estado = G4DUtility.Convertor.toAdmissibleEnumString(modelo.getEstado(), EstadoUsuario.class);
         List<DTO> dtos = new ArrayList<>();
-        List<AdministradorEntity> entities = administradorRepository.filterBy(nombre, correo, estado, pageable).getContent();
+        List<AdministradorEntity> entities = this.findAllByAttributes(nombre, correo, estado, pageable);
         entities.forEach(entity -> dtos.add(usuarioMapper.toDTO(entity)));
         return new ListResponse(true, String.format("Administradores filtrados correctamente! ('%d')", dtos.size()), dtos);
     }
 
-    public GenericResponse importar(String idTransaccion, Path archivo) {
+    public void importar(String idTransaccion, Path archivo) {
         String progressDestination = String.format("/topic/importation-%s", idTransaccion), statusDestination = String.format("/topic/importation-status-%s", idTransaccion);
         try {
             System.out.printf(">> Importando administradores desde '%s'..%n", archivo.getFileName().toString());
+            communicationService.enviar(progressDestination, new ProgressPayload("Cargando recursos de importación", 0, 4));
             BufferedReader br = Files.newBufferedReader(archivo, G4DUtility.Reader.getFileCharset(archivo));
-            List<AdministradorEntity> administradores = new ArrayList<>();
-            Map<String, AdministradorEntity> poolAdministradores = new LinkedHashMap<>(16, 0.75f, true) {
-                @Override
-                protected boolean removeEldestEntry(Map.Entry<String, AdministradorEntity> eldest) {
-                    return size() > 500;
-                }
-            };
-            this.findAll(PageRequest.of(0, 250)).forEach(c -> poolAdministradores.put(c.getCorreo(), c));
+            communicationService.enviar(progressDestination, new ProgressPayload("Cargando recursos de importación", 1, 4));
+            Map<String, AdministradorEntity> poolAdministradores = importationService.getNewLimitedPool(500);
+            this.findAll(PageRequest.of(0, 250)).forEach(entity -> poolAdministradores.put(entity.getCorreo(), entity));
+            communicationService.enviar(progressDestination, new ProgressPayload("Cargando recursos de importación", 2, 4));
             int maxCodigo = this.findMaxCode();
+            communicationService.enviar(progressDestination, new ProgressPayload("Cargando recursos de importación", 3, 4));
             int lTotales = (int) G4DUtility.Reader.getLineCount(archivo);
             int lProcesadas = 0;
+            communicationService.enviar(progressDestination, new ProgressPayload("Cargando recursos de importación", 4, 4));
+            List<AdministradorEntity> administradores = new ArrayList<>();
             String linea;
-            WebSocketService.enviar(progressDestination, new ProgressPayload("Leyendo archivo", lProcesadas, lTotales));
-            WebSocketService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.INICIADO));
+            communicationService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.INICIADO));
+            communicationService.enviar(progressDestination, new ProgressPayload("Leyendo archivo", lProcesadas, lTotales));
             while ((linea = br.readLine()) != null) {
                 linea = linea.trim();
                 if (!linea.isEmpty()) {
@@ -149,22 +151,21 @@ public class AdministradorService {
                     }
                 }
                 lProcesadas++;
-                WebSocketService.enviar(progressDestination, new ProgressPayload("Leyendo archivo", lProcesadas, lTotales));
+                communicationService.enviar(progressDestination, new ProgressPayload("Leyendo archivo", lProcesadas, lTotales));
                 if (lProcesadas % 500 == 0 || lProcesadas == lTotales) {
-                    importService.batchSave(administradores, "administradores");
+                    importationService.batchSave(administradores, "administradores");
                     System.out.printf("[<] ADMINISTRADORES IMPORTADOS! ('%d')%n", administradores.size());
                     administradores.clear();
                 }
             }
             poolAdministradores.clear();
             br.close();
-            WebSocketService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.EXITOSO));
-            return new GenericResponse(true, "Administradores importados correctamente!");
+            communicationService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.EXITOSO));
         } catch (ArrayIndexOutOfBoundsException e) {
-            WebSocketService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.ERRONEO));
+            communicationService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.ERRONEO));
             throw new G4DException(String.format("El archivo '%s' no sigue el formato esperado.", archivo.getFileName()));
         } catch (IOException e) {
-            WebSocketService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.ERRONEO));
+            communicationService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.ERRONEO));
             throw new G4DException(String.format("No se pudo cargar el archivo '%s'.", archivo.getFileName()));
         }
     }

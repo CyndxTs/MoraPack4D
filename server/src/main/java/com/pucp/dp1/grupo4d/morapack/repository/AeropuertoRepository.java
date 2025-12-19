@@ -8,6 +8,7 @@ package com.pucp.dp1.grupo4d.morapack.repository;
 
 import com.pucp.dp1.grupo4d.morapack.model.entity.AeropuertoEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -20,9 +21,31 @@ import java.util.Optional;
 public interface AeropuertoRepository extends JpaRepository<AeropuertoEntity, Integer> {
     Optional<AeropuertoEntity> findByCodigo(String codigo);
     Optional<AeropuertoEntity> findByAlias(String alias);
-    List<AeropuertoEntity> findByEsSede(Boolean esSede);
+    List<AeropuertoEntity> findAllByEsSede(Boolean esSede);
 
-    // Filtrar pagina de aeropuertos por sus atributos
+    @Modifying
+    @Query(
+        value = """
+        UPDATE AEROPUERTO
+        SET es_sede = false
+        WHERE es_sede = true
+        """,
+        nativeQuery = true
+    )
+    int unsetAllOriginFlags();
+
+    @Modifying
+    @Query(
+        value = """
+        UPDATE AEROPUERTO
+        SET es_sede = true
+        WHERE codigo IN (:codOrigenes)
+        """,
+        nativeQuery = true
+    )
+    int setOriginFlagsByList(@Param("codOrigenes") List<String> codOrigenes);
+
+    // Listar pagina de aeropuertos por sus atributos
     @Query(
         value = """
         SELECT *
@@ -46,7 +69,7 @@ public interface AeropuertoRepository extends JpaRepository<AeropuertoEntity, In
         """,
         nativeQuery = true
     )
-    Page<AeropuertoEntity> filterBy(
+    Page<AeropuertoEntity> findAllByAttributes(
         @Param("codigo") String codigo,
         @Param("alias") String alias,
         @Param("continente") String continente,

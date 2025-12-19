@@ -65,28 +65,4 @@ public class ParametrosMapper {
         dto.setFactorDeDisposicionOperacional(entity.getFactorDeDisposicionOperacional());
         return dto;
     }
-
-    public ParametrosEntity toEntity(ParametrosDTO dto) {
-        ParametrosEntity entity = new ParametrosEntity();
-        entity.setMaxDiasEntregaIntracontinental(G4DUtility.Convertor.toAdmissible(dto.getMaxDiasEntregaIntracontinental(), 2));
-        entity.setMaxDiasEntregaIntercontinental(G4DUtility.Convertor.toAdmissible(dto.getMaxDiasEntregaIntercontinental(), 3));
-        entity.setMaxHorasRecojo(G4DUtility.Convertor.toAdmissible(dto.getMaxHorasRecojo(), 2.0));
-        entity.setMaxHorasEstancia(G4DUtility.Convertor.toAdmissible(dto.getMaxHorasEstancia(), 12.0));
-        entity.setMinHorasEstancia(G4DUtility.Convertor.toAdmissible(dto.getMinHorasEstancia(), 1.0));
-        entity.setProbabilidadReplanificacion(G4DUtility.Convertor.toAdmissible(dto.getProbabilidadReplanificacion(), 0.350));
-        entity.setCodOrigenes(G4DUtility.Convertor.toAdmissible(dto.getCodOrigenes(), () -> List.of("SPIM", "EBCI", "UBBB")));
-        entity.setDMin(G4DUtility.Convertor.toAdmissible(dto.getDMin(), 0.005));
-        entity.setIMax(G4DUtility.Convertor.toAdmissible(dto.getIMax(), 3));
-        entity.setEleMin(G4DUtility.Convertor.toAdmissible(dto.getEleMin(), 1));
-        entity.setEleMax(G4DUtility.Convertor.toAdmissible(dto.getEleMax(), 2));
-        entity.setKMin(G4DUtility.Convertor.toAdmissible(dto.getKMin(), 3));
-        entity.setKMax(G4DUtility.Convertor.toAdmissible(dto.getKMax(), 5));
-        entity.setNMax(G4DUtility.Convertor.toAdmissible(dto.getNMax(), 6));
-        entity.setTMax(G4DUtility.Convertor.toAdmissible(dto.getTMax(), 7));
-        entity.setFactorDeUmbralDeAberracion(G4DUtility.Convertor.toAdmissible(dto.getFactorDeUmbralDeAberracion(), 1.015));
-        entity.setFactorDeUtilizacionTemporal(G4DUtility.Convertor.toAdmissible(dto.getFactorDeUtilizacionTemporal(), 5000.0));
-        entity.setFactorDeDesviacionEspacial(G4DUtility.Convertor.toAdmissible(dto.getFactorDeDesviacionEspacial(), 2000.0));
-        entity.setFactorDeDisposicionOperacional(G4DUtility.Convertor.toAdmissible(dto.getFactorDeDisposicionOperacional(), 3000.0));
-        return entity;
-    }
 }

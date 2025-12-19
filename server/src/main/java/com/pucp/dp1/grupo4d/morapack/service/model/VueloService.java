@@ -32,6 +32,10 @@ public class VueloService {
         this.vueloMapper = vueloMapper;
     }
 
+    public VueloEntity save(VueloEntity vuelo) {
+        return vueloRepository.save(vuelo);
+    }
+
     public List<VueloEntity> findAll() {
         return vueloRepository.findAll();
     }
@@ -40,20 +44,20 @@ public class VueloService {
         return vueloRepository.findAll(pageable).getContent();
     }
 
+    public List<VueloEntity> findAllInRangeByScenario(LocalDateTime fechaHoraInicio, LocalDateTime fechaHoraFin, String tipoEscenario, List<String> codOrigenes) {
+        return vueloRepository.findAllInRangeByScenario(fechaHoraInicio, fechaHoraFin, tipoEscenario, codOrigenes);
+    }
+
     public Optional<VueloEntity> findById(Integer id) {
         return vueloRepository.findById(id);
     }
 
-    public VueloEntity save(VueloEntity vuelo) {
-        return vueloRepository.save(vuelo);
+    public boolean existsById(Integer id) {
+        return vueloRepository.existsById(id);
     }
 
     public void deleteById(Integer id) {
         vueloRepository.deleteById(id);
-    }
-
-    public boolean existsById(Integer id) {
-        return vueloRepository.existsById(id);
     }
 
     public Optional<VueloEntity> findByCodigo(String codigo) {
@@ -62,10 +66,6 @@ public class VueloService {
 
     public boolean existsByCodigo(String codigo) {
         return vueloRepository.findByCodigo(codigo).isPresent();
-    }
-
-    public List<VueloEntity> findAllInRangeByScenario(LocalDateTime fechaHoraInicio, LocalDateTime fechaHoraFin, String tipoEscenario, List<String> codOrigenes) {
-        return vueloRepository.findAllInRangeByScenario(fechaHoraInicio, fechaHoraFin, tipoEscenario, codOrigenes);
     }
 
     public ListResponse listar(ListRequest request) {

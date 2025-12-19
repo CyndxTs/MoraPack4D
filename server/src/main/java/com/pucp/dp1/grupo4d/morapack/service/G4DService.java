@@ -6,6 +6,9 @@
 
 package com.pucp.dp1.grupo4d.morapack.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pucp.dp1.grupo4d.morapack.adapter.*;
 import com.pucp.dp1.grupo4d.morapack.algorithm.GVNS;
 import com.pucp.dp1.grupo4d.morapack.algorithm.Problematica;
@@ -31,7 +34,6 @@ import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -50,76 +52,118 @@ import java.util.concurrent.Future;
 
 @Service
 public class G4DService {
-    private final SegmentacionService segmentacionService;
-    private final LoteService loteService;
-    private final RegistroService registroService;
-
     private static class G4DContext {
         public volatile boolean running = true;
         public Future<?> task;
         public Problematica problematic;
         public Solucion solution;
     }
-    private final G4DExceptionHandlerAsync asyncExceptionHandler;
-    private final PedidoService pedidoService;
-    private final PedidoAdapter pedidoAdapter;
+
     private final AeropuertoService aeropuertoService;
     private final AeropuertoAdapter aeropuertoAdapter;
-    private final ClienteService clienteService;
-    private final UsuarioAdapter usuarioAdapter;
+    private final AeropuertoMapper aeropuertoMapper;
+    private final LoteService loteService;
+    private final LoteAdapter loteAdapter;
+    private final ParametrosService parametrosService;
+    private final ParametrosMapper parametrosMapper;
+    private final PedidoService pedidoService;
+    private final PedidoAdapter pedidoAdapter;
+    private final PedidoMapper pedidoMapper;
     private final PlanService planService;
     private final PlanAdapter planAdapter;
-    private final LoteAdapter loteAdapter;
+    private final RegistroService registroService;
+    private final RegistroAdapter registroAdapter;
     private final RutaService rutaService;
     private final RutaAdapter rutaAdapter;
-    private final VueloAdapter vueloAdapter;
-    private final VueloService vueloService;
-    private final RegistroAdapter registroAdapter;
-    private final ParametrosMapper parametrosMapper;
-    private final PedidoMapper pedidoMapper;
-    private final AeropuertoMapper aeropuertoMapper;
-    private final VueloMapper vueloMapper;
     private final RutaMapper rutaMapper;
+    private final SegmentacionService segmentacionService;
     private final SegmentacionAdapter segmentacionAdapter;
     private final AdministradorService administradorService;
+    private final ClienteService clienteService;
+    private final UsuarioAdapter usuarioAdapter;
+    private final VueloService vueloService;
+    private final VueloAdapter vueloAdapter;
+    private final VueloMapper vueloMapper;
     private final ObjectProvider<G4DService> self;
+    private final CommunicationService communicationService;
+    private final ExportationService exportationService;
+    private final ObjectMapper objectMapper;
+    private final G4DExceptionHandlerAsync asyncExceptionHandler;
+    private final G4DContext operationContext = new G4DContext();
     private final Map<String, G4DContext> simulationContexts = new ConcurrentHashMap<>();
+    private final Map<String, G4DContext> importationContexts = new ConcurrentHashMap<>();
     private final Map<String, G4DContext> exportationContexts = new ConcurrentHashMap<>();
-    private final G4DContext replanificationContext = new G4DContext();
-    private final long tiempoMaximoDeReplanificacionEnSegundos = 180L;
-    private final long tiempoMaximoDeCargaEnSegundos = 90L;
 
-    public G4DService(ClienteService clienteService, PedidoService pedidoService, SegmentacionAdapter segmentacionAdapter, ObjectProvider<G4DService> self,
-                      PedidoMapper pedidoMapper, PedidoAdapter pedidoAdapter, AeropuertoService aeropuertoService, AeropuertoAdapter aeropuertoAdapter,
-                      UsuarioAdapter usuarioAdapter, PlanService planService, PlanAdapter planAdapter, LoteAdapter loteAdapter,
-                      AeropuertoMapper aeropuertoMapper, RutaMapper rutaMapper, VueloMapper vueloMapper, RegistroAdapter registroAdapter,
-                      ParametrosMapper parametrosMapper, RutaService rutaService, VueloService vueloService, RutaAdapter rutaAdapter, VueloAdapter vueloAdapter, AdministradorService administradorService, G4DExceptionHandlerAsync asyncExceptionHandler, SegmentacionService segmentacionService, LoteService loteService, RegistroService registroService) {
-        this.clienteService = clienteService;
-        this.pedidoService = pedidoService;
-        this.segmentacionAdapter = segmentacionAdapter;
-        this.self = self;
-        this.pedidoMapper = pedidoMapper;
-        this.pedidoAdapter = pedidoAdapter;
+    public G4DService(AeropuertoService aeropuertoService, AeropuertoAdapter aeropuertoAdapter, AeropuertoMapper aeropuertoMapper,
+                      LoteService loteService, LoteAdapter loteAdapter, ParametrosService parametrosService, ParametrosMapper parametrosMapper,
+                      PedidoService pedidoService, PedidoAdapter pedidoAdapter, PedidoMapper pedidoMapper, PlanService planService, PlanAdapter planAdapter,
+                      RegistroService registroService, RegistroAdapter registroAdapter, RutaService rutaService, RutaAdapter rutaAdapter, RutaMapper rutaMapper,
+                      SegmentacionService segmentacionService, SegmentacionAdapter segmentacionAdapter, AdministradorService administradorService, ClienteService clienteService, UsuarioAdapter usuarioAdapter,
+                      VueloService vueloService, VueloAdapter vueloAdapter, VueloMapper vueloMapper, ObjectProvider<G4DService> self,
+                      CommunicationService communicationService, ExportationService exportationService, ObjectMapper objectMapper, G4DExceptionHandlerAsync asyncExceptionHandler) {
         this.aeropuertoService = aeropuertoService;
         this.aeropuertoAdapter = aeropuertoAdapter;
-        this.usuarioAdapter = usuarioAdapter;
+        this.aeropuertoMapper = aeropuertoMapper;
+        this.loteService = loteService;
+        this.loteAdapter = loteAdapter;
+        this.parametrosService = parametrosService;
+        this.parametrosMapper = parametrosMapper;
+        this.pedidoService = pedidoService;
+        this.pedidoAdapter = pedidoAdapter;
+        this.pedidoMapper = pedidoMapper;
         this.planService = planService;
         this.planAdapter = planAdapter;
-        this.loteAdapter = loteAdapter;
-        this.aeropuertoMapper = aeropuertoMapper;
-        this.rutaMapper = rutaMapper;
-        this.vueloMapper = vueloMapper;
-        this.registroAdapter = registroAdapter;
-        this.parametrosMapper = parametrosMapper;
-        this.rutaService = rutaService;
-        this.vueloService = vueloService;
-        this.rutaAdapter = rutaAdapter;
-        this.vueloAdapter = vueloAdapter;
-        this.administradorService = administradorService;
-        this.asyncExceptionHandler = asyncExceptionHandler;
-        this.segmentacionService = segmentacionService;
-        this.loteService = loteService;
         this.registroService = registroService;
+        this.registroAdapter = registroAdapter;
+        this.rutaService = rutaService;
+        this.rutaAdapter = rutaAdapter;
+        this.rutaMapper = rutaMapper;
+        this.segmentacionService = segmentacionService;
+        this.segmentacionAdapter = segmentacionAdapter;
+        this.administradorService = administradorService;
+        this.clienteService = clienteService;
+        this.usuarioAdapter = usuarioAdapter;
+        this.vueloService = vueloService;
+        this.vueloAdapter = vueloAdapter;
+        this.vueloMapper = vueloMapper;
+        this.self = self;
+        this.communicationService = communicationService;
+        this.exportationService = exportationService;
+        this.objectMapper = objectMapper;
+        this.asyncExceptionHandler = asyncExceptionHandler;
+    }
+
+    public GenericResponse iniciarImportacion(ImportRequest request) throws JsonProcessingException {
+        GenericResponse response = new GenericResponse(true, "Importación iniciada!");
+        String idTransaccion = response.getToken().substring(4);
+        G4DContext context = new G4DContext();
+        importationContexts.put(idTransaccion, context);
+        context.task = self.getObject().importar(idTransaccion, request)
+                                       .whenComplete((r, ex) -> {
+                                           context.running = false;
+                                           context.task = null;
+                                           importationContexts.remove(idTransaccion);
+                                       })
+                                       .exceptionally(ex -> {
+                                           asyncExceptionHandler.handleException("Importation-" + idTransaccion, ex);
+                                           return null;
+                                       });
+        communicationService.enviar(String.format("/topic/importation-status-%s", idTransaccion), new StatusPayload(EstadoEjecucion.POR_INICIAR));
+        return response;
+    }
+
+    @Async("importationExecutor")
+    @Transactional
+    public CompletableFuture<Void> importar(String idTransaccion, ImportRequest request) throws JsonProcessingException {
+        JsonNode dto = request.getDto();
+        switch (request.getTipoDto().toUpperCase()) {
+            case "AEROPUERTO" -> aeropuertoService.importar(idTransaccion, objectMapper.treeToValue(dto, AeropuertoDTO.class));
+            case "PLAN" -> planService.importar(idTransaccion, objectMapper.treeToValue(dto, PlanDTO.class));
+            case "PEDIDO" -> pedidoService.importar(idTransaccion, objectMapper.treeToValue(dto, PedidoDTO.class));
+            case "PARAMETROS" -> parametrosService.importar(idTransaccion, objectMapper.treeToValue(dto, ParametrosDTO.class));
+            default -> throw new G4DException("Tipo de dato inválido!");
+        }
+        return CompletableFuture.completedFuture(null);
     }
 
     public GenericResponse iniciarImportacion(MultipartFile file, ImportFileRequest request) throws IOException {
@@ -127,7 +171,19 @@ public class G4DService {
         String idTransaccion = response.getToken().substring(4);
         Path archivo = Files.createTempFile("import-" + idTransaccion + "-", "-" + file.getOriginalFilename());
         file.transferTo(archivo.toFile());
-        self.getObject().importar(idTransaccion, archivo, request).exceptionally(ex -> { asyncExceptionHandler.handleException("Importation-" + idTransaccion, ex); return null; });
+        G4DContext context = new G4DContext();
+        importationContexts.put(idTransaccion, context);
+        context.task = self.getObject().importar(idTransaccion, archivo, request)
+                                       .whenComplete((r, ex) -> {
+                                           context.running = false;
+                                           context.task = null;
+                                           importationContexts.remove(idTransaccion);
+                                       })
+                                       .exceptionally(ex -> {
+                                           asyncExceptionHandler.handleException("Importation-" + idTransaccion, ex);
+                                           return null;
+                                       });
+        communicationService.enviar(String.format("/topic/importation-status-%s", idTransaccion), new StatusPayload(EstadoEjecucion.POR_INICIAR));
         return response;
     }
 
@@ -140,7 +196,7 @@ public class G4DService {
             case "AEROPUERTOS" -> aeropuertoService.importar(idTransaccion, archivo);
             case "PLANES" -> planService.importar(idTransaccion, archivo);
             case "PEDIDOS" -> pedidoService.importar(idTransaccion, archivo, request);
-            default -> throw new G4DException("Tipo de archivo invalido");
+            default -> throw new G4DException("Tipo de archivo inválido!");
         }
         return CompletableFuture.completedFuture(null);
     }
@@ -155,7 +211,7 @@ public class G4DService {
                                            if(exito) {
                                                G4DContext contextoDeExportacion = new G4DContext();
                                                exportationContexts.put(idTransaccion, contextoDeExportacion);
-                                               WebSocketService.enviar(String.format("/topic/exportation-status-%s", idTransaccion), EstadoEjecucion.INICIADO);
+                                               communicationService.enviar(String.format("/topic/exportation-status-%s", idTransaccion), EstadoEjecucion.INICIADO);
                                                return exportar(idTransaccion, new ExportationRequest(idTransaccion, "SIMULACION"))
                                                        .whenComplete((r, ex) -> {
                                                            contextoDeExportacion.running = false;
@@ -178,7 +234,7 @@ public class G4DService {
                                            asyncExceptionHandler.handleException("Simulation-" + idTransaccion, ex);
                                            return null;
                                        });
-        WebSocketService.enviar(String.format("/topic/simulation-status-%s", idTransaccion), EstadoEjecucion.POR_INICIAR);
+        communicationService.enviar(String.format("/topic/simulation-status-%s", idTransaccion), EstadoEjecucion.POR_INICIAR);
         return response;
     }
 
@@ -208,18 +264,17 @@ public class G4DService {
                 finDePlanificacion = (LocalDateTime) G4DUtility.Calculator.getMin(finDePlanificacion.plusMinutes(saltoDeConsumoEnMinutos),finDeSimulacion);
                 Instant start = Instant.now();
                 SolucionDTO solucion = planificar(context, parametros, TipoEscenario.SIMULACION, inicioDePlanificacion, finDePlanificacion, umbralDeReplanificacion, null);
-                GVNS.imprimirSolucion(context.solution, "SimuSemanal.txt");
                 if(solucion != null) {
                     System.out.println("[>] SOLUCIÓN ENVIADA!");
-                    WebSocketService.enviar(solutionDestination, new SolutionPayload(solucion));
+                    communicationService.enviar(solutionDestination, new SolutionPayload(solucion));
                 } else {
                     System.out.println("[*] COLAPSO LOGÍSTICO!");
                     huboColapso = true;
-                    WebSocketService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.COLAPSO));
+                    communicationService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.COLAPSO));
                     break;
                 }
                 if(esPrimeraIteracion) {
-                    WebSocketService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.INICIADO));
+                    communicationService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.INICIADO));
                     esPrimeraIteracion = false;
                 }
                 Instant end = Instant.now();
@@ -241,20 +296,20 @@ public class G4DService {
             if(context.running && !Thread.currentThread().isInterrupted()) {
                 System.out.println("[>] SIMULACION CONLCUIDA!");
                 if(!finDeSimulacion.equals(LocalDateTime.MAX) && !huboColapso) {
-                    WebSocketService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.EXITOSO));
+                    communicationService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.EXITOSO));
                 }
                 future.complete(true);
             } else {
                 System.out.println("[X] SIMULACION DETENIDA FORZOSAMENTE!");
-                WebSocketService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.DETENIDO,  EstadoFinalizacion.FORZADO));
+                communicationService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.DETENIDO,  EstadoFinalizacion.FORZADO));
                 future.complete(false);
             }
         } catch (InterruptedException e) {
             System.out.println("[X] SIMULACION DETENIDA FORZOSAMENTE!");
-            WebSocketService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.DETENIDO,  EstadoFinalizacion.FORZADO));
+            communicationService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.DETENIDO,  EstadoFinalizacion.FORZADO));
             future.complete(false);
         } catch (Exception e) {
-            WebSocketService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.DETENIDO,  EstadoFinalizacion.ERRONEO));
+            communicationService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.DETENIDO,  EstadoFinalizacion.ERRONEO));
             future.completeExceptionally(e);
         } finally {
             limpiarPools();
@@ -270,26 +325,26 @@ public class G4DService {
         }
         context.running = false;
         context.task.cancel(true);
-        WebSocketService.enviar(String.format("/topic/simulation-status-%s", idTransaccion), new StatusPayload(EstadoEjecucion.POR_DETENER));
+        communicationService.enviar(String.format("/topic/simulation-status-%s", idTransaccion), new StatusPayload(EstadoEjecucion.POR_DETENER));
         return new GenericResponse(true, "Simulación en detenimiento!");
     }
 
     public GenericResponse replanificarOperacion(ReplanificationRequest request) {
-        if(replanificationContext.task != null && replanificationContext.running) {
+        if(operationContext.task != null && operationContext.running) {
             throw new G4DException("Ya hay una replanificación en proceso!");
         }
-        replanificationContext.running = true;
-        replanificationContext.task = self.getObject().replanificar(request)
+        operationContext.running = true;
+        operationContext.task = self.getObject().replanificar(request)
                                                       .whenComplete((r, ex) -> {
-                                                          replanificationContext.running = false;
-                                                          replanificationContext.problematic = null;
-                                                          replanificationContext.task = null;
+                                                          operationContext.running = false;
+                                                          operationContext.problematic = null;
+                                                          operationContext.task = null;
                                                       })
                                                       .exceptionally(ex -> {
                                                           asyncExceptionHandler.handleException("Operation", ex);
                                                           return null;
                                                       });
-        WebSocketService.enviar("/topic/operation-status", EstadoEjecucion.INICIADO);
+        communicationService.enviar("/topic/operation-status", EstadoEjecucion.INICIADO);
         return new GenericResponse(true, "Replanificación Iniciada!");
     }
 
@@ -305,23 +360,66 @@ public class G4DService {
             long desfaseTemporal = 1440L*(Math.max(parametros.getMaxDiasEntregaIntracontinental(), parametros.getMaxDiasEntregaIntercontinental()));
             LocalDateTime fechaHoraActual = G4DUtility.Convertor.toAdmissible(request.getFechaHoraActual(), (LocalDateTime) null);
             LocalDateTime inicioPlanificacion = fechaHoraActual.minusMinutes(desfaseTemporal);
-            LocalDateTime umbralDeReplanificacion = fechaHoraActual.plusSeconds(this.tiempoMaximoDeReplanificacionEnSegundos);
-            LocalDateTime instanteDeProcesamiento = fechaHoraActual.plusSeconds(this.tiempoMaximoDeCargaEnSegundos);
-            SolucionDTO solucion = planificar(replanificationContext, parametros, escenario, inicioPlanificacion, fechaHoraActual, umbralDeReplanificacion, instanteDeProcesamiento);
+            LocalDateTime umbralDeReplanificacion = fechaHoraActual.plusSeconds(180L); // Predicción por tiempo maximo de replanificacion
+            LocalDateTime instanteDeProcesamiento = fechaHoraActual.plusSeconds(90L); // Predicción por tiempo maximo de carga
+            SolucionDTO solucion = planificar(operationContext, parametros, escenario, inicioPlanificacion, fechaHoraActual, umbralDeReplanificacion, instanteDeProcesamiento);
             if(solucion != null) {
-                WebSocketService.enviar(solutionDestination, new SolutionPayload(solucion));
+                communicationService.enviar(solutionDestination, new SolutionPayload(solucion));
                 System.out.println("[>] OPERACION ACTUALIZADA!");
-                WebSocketService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.EXITOSO));
+                communicationService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.EXITOSO));
                 future.complete(null);
             } else {
                 System.out.println("[*] COLAPSO LOGÍSTICO!");
                 throw new G4DException("OPERACIÓN COLAPSADA!");
             }
         } catch (Exception e) {
-            WebSocketService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.DETENIDO,  EstadoFinalizacion.ERRONEO));
+            communicationService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.DETENIDO,  EstadoFinalizacion.ERRONEO));
             future.completeExceptionally(e);
         } finally {
             limpiarPools();
+        }
+        return future;
+    }
+
+    public GenericResponse iniciarExportacion(ExportationRequest request) {
+        GenericResponse response  = new GenericResponse(true, "Exportación iniciada!");
+        String idTransaccion = response.getToken().substring(4);
+        G4DContext context = new G4DContext();
+        exportationContexts.put(idTransaccion, context);
+        context.task = self.getObject().exportar(idTransaccion, request)
+                .whenComplete((r, ex) -> {
+                    context.running = false;
+                    context.task = null;
+                    exportationContexts.remove(idTransaccion);
+                })
+                .exceptionally(ex -> {
+                    asyncExceptionHandler.handleException("Exportation-" + idTransaccion, ex);
+                    return null;
+                });
+        communicationService.enviar(String.format("/topic/exportation-status-%s", idTransaccion), EstadoEjecucion.INICIADO);
+        return response;
+    }
+
+    @Async("exportationExecutor")
+    public CompletableFuture<Void> exportar(String idTransaccion, ExportationRequest request) {
+        CompletableFuture<Void> future = new CompletableFuture<>();
+        String linkDestination = String.format("/topic/exportation-%s", idTransaccion), statusDestination = String.format("/topic/exportation-status-%s", idTransaccion);
+        try {
+            System.out.println(">> Exportando solución..");
+            G4DContext contexto = exportationContexts.get(idTransaccion);
+            String prefijo = G4DUtility.Convertor.toAdmissible(request.getPrefijo());
+            String idTransaccionDeContextoDeSolucion = G4DUtility.Convertor.toAdmissible(request.getIdTransaccion(), G4DUtility.Generator.getUniqueString("TOK").substring(4));
+            contexto.solution = simulationContexts.getOrDefault(idTransaccionDeContextoDeSolucion, operationContext).solution;
+            String nombreDelArchivo = String.format("%s__%s.txt", prefijo, idTransaccionDeContextoDeSolucion);
+            String rutaDeLdirectorio = "exports" + File.separator;
+            exportationService.exportarSolucionComoTxt(contexto.solution, Paths.get(rutaDeLdirectorio, nombreDelArchivo).toString());
+            System.out.printf("[+] SOLUCION EXPORTADA! ('%s')%n", nombreDelArchivo);
+            communicationService.enviar(linkDestination, new ExportationPayload(nombreDelArchivo, rutaDeLdirectorio));
+            communicationService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.DETENIDO,  EstadoFinalizacion.EXITOSO));
+            future.complete(null);
+        } catch (Exception e) {
+            communicationService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.DETENIDO,  EstadoFinalizacion.ERRONEO));
+            future.completeExceptionally(e);
         }
         return future;
     }
@@ -476,49 +574,6 @@ public class G4DService {
         solucionDTO.setRutasEnOperacion(rutasEnOperacion);
         System.out.println("[~] SOLUCIÓN ENCAPSULADA!");
         return solucionDTO;
-    }
-
-    public GenericResponse iniciarExportacion(ExportationRequest request) {
-        GenericResponse response  = new GenericResponse(true, "Exportación iniciada!");
-        String idTransaccion = response.getToken().substring(4);
-        G4DContext context = new G4DContext();
-        exportationContexts.put(idTransaccion, context);
-        context.task = self.getObject().exportar(idTransaccion, request)
-                                       .whenComplete((r, ex) -> {
-                                           context.running = false;
-                                           context.task = null;
-                                           exportationContexts.remove(idTransaccion);
-                                       })
-                                       .exceptionally(ex -> {
-                                           asyncExceptionHandler.handleException("Exportation-" + idTransaccion, ex);
-                                           return null;
-                                       });
-        WebSocketService.enviar(String.format("/topic/exportation-status-%s", idTransaccion), EstadoEjecucion.INICIADO);
-        return response;
-    }
-
-    @Async("exportationExecutor")
-    public CompletableFuture<Void> exportar(String idTransaccion, ExportationRequest request) {
-        CompletableFuture<Void> future = new CompletableFuture<>();
-        String linkDestination = String.format("/topic/exportation-%s", idTransaccion), statusDestination = String.format("/topic/exportation-status-%s", idTransaccion);
-        try {
-            System.out.println(">> Exportando solución..");
-            G4DContext contexto = exportationContexts.get(idTransaccion);
-            String prefijo = G4DUtility.Convertor.toAdmissible(request.getPrefijo());
-            String idTransaccionDeContextoDeSolucion = G4DUtility.Convertor.toAdmissible(request.getIdTransaccion(), G4DUtility.Generator.getUniqueString("TOK").substring(4));
-            contexto.solution = simulationContexts.getOrDefault(idTransaccionDeContextoDeSolucion, replanificationContext).solution;
-            String nombreDelArchivo = String.format("%s__%s.txt", prefijo, idTransaccionDeContextoDeSolucion);
-            String rutaDeLdirectorio = "exports" + File.separator;
-            GVNS.imprimirSolucion(contexto.solution, Paths.get(rutaDeLdirectorio, nombreDelArchivo).toString());
-            System.out.printf("[+] SOLUCION EXPORTADA! ('%s')%n", nombreDelArchivo);
-            WebSocketService.enviar(linkDestination, new ExportationPayload(nombreDelArchivo, rutaDeLdirectorio));
-            WebSocketService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.DETENIDO,  EstadoFinalizacion.EXITOSO));
-            future.complete(null);
-        } catch (Exception e) {
-            WebSocketService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.DETENIDO,  EstadoFinalizacion.ERRONEO));
-            future.completeExceptionally(e);
-        }
-        return future;
     }
 
     private void limpiarPools() {

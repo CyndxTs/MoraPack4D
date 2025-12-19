@@ -8,14 +8,11 @@ package com.pucp.dp1.grupo4d.morapack.controller.model;
 
 import com.pucp.dp1.grupo4d.morapack.model.dto.AeropuertoDTO;
 import com.pucp.dp1.grupo4d.morapack.model.dto.request.FilterRequest;
-import com.pucp.dp1.grupo4d.morapack.model.dto.request.ImportRequest;
 import com.pucp.dp1.grupo4d.morapack.model.dto.request.ListRequest;
-import com.pucp.dp1.grupo4d.morapack.model.dto.response.GenericResponse;
 import com.pucp.dp1.grupo4d.morapack.model.dto.response.ListResponse;
 import com.pucp.dp1.grupo4d.morapack.service.model.AeropuertoService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api/aeropuertos")
@@ -42,12 +39,6 @@ public class AeropuertoController {
     @PostMapping("/filtrar")
     public ResponseEntity<ListResponse> filtrar(@RequestBody FilterRequest<AeropuertoDTO> request) {
         ListResponse response = aeropuertoService.filtrar(request);
-        return ResponseEntity.ok(response);
-    }
-
-    @PostMapping("/importar")
-    public ResponseEntity<GenericResponse> importar(@RequestBody ImportRequest<AeropuertoDTO> request) {
-        GenericResponse response = aeropuertoService.importar(request);
         return ResponseEntity.ok(response);
     }
 }

@@ -7,7 +7,6 @@
 package com.pucp.dp1.grupo4d.morapack.repository;
 
 import com.pucp.dp1.grupo4d.morapack.model.entity.VueloEntity;
-import com.pucp.dp1.grupo4d.morapack.model.enumeration.TipoEscenario;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -24,13 +23,13 @@ public interface VueloRepository extends JpaRepository<VueloEntity, Integer> {
     @Query(
         value = """
         SELECT DISTINCT v.*
-        FROM vuelo v
-        JOIN ruta_por_vuelo rv ON rv.id_vuelo = v.id
-        JOIN ruta r ON r.id = rv.id_ruta
-        JOIN lote l ON l.id_ruta = r.id
-        JOIN segmentacion s ON s.id = l.id_segmentacion
-        JOIN pedido p ON p.id = s.id_pedido
-        JOIN aeropuerto a ON a.id = p.id_aeropuerto_destino
+        FROM VUELO v
+        JOIN RUTA_POR_VUELO rv ON rv.id_vuelo = v.id
+        JOIN RUTA r ON r.id = rv.id_ruta
+        JOIN LOTE l ON l.id_ruta = r.id
+        JOIN SEGMENTACION s ON s.id = l.id_segmentacion
+        JOIN PEDIDO p ON p.id = s.id_pedido
+        JOIN AEROPUERTO a ON a.id = p.id_aeropuerto_destino
         WHERE p.fh_generacion_utc BETWEEN :fechaHoraInicio AND :fechaHoraFin
           AND p.tipo_escenario = :tipoEscenario
           AND a.codigo NOT IN (:codOrigenes)

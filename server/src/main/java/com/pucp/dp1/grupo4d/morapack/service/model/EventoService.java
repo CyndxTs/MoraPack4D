@@ -28,6 +28,10 @@ public class EventoService {
         this.eventoMapper = eventoMapper;
     }
 
+    public EventoEntity save(EventoEntity administrador) {
+        return eventoRepository.save(administrador);
+    }
+
     public List<EventoEntity> findAll() {
         return eventoRepository.findAll();
     }
@@ -40,16 +44,12 @@ public class EventoService {
         return eventoRepository.findById(id);
     }
 
-    public EventoEntity save(EventoEntity administrador) {
-        return eventoRepository.save(administrador);
+    public boolean existsById(Integer id) {
+        return eventoRepository.existsById(id);
     }
 
     public void deleteById(Integer id) {
         eventoRepository.deleteById(id);
-    }
-
-    public boolean existsById(Integer id) {
-        return eventoRepository.existsById(id);
     }
 
     public Optional<EventoEntity> findByCodigo(String codigo) {

@@ -8,12 +8,10 @@ package com.pucp.dp1.grupo4d.morapack.controller.model;
 
 import com.pucp.dp1.grupo4d.morapack.model.dto.UsuarioDTO;
 import com.pucp.dp1.grupo4d.morapack.model.dto.request.*;
-import com.pucp.dp1.grupo4d.morapack.model.dto.response.GenericResponse;
 import com.pucp.dp1.grupo4d.morapack.model.dto.response.ListResponse;
 import com.pucp.dp1.grupo4d.morapack.service.model.AdministradorService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api/administradores")

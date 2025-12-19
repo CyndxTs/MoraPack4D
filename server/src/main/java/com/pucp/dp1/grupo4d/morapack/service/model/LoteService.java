@@ -30,6 +30,10 @@ public class LoteService {
         this.loteMapper = loteMapper;
     }
 
+    public LoteEntity save(LoteEntity lote) {
+        return loteRepository.save(lote);
+    }
+
     public List<LoteEntity> findAll() {
         return loteRepository.findAll();
     }
@@ -42,16 +46,12 @@ public class LoteService {
         return loteRepository.findById(id);
     }
 
-    public LoteEntity save(LoteEntity lote) {
-        return loteRepository.save(lote);
+    public boolean existsById(Integer id) {
+        return loteRepository.existsById(id);
     }
 
     public void deleteById(Integer id) {
         loteRepository.deleteById(id);
-    }
-
-    public boolean existsById(Integer id) {
-        return loteRepository.existsById(id);
     }
 
     public Optional<LoteEntity> findByCodigo(String codigo) {

@@ -6,6 +6,7 @@
 
 package com.pucp.dp1.grupo4d.morapack.controller;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.pucp.dp1.grupo4d.morapack.model.dto.request.*;
 import com.pucp.dp1.grupo4d.morapack.model.dto.response.GenericResponse;
 import com.pucp.dp1.grupo4d.morapack.model.exception.G4DException;
@@ -37,6 +38,12 @@ public class G4DController {
     }
 
     @PostMapping("/importation-init")
+    public ResponseEntity<GenericResponse> iniciarImportacion(@RequestBody ImportRequest request) throws JsonProcessingException {
+        GenericResponse response = g4dService.iniciarImportacion(request);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/importation-init-file")
     public ResponseEntity<GenericResponse> iniciarImportacion(@RequestPart("file") MultipartFile file, @RequestPart("request") ImportFileRequest request) throws IOException {
         GenericResponse response = g4dService.iniciarImportacion(file, request);
         return ResponseEntity.ok(response);

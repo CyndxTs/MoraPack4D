@@ -6,11 +6,11 @@
 
 package com.pucp.dp1.grupo4d.morapack.model.dto.request;
 
-import com.pucp.dp1.grupo4d.morapack.model.dto.DTO;
+import com.fasterxml.jackson.databind.JsonNode;
 import lombok.Data;
 
 @Data
-public class ImportRequest<T extends DTO> {
+public class ImportRequest {
     private String tipoDto;
-    private T dto;
+    private JsonNode dto;
 }
