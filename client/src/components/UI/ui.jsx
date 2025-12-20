@@ -920,20 +920,20 @@ export function LoadingOverlay({ token, onFinish }) {
   const porcentaje =
     totalGlobal > 0 ? Math.floor((completadoGlobal / totalGlobal) * 100) : 0;
 
-  // cerrar cuando ya no puede cambiar
+  // --- CORRECCIÓN AQUÍ ---
+  // Cerrar cuando se detiene, independientemente del porcentaje
   useEffect(() => {
     if (!detenido) return;
 
-    // caso normal: hubo progreso
-    if (totalGlobal > 0 && porcentaje === 100) {
-      onFinish?.(status);
-    }
+    // Agregamos un pequeño delay (2 segundos) para que el usuario 
+    // pueda leer "Importación finalizada" antes de que se cierre solo.
+    const timeout = setTimeout(() => {
+        onFinish?.(status);
+    }, 2000);
 
-    // caso extremo: nunca llegó progreso
-    if (totalGlobal === 0) {
-      onFinish?.(status);
-    }
-  }, [detenido, porcentaje, totalGlobal, status, onFinish]);
+    return () => clearTimeout(timeout);
+  }, [detenido, status, onFinish]); 
+  // ------------------------
 
   // texto X / TOTAL
   const texto = payload
