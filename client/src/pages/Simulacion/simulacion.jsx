@@ -1313,6 +1313,9 @@ export default function Simulacion() {
           (payload) => {
             // Callback de DATOS (Solución)
             //console.log("📦 DATA WebSocket Recibida:", payload);
+            console.log(
+              `📦 Paquete recibido a las ${new Date().toLocaleTimeString()}`
+            );
             const solucion = payload.solucion || payload;
             if (solucion) buildSimulationFromSolution(solucion);
           },
