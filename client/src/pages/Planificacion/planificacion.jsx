@@ -997,14 +997,14 @@ export default function Planificacion() {
         console.log("TOKEN PARA EXPORTACION: ",tokenExportacion);
         connectOperatorExportWS(
           tokenExportacion,
-          (payload) => {
-            console.log("SolutionPayload recibido por WS (OPERACION):", payload);
-            setReporteDisponible(payload);
+          (solution) => {
+            console.log("SolutionPayload recibido por WS (OPERACION):", solution);
+            setReporteDisponible(solution);
             // ✅ PERSISTIR REPORTE HASTA limpiarSimulacion
             try {
               localStorage.setItem(
                 "REPORTE_DISPONIBLE_BACKUP",
-                JSON.stringify(payload)
+                JSON.stringify(solution)
               );
             } catch (e) {
               console.error("No se pudo guardar el reporte en localStorage", e);
@@ -1018,8 +1018,29 @@ export default function Planificacion() {
               typeof status === "string" ? null : status.estadoFinalizacion;
     
             if (!estadoEjecucion) return;
-            if (estadoEjecucion === "DETENIDO" && estadoFinalizacion === "EXITOSO") {
+            if (
+              estadoEjecucion === "DETENIDO" &&
+              estadoFinalizacion === "EXITOSO"
+            ) {
               showNotification("success", "Reporte generado");
+
+              // FALLBACK FRONTEND (backend no modificable)
+              if (!reporteDisponible) {
+                const nombre = `OPERACION__${cleanToken(token)}.txt`;
+
+                const reporte = {
+                  nombre,
+                  ruta: "exports/"
+                };
+
+                console.warn("Payload WS no llegó, usando fallback:", reporte);
+
+                setReporteDisponible(reporte);
+                localStorage.setItem(
+                  "REPORTE_DISPONIBLE_BACKUP",
+                  JSON.stringify(reporte)
+                );
+              }
             }
           }
         );
@@ -1043,10 +1064,10 @@ export default function Planificacion() {
       showNotification("info", "El reporte aún no está listo");
       return;
     }
-
+    console.log("Reporte disponible: ",reporteDisponible);
     if (descargandoRef.current) return;
     descargandoRef.current = true;
-
+    console.log("DescargandoRef: ",descargandoRef);
     try {
       const fileRequest = {
         nombre: reporteDisponible.nombre,
@@ -2266,7 +2287,7 @@ export default function Planificacion() {
 
                   <label>Probabilidad de replanificación</label>
                   <RangeSelector 
-                    min={0.30}
+                    min={0}
                     max={0.55}
                     step={0.05}
                     value={probabilidadReplanificacion}

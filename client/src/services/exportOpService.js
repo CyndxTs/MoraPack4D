@@ -9,7 +9,7 @@ const SOCKET_URL =
 const API_URL = "/api";
 const API_EXPORTATION_INIT = "/api/exportation-init";
 
-let client = null;
+let exportClient = null;
 
 /* ===============================
    HELPERS
@@ -66,37 +66,41 @@ export function connectOperatorExportWS(
   const cleanId = cleanToken(idTransaccion);
 
   // Si ya hay cliente, lo desactivamos para conectar al nuevo canal
-  if (client) {
+  if (exportClient ) {
     console.log("[EXPORT WS] Reiniciando conexión para nuevo ID:", cleanId);
-    client.deactivate();
-    client = null;
+    exportClient .deactivate();
+    exportClient  = null;
   }
 
-  client = new Client({
+  exportClient  = new Client({
     brokerURL: SOCKET_URL,
     reconnectDelay: 5000,
     debug: () => {},
     onConnect: () => {
       console.log("[EXPORT WS] Conectado");
 
-      client.subscribe(
+      exportClient .subscribe(
         `/topic/exportation-${cleanId}`,
-        (message) => onSolution(JSON.parse(message.body))
-      );
+        (message) => {
+          const solution = JSON.parse(message.body);
+          onSolution(solution);
+      });
 
-      client.subscribe(
+      exportClient .subscribe(
         `/topic/exportation-status-${cleanId}`,
-        (message) => onStatus(JSON.parse(message.body))
-      );
+        (message) => {
+          const status = JSON.parse(message.body);
+          onStatus(status);
+      });
     },
   });
 
-  client.activate();
+  exportClient .activate();
 }
 
 export function disconnectExportWS() {
-  if (client) {
-    client.deactivate();
-    client = null;
+  if (exportClient ) {
+    exportClient .deactivate();
+    exportClient  = null;
   }
 }
