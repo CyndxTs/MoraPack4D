@@ -72,7 +72,7 @@ public interface ClienteRepository extends JpaRepository<ClienteEntity, Integer>
     @Query(
         value = """
         SELECT MAX(CAST(c.codigo AS UNSIGNED))
-        FROM cliente c
+        FROM CLIENTE c
         """,
         nativeQuery = true
     )
