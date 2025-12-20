@@ -163,6 +163,9 @@ export default function Pedidos() {
           showNotification("success", respuesta.mensaje || "Importación iniciada");
           console.log("Token de importación:", respuesta.token);
           setImportToken(respuesta.token); // ✅ CLAVE
+          setIsModalOpen(false); 
+          setArchivo(null);
+          limpiar();
         } else {
           showNotification("danger", respuesta.mensaje || "Error al iniciar importación");
         }
@@ -172,6 +175,7 @@ export default function Pedidos() {
       else if (isOperacion && !hayArchivo) {
         if (!selectedCliente || !selectedDestino || !fecha || !hora || !cantidad) {
           showNotification("warning", "Completa todos los campos del pedido manual.");
+          setProcessing(false);
           return;
         }
 
@@ -190,13 +194,16 @@ export default function Pedidos() {
         await importarPedido(dto);
         notifyNewOrder();
         showNotification("success", "Pedido manual registrado correctamente");
-      }
 
-      // Recargar tabla
-      await fetchPedidos(1);
-      limpiar();
-      setIsModalOpen(false);
-      setArchivo(null);
+        // --- SOLUCIÓN AQUÍ ---
+        // Esperamos 0.5 segundos para asegurar que la DB ya tiene el dato listo
+        await new Promise(resolve => setTimeout(resolve, 500));
+        // Recargar tabla
+        await fetchPedidos(1);
+        
+        limpiar();
+        setIsModalOpen(false);
+      }
 
     } catch (error) {
       console.error(error);
