@@ -1312,7 +1312,10 @@ export default function Simulacion() {
           idTransaccion,
           (payload) => {
             // Callback de DATOS (Solución)
-            console.log("📦 DATA WebSocket Recibida:", payload);
+            //console.log("📦 DATA WebSocket Recibida:", payload);
+            console.log(
+              `📦 Paquete recibido a las ${new Date().toLocaleTimeString()}`
+            );
             const solucion = payload.solucion || payload;
             if (solucion) buildSimulationFromSolution(solucion);
           },
@@ -1977,7 +1980,7 @@ export default function Simulacion() {
                   </span>
                   <span className="legend-card-title">Estado de Flota</span>
                   <span className="legend-card-toggle">
-                    {fleetPanelCollapsed ? "▼" : "▲"}
+                    {fleetPanelCollapsed ? "▲" : "▼"}
                   </span>
                 </button>
                 {!fleetPanelCollapsed && (
