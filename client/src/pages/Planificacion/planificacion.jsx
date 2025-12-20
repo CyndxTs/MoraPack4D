@@ -983,67 +983,67 @@ export default function Planificacion() {
       };
     }, []);
 
+  // En planificacion.jsx
+
   useEffect(() => {
+    // Usamos una referencia para saber si el WS respondió a tiempo
+    // (Esto evita que el timeout se ejecute si el WS sí funcionó)
+    let wsRespondio = false; 
+
     const unsubscribe = onEvent(async (evt) => {
       console.log("EVENTO:", evt);
 
       if (evt.type === "replanificacion-iniciada") {
         const token = evt.token;
 
-        const data = await iniciarExportacion(token, "OPERACION");
-        console.log("EXPORT INICIADA:", data);
+        // 1. Iniciamos la exportación por HTTP
+        const tokenOperacion = evt.token; // <--- ESTE es el que da nombre al archivo (guardalo bien)
+        console.log("TOKEN OPERACION: ",tokenOperacion);
+        const data = await iniciarExportacion(tokenOperacion, "OPERACION");
+        console.log("TOKEN OPERACION: ",data);
+        const tokenExportacion = data.token; // <--- Este solo sirve para el WebSocket
+        console.log("TOKEN OPERACION: ",tokenExportacion);
 
-        const tokenExportacion = data.token;
-        console.log("TOKEN PARA EXPORTACION: ",tokenExportacion);
+        // Reiniciamos la bandera para este nuevo intento
+        wsRespondio = false;
+
+        // 2. Intentamos conectar por WebSocket (Plan A)
         connectOperatorExportWS(
           tokenExportacion,
           (solution) => {
-            console.log("SolutionPayload recibido por WS (OPERACION):", solution);
+            wsRespondio = true; // ¡El WS ganó la carrera!
+            console.log("✅ SolutionPayload recibido por WS (OPERACION):", solution);
             setReporteDisponible(solution);
-            // ✅ PERSISTIR REPORTE HASTA limpiarSimulacion
-            try {
-              localStorage.setItem(
-                "REPORTE_DISPONIBLE_BACKUP",
-                JSON.stringify(solution)
-              );
-            } catch (e) {
-              console.error("No se pudo guardar el reporte en localStorage", e);
-            }
+            localStorage.setItem("REPORTE_DISPONIBLE_BACKUP", JSON.stringify(solution));
+            showNotification("success", "Reporte generado (vía WS)");
           },
           (status) => {
+            // Si llega status, también consideramos que el WS está vivo
             console.log("Status exportación:", status);
-            const estadoEjecucion =
-              typeof status === "string" ? status : status.estadoEjecucion;
-            const estadoFinalizacion =
-              typeof status === "string" ? null : status.estadoFinalizacion;
-    
-            if (!estadoEjecucion) return;
-            if (
-              estadoEjecucion === "DETENIDO" &&
-              estadoFinalizacion === "EXITOSO"
-            ) {
-              showNotification("success", "Reporte generado");
-
-              // FALLBACK FRONTEND (backend no modificable)
-              if (!reporteDisponible) {
-                const nombre = `OPERACION__${cleanToken(token)}.txt`;
-
-                const reporte = {
-                  nombre,
-                  ruta: "exports/"
-                };
-
-                console.warn("Payload WS no llegó, usando fallback:", reporte);
-
-                setReporteDisponible(reporte);
-                localStorage.setItem(
-                  "REPORTE_DISPONIBLE_BACKUP",
-                  JSON.stringify(reporte)
-                );
-              }
-            }
           }
         );
+
+        // 3. FALLBACK / PLAN B: "Timeout de Seguridad"
+        // Si en 1.5 segundos no ha llegado nada por WS, asumimos que ya terminó
+        setTimeout(() => {
+          if (!wsRespondio) {
+            console.warn("⚠️ Usando Fallback manual.");
+            
+            // CORRECCIÓN: Usamos 'tokenOperacion' en vez de 'tokenExportacion'
+            const idLimpio = tokenOperacion.startsWith("TOK-") 
+                ? tokenOperacion.substring(4) 
+                : tokenOperacion;
+
+            const reporteManual = {
+              nombre: `OPERACION__${idLimpio}.txt`, // Ahora sí coincidirá con el archivo en disco
+              ruta: "exports" // Quita la barra final por si acaso
+            };
+
+            setReporteDisponible(reporteManual);
+            localStorage.setItem("REPORTE_DISPONIBLE_BACKUP", JSON.stringify(reporteManual));
+            showNotification("success", "Reporte listo (Manual)");
+          }
+        }, 1500);
       }
     });
 

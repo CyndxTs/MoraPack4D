@@ -75,7 +75,10 @@ export function connectOperatorExportWS(
   exportClient  = new Client({
     brokerURL: SOCKET_URL,
     reconnectDelay: 5000,
-    debug: () => {},
+    // Agrega esto para ver TODO el tráfico en la consola
+    debug: (str) => {
+        console.log('[STOMP DEBUG]:', str);
+    },
     onConnect: () => {
       console.log("[EXPORT WS] Conectado");
 
