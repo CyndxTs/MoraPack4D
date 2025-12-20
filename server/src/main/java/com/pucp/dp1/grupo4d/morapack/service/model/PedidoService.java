@@ -28,6 +28,8 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -123,6 +125,7 @@ public class PedidoService {
         return new ListResponse(true, String.format("Pedidos filtrados correctamente! ('%d')", dtos.size()), dtos);
     }
 
+    @Transactional
     public void importar(String idTransaccion, PedidoDTO dto) {
         String progressDestination = String.format("/topic/importation-%s", idTransaccion), statusDestination = String.format("/topic/importation-status-%s", idTransaccion);
         try {
@@ -221,8 +224,8 @@ public class PedidoService {
                                         cliente.setCorreo(newCorreo);
                                     } else cliente.setCorreo(correo);
                                     cliente.setContrasenia("12345678");
+                                    clientes.add(cliente);
                                 }
-                                clientes.add(cliente);
                                 poolClientes.put(codCliente, cliente);
                             }
                             PedidoEntity pedido = new PedidoEntity();
@@ -246,11 +249,11 @@ public class PedidoService {
                 communicationService.enviar(progressDestination, new ProgressPayload("Leyendo archivo", lProcesadas, lTotales));
                 if (pedidos.size() % 500 == 0 || lProcesadas == lTotales) {
                     if(!clientes.isEmpty()) {
-                        importationService.batchSave(clientes, "clientes");
+                        importationService.batchSave(clientes, progressDestination, "clientes");
                         System.out.printf("[<] CLIENTES IMPORTADOS! ('%d')%n", clientes.size());
                         clientes.clear();
                     }
-                    importationService.batchSave(pedidos, "pedidos");
+                    importationService.batchSave(pedidos, progressDestination, "pedidos");
                     System.out.printf("[<] PEDIDOS IMPORTADOS! ('%d')%n", pedidos.size());
                     pedidos.clear();
                 }

@@ -152,8 +152,8 @@ public class AdministradorService {
                 }
                 lProcesadas++;
                 communicationService.enviar(progressDestination, new ProgressPayload("Leyendo archivo", lProcesadas, lTotales));
-                if (lProcesadas % 500 == 0 || lProcesadas == lTotales) {
-                    importationService.batchSave(administradores, "administradores");
+                if (administradores.size() % 500 == 0 || lProcesadas == lTotales) {
+                    importationService.batchSave(administradores, progressDestination, "administradores");
                     System.out.printf("[<] ADMINISTRADORES IMPORTADOS! ('%d')%n", administradores.size());
                     administradores.clear();
                 }

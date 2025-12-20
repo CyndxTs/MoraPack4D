@@ -14,14 +14,12 @@ import com.pucp.dp1.grupo4d.morapack.algorithm.GVNS;
 import com.pucp.dp1.grupo4d.morapack.algorithm.Problematica;
 import com.pucp.dp1.grupo4d.morapack.algorithm.Solucion;
 import com.pucp.dp1.grupo4d.morapack.mapper.*;
-import com.pucp.dp1.grupo4d.morapack.model.algorithm.*;
 import com.pucp.dp1.grupo4d.morapack.model.dto.*;
 import com.pucp.dp1.grupo4d.morapack.model.dto.payload.ExportationPayload;
 import com.pucp.dp1.grupo4d.morapack.model.dto.payload.StatusPayload;
 import com.pucp.dp1.grupo4d.morapack.model.dto.request.*;
 import com.pucp.dp1.grupo4d.morapack.model.dto.response.GenericResponse;
 import com.pucp.dp1.grupo4d.morapack.model.dto.payload.SolutionPayload;
-import com.pucp.dp1.grupo4d.morapack.model.entity.*;
 import com.pucp.dp1.grupo4d.morapack.model.enumeration.EstadoEjecucion;
 import com.pucp.dp1.grupo4d.morapack.model.enumeration.EstadoFinalizacion;
 import com.pucp.dp1.grupo4d.morapack.model.enumeration.TipoEscenario;
@@ -29,7 +27,6 @@ import com.pucp.dp1.grupo4d.morapack.model.exception.G4DException;
 import com.pucp.dp1.grupo4d.morapack.model.exception.G4DExceptionHandlerAsync;
 import com.pucp.dp1.grupo4d.morapack.service.model.*;
 import com.pucp.dp1.grupo4d.morapack.util.G4DUtility;
-import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
@@ -43,7 +40,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -62,7 +58,6 @@ public class G4DService {
     private final AeropuertoService aeropuertoService;
     private final AeropuertoAdapter aeropuertoAdapter;
     private final AeropuertoMapper aeropuertoMapper;
-    private final LoteService loteService;
     private final LoteAdapter loteAdapter;
     private final ParametrosService parametrosService;
     private final ParametrosMapper parametrosMapper;
@@ -71,22 +66,18 @@ public class G4DService {
     private final PedidoMapper pedidoMapper;
     private final PlanService planService;
     private final PlanAdapter planAdapter;
-    private final RegistroService registroService;
     private final RegistroAdapter registroAdapter;
-    private final RutaService rutaService;
     private final RutaAdapter rutaAdapter;
     private final RutaMapper rutaMapper;
-    private final SegmentacionService segmentacionService;
     private final SegmentacionAdapter segmentacionAdapter;
     private final AdministradorService administradorService;
     private final ClienteService clienteService;
     private final UsuarioAdapter usuarioAdapter;
-    private final VueloService vueloService;
     private final VueloAdapter vueloAdapter;
     private final VueloMapper vueloMapper;
     private final ObjectProvider<G4DService> self;
     private final CommunicationService communicationService;
-    private final ExportationService exportationService;
+    private final ContextService contextService;
     private final ObjectMapper objectMapper;
     private final G4DExceptionHandlerAsync asyncExceptionHandler;
     private final G4DContext operationContext = new G4DContext();
@@ -95,16 +86,15 @@ public class G4DService {
     private final Map<String, G4DContext> exportationContexts = new ConcurrentHashMap<>();
 
     public G4DService(AeropuertoService aeropuertoService, AeropuertoAdapter aeropuertoAdapter, AeropuertoMapper aeropuertoMapper,
-                      LoteService loteService, LoteAdapter loteAdapter, ParametrosService parametrosService, ParametrosMapper parametrosMapper,
+                      LoteAdapter loteAdapter, ParametrosService parametrosService, ParametrosMapper parametrosMapper,
                       PedidoService pedidoService, PedidoAdapter pedidoAdapter, PedidoMapper pedidoMapper, PlanService planService, PlanAdapter planAdapter,
-                      RegistroService registroService, RegistroAdapter registroAdapter, RutaService rutaService, RutaAdapter rutaAdapter, RutaMapper rutaMapper,
-                      SegmentacionService segmentacionService, SegmentacionAdapter segmentacionAdapter, AdministradorService administradorService, ClienteService clienteService, UsuarioAdapter usuarioAdapter,
-                      VueloService vueloService, VueloAdapter vueloAdapter, VueloMapper vueloMapper, ObjectProvider<G4DService> self,
-                      CommunicationService communicationService, ExportationService exportationService, ObjectMapper objectMapper, G4DExceptionHandlerAsync asyncExceptionHandler) {
+                      RegistroAdapter registroAdapter, RutaAdapter rutaAdapter, RutaMapper rutaMapper,
+                      SegmentacionAdapter segmentacionAdapter, AdministradorService administradorService, ClienteService clienteService, UsuarioAdapter usuarioAdapter,
+                      VueloAdapter vueloAdapter, VueloMapper vueloMapper, ObjectProvider<G4DService> self,
+                      CommunicationService communicationService, ContextService contextService, ObjectMapper objectMapper, G4DExceptionHandlerAsync asyncExceptionHandler) {
         this.aeropuertoService = aeropuertoService;
         this.aeropuertoAdapter = aeropuertoAdapter;
         this.aeropuertoMapper = aeropuertoMapper;
-        this.loteService = loteService;
         this.loteAdapter = loteAdapter;
         this.parametrosService = parametrosService;
         this.parametrosMapper = parametrosMapper;
@@ -113,22 +103,18 @@ public class G4DService {
         this.pedidoMapper = pedidoMapper;
         this.planService = planService;
         this.planAdapter = planAdapter;
-        this.registroService = registroService;
         this.registroAdapter = registroAdapter;
-        this.rutaService = rutaService;
         this.rutaAdapter = rutaAdapter;
         this.rutaMapper = rutaMapper;
-        this.segmentacionService = segmentacionService;
         this.segmentacionAdapter = segmentacionAdapter;
         this.administradorService = administradorService;
         this.clienteService = clienteService;
         this.usuarioAdapter = usuarioAdapter;
-        this.vueloService = vueloService;
         this.vueloAdapter = vueloAdapter;
         this.vueloMapper = vueloMapper;
         this.self = self;
         this.communicationService = communicationService;
-        this.exportationService = exportationService;
+        this.contextService = contextService;
         this.objectMapper = objectMapper;
         this.asyncExceptionHandler = asyncExceptionHandler;
     }
@@ -153,7 +139,6 @@ public class G4DService {
     }
 
     @Async("importationExecutor")
-    @Transactional
     public CompletableFuture<Void> importar(String idTransaccion, ImportRequest request) throws JsonProcessingException {
         JsonNode dto = request.getDto();
         switch (request.getTipoDto().toUpperCase()) {
@@ -188,7 +173,6 @@ public class G4DService {
     }
 
     @Async("importationExecutor")
-    @Transactional
     public CompletableFuture<Void> importar(String idTransaccion, Path archivo, ImportFileRequest request) {
         switch (request.getTipoArchivo().toUpperCase()) {
             case "ADMINISTRADORES" -> administradorService.importar(idTransaccion, archivo);
@@ -239,7 +223,6 @@ public class G4DService {
     }
 
     @Async("simulationExecutor")
-    @Transactional
     public CompletableFuture<Boolean> simular(String idTransaccion, SimulationRequest request) {
         CompletableFuture<Boolean> future = new CompletableFuture<>();
         String solutionDestination = String.format("/topic/simulation-%s", idTransaccion), statusDestination = String.format("/topic/simulation-status-%s", idTransaccion);
@@ -290,7 +273,8 @@ public class G4DService {
                     break;
                 }
                 if(G4DUtility.Calculator.isProximatelyFewer(milisegundosRealesTranscurridos, saltoDeAlgoritmoEnMilisegundos, 0.125)) {
-                    Thread.sleep(saltoDeAlgoritmoEnMilisegundos - milisegundosRealesTranscurridos);
+                    // Thread.sleep(saltoDeAlgoritmoEnMilisegundos - milisegundosRealesTranscurridos);
+                    Thread.sleep(10000L);
                 }
             }
             if(context.running && !Thread.currentThread().isInterrupted()) {
@@ -349,7 +333,6 @@ public class G4DService {
     }
 
     @Async("operationExecutor")
-    @Transactional
     public CompletableFuture<Void> replanificar(ReplanificationRequest request) {
         CompletableFuture<Void> future = new CompletableFuture<>();
         String solutionDestination = "/topic/operation", statusDestination = "/topic/operation-status";
@@ -412,7 +395,7 @@ public class G4DService {
             contexto.solution = simulationContexts.getOrDefault(idTransaccionDeContextoDeSolucion, operationContext).solution;
             String nombreDelArchivo = String.format("%s__%s.txt", prefijo, idTransaccionDeContextoDeSolucion);
             String rutaDeLdirectorio = "exports" + File.separator;
-            exportationService.exportarSolucionComoTxt(contexto.solution, Paths.get(rutaDeLdirectorio, nombreDelArchivo).toString());
+            contextService.exportSolutionAsTxt(contexto.solution, Paths.get(rutaDeLdirectorio, nombreDelArchivo).toString());
             System.out.printf("[+] SOLUCION EXPORTADA! ('%s')%n", nombreDelArchivo);
             communicationService.enviar(linkDestination, new ExportationPayload(nombreDelArchivo, rutaDeLdirectorio));
             communicationService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.DETENIDO,  EstadoFinalizacion.EXITOSO));
@@ -426,132 +409,23 @@ public class G4DService {
 
     private SolucionDTO planificar(G4DContext context, ParametrosDTO parametros, TipoEscenario tipoEscenario, LocalDateTime inicioDePlanificacion, LocalDateTime finDePlanificacion, LocalDateTime umbralDeReplanificacion, LocalDateTime instanteDeProcesamiento) {
         boolean esSimulacion = tipoEscenario.equals(TipoEscenario.SIMULACION);
-        Problematica problematica;
+        context.problematic = contextService.getUpdatedProblematic(context.problematic, esSimulacion, parametros, inicioDePlanificacion, finDePlanificacion, umbralDeReplanificacion, instanteDeProcesamiento, tipoEscenario);
         if(esSimulacion) {
-            if(context.problematic == null) {
-                context.problematic = new Problematica();
-                parametrosMapper.toAlgorithm(context.problematic, parametros);
-                context.problematic.cargarAeropuertos(aeropuertoService, aeropuertoAdapter);
-                context.problematic.cargarPlanes(planService, planAdapter);
-            }
-            context.problematic.inicioDePlanificacion = inicioDePlanificacion;
-            context.problematic.finDePlanificacion = finDePlanificacion;
-            context.problematic.umbralDeReplanificacion = umbralDeReplanificacion;
-            context.problematic.instanteDeProcesamiento = instanteDeProcesamiento;
-            context.problematic.tipoEscenario = tipoEscenario.toString().toUpperCase();
-            context.problematic.cargarClientes(clienteService, usuarioAdapter);
-            context.problematic.cargarPedidos(pedidoService, pedidoAdapter);
-            context.problematic.cargarRutas(rutaService, rutaAdapter);
-            problematica = context.problematic;
             System.out.printf("[*] SIMULANDO BLOQUE TEMPORAL! ['%s' - '%s']%n", G4DUtility.Convertor.toDisplayString(inicioDePlanificacion), G4DUtility.Convertor.toDisplayString(finDePlanificacion));
-        } else {
-            context.problematic = new Problematica();
-            parametrosMapper.toAlgorithm(context.problematic, parametros);
-            context.problematic.inicioDePlanificacion = inicioDePlanificacion;
-            context.problematic.finDePlanificacion = finDePlanificacion;
-            context.problematic.umbralDeReplanificacion = umbralDeReplanificacion;
-            context.problematic.instanteDeProcesamiento = instanteDeProcesamiento;
-            context.problematic.tipoEscenario = tipoEscenario.toString().toUpperCase();
-            context.problematic.cargarAeropuertos(aeropuertoService, aeropuertoAdapter);
-            context.problematic.cargarPlanes(planService, planAdapter);
-            context.problematic.cargarClientes(clienteService, usuarioAdapter);
-            context.problematic.cargarPedidos(pedidoService, pedidoAdapter);
-            context.problematic.cargarVuelos(vueloService, vueloAdapter);
-            context.problematic.cargarRutas(rutaService, rutaAdapter);
-            problematica = context.problematic;
-            System.out.printf("[*] OPERANDO BLOQUE TEMPORAL! ['%s' - '%s']%n", G4DUtility.Convertor.toDisplayString(inicioDePlanificacion), G4DUtility.Convertor.toDisplayString(finDePlanificacion));
-        }
+        } else System.out.printf("[*] OPERANDO BLOQUE TEMPORAL! ['%s' - '%s']%n", G4DUtility.Convertor.toDisplayString(inicioDePlanificacion), G4DUtility.Convertor.toDisplayString(finDePlanificacion));
         GVNS gvns = new GVNS();
         parametrosMapper.toAlgorithm(gvns, parametros);
-        gvns.planificar(problematica);
+        gvns.planificar(context.problematic);
         Solucion solucion = gvns.solucion;
         if(solucion != null) {
             context.solution = solucion;
         } else return null;
         System.out.printf("[*] BLOQUE TEMPORAL PLANIFICADO! ['%s' - '%s']%n", G4DUtility.Convertor.toDisplayString(inicioDePlanificacion), G4DUtility.Convertor.toDisplayString(finDePlanificacion));
         if(!esSimulacion) {
-            almacenarSolucion(solucion, tipoEscenario.toString().toUpperCase());
+            contextService.importSolution(solucion);
             limpiarPools();
         }
         return devolverSolucion(solucion, tipoEscenario.toString().toUpperCase());
-    }
-
-    private void almacenarSolucion(Solucion solucion, String tipoEscenario) {
-        if (solucion == null || solucion.getPedidosAtendidos() == null) {
-            return;
-        }
-        System.out.println(">> Guardando solución en bd..");
-        // Vuelos
-        for (Vuelo vuelo : solucion.getVuelosEnTransito()) {
-            VueloEntity vueloEntity = vueloAdapter.toEntity(vuelo);
-            if (vueloEntity != null) {
-                vueloService.save(vueloEntity);
-                System.out.println("[*] VUELO: " + vueloEntity.getCodigo());
-            }
-        }
-        // Rutas & RutasPorVuelos
-        for (Ruta ruta : solucion.getRutasEnOperacion()) {
-            RutaEntity rutaEntity = rutaAdapter.toEntity(ruta);
-            if (rutaEntity != null) {
-                for (Vuelo vuelo : ruta.getVuelos()) {
-                    VueloEntity vueloEntity = vueloAdapter.toEntity(vuelo);
-                    if (vueloEntity != null) {
-                        rutaEntity.getVuelos().remove(vueloEntity);
-                        rutaEntity.getVuelos().add(vueloEntity);
-                    }
-                }
-                rutaEntity.getVuelos().sort(Comparator.comparing(VueloEntity::getFechaHoraSalidaUTC));
-                rutaService.save(rutaEntity);
-                System.out.println("[*] RUTA: " + rutaEntity.getCodigo() + " {'" + rutaEntity.getVuelos().size() + "' vuelos!}");
-            }
-        }
-        // Pedidos & Segmentaciones & Lotes
-        for (Pedido pedido : solucion.getPedidosAtendidos()) {
-            PedidoEntity pedidoEntity = pedidoAdapter.toEntity(pedido, tipoEscenario);
-            if(pedidoEntity != null) {
-                pedidoService.save(pedidoEntity);
-                System.out.println("[*] PEDIDO: " + pedidoEntity.getCodigo());
-                for(Segmentacion segmentacion : pedido.getSegmentaciones()) {
-                    SegmentacionEntity segmentacionEntity = segmentacionAdapter.toEntity(segmentacion);
-                    if(segmentacionEntity != null) {
-                        segmentacionEntity.setFechaHoraAplicacionLocal(G4DUtility.Convertor.toLocal(segmentacionEntity.getFechaHoraAplicacionUTC(), pedidoEntity.getDestino().getHusoHorario()));
-                        segmentacionEntity.setFechaHoraSustitucionLocal((segmentacionEntity.getFechaHoraSustitucionUTC() != null)? (G4DUtility.Convertor.toLocal(segmentacionEntity.getFechaHoraSustitucionUTC(), pedidoEntity.getDestino().getHusoHorario())) : null);
-                        segmentacionEntity.setPedido(pedidoEntity);
-                        segmentacionService.save(segmentacionEntity);
-                        System.out.println("[*] SEGMENTACION: " + segmentacion.getCodigo());
-                        for(Map.Entry<Ruta, Lote> entry : segmentacion.getLotesPorRuta().entrySet()) {
-                            RutaEntity rutaEntity = rutaAdapter.toEntity(entry.getKey());
-                            if(rutaEntity != null) {
-                                LoteEntity loteEntity = loteAdapter.toEntity(entry.getValue());
-                                loteEntity.setRuta(rutaEntity);
-                                loteEntity.setSegmentacion(segmentacionEntity);
-                                loteService.save(loteEntity);
-                                System.out.println("[*] LOTE: " + loteEntity.getCodigo());
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        // Aeropuertos && Registros && Lotes
-        for(Aeropuerto aeropuerto : solucion.getAeropuertosTransitados()) {
-            AeropuertoEntity aeropuertoEntity = aeropuertoAdapter.toEntity(aeropuerto);
-            if(aeropuertoEntity != null) {
-                aeropuertoService.save(aeropuertoEntity);
-                System.out.println("[*] AEROPUERTO: " + aeropuertoEntity.getCodigo());
-                for(Registro registro : aeropuerto.getRegistros()) {
-                    RegistroEntity registroEntity = registroAdapter.toEntity(registro);
-                    if(registroEntity.getLote().getId() != null) {
-                        registroEntity.setFechaHoraIngresoLocal(G4DUtility.Convertor.toLocal(registroEntity.getFechaHoraIngresoUTC(), aeropuertoEntity.getHusoHorario()));
-                        registroEntity.setFechaHoraEgresoLocal((registroEntity.getFechaHoraEgresoUTC() != null)? G4DUtility.Convertor.toLocal(registroEntity.getFechaHoraEgresoUTC(), aeropuertoEntity.getHusoHorario()): null);
-                        registroEntity.setAeropuerto(aeropuertoEntity);
-                        registroService.save(registroEntity);
-                        System.out.println("[*] REGISTRO: " + registroEntity.getCodigo());
-                    }
-                }
-            }
-        }
-        System.out.println("[~] SOLUCIÓN ALMACENADA!");
     }
 
     private SolucionDTO devolverSolucion(Solucion solucion, String tipoEscenario) {

@@ -157,8 +157,8 @@ public class ClienteService {
                 }
                 lProcesadas++;
                 communicationService.enviar(progressDestination, new ProgressPayload("Leyendo archivo", lProcesadas, lTotales));
-                if (lProcesadas % 500 == 0 || lProcesadas == lTotales) {
-                    importationService.batchSave(clientes, "clientes");
+                if (clientes.size() % 500 == 0 || lProcesadas == lTotales) {
+                    importationService.batchSave(clientes, progressDestination, "clientes");
                     System.out.printf("[<] CLIENTES IMPORTADOS! ('%d')%n", clientes.size());
                     clientes.clear();
                 }

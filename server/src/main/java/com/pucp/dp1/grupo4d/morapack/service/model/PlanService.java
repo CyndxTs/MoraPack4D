@@ -25,6 +25,8 @@ import com.pucp.dp1.grupo4d.morapack.util.G4DUtility;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -89,6 +91,7 @@ public class PlanService {
         return new ListResponse(true, String.format("Planes listados correctamente! ('%d')", dtos.size()), dtos);
     }
 
+    @Transactional
     public void importar(String idTransaccion, PlanDTO dto) {
         String progressDestination = String.format("/topic/importation-%s", idTransaccion), statusDestination = String.format("/topic/importation-status-%s", idTransaccion);
         try {
@@ -173,7 +176,7 @@ public class PlanService {
                 lProcesadas++;
                 communicationService.enviar(progressDestination, new ProgressPayload("Leyendo archivo", lProcesadas, lTotales));
                 if(planes.size() % 500 == 0 || lProcesadas == lTotales) {
-                    importationService.batchSave(planes, "planes de vuelo");
+                    importationService.batchSave(planes, progressDestination, "planes de vuelo");
                     System.out.printf("[<] PLANES IMPORTADOS! ('%d')%n", planes.size());
                     planes.clear();
                 }

@@ -6,10 +6,15 @@
 
 package com.pucp.dp1.grupo4d.morapack.service;
 
+import com.pucp.dp1.grupo4d.morapack.adapter.*;
+import com.pucp.dp1.grupo4d.morapack.model.algorithm.*;
 import com.pucp.dp1.grupo4d.morapack.model.dto.payload.ProgressPayload;
+import com.pucp.dp1.grupo4d.morapack.model.entity.*;
+import com.pucp.dp1.grupo4d.morapack.service.model.*;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -35,11 +40,13 @@ public class ImportationService {
         };
     }
 
-    public <T> void batchSave(List<T> entities, String type) {
+    @Transactional
+    public <T> void batchSave(List<T> entities, String progressDestination, String type) {
         for (int i = 0; i < entities.size(); i++) {
-            communicationService.enviar("/topic/loader", new ProgressPayload(String.format("Guardando %s", type), i + 1, entities.size()));
+            communicationService.enviar(progressDestination, new ProgressPayload(String.format("Guardando %s", type), i + 1, entities.size()));
             em.persist(entities.get(i));
         }
         em.flush();
+        em.clear();
     }
 }

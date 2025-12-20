@@ -20,6 +20,8 @@ import com.pucp.dp1.grupo4d.morapack.repository.ParametrosRepository;
 import com.pucp.dp1.grupo4d.morapack.service.CommunicationService;
 import com.pucp.dp1.grupo4d.morapack.util.G4DUtility;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.util.*;
 
 @Service
@@ -80,6 +82,7 @@ public class ParametrosService {
         return new ListResponse(true, "Parametros listados correctamente!", dtos);
     }
 
+    @Transactional
     public void importar(String idTransaccion, ParametrosDTO dto) {
         String progressDestination = String.format("/topic/importation-%s", idTransaccion), statusDestination = String.format("/topic/importation-status-%s", idTransaccion);
         try {
