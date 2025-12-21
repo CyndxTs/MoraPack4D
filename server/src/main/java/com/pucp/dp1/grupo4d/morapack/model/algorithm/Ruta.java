@@ -93,8 +93,9 @@ public class Ruta {
     public void instanciarAtributos() {
         if(!this.vuelos.isEmpty()) {
             this.origen = this.vuelos.getFirst().getPlan().getOrigen();
-            this.destino = this.vuelos.getFirst().getPlan().getDestino();
+            this.destino = this.vuelos.getLast().getPlan().getDestino();
             this.setDistancia();
+            this.setTipo();
             this.fechaHoraSalida = this.vuelos.getFirst().getFechaHoraSalida();
             this.fechaHoraLlegada = this.vuelos.getLast().getFechaHoraLlegada();
             this.setDuracion();
@@ -106,7 +107,7 @@ public class Ruta {
     }
 
     public void agregarRegistroDeLoteDeProductos(Problematica problematica, Lote lote, Set<Vuelo> vuelosEnTransito, Set<Ruta> rutasEnOperacion, boolean softInsert) {
-        System.out.printf("%-20sRegistro de lote '%s(%d)' en los aeropuertos:", "AGREGACIÓN-" + ((softInsert)? "SOFT":"HARD"), lote.getCodigo(), lote.getTamanio());
+        System.out.printf("%-20sLote '%s(%d)' en la secuencia: {}", "AGREGACIÓN-" + ((softInsert)? "SOFT:":"HARD:"), lote.getCodigo(), lote.getTamanio());
         rutasEnOperacion.add(this);
         vuelosEnTransito.addAll(this.vuelos);
         for(int i = 0; i < this.vuelos.size(); i++) {
@@ -114,7 +115,7 @@ public class Ruta {
             vuelo.setCapacidadDisponible(vuelo.getCapacidadDisponible() - lote.getTamanio());
             LocalDateTime destFechaHoraIngreso = vuelo.getFechaHoraLlegada(), destFechaHoraEgreso = (i + 1 < vuelos.size()) ? this.vuelos.get(i + 1).getFechaHoraSalida() : destFechaHoraIngreso.plusMinutes((long)(60*problematica.maxHorasDeRecojo));
             vuelo.getPlan().getDestino().agregarRegistroDeLoteDeProductos(lote, destFechaHoraIngreso, destFechaHoraEgreso, softInsert);
-            System.out.printf(" '%s'", vuelo.getPlan().getDestino().getCodigo());
+            System.out.printf(" -> V -> '%s'", vuelo.getPlan().getDestino().getCodigo());
         }
         System.out.println();
     }
@@ -128,7 +129,7 @@ public class Ruta {
             this.agregarRegistroDeLoteDeProductos(problematica, lote, vuelosEnTransito, rutasEnOperacion);
             return;
         }
-        System.out.printf("%-20sRegistro de lote '%s(%d)' en los aeropuertos:", "AGREGACIÓN-" + ((softInsert)? "SOFT":"HARD"), lote.getCodigo(), lote.getTamanio());
+        System.out.printf("%-20sLote '%s(%d)' en la secuencia:", "AGREGACIÓN-" + ((softInsert)? "SOFT:":"HARD:"), lote.getCodigo(), lote.getTamanio());
         rutasEnOperacion.add(this);
         vuelosEnTransito.addAll(this.vuelos);
         boolean agregar = false;
@@ -143,7 +144,7 @@ public class Ruta {
                 vuelo.setCapacidadDisponible(vuelo.getCapacidadDisponible() - lote.getTamanio());
                 LocalDateTime destFechaHoraIngreso = vuelo.getFechaHoraLlegada(), destFechaHoraEgreso = (i + 1 < vuelos.size()) ? this.vuelos.get(i + 1).getFechaHoraSalida() : destFechaHoraIngreso.plusMinutes((long)(60*problematica.maxHorasDeRecojo));
                 vuelo.getPlan().getDestino().agregarRegistroDeLoteDeProductos(lote, destFechaHoraIngreso, destFechaHoraEgreso, softInsert);
-                System.out.printf(" '%s'", vuelo.getPlan().getDestino().getCodigo());
+                System.out.printf(" -> V -> '%s'", vuelo.getPlan().getDestino().getCodigo());
             }
         }
         System.out.println();
@@ -154,10 +155,10 @@ public class Ruta {
     }
 
     public void eliminarRegistroDeLoteDeProductos(Lote lote, boolean softDelete) {
-        System.out.printf("%-20sRegistro de lote '%s(%d)' en los aeropuertos:", "ELIMINACIÓN-" + ((softDelete)? "SOFT":"HARD"), lote.getCodigo(), lote.getTamanio());
+        System.out.printf("%-20sLote '%s(%d)' en la secuencia: {}", "ELIMINACIÓN-" + ((softDelete)? "SOFT:":"HARD:"), lote.getCodigo(), lote.getTamanio());
         for(Vuelo vuelo : this.vuelos) {
             vuelo.getPlan().getDestino().eliminarRegistroDeLoteDeProductos(lote, softDelete);
-            System.out.printf(" '%s'", vuelo.getPlan().getDestino().getCodigo());
+            System.out.printf(" -> V -> '%s'", vuelo.getPlan().getDestino().getCodigo());
             vuelo.setCapacidadDisponible(vuelo.getCapacidadDisponible() + lote.getTamanio());
         }
         System.out.println();
@@ -172,7 +173,7 @@ public class Ruta {
             this.eliminarRegistroDeLoteDeProductos(lote, softDelete);
             return;
         }
-        System.out.printf("%-20sRegistro de lote '%s(%d)' en los aeropuertos:", "ELIMINACIÓN-" + ((softDelete)? "SOFT":"HARD"), lote.getCodigo(), lote.getTamanio());
+        System.out.printf("%-20sLote '%s(%d)' en la secuencia:", "ELIMINACIÓN-" + ((softDelete)? "SOFT:":"HARD:"), lote.getCodigo(), lote.getTamanio());
         boolean eliminar = false;
         for (Vuelo vuelo : this.vuelos) {
             if (!eliminar && vuelo.getPlan().getOrigen().equals(aeropuerto)) {
@@ -182,7 +183,7 @@ public class Ruta {
             }
             if (eliminar) {
                 vuelo.getPlan().getDestino().eliminarRegistroDeLoteDeProductos(lote, softDelete);
-                System.out.printf(" '%s'", vuelo.getPlan().getDestino().getCodigo());
+                System.out.printf(" -> V -> '%s'", vuelo.getPlan().getDestino().getCodigo());
                 vuelo.setCapacidadDisponible(vuelo.getCapacidadDisponible() + lote.getTamanio());
             }
         }
@@ -349,6 +350,10 @@ public class Ruta {
 
     public TipoRuta getTipo() {
         return tipo;
+    }
+
+    public void setTipo() {
+        this.tipo = (origen.getContinente().equals(destino.getContinente())) ? TipoRuta.INTRACONTINENTAL : TipoRuta.INTERCONTINENTAL;
     }
 
     public void setTipo(TipoRuta tipo) {

@@ -46,7 +46,6 @@ public class Solucion {
         this.reasignar(solucion);
     }
 
-
     public void reasignar(Solucion solucion) {
         this.fitness = solucion.fitness;
         this.ratioPromedioDeUtilizacionTemporal = solucion.ratioPromedioDeUtilizacionTemporal;
@@ -164,19 +163,22 @@ public class Solucion {
     }
 
     public void setRatioPromedioDeDisposicionOperacional(Problematica problematica) {
-        int totalRut = 0;
+        int totalProd = 0;
         double sumaRatios = 0.0;
-        for (Ruta ruta : this.rutasEnOperacion) {
-            if(ruta.getEstado().equals(EstadoRuta.DESHABILITADA)) continue;
-            int rCapDisp = ruta.obtenerCapacidadDisponible(problematica);
-            double rCap = ((double)(ruta.obtenerCapacidadMaxima()));
-            if(rCapDisp == rCap) continue;
-            sumaRatios +=  rCapDisp/rCap ;
-            totalRut++;
+        for(Pedido pedido: this.pedidosAtendidos) {
+            Map<Ruta, Lote> lotesPorRuta = pedido.obtenerSegementacionVigente().getLotesPorRuta();
+            List<Ruta> rutas = new ArrayList<>(lotesPorRuta.keySet());
+            for(Ruta ruta : rutas) {
+                int rCapDisp = ruta.obtenerCapacidadDisponible(problematica);
+                double rCap = ((double)(ruta.obtenerCapacidadMaxima()));
+                int cantProd = lotesPorRuta.get(ruta).getTamanio();
+                totalProd += cantProd;
+                sumaRatios +=  cantProd*(rCapDisp/rCap);
+            }
         }
-        if (this.rutasEnOperacion.isEmpty()) {
+        if (this.pedidosAtendidos.isEmpty()) {
             this.ratioPromedioDeDisposicionOperacional = 1.0;
-        } else this.ratioPromedioDeDisposicionOperacional = sumaRatios / totalRut;
+        } else this.ratioPromedioDeDisposicionOperacional = sumaRatios / totalProd;
     }
 
     public void setRatioPromedioDeDisposicionOperacional(Double ratioPromedioDeDisposicionOperacional) {
