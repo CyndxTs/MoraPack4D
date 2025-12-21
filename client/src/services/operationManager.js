@@ -12,7 +12,7 @@ import { listarParametros } from "./parametrosService";
 /* ===============================
    CONFIG
 ================================ */
-const REPLANIFICACION_MINUTOS = 20;
+const REPLANIFICACION_MINUTOS = 15;
 
 const SOCKET_URL =
   (window.location.protocol === "https:" ? "wss://" : "ws://") +
@@ -32,6 +32,9 @@ let listeners = [];
 
 // 🔴 NUEVO: token de la última replanificación
 let lastReplanificationToken = null;
+
+// 🔒 NUEVO: Semáforo para evitar múltiples clics simultáneos
+let isExecutingReplan = false;
 
 let pendingOrders = 0;
 let fechaHoraPrimerPedido = null;
@@ -214,6 +217,12 @@ export async function sendReplanificationRequest(requestPayload) {
 }
 
 async function runReplanification() {
+  // 1. SI YA SE ESTÁ EJECUTANDO, NO HACER NADA (Debounce/Throttle)
+  if (isExecutingReplan) {
+    console.warn("[OM] Replanificación en curso, ignorando solicitud duplicada.");
+    return;
+  }
+
   console.log("Intentando replanificar...", { listoParaReplanificar, parametros });
 
   if (!listoParaReplanificar || !parametros) return;
@@ -231,10 +240,14 @@ async function runReplanification() {
       return; 
   }
 
+  // 2. ACTIVAR BLOQUEO
+  isExecutingReplan = true;
+
   broadcast({
     type: "notification-global",
     variant: "info",
-    message: `Se están replanificando ${pendingOrders} pedidos`,
+    //message: `Se están replanificando ${pendingOrders} pedidos`,
+    message: `Se están replanificando los pedidos`,
   });
 
   try {
@@ -267,6 +280,9 @@ async function runReplanification() {
       variant: "danger",
       message: e.message || "Error durante la replanificación",
     });
+  } finally {
+    // 3. IMPORTANTE: LIBERAR BLOQUEO SIEMPRE
+    isExecutingReplan = false;
   }
 }
 
@@ -325,10 +341,10 @@ export function forceReplanification() {
     return;
   }
 
-  if (!listoParaReplanificar) {
-    console.warn("[OM] No hay pedidos pendientes");
-    return;
-  }
+  // 1. PREVENCIÓN RÁPIDA DE CLICS (Si ya está rodando, salimos antes de tocar nada)
+  if (isExecutingReplan) return;
+
+  listoParaReplanificar = true;
 
   // Esta pestaña pasa a ser la Master
   isMasterTab = true;

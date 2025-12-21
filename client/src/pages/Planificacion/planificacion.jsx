@@ -235,6 +235,7 @@ export default function Planificacion() {
   const [orderFilterEstado, setOrderFilterEstado] = useState("PENDIENTES");
   const [onlyHubs, setOnlyHubs] = useState(false);
   const [airportFilterText, setAirportFilterText] = useState("");
+  const [isCooldown, setIsCooldown] = useState(false);
 
   // -- Modal y Formulario de Planificación --
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -1103,27 +1104,38 @@ export default function Planificacion() {
   // ------------------------------------------------------------------------
   // 1. Reloj Real
   useEffect(() => {
-    const interval = setInterval(() => {
+    let animationFrameId;
+
+    const animate = () => {
       setRealNow(new Date());
-    }, 1000);
-    return () => clearInterval(interval);
+      animationFrameId = requestAnimationFrame(animate);
+    };
+
+    animate(); // Iniciar el loop
+
+    return () => {
+      if (animationFrameId) cancelAnimationFrame(animationFrameId);
+    };
   }, []);
 
   // 2. Cronómetro y Loop de Animación
 
 
-  // 3. Actualización de Posición de Vuelos
+  // 3. Actualización de Posición de Vuelos (Con Interpolación Suave)
   useEffect(() => {
-    //if (!timerActive) return;
-
     setFlights((prev) =>
       prev.map((f) => {
+        // Si no tiene ruta válida, devolver tal cual
         if (!f || !f.path || f.path.length === 0) return f;
-        const total = Math.max(f.endMs - f.startMs, 60 * 1000);
 
+        const total = Math.max(f.endMs - f.startMs, 60 * 1000); // Mínimo 1 min para evitar div/0
+
+        // Caso: Aún no sale
         if (nowMs <= f.startMs) {
           return { ...f, progress: 0, position: f.path[0], arrived: false };
         }
+
+        // Caso: Ya llegó
         if (nowMs >= f.endMs) {
           return {
             ...f,
@@ -1133,30 +1145,40 @@ export default function Planificacion() {
           };
         }
 
+        // Caso: En vuelo (Cálculo Interpolado)
         const frac = Math.min((nowMs - f.startMs) / total, 1);
-        const idx = Math.floor(frac * (f.path.length - 1));
+        
+        // Calcular índices exactos
+        const maxIndex = f.path.length - 1;
+        const rawIndex = frac * maxIndex;       // Ej: 10.45
+        const idx = Math.floor(rawIndex);       // Ej: 10
+        const nextIdx = Math.min(idx + 1, maxIndex); // Ej: 11
+        const segmentFrac = rawIndex - idx;     // Ej: 0.45 (Progreso entre punto 10 y 11)
+
         const pos = f.path[idx];
-        const next = f.path[Math.min(idx + 1, f.path.length - 1)];
+        const next = f.path[nextIdx];
 
-        const toRad = (d) => (d * Math.PI) / 180,
-          toDeg = (r) => (r * 180) / Math.PI;
-        const lat1 = toRad(pos.lat),
-          lon1 = toRad(pos.lng);
-        const lat2 = toRad(next.lat),
-          lon2 = toRad(next.lng);
+        // INTERPOLACIÓN LINEAL: Calcula la lat/lng exacta entre los dos puntos
+        const lat = pos.lat + (next.lat - pos.lat) * segmentFrac;
+        const lng = pos.lng + (next.lng - pos.lng) * segmentFrac;
 
+        // Cálculo de rotación (Bearing)
+        const toRad = (d) => (d * Math.PI) / 180;
+        const toDeg = (r) => (r * 180) / Math.PI;
+        const lat1 = toRad(pos.lat), lon1 = toRad(pos.lng);
+        const lat2 = toRad(next.lat), lon2 = toRad(next.lng);
+        
         let bearing = Math.atan2(
           Math.sin(lon2 - lon1) * Math.cos(lat2),
-          Math.cos(lat1) * Math.sin(lat2) -
-            Math.sin(lat1) * Math.cos(lat2) * Math.cos(lon2 - lon1)
+          Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(lon2 - lon1)
         );
         bearing = (toDeg(bearing) + 360) % 360;
-        const rotation = bearing - 45;
+        const rotation = bearing - 45; // Ajuste por tu icono
 
         return {
           ...f,
           progress: frac,
-          position: pos,
+          position: { lat, lng }, // Usamos la posición interpolada
           rotation,
           arrived: frac >= 1,
         };
@@ -1503,6 +1525,19 @@ export default function Planificacion() {
     setFlightFilterCode("");
   };
 
+  const handleReplanClick = () => {
+    // Ejecutamos la lógica de negocio
+    forceReplanification();
+
+    // Activamos el bloqueo
+    setIsCooldown(true);
+
+    // Desbloqueamos después de 3 segundos (3000ms)
+    setTimeout(() => {
+      setIsCooldown(false);
+    }, 3000);
+  };
+
   // ------------------------------------------------------------------------
   // G. RENDER
   // ------------------------------------------------------------------------
@@ -1590,8 +1625,18 @@ export default function Planificacion() {
                   <div className="control-label-buttons">
                     <ButtonAdd
                       icon={run}
-                      label="Replanificar"
-                      onClick={forceReplanification}
+                      // Opcional: Cambiar el texto si está bloqueado
+                      label={isCooldown ? "Espere..." : "Replanificar"} 
+                      
+                      // Usamos nuestra nueva función wrapper
+                      onClick={handleReplanClick} 
+                      
+                      // Pasamos la prop disabled que tu componente ya soporta
+                      disabled={isCooldown} 
+                      
+                      // Opcional: Si quieres forzar que se vea diferente con estilo inline
+                      // (aunque lo ideal es hacerlo por CSS)
+                      style={{ opacity: isCooldown ? 0.6 : 1, cursor: isCooldown ? 'not-allowed' : 'pointer' }}
                     />
                     <ButtonAdd
                       icon={config}
@@ -1801,9 +1846,12 @@ export default function Planificacion() {
                   <React.Fragment key={flight.code}>
                     <Polyline
                       key={flight.code + "-" + (isHighlighted ? "on" : "off")}
-                      positions={flight.path.slice(
-                        Math.floor(flight.path.length * (flight.progress ?? 0))
-                      )}
+                      positions={[
+                        flight.position,
+                        ...flight.path.slice(
+                          Math.floor((flight.path.length - 1) * (flight.progress ?? 0)) + 1
+                        ),
+                      ]}
                       color={
                         !shouldDimOthers
                           ? routeNormalColor
