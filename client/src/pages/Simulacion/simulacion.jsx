@@ -195,7 +195,9 @@ export default function Simulacion() {
   // ------------------------------------------------------------------------
   // A. ESTADOS (States)
   // ------------------------------------------------------------------------
-
+  // ... otros estados
+  const [isCollapseModalOpen, setIsCollapseModalOpen] = useState(false); // El modal de decisión
+  const [isSystemCollapsed, setIsSystemCollapsed] = useState(false); // Para mantener la alerta roja visible
   //reportes
   const [reporteListo, setReporteListo] = useState(null);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
@@ -993,33 +995,55 @@ export default function Simulacion() {
 
   // 4. NUEVO EFECTO: ABRIR MODAL CUANDO HAYA REPORTE Y LA SIMULACIÓN HAYA TERMINADO
   useEffect(() => {
-    // Si ya terminó el tiempo (timerActive false) y tenemos el reporte listo...
-    if (!timerActive && reporteListo && !isReportModalOpen) {
+    if (
+      !timerActive &&
+      reporteListo &&
+      !isReportModalOpen &&
+      !isSystemCollapsed
+    ) {
       const abrirModalAutomaticamente = async () => {
         try {
-          // Traemos el contenido del archivo
           const texto = await getExportationPreview(reporteListo);
           setReportPreviewContent(texto);
           setIsReportModalOpen(true);
         } catch (err) {
-          showNotification(
-            "warning",
-            "No se pudo cargar la vista previa del reporte"
+          console.warn(
+            "No se pudo cargar vista previa (posiblemente eliminado)."
           );
         }
       };
       abrirModalAutomaticamente();
     }
-  }, [timerActive, reporteListo, isReportModalOpen]);
+  }, [timerActive, reporteListo, isReportModalOpen, isSystemCollapsed]);
 
   // 5. FUNCIONES PARA LOS BOTONES DEL MODAL
 
   // Opción A: Descargar (Baja el archivo y cierra conexión)
   const handleModalDownload = async () => {
     if (reporteListo) {
-      await downloadExportationFile(reporteListo);
-      showNotification("success", "Archivo descargado. Cerrando sesión.");
-      cerrarTodoYDesconectar();
+      try {
+        await downloadExportationFile(reporteListo);
+        try {
+          await deleteExportationFile(reporteListo);
+        } catch (delError) {
+          console.warn(
+            "Advertencia: No se pudo eliminar el archivo remoto.",
+            delError
+          );
+        }
+
+        showNotification(
+          "success",
+          "Archivo descargado y eliminado. Cerrando sesión."
+        );
+        cerrarTodoYDesconectar();
+      } catch (error) {
+        console.error("Error al descargar:", error);
+        showNotification(
+          "danger",
+          "Falló la descarga. No se cerrará la sesión."
+        );
+      }
     }
   };
 
@@ -1043,7 +1067,6 @@ export default function Simulacion() {
       subscriptionsRef.current = null;
     }
     setSimulationId(null);
-    // Limpiar mapa si quieres (opcional)
     // handleStop();
   };
   // 6. Carga de Aeropuertos Iniciales
@@ -1240,6 +1263,8 @@ export default function Simulacion() {
     setSimNowMs(now.getTime());
     setSimStartMs(null);
     setSimEndMs(null);
+    setIsCollapseModalOpen(false);
+    setIsSystemCollapsed(false);
     // 6. IMPORTANTE: Limpiar Suscripción WebSocket y borrar el ID
     /*
     if (subscriptionsRef.current) {
@@ -1343,13 +1368,13 @@ export default function Simulacion() {
                 console.log(`✅ [${idTransaccion}] Terminó con ÉXITO`);
                 showNotification("success", "Finalizado con éxito");
               } else if (fin === "COLAPSO") {
-                console.warn(
-                  `💥 [${idTransaccion}] COLAPSÓ. Esperando reporte parcial...`
-                );
-                showNotification(
-                  "danger",
-                  "¡Colapso Logístico! (Generando reporte de error...)"
-                );
+                console.warn(`💥 [${idTransaccion}] COLAPSÓ.`);
+                // Marcamos el sistema como colapsado (para alertas visuales)
+                setIsSystemCollapsed(true);
+                // ABRIMOS EL MODAL DE DECISIÓN INMEDIATAMENTE
+                setIsCollapseModalOpen(true);
+                // Notificacion breve
+                showNotification("danger", "¡ALERTA DE COLAPSO LOGÍSTICO!");
               } else {
                 if (fin === "FORZADO") {
                   console.log(
@@ -1553,6 +1578,41 @@ export default function Simulacion() {
     setFlightFilterCode("");
   };
 
+  /*ESTADOS PARA EL MODAL DE COLAPSO*/
+  // OPCIÓN A: Continuar simulando (Cierra modal, mantiene alerta, no borra reporte)
+  const handleCollapseContinue = () => {
+    setIsCollapseModalOpen(false);
+    showNotification("info", "Continuando visualización del colapso...");
+    // No hacemos handleStop(), dejamos que el timer siga corriendo hasta que acaben los vuelos
+  };
+
+  // OPCIÓN B: Descargar y Detener (Descarga, limpia mapa y detiene todo)
+  const handleCollapseDownloadAndStop = async () => {
+    if (!reporteListo) return;
+
+    try {
+      await downloadExportationFile(reporteListo);
+      try {
+        await deleteExportationFile(reporteListo);
+      } catch (delError) {
+        console.warn("No se pudo eliminar remoto:", delError);
+      }
+
+      showNotification("success", "Reporte guardado y eliminado. Limpiando...");
+      setReporteListo(null);
+      setReportPreviewContent("");
+      if (subscriptionsRef.current) {
+        subscriptionsRef.current.unsubscribe();
+        subscriptionsRef.current = null;
+      }
+      setSimulationId(null);
+      handleStop();
+      setIsCollapseModalOpen(false);
+    } catch (error) {
+      console.error("Error descarga:", error);
+      showNotification("danger", "Error al descargar. Intenta de nuevo.");
+    }
+  };
   // ------------------------------------------------------------------------
   // G. RENDER
   // ------------------------------------------------------------------------
@@ -1711,7 +1771,12 @@ export default function Simulacion() {
               </div>
             )}
           </div>
-
+          {/* ALERTA DE COLAPSO */}
+          {isSystemCollapsed && !isCollapseModalOpen && (
+            <div className="system-collapse-alert">
+              <span>⚠️ SISTEMA EN ESTADO DE COLAPSO</span>
+            </div>
+          )}
           {/* MAPA */}
           <div className="map-wrapper">
             <MapContainer
@@ -2268,6 +2333,97 @@ export default function Simulacion() {
                 onClick={handleModalDownload}
               >
                 📥 Descargar Reporte
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Modal de colapso logístico */}
+      {isCollapseModalOpen && (
+        <div
+          className="report-modal-overlay"
+          style={{ backgroundColor: "rgba(69, 10, 10, 0.8)" }}
+        >
+          <div
+            className="report-modal-content"
+            style={{ border: "2px solid #ef4444" }}
+          >
+            <div
+              className="report-modal-header"
+              style={{ background: "#7f1d1d" }}
+            >
+              <h3 className="report-modal-title">
+                <span>🚨</span> ¡COLAPSO LOGÍSTICO DETECTADO!
+              </h3>
+            </div>
+
+            <div className="report-modal-body">
+              <div
+                className="report-info-text"
+                style={{ fontSize: "16px", color: "#333" }}
+              >
+                <p>
+                  La simulación ha alcanzado un estado crítico y no puede
+                  cumplir con los pedidos solicitados.
+                </p>
+                <p>
+                  Se ha generado un reporte de incidencias.{" "}
+                  <strong>¿Qué desea hacer?</strong>
+                </p>
+
+                {reporteListo ? (
+                  <div
+                    style={{
+                      marginTop: "12px",
+                      padding: "8px",
+                      background: "#fef2f2",
+                      border: "1px solid #fca5a5",
+                      borderRadius: "6px",
+                      color: "#b91c1c",
+                    }}
+                  >
+                    📄 Reporte listo: <strong>{reporteListo.nombre}</strong>
+                  </div>
+                ) : (
+                  <div
+                    style={{
+                      marginTop: "12px",
+                      fontStyle: "italic",
+                      color: "#666",
+                    }}
+                  >
+                    ⏳ Generando reporte de colapso...
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="report-modal-footer" style={{ gap: "10px" }}>
+              <button
+                className="btn-report-action"
+                style={{
+                  backgroundColor: "#fff",
+                  border: "1px solid #ccc",
+                  color: "#333",
+                }}
+                onClick={handleCollapseContinue}
+              >
+                👀 Continuar visualización
+              </button>
+
+              <button
+                className="btn-report-action"
+                style={{
+                  backgroundColor: "#dc2626",
+                  color: "white",
+                  border: "none",
+                }}
+                onClick={handleCollapseDownloadAndStop}
+                disabled={!reporteListo}
+              >
+                {reporteListo
+                  ? "📥 Descargar y Detener"
+                  : "Esperando archivo..."}
               </button>
             </div>
           </div>
