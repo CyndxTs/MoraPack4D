@@ -154,6 +154,7 @@ public class GVNS {
         List<Pedido> pedidosReplanificables = pedidos.stream().filter(Pedido::getFueAtendido).toList();
         // Preparación de pedidos replanificables
         for(Pedido pReplanificable : pedidosReplanificables) {
+            System.out.printf("[*] Chekando pedido '%s(%d)'", pReplanificable.getCodigo(), pReplanificable.getSegmentaciones().size());
             Map<Ruta, Lote> sVigente = pReplanificable.obtenerSegementacionVigente().getLotesPorRuta();
             for(Map.Entry<Ruta, Lote> entry : sVigente.entrySet()) {
                 Ruta ruta = entry.getKey();

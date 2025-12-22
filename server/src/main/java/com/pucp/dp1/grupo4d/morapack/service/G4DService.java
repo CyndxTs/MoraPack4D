@@ -273,7 +273,8 @@ public class G4DService {
                     break;
                 }
                 if(G4DUtility.Calculator.isProximatelyFewer(milisegundosRealesTranscurridos, saltoDeAlgoritmoEnMilisegundos, 0.125)) {
-                    Thread.sleep(saltoDeAlgoritmoEnMilisegundos - milisegundosRealesTranscurridos);
+                    // Thread.sleep(saltoDeAlgoritmoEnMilisegundos - milisegundosRealesTranscurridos);
+                    Thread.sleep(1500L);
                 }
             }
             if(context.running && !Thread.currentThread().isInterrupted()) {
@@ -422,7 +423,6 @@ public class G4DService {
         System.out.printf("[*] BLOQUE TEMPORAL PLANIFICADO! ['%s' - '%s']%n", G4DUtility.Convertor.toDisplayString(inicioDePlanificacion), G4DUtility.Convertor.toDisplayString(finDePlanificacion));
         if(!esSimulacion) {
             contextService.importSolution(solucion);
-            limpiarPools();
         }
         return devolverSolucion(solucion, tipoEscenario.toString().toUpperCase());
     }

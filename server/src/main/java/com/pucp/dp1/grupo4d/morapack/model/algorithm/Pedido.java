@@ -86,7 +86,7 @@ public class Pedido {
     }
 
     public Segmentacion obtenerSegementacionVigente() {
-        return this.segmentaciones.stream().filter(s -> s.getFechaHoraSustitucion() == null).findFirst().orElse(null);
+        return (!this.segmentaciones.isEmpty()) ? this.segmentaciones.stream().sorted(Comparator.comparing(Segmentacion::getFechaHoraAplicacion)).toList().getLast() : null;
     }
 
     @Override
