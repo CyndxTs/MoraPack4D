@@ -963,7 +963,6 @@ export default function Simulacion() {
   }, [flights, highlightedFlights, simNowMs, timerActive]);
 
   // 5. Finalización Automática
-  // 5. Finalización Automática Inteligente (Espera a TODOS los vuelos)
   useEffect(() => {
     // Si el reloj no está corriendo, no hacemos nada
     if (!timerActive) return;
@@ -1265,14 +1264,6 @@ export default function Simulacion() {
     setSimEndMs(null);
     setIsCollapseModalOpen(false);
     setIsSystemCollapsed(false);
-    // 6. IMPORTANTE: Limpiar Suscripción WebSocket y borrar el ID
-    /*
-    if (subscriptionsRef.current) {
-      console.log("🔌 Desuscribiendo canales WebSocket...");
-      subscriptionsRef.current.unsubscribe();
-      subscriptionsRef.current = null;
-    }
-    setSimulationId(null);*/
   };
 
   const formatDateForBackend = (dateStr, timeStr) => {
@@ -1292,7 +1283,7 @@ export default function Simulacion() {
         return;
       }
 
-      // 1. ACTUALIZAR ESTADO LOCAL PARA EL RELOJ (¡ESTO FALTABA!)
+      // 1. ACTUALIZAR ESTADO LOCAL PARA EL RELOJ
       // Esto asegura que cuando handleStart() se ejecute, use estas fechas
       setInputDate(fechaI);
       setInputTime(horaI);
@@ -1301,7 +1292,7 @@ export default function Simulacion() {
       }
       /** @type {SimulationRequest} */
       const body = {
-        fechaHoraInicio: formatDateForBackend(fechaI, horaI), // Antes: `${fechaI}T${horaI}:00`
+        fechaHoraInicio: formatDateForBackend(fechaI, horaI),
         fechaHoraFin: formatDateForBackend(fechaF, horaF),
         parametros: {
           ...parametrosCompletos,
@@ -1354,14 +1345,14 @@ export default function Simulacion() {
             console.log(
               `🎫 [TOKEN: ${idTransaccion}] Estado: "${estado}" | Fin: "${fin}"`
             );
-            // Tu lógica de notificaciones movida aquí:
+
             if (estado === "POR_INICIAR") {
               setShowLoadingSim(true);
               showNotification("info", "Iniciando motores...");
             } else if (estado === "INICIADO") {
               setShowLoadingSim(false);
               showNotification("success", "¡Simulación en curso!");
-              handleStart(fechaI, horaI); // <--- IMPORTANTE: Iniciar reloj visual
+              handleStart(fechaI, horaI);
             } else if (estado === "DETENIDO") {
               setShowLoadingSim(false);
               if (fin === "EXITOSO") {
@@ -1583,7 +1574,6 @@ export default function Simulacion() {
   const handleCollapseContinue = () => {
     setIsCollapseModalOpen(false);
     showNotification("info", "Continuando visualización del colapso...");
-    // No hacemos handleStop(), dejamos que el timer siga corriendo hasta que acaben los vuelos
   };
 
   // OPCIÓN B: Descargar y Detener (Descarga, limpia mapa y detiene todo)
