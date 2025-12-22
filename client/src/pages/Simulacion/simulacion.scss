@@ -934,3 +934,44 @@ select.filter-select {
   from { opacity: 0; transform: translateY(20px) scale(0.95); }
   to { opacity: 1; transform: translateY(0) scale(1); }
 }
+
+/* ==========================================================================
+   ALERTAS VISUALES (COLAPSO)
+   ========================================================================== */
+
+.system-collapse-alert {
+  position: absolute;
+  top: 20px; 
+  left: 50%;
+  transform: translateX(-50%);
+  
+  background-color: #ef4444;
+  color: white;
+  
+  padding: 10px 24px;
+  border-radius: 99px; 
+  z-index: 2000;
+  
+  font-weight: 700;
+  font-size: 14px;
+  box-shadow: 0 4px 15px rgba(220, 38, 38, 0.5);
+  border: 1px solid #fca5a5; 
+  
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  
+ 
+  animation: slideDownAlert 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes slideDownAlert {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -100%); 
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
