@@ -46,7 +46,6 @@ public class GVNS {
         G4DUtility.Logger.logf("[+] SOLUCION INICIAL REALIZADA! (FITNESS: %.3f)%n", x.getFitness());
         G4DUtility.Logger.Stats.log_stat_local_sol();
         this.solucion = x;
-        /*
         // Optimización inicial (Variable Neighborhood Descent)
         G4DUtility.Logger.Stats.set_local_start();
         G4DUtility.Logger.log("Realizando optimización inicial.. ");
@@ -55,8 +54,6 @@ public class GVNS {
         G4DUtility.Logger.logf("[+] OPTIMIZACION INICIAL REALIZADA! (FITNESS: %.3f)%n", x.getFitness());
         G4DUtility.Logger.Stats.log_stat_local_sol();
         this.solucion = x;
-        */
-        /*
         // Optimización final (Variable Neighborhood Search)
         G4DUtility.Logger.Stats.set_local_start();
         G4DUtility.Logger.logln("Realizando optimización final.. ");
@@ -65,7 +62,6 @@ public class GVNS {
         G4DUtility.Logger.logf("[+] OPTIMIZACION FINAL REALIZADA! (FITNESS: %.3f)%n", x.getFitness());
         G4DUtility.Logger.Stats.log_stat_local_sol();
         this.solucion = x;
-         */
         // Limpieza de datos sobrantes (Garbage Collection)
         G4DUtility.Logger.Stats.set_local_start();
         G4DUtility.Logger.logln("Realizando limpieza final.. ");
@@ -584,10 +580,10 @@ public class GVNS {
                         huboMejora = LSCompactar(pAux, sAux, ele);
                         break;
                     case 2:
-                        // huboMejora = LSFusionar(pAux, sAux, ele);
+                        huboMejora = LSFusionar(pAux, sAux, ele);
                         break;
                     case 3:
-                        // huboMejora = LSRealocar(pAux, sAux, ele);
+                        huboMejora = LSRealocar(pAux, sAux, ele);
                         break;
                 }
                 // Validación por mejora obtenida
@@ -1035,10 +1031,10 @@ public class GVNS {
                     TCompactar(problematica, solucion, ele);
                     break;
                 case 1:
-                    // TFusionar(problematica, solucion, ele);
+                    TFusionar(problematica, solucion, ele);
                     break;
                 case 2:
-                    // TRealocar(problematica, solucion, ele);
+                    TRealocar(problematica, solucion, ele);
                     break;
             }
         }

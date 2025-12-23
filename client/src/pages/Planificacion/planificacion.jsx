@@ -2187,7 +2187,7 @@ export default function Planificacion() {
                   <label>Min horas estancia</label>
                   <RangeSelector 
                     min={1}
-                    max={12}
+                    max={6}
                     step={1}
                     value={minHorasEstancia}
                     onChange={(num) => {
@@ -2204,9 +2204,9 @@ export default function Planificacion() {
 
                   <label>Max horas estancia</label>
                   <RangeSelector 
-                    min={1}
-                    max={12}
-                    step={1}
+                    min={12}
+                    max={32}
+                    step={4}
                     value={maxHorasEstancia}
                     onChange={(num) => {
                       const n = parseNumber(num);
@@ -2280,7 +2280,7 @@ export default function Planificacion() {
                   <label>kMin</label>
                   <RangeSelector 
                     min={1}
-                    max={10}
+                    max={5}
                     step={1}
                     value={kMin}
                     onChange={(num) => {
@@ -2290,7 +2290,7 @@ export default function Planificacion() {
 
                       // Garantizar kMin < kMax
                       if (n >= kMax) {
-                        const newMax = Math.min(n + 1, 11);
+                        const newMax = Math.min(n + 2, 11);
                         setKMax(newMax);
                       }
                     }}
@@ -2298,8 +2298,8 @@ export default function Planificacion() {
 
                   <label>kMax</label>
                   <RangeSelector 
-                    min={2}
-                    max={11}
+                    min={3}
+                    max={7}
                     step={1}
                     value={kMax}
                     onChange={(num) => {
@@ -2309,7 +2309,7 @@ export default function Planificacion() {
 
                       // Garantizar kMin < kMax
                       if (n <= kMin) {
-                        const newMin = Math.max(n - 1, 1);
+                        const newMin = Math.max(n - 2, 1);
                         setKMin(newMin);
                       }
                     }}
@@ -2317,17 +2317,17 @@ export default function Planificacion() {
 
                   <label>tMax</label>
                   <RangeSelector 
-                    min={15}
+                    min={12}
                     max={60}
-                    step={15}
+                    step={12}
                     value={tMax}
                     onChange={(num) => setTMax(parseNumber(num))}
                   />
 
                   <label>Max intentos</label>
                   <RangeSelector 
-                    min={1}
-                    max={10}
+                    min={5}
+                    max={12}
                     step={1}
                     value={nMax}
                     onChange={(num) => setNMax(parseNumber(num))}
@@ -2336,7 +2336,7 @@ export default function Planificacion() {
                   <label>Probabilidad de replanificación</label>
                   <RangeSelector 
                     min={0}
-                    max={0.55}
+                    max={0.5}
                     step={0.05}
                     value={probabilidadReplanificacion}
                     onChange={(num) => setProbabilidadReplanificacion(parseNumber(num))}

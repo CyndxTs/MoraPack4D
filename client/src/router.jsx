@@ -24,6 +24,8 @@ const router = createBrowserRouter([
       { path: 'pedidos', element: <Pedidos /> },
       { path: 'planificacion', element: <Planificacion /> },
       { path: 'simulacion', element: <Simulacion /> },
+      // AGREGA esta para cuando la simulación ya tiene ID (Ruta Dinámica)
+      { path: 'simulacion/:idTransaccion', element: <Simulacion /> },
       { path: 'reportes', element: <Reportes /> },
     ],
   },

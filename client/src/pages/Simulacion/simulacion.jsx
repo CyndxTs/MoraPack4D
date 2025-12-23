@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import L from "leaflet";
 import {
   MapContainer,
@@ -32,6 +33,7 @@ import {
   Dropdown2,
   Input,
   SimulationLoadingOverlay,
+  RangeSelector,
 } from "../../components/UI/ui";
 import SimulationSidebar from "./SimulationSidebar";
 import { AirportTooltipContent, PlaneTooltipContent } from "./MapTooltips";
@@ -192,6 +194,9 @@ const getAirportOccupancyClass = (ocupacion) => {
 // ==========================================================================
 
 export default function Simulacion() {
+  // 1. Obtener hooks
+  const { idTransaccion } = useParams(); // Leer ID de la URL
+  const navigate = useNavigate();        // Para cambiar la URL
   // ------------------------------------------------------------------------
   // A. ESTADOS (States)
   // ------------------------------------------------------------------------
@@ -1184,6 +1189,27 @@ export default function Simulacion() {
     }, 50);
   }, [openFlightTooltipCode]);
 
+  // Sincronizar URL -> Estado local
+  useEffect(() => {
+    if (idTransaccion) {
+      console.log("✅ ID de simulación detectado:", idTransaccion);
+      setSimulationId(idTransaccion);
+
+      // === SOLUCIÓN: APAGAR EL LOADING AQUÍ ===
+      // Como ya tenemos un ID, significa que el backend respondió 
+      // y la navegación fue exitosa. Apagamos los spinners.
+      setShowLoadingSim(false); 
+      setLoading(false); 
+      // ========================================
+
+    } else {
+      // Si no hay ID (estamos en /simulacion limpio), limpiamos el estado
+      setSimulationId(null);
+      // Opcional: Asegurar que el loading esté apagado también aquí
+      setShowLoadingSim(false);
+    }
+  }, [idTransaccion]); // Se ejecuta cada vez que cambia la URL
+
   // ------------------------------------------------------------------------
   // F. HANDLERS (Manejadores de Eventos)
   // ------------------------------------------------------------------------
@@ -1232,6 +1258,7 @@ export default function Simulacion() {
       console.warn("Error al intentar detener la simulación en servidor:", err);
     }
 
+    navigate(`/simulacion`);
     // 3. Limpieza de Lógica de Simulación
     setTimerRunning(false);
     setTimerActive(false);
@@ -1353,6 +1380,7 @@ export default function Simulacion() {
               setShowLoadingSim(false);
               showNotification("success", "¡Simulación en curso!");
               handleStart(fechaI, horaI);
+              navigate(`/simulacion/${idTransaccion}`);
             } else if (estado === "DETENIDO") {
               setShowLoadingSim(false);
               if (fin === "EXITOSO") {
@@ -2164,23 +2192,33 @@ export default function Simulacion() {
 
               <span className="sidebar-subtitle">Configuración temporal</span>
               <label>Multiplicador temporal</label>
-              <Input
-                label="Multiplicador temporal"
-                type="number"
+              <RangeSelector 
+                min={120}
+                max={180}
+                step={30}
                 value={multiplicadorTemporal}
-                onChange={(e) =>
-                  setMultiplicadorTemporal(parseNumber(e.target.value))
-                }
+                onChange={(num) => {
+                      const n = parseNumber(num);
+                      const pos = (n-120)/30;
+                      const sa = 1.5+0.25*(2-pos);
+                      setMultiplicadorTemporal(n);
+                      setTamanioDeSaltoTemporal(sa);
+                    }}
               />
+              
               <label>Salto de algoritmo (minutos)</label>
-              <Input
-                label="Salto de algoritmo (minutos)"
-                type="number"
-                step="0.1"
+              <RangeSelector 
+                min={1.5}
+                max={2}
+                step={0.25}
                 value={saltoDeAlgoritmo}
-                onChange={(e) =>
-                  setTamanioDeSaltoTemporal(parseFloat(e.target.value))
-                }
+                onChange={(num) => {
+                      const sa = parseNumber(num);
+                      const pos = (sa-1.5)/0.25;
+                      const n = 120+30*(2-pos);
+                      setTamanioDeSaltoTemporal(sa);
+                      setMultiplicadorTemporal(n);
+                    }}
               />
 
               <span className="sidebar-subtitle">Ciudades sede</span>
@@ -2214,56 +2252,75 @@ export default function Simulacion() {
                 Parámetros de planificación
               </span>
               <label>Máx. días entrega intercontinental</label>
-              <Input
-                label="Máx. días entrega intercontinental"
-                type="number"
+              <RangeSelector 
+                min={1}
+                max={3}
+                step={1}
                 value={maxDiasEntregaIntercontinental}
-                onChange={(e) =>
-                  setMaxDiasEntregaIntercontinental(parseNumber(e.target.value))
-                }
+                onChange={(num) => setMaxDiasEntregaIntercontinental(parseNumber(num))}
               />
+
               <label>Máx. días entrega intracontinental</label>
-              <Input
-                label="Máx. días entrega intracontinental"
-                type="number"
+              <RangeSelector 
+                min={1}
+                max={3}
+                step={1}
                 value={maxDiasEntregaIntracontinental}
-                onChange={(e) =>
-                  setMaxDiasEntregaIntracontinental(parseNumber(e.target.value))
-                }
+                onChange={(num) => setMaxDiasEntregaIntracontinental(parseNumber(num))}
               />
+
               <label>Máx. horas de recojo</label>
-              <Input
-                label="Máx. horas de recojo"
-                type="number"
+              <RangeSelector 
+                min={1}
+                max={3}
+                step={1}
                 value={maxHorasRecojo}
-                onChange={(e) => setMaxHorasRecojo(parseNumber(e.target.value))}
+                onChange={(num) => setMaxHorasRecojo(parseNumber(num))}
               />
+
               <label>Mín. horas de estancia</label>
-              <Input
-                label="Mín. horas de estancia"
-                type="number"
+              <RangeSelector 
+                min={1}
+                max={6}
+                step={1}
                 value={minHorasEstancia}
-                onChange={(e) =>
-                  setMinHorasEstancia(parseNumber(e.target.value))
-                }
+                onChange={(num) => {
+                      const n = parseNumber(num);
+
+                      setMinHorasEstancia(n);
+
+                      // Asegurar que min < max
+                      if (n >= maxHorasEstancia) {
+                        setMaxHorasEstancia(n + 1 <= 12 ? n + 1 : 12);
+                      }
+                    }}
               />
+
               <label>Máx. horas de estancia</label>
-              <Input
-                label="Máx. horas de estancia"
-                type="number"
+              <RangeSelector 
+                min={12}
+                max={32}
+                step={4}
                 value={maxHorasEstancia}
-                onChange={(e) =>
-                  setMaxHorasEstancia(parseNumber(e.target.value))
-                }
+                onChange={(num) => {
+                      const n = parseNumber(num);
+
+                      setMaxHorasEstancia(n);
+
+                      // Asegurar que max > min
+                      if (n <= minHorasEstancia) {
+                        setMinHorasEstancia(n - 1 >= 1 ? n - 1 : 1);
+                      }
+                    }}
               />
+
               <label>Probabilidad de replanificación</label>
-              <Input
-                label="Probabilidad de replanificación"
-                type="number"
+              <RangeSelector 
+                min={0}
+                max={0.5}
+                step={0.05}
                 value={probabilidadReplanificacion}
-                onChange={(e) =>
-                  setProbabilidadReplanificacion(parseNumber(e.target.value))
-                }
+                onChange={(num) => setProbabilidadReplanificacion(parseNumber(num))}
               />
             </div>
             <div className="modal-footer">
