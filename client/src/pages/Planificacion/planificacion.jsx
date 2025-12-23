@@ -1643,12 +1643,12 @@ export default function Planificacion() {
                       label="Configurar parámetros"
                       onClick={openModal}
                     />
-                    <ButtonAdd
+                    {/*<ButtonAdd
                       icon={stopIcon}
                       className="btn-stop"
                       label="Limpiar mapa"
                       onClick={limpiarSimulacion}
-                    />
+                    />*/}
                   </div>
                 </div>
                 {/*<hr

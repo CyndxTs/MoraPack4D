@@ -40,7 +40,7 @@ const Navbar = () => {
             <ul className="dropdown-menu">
               <li><Link to="/planificacion">Operación Diaria</Link></li>
               <li><Link to="/simulacion">Simulación</Link></li>
-              <li><Link to="/reportes">Reportes</Link></li>
+              {/*<li><Link to="/reportes">Reportes</Link></li>*/}
             </ul>
           </li>
 

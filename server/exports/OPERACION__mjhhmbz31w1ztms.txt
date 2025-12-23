@@ -1,0 +1,275 @@
+=====================================================================================================================================================================================
+                                                                               FITNESS DE LA SOLUCIÓN
+                                                                                       2097.42
+
+                                           UTILIZACION TEMPORAL                DESVIACION ESPACIAL                DISPOSICION OPERACIONAL
+                                                   26.69%                             31.57%                                4.38%
+=====================================================================================================================================================================================
+                                                                                      PEDIDO #1
+    -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    CLIENTE                                                   DESTINO                                 CANT. PRODUCTOS MPE        INSTANTE DE REGISTRO        INSTANTE DE EXPIRACION
+    0000001 - Bruno Felipe João Pereira Cardoso               SCEL - Santiago de Chile, Chile                 900                  22/12/2025 18:24             24/12/2025 18:24
+
+                                                                       >> RUTAS PLANIFICADAS PARA EL PEDIDO <<
+
+        *********************************************************************************************************************************************************************
+        >> RUTA #001 | ORIGEN: SPIM - Lima, Perú              | TIPO DE ENVIO: INTRACONTINENTAL | INSTANTE DE ENTREGA: 23/12/2025 10:17 | CANTIDAD ASIGNADA DE PRODUCTOS: 300
+
+                     INSTANTE DE SALIDA    ORIGEN                                                             INSTANTE DE LLEGADA   DESTINO
+                   [22/12/2025 20:03]    SPIM - Lima, Perú                           > > > > > >            [23/12/2025 01:57]    SABE - Buenos Aires, Argentina  
+                   [23/12/2025 07:53]    SABE - Buenos Aires, Argentina              > > > > > >            [23/12/2025 10:17]    SCEL - Santiago de Chile, Chile 
+        .....................................................................................................................................................................
+        Resumen de la ruta:            INDIVIDUAL            LOTE
+        >> Duración 'Activa':              8h 17m        103d 17h 59m
+        >> Duración 'Pasiva':              7h 35m         94d 19h  0m
+        >> Tiempo optimizado:          1d  8h  7m        401d 11h  0m
+        *********************************************************************************************************************************************************************
+        >> RUTA #002 | ORIGEN: EBCI - Bruselas, Belgica       | TIPO DE ENVIO: INTERCONTINENTAL | INSTANTE DE ENTREGA: 23/12/2025 12:54 | CANTIDAD ASIGNADA DE PRODUCTOS: 300
+
+                     INSTANTE DE SALIDA    ORIGEN                                                             INSTANTE DE LLEGADA   DESTINO
+                   [22/12/2025 20:08]    EBCI - Bruselas, Belgica                    > > > > > >            [23/12/2025 12:54]    SCEL - Santiago de Chile, Chile 
+        .....................................................................................................................................................................
+        Resumen de la ruta:            INDIVIDUAL            LOTE
+        >> Duración 'Activa':             16h 46m        209d 14h  0m
+        >> Duración 'Pasiva':              1h 44m         21d 16h  0m
+        >> Tiempo optimizado:          1d  5h 30m        368d 18h  0m
+        *********************************************************************************************************************************************************************
+        >> RUTA #003 | ORIGEN: SPIM - Lima, Perú              | TIPO DE ENVIO: INTRACONTINENTAL | INSTANTE DE ENTREGA: 23/12/2025 05:38 | CANTIDAD ASIGNADA DE PRODUCTOS: 300
+
+                     INSTANTE DE SALIDA    ORIGEN                                                             INSTANTE DE LLEGADA   DESTINO
+                   [23/12/2025 00:34]    SPIM - Lima, Perú                           > > > > > >            [23/12/2025 05:38]    SCEL - Santiago de Chile, Chile 
+        .....................................................................................................................................................................
+        Resumen de la ruta:            INDIVIDUAL            LOTE
+        >> Duración 'Activa':              5h  4m         63d  8h  0m
+        >> Duración 'Pasiva':              6h 10m         77d  2h  0m
+        >> Tiempo optimizado:          1d 12h 46m        459d 14h  0m
+    -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    Resumen del pedido:                  TOTAL
+    >> Duración 'Activa':            376d 16h  0m
+    >> Duración 'Pasiva':            193d 13h  0m
+    >> Tiempo optimizado:           1229d 19h  0m
+=====================================================================================================================================================================================
+                                                                                      PEDIDO #2
+    -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    CLIENTE                                                   DESTINO                                 CANT. PRODUCTOS MPE        INSTANTE DE REGISTRO        INSTANTE DE EXPIRACION
+    0000002 - Carla Valentina Flores Hernández                OSDI - Damasco, Siria                           900                  22/12/2025 18:24             24/12/2025 18:24
+
+                                                                       >> RUTAS PLANIFICADAS PARA EL PEDIDO <<
+
+        *********************************************************************************************************************************************************************
+        >> RUTA #001 | ORIGEN: EBCI - Bruselas, Belgica       | TIPO DE ENVIO: INTERCONTINENTAL | INSTANTE DE ENTREGA: 23/12/2025 09:19 | CANTIDAD ASIGNADA DE PRODUCTOS: 320
+
+                     INSTANTE DE SALIDA    ORIGEN                                                             INSTANTE DE LLEGADA   DESTINO
+                   [22/12/2025 20:01]    EBCI - Bruselas, Belgica                    > > > > > >            [23/12/2025 02:12]    OJAI - Aman, Jordania           
+                   [23/12/2025 07:01]    OJAI - Aman, Jordania                       > > > > > >            [23/12/2025 09:19]    OSDI - Damasco, Siria           
+        .....................................................................................................................................................................
+        Resumen de la ruta:            INDIVIDUAL            LOTE
+        >> Duración 'Activa':              8h 29m        113d  2h 40m
+        >> Duración 'Pasiva':              6h 26m         85d 18h 40m
+        >> Tiempo optimizado:          1d  9h  5m        441d  2h 40m
+        *********************************************************************************************************************************************************************
+        >> RUTA #002 | ORIGEN: SPIM - Lima, Perú              | TIPO DE ENVIO: INTERCONTINENTAL | INSTANTE DE ENTREGA: 23/12/2025 21:09 | CANTIDAD ASIGNADA DE PRODUCTOS: 240
+
+                     INSTANTE DE SALIDA    ORIGEN                                                             INSTANTE DE LLEGADA   DESTINO
+                   [22/12/2025 20:56]    SPIM - Lima, Perú                           > > > > > >            [23/12/2025 14:00]    OJAI - Aman, Jordania           
+                   [23/12/2025 19:51]    OJAI - Aman, Jordania                       > > > > > >            [23/12/2025 21:09]    OSDI - Damasco, Siria           
+        .....................................................................................................................................................................
+        Resumen de la ruta:            INDIVIDUAL            LOTE
+        >> Duración 'Activa':             18h 22m        183d 16h  0m
+        >> Duración 'Pasiva':              8h 23m         83d 20h  0m
+        >> Tiempo optimizado:             21h 15m        212d 12h  0m
+        *********************************************************************************************************************************************************************
+        >> RUTA #003 | ORIGEN: UBBB - Baku, Azerbaiyan        | TIPO DE ENVIO: INTRACONTINENTAL | INSTANTE DE ENTREGA: 23/12/2025 01:51 | CANTIDAD ASIGNADA DE PRODUCTOS: 340
+
+                     INSTANTE DE SALIDA    ORIGEN                                                             INSTANTE DE LLEGADA   DESTINO
+                   [22/12/2025 22:00]    UBBB - Baku, Azerbaiyan                     > > > > > >            [23/12/2025 01:51]    OSDI - Damasco, Siria           
+        .....................................................................................................................................................................
+        Resumen de la ruta:            INDIVIDUAL            LOTE
+        >> Duración 'Activa':              3h 51m         54d 13h  0m
+        >> Duración 'Pasiva':              3h 36m         51d  0h  0m
+        >> Tiempo optimizado:          1d 16h 33m        574d 10h 59m
+    -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    Resumen del pedido:                  TOTAL
+    >> Duración 'Activa':            351d  7h 40m
+    >> Duración 'Pasiva':            220d 14h 40m
+    >> Tiempo optimizado:           1228d  1h 39m
+=====================================================================================================================================================================================
+                                                                                      PEDIDO #3
+    -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    CLIENTE                                                   DESTINO                                 CANT. PRODUCTOS MPE        INSTANTE DE REGISTRO        INSTANTE DE EXPIRACION
+    0000003 - Jack Benjamin Martin Sanchez                    UMMS - Minsk, Bielorrusia                       900                  22/12/2025 18:24             24/12/2025 18:24
+
+                                                                       >> RUTAS PLANIFICADAS PARA EL PEDIDO <<
+
+        *********************************************************************************************************************************************************************
+        >> RUTA #001 | ORIGEN: UBBB - Baku, Azerbaiyan        | TIPO DE ENVIO: INTERCONTINENTAL | INSTANTE DE ENTREGA: 23/12/2025 07:41 | CANTIDAD ASIGNADA DE PRODUCTOS: 300
+
+                     INSTANTE DE SALIDA    ORIGEN                                                             INSTANTE DE LLEGADA   DESTINO
+                   [22/12/2025 19:26]    UBBB - Baku, Azerbaiyan                     > > > > > >            [23/12/2025 00:00]    LOWW - Viena, Austria           
+                   [23/12/2025 04:25]    LOWW - Viena, Austria                       > > > > > >            [23/12/2025 07:41]    UMMS - Minsk, Bielorrusia       
+        .....................................................................................................................................................................
+        Resumen de la ruta:            INDIVIDUAL            LOTE
+        >> Duración 'Activa':              7h 50m         97d 22h  0m
+        >> Duración 'Pasiva':              5h 27m         68d  3h  0m
+        >> Tiempo optimizado:          1d 10h 43m        433d 23h  0m
+        *********************************************************************************************************************************************************************
+        >> RUTA #002 | ORIGEN: EBCI - Bruselas, Belgica       | TIPO DE ENVIO: INTRACONTINENTAL | INSTANTE DE ENTREGA: 23/12/2025 01:20 | CANTIDAD ASIGNADA DE PRODUCTOS: 200
+
+                     INSTANTE DE SALIDA    ORIGEN                                                             INSTANTE DE LLEGADA   DESTINO
+                   [22/12/2025 21:13]    EBCI - Bruselas, Belgica                    > > > > > >            [23/12/2025 01:20]    UMMS - Minsk, Bielorrusia       
+        .....................................................................................................................................................................
+        Resumen de la ruta:            INDIVIDUAL            LOTE
+        >> Duración 'Activa':              4h  7m         34d  7h 20m
+        >> Duración 'Pasiva':              2h 49m         23d 11h 20m
+        >> Tiempo optimizado:          1d 17h  4m        342d  5h 20m
+        *********************************************************************************************************************************************************************
+        >> RUTA #003 | ORIGEN: UBBB - Baku, Azerbaiyan        | TIPO DE ENVIO: INTERCONTINENTAL | INSTANTE DE ENTREGA: 23/12/2025 04:12 | CANTIDAD ASIGNADA DE PRODUCTOS: 300
+
+                     INSTANTE DE SALIDA    ORIGEN                                                             INSTANTE DE LLEGADA   DESTINO
+                   [23/12/2025 00:26]    UBBB - Baku, Azerbaiyan                     > > > > > >            [23/12/2025 04:12]    UMMS - Minsk, Bielorrusia       
+        .....................................................................................................................................................................
+        Resumen de la ruta:            INDIVIDUAL            LOTE
+        >> Duración 'Activa':              3h 46m         47d  2h  0m
+        >> Duración 'Pasiva':              6h  2m         75d 10h  0m
+        >> Tiempo optimizado:          1d 14h 12m        477d 12h  0m
+        *********************************************************************************************************************************************************************
+        >> RUTA #004 | ORIGEN: UBBB - Baku, Azerbaiyan        | TIPO DE ENVIO: INTERCONTINENTAL | INSTANTE DE ENTREGA: 23/12/2025 08:51 | CANTIDAD ASIGNADA DE PRODUCTOS: 100
+
+                     INSTANTE DE SALIDA    ORIGEN                                                             INSTANTE DE LLEGADA   DESTINO
+                   [23/12/2025 04:05]    UBBB - Baku, Azerbaiyan                     > > > > > >            [23/12/2025 08:51]    UMMS - Minsk, Bielorrusia       
+        .....................................................................................................................................................................
+        Resumen de la ruta:            INDIVIDUAL            LOTE
+        >> Duración 'Activa':              4h 46m         19d 20h 40m
+        >> Duración 'Pasiva':              9h 41m         40d  8h 20m
+        >> Tiempo optimizado:          1d  9h 32m        139d 18h 59m
+    -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    Resumen del pedido:                  TOTAL
+    >> Duración 'Activa':            199d  4h  0m
+    >> Duración 'Pasiva':            207d  8h 40m
+    >> Tiempo optimizado:           1393d 11h 20m
+=====================================================================================================================================================================================
+                                                                                      PEDIDO #4
+    -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    CLIENTE                                                   DESTINO                                 CANT. PRODUCTOS MPE        INSTANTE DE REGISTRO        INSTANTE DE EXPIRACION
+    0000005 - Ivan Alexanderovich                             EHAM - Amsterdam, Holanda                       900                  22/12/2025 18:25             24/12/2025 18:25
+
+                                                                       >> RUTAS PLANIFICADAS PARA EL PEDIDO <<
+
+        *********************************************************************************************************************************************************************
+        >> RUTA #001 | ORIGEN: EBCI - Bruselas, Belgica       | TIPO DE ENVIO: INTRACONTINENTAL | INSTANTE DE ENTREGA: 23/12/2025 04:21 | CANTIDAD ASIGNADA DE PRODUCTOS: 140
+
+                     INSTANTE DE SALIDA    ORIGEN                                                             INSTANTE DE LLEGADA   DESTINO
+                   [22/12/2025 19:21]    EBCI - Bruselas, Belgica                    > > > > > >            [22/12/2025 21:11]    EDDI - Berlin, Alemania         
+                   [23/12/2025 02:35]    EDDI - Berlin, Alemania                     > > > > > >            [23/12/2025 04:21]    EHAM - Amsterdam, Holanda       
+        .....................................................................................................................................................................
+        Resumen de la ruta:            INDIVIDUAL            LOTE
+        >> Duración 'Activa':              3h 35m         20d 23h 59m
+        >> Duración 'Pasiva':              6h 20m         36d 22h 40m
+        >> Tiempo optimizado:          1d 14h  4m        222d  1h 20m
+        *********************************************************************************************************************************************************************
+        >> RUTA #002 | ORIGEN: SPIM - Lima, Perú              | TIPO DE ENVIO: INTERCONTINENTAL | INSTANTE DE ENTREGA: 23/12/2025 10:34 | CANTIDAD ASIGNADA DE PRODUCTOS:  60
+
+                     INSTANTE DE SALIDA    ORIGEN                                                             INSTANTE DE LLEGADA   DESTINO
+                   [22/12/2025 19:25]    SPIM - Lima, Perú                           > > > > > >            [23/12/2025 10:34]    EHAM - Amsterdam, Holanda       
+        .....................................................................................................................................................................
+        Resumen de la ruta:            INDIVIDUAL            LOTE
+        >> Duración 'Activa':             15h  9m         37d 21h  0m
+        >> Duración 'Pasiva':              1h  0m          2d 12h  0m
+        >> Tiempo optimizado:          1d  7h 51m         79d 15h  0m
+        *********************************************************************************************************************************************************************
+        >> RUTA #003 | ORIGEN: UBBB - Baku, Azerbaiyan        | TIPO DE ENVIO: INTERCONTINENTAL | INSTANTE DE ENTREGA: 23/12/2025 02:11 | CANTIDAD ASIGNADA DE PRODUCTOS: 360
+
+                     INSTANTE DE SALIDA    ORIGEN                                                             INSTANTE DE LLEGADA   DESTINO
+                   [22/12/2025 20:30]    UBBB - Baku, Azerbaiyan                     > > > > > >            [23/12/2025 02:11]    EHAM - Amsterdam, Holanda       
+        .....................................................................................................................................................................
+        Resumen de la ruta:            INDIVIDUAL            LOTE
+        >> Duración 'Activa':              5h 41m         85d  6h  0m
+        >> Duración 'Pasiva':              2h  5m         31d  6h  0m
+        >> Tiempo optimizado:          1d 16h 14m        603d 12h  0m
+        *********************************************************************************************************************************************************************
+        >> RUTA #004 | ORIGEN: UBBB - Baku, Azerbaiyan        | TIPO DE ENVIO: INTERCONTINENTAL | INSTANTE DE ENTREGA: 23/12/2025 04:34 | CANTIDAD ASIGNADA DE PRODUCTOS: 340
+
+                     INSTANTE DE SALIDA    ORIGEN                                                             INSTANTE DE LLEGADA   DESTINO
+                   [22/12/2025 22:53]    UBBB - Baku, Azerbaiyan                     > > > > > >            [23/12/2025 04:34]    EHAM - Amsterdam, Holanda       
+        .....................................................................................................................................................................
+        Resumen de la ruta:            INDIVIDUAL            LOTE
+        >> Duración 'Activa':              5h 41m         80d 12h 20m
+        >> Duración 'Pasiva':              4h 28m         63d  6h 40m
+        >> Tiempo optimizado:          1d 13h 51m        536d  5h  0m
+    -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    Resumen del pedido:                  TOTAL
+    >> Duración 'Activa':            224d 15h 20m
+    >> Duración 'Pasiva':            133d 23h 20m
+    >> Tiempo optimizado:           1441d  9h 20m
+=====================================================================================================================================================================================
+                                                                                      PEDIDO #5
+    -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    CLIENTE                                                   DESTINO                                 CANT. PRODUCTOS MPE        INSTANTE DE REGISTRO        INSTANTE DE EXPIRACION
+    0000042 - Noah Noah Davis Martin                          LOWW - Viena, Austria                           900                  22/12/2025 18:25             24/12/2025 18:25
+
+                                                                       >> RUTAS PLANIFICADAS PARA EL PEDIDO <<
+
+        *********************************************************************************************************************************************************************
+        >> RUTA #001 | ORIGEN: EBCI - Bruselas, Belgica       | TIPO DE ENVIO: INTRACONTINENTAL | INSTANTE DE ENTREGA: 23/12/2025 03:48 | CANTIDAD ASIGNADA DE PRODUCTOS: 130
+
+                     INSTANTE DE SALIDA    ORIGEN                                                             INSTANTE DE LLEGADA   DESTINO
+                   [22/12/2025 19:17]    EBCI - Bruselas, Belgica                    > > > > > >            [22/12/2025 22:36]    LDZA - Zagreb, Croacia          
+                   [23/12/2025 01:23]    LDZA - Zagreb, Croacia                      > > > > > >            [23/12/2025 03:48]    LOWW - Viena, Austria           
+        .....................................................................................................................................................................
+        Resumen de la ruta:            INDIVIDUAL            LOTE
+        >> Duración 'Activa':              5h 44m         31d  1h 20m
+        >> Duración 'Pasiva':              3h 39m         19d 18h 30m
+        >> Tiempo optimizado:          1d 14h 37m        209d  4h 10m
+        *********************************************************************************************************************************************************************
+        >> RUTA #002 | ORIGEN: UBBB - Baku, Azerbaiyan        | TIPO DE ENVIO: INTERCONTINENTAL | INSTANTE DE ENTREGA: 23/12/2025 09:44 | CANTIDAD ASIGNADA DE PRODUCTOS: 320
+
+                     INSTANTE DE SALIDA    ORIGEN                                                             INSTANTE DE LLEGADA   DESTINO
+                   [22/12/2025 20:00]    UBBB - Baku, Azerbaiyan                     > > > > > >            [23/12/2025 01:32]    LDZA - Zagreb, Croacia          
+                   [23/12/2025 02:56]    LDZA - Zagreb, Croacia                      > > > > > >            [23/12/2025 04:34]    LATI - Tirana, Albania          
+                   [23/12/2025 06:43]    LATI - Tirana, Albania                      > > > > > >            [23/12/2025 09:44]    LOWW - Viena, Austria           
+        .....................................................................................................................................................................
+        Resumen de la ruta:            INDIVIDUAL            LOTE
+        >> Duración 'Activa':             10h 11m        135d 18h 40m
+        >> Duración 'Pasiva':              5h  8m         68d 10h 39m
+        >> Tiempo optimizado:          1d  8h 40m        435d 18h 40m
+        *********************************************************************************************************************************************************************
+        >> RUTA #003 | ORIGEN: SPIM - Lima, Perú              | TIPO DE ENVIO: INTERCONTINENTAL | INSTANTE DE ENTREGA: 23/12/2025 18:12 | CANTIDAD ASIGNADA DE PRODUCTOS: 340
+
+                     INSTANTE DE SALIDA    ORIGEN                                                             INSTANTE DE LLEGADA   DESTINO
+                   [22/12/2025 20:18]    SPIM - Lima, Perú                           > > > > > >            [23/12/2025 11:15]    LKPR - Praga, Checa             
+                   [23/12/2025 16:52]    LKPR - Praga, Checa                         > > > > > >            [23/12/2025 18:12]    LOWW - Viena, Austria           
+        .....................................................................................................................................................................
+        Resumen de la ruta:            INDIVIDUAL            LOTE
+        >> Duración 'Activa':             16h 16m        230d 16h 20m
+        >> Duración 'Pasiva':              7h 30m        106d  6h  0m
+        >> Tiempo optimizado:          1d  0h 13m        343d  1h 39m
+        *********************************************************************************************************************************************************************
+        >> RUTA #004 | ORIGEN: SPIM - Lima, Perú              | TIPO DE ENVIO: INTERCONTINENTAL | INSTANTE DE ENTREGA: 24/12/2025 03:48 | CANTIDAD ASIGNADA DE PRODUCTOS:  20
+
+                     INSTANTE DE SALIDA    ORIGEN                                                             INSTANTE DE LLEGADA   DESTINO
+                   [22/12/2025 20:18]    SPIM - Lima, Perú                           > > > > > >            [23/12/2025 11:15]    LKPR - Praga, Checa             
+                   [23/12/2025 14:03]    LKPR - Praga, Checa                         > > > > > >            [23/12/2025 16:46]    LDZA - Zagreb, Croacia          
+                   [24/12/2025 01:23]    LDZA - Zagreb, Croacia                      > > > > > >            [24/12/2025 03:48]    LOWW - Viena, Austria           
+        .....................................................................................................................................................................
+        Resumen de la ruta:            INDIVIDUAL            LOTE
+        >> Duración 'Activa':             20h  5m         16d 17h 39m
+        >> Duración 'Pasiva':             13h 18m         11d  2h  0m
+        >> Tiempo optimizado:             14h 37m         12d  4h 20m
+        *********************************************************************************************************************************************************************
+        >> RUTA #005 | ORIGEN: UBBB - Baku, Azerbaiyan        | TIPO DE ENVIO: INTERCONTINENTAL | INSTANTE DE ENTREGA: 23/12/2025 15:24 | CANTIDAD ASIGNADA DE PRODUCTOS:  90
+
+                     INSTANTE DE SALIDA    ORIGEN                                                             INSTANTE DE LLEGADA   DESTINO
+                   [23/12/2025 00:06]    UBBB - Baku, Azerbaiyan                     > > > > > >            [23/12/2025 05:52]    LKPR - Praga, Checa             
+                   [23/12/2025 07:08]    LKPR - Praga, Checa                         > > > > > >            [23/12/2025 09:51]    LDZA - Zagreb, Croacia          
+                   [23/12/2025 13:59]    LDZA - Zagreb, Croacia                      > > > > > >            [23/12/2025 15:24]    LOWW - Viena, Austria           
+        .....................................................................................................................................................................
+        Resumen de la ruta:            INDIVIDUAL            LOTE
+        >> Duración 'Activa':              9h 54m         37d  3h  0m
+        >> Duración 'Pasiva':             11h  5m         41d 13h 30m
+        >> Tiempo optimizado:          1d  3h  1m        101d  7h 30m
+    -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    Resumen del pedido:                  TOTAL
+    >> Duración 'Activa':            451d  9h  0m
+    >> Duración 'Pasiva':            247d  2h 39m
+    >> Tiempo optimizado:           1101d 12h 20m
+=====================================================================================================================================================================================
