@@ -1204,7 +1204,7 @@ export default function Simulacion() {
 
     // Convertimos esa fecha específica a milisegundos
     const base = fromInputsToMsUTC(d, t);
-
+    const OFFSET_MS = 216060 * 1000;
     setSimNowMs(base);
     setSimStartMs(base);
 
@@ -1235,7 +1235,7 @@ export default function Simulacion() {
     // 3. Limpieza de Lógica de Simulación
     setTimerRunning(false);
     setTimerActive(false);
-    setSeconds(775);
+    setSeconds(0);
 
     // Limpiar datos del mapa
     setFlights([]);
