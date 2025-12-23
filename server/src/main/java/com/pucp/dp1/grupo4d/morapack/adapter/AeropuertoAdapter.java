@@ -21,17 +21,17 @@ import java.util.Map;
 public class AeropuertoAdapter {
     private final AeropuertoService aeropuertoService;
     private final RegistroAdapter registroAdapter;
-    private final Map<String, Aeropuerto> poolAlgorithm = new HashMap<>();
-    private final Map<String, AeropuertoEntity> poolEntity = new HashMap<>();
+    private final Map<String, Map<String, Aeropuerto>> poolAlgorithm = new HashMap<>();
+    private final Map<String, Map<String, AeropuertoEntity>> poolEntity = new HashMap<>();
 
     public AeropuertoAdapter(RegistroAdapter registroAdapter, AeropuertoService aeropuertoService) {
         this.registroAdapter = registroAdapter;
         this.aeropuertoService = aeropuertoService;
     }
 
-    public Aeropuerto toAlgorithm(AeropuertoEntity entity) {
-        if (poolAlgorithm.containsKey(entity.getCodigo())) {
-            return poolAlgorithm.get(entity.getCodigo());
+    public Aeropuerto toAlgorithm(String idTransaccion, AeropuertoEntity entity) {
+        if (poolAlgorithm.containsKey(idTransaccion) && poolAlgorithm.get(idTransaccion).containsKey(entity.getCodigo())) {
+            return poolAlgorithm.get(idTransaccion).get(entity.getCodigo());
         }
         Aeropuerto algorithm = new Aeropuerto();
         algorithm.setCodigo(entity.getCodigo());
@@ -46,30 +46,32 @@ public class AeropuertoAdapter {
         algorithm.setEsSede(entity.getEsSede());
         List<Registro> registros = new ArrayList<>();
         List<RegistroEntity> registrosEntity = entity.getRegistros();
-        for (RegistroEntity registroEntity : registrosEntity) {
-            Registro registro = registroAdapter.toAlgorithm(registroEntity);
-            registros.add(registro);
-        }
+        registrosEntity.forEach(e -> registros.add(registroAdapter.toAlgorithm(idTransaccion, e)));
         algorithm.setRegistros(registros);
-        poolAlgorithm.put(algorithm.getCodigo(), algorithm);
+        if(!poolAlgorithm.containsKey(idTransaccion)) {
+            poolAlgorithm.put(idTransaccion, new HashMap<>());
+        }
+        poolAlgorithm.get(idTransaccion).put(algorithm.getCodigo(), algorithm);
         return algorithm;
     }
 
-    public AeropuertoEntity toEntity(Aeropuerto algorithm) {
-        if(poolEntity.containsKey(algorithm.getCodigo())) {
-            return poolEntity.get(algorithm.getCodigo());
+    public AeropuertoEntity toEntity(String idTransaccion, Aeropuerto algorithm) {
+        if(poolEntity.containsKey(idTransaccion) && poolEntity.get(idTransaccion).containsKey(algorithm.getCodigo())) {
+            return poolEntity.get(idTransaccion).get(algorithm.getCodigo());
         }
         AeropuertoEntity entity = aeropuertoService.findByCodigo(algorithm.getCodigo()).orElse(null);
-        if (entity == null) {
-            return null;
+        if (entity != null) {
+            if(!poolEntity.containsKey(idTransaccion)) {
+                poolEntity.put(idTransaccion, new HashMap<>());
+            }
+            poolEntity.get(idTransaccion).put(entity.getCodigo(), entity);
         }
-        poolEntity.put(entity.getCodigo(), entity);
         return entity;
     }
 
-    public void clearPools() {
-        poolAlgorithm.clear();
-        poolEntity.clear();
-        registroAdapter.clearPools();
+    public void clearPools(String idTransaccion) {
+        poolAlgorithm.remove(idTransaccion);
+        poolEntity.remove(idTransaccion);
+        registroAdapter.clearPools(idTransaccion);
     }
 }

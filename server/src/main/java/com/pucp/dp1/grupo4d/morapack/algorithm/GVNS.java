@@ -154,7 +154,6 @@ public class GVNS {
         List<Pedido> pedidosReplanificables = pedidos.stream().filter(Pedido::getFueAtendido).toList();
         // Preparación de pedidos replanificables
         for(Pedido pReplanificable : pedidosReplanificables) {
-            System.out.printf("[*] Chekando pedido '%s(%d)'", pReplanificable.getCodigo(), pReplanificable.getSegmentaciones().size());
             Map<Ruta, Lote> sVigente = pReplanificable.obtenerSegementacionVigente().getLotesPorRuta();
             for(Map.Entry<Ruta, Lote> entry : sVigente.entrySet()) {
                 Ruta ruta = entry.getKey();
@@ -580,7 +579,7 @@ public class GVNS {
                 huboMejora = false;
                 switch (i) {
                     case 1:
-                        // huboMejora = LSCompactar(pAux, sAux, ele);
+                        huboMejora = LSCompactar(pAux, sAux, ele);
                         break;
                     case 2:
                         // huboMejora = LSFusionar(pAux, sAux, ele);
@@ -1034,10 +1033,10 @@ public class GVNS {
                     TCompactar(problematica, solucion, ele);
                     break;
                 case 1:
-                    TFusionar(problematica, solucion, ele);
+                    // TFusionar(problematica, solucion, ele);
                     break;
                 case 2:
-                    TRealocar(problematica, solucion, ele);
+                    // TRealocar(problematica, solucion, ele);
                     break;
             }
         }

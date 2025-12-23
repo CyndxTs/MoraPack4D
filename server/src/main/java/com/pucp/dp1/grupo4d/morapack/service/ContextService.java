@@ -109,14 +109,14 @@ public class ContextService {
     }
 
     @Transactional
-    public void importSolution(Solucion solucion) {
+    public void importSolution(String idTransaccion, Solucion solucion) {
         if (solucion == null || solucion.getPedidosAtendidos() == null) {
             return;
         }
         System.out.println(">> Guardando solución en bd..");
         // Vuelos
         for (Vuelo vuelo : solucion.getVuelosEnTransito()) {
-            VueloEntity vueloEntity = vueloAdapter.toEntity(vuelo);
+            VueloEntity vueloEntity = vueloAdapter.toEntity(idTransaccion, vuelo);
             if (vueloEntity != null) {
                 vueloService.save(vueloEntity);
                 System.out.println("[*] VUELO: " + vueloEntity.getCodigo());
@@ -124,10 +124,10 @@ public class ContextService {
         }
         // Rutas & RutasPorVuelos
         for (Ruta ruta : solucion.getRutasEnOperacion()) {
-            RutaEntity rutaEntity = rutaAdapter.toEntity(ruta);
+            RutaEntity rutaEntity = rutaAdapter.toEntity(idTransaccion, ruta);
             if (rutaEntity != null) {
                 for (Vuelo vuelo : ruta.getVuelos()) {
-                    VueloEntity vueloEntity = vueloAdapter.toEntity(vuelo);
+                    VueloEntity vueloEntity = vueloAdapter.toEntity(idTransaccion, vuelo);
                     if (vueloEntity != null) {
                         rutaEntity.getVuelos().remove(vueloEntity);
                         rutaEntity.getVuelos().add(vueloEntity);
@@ -140,12 +140,12 @@ public class ContextService {
         }
         // Pedidos & Segmentaciones & Lotes
         for (Pedido pedido : solucion.getPedidosAtendidos()) {
-            PedidoEntity pedidoEntity = pedidoAdapter.toEntity(pedido, TipoEscenario.OPERACION.toString().toUpperCase());
+            PedidoEntity pedidoEntity = pedidoAdapter.toEntity(idTransaccion, pedido, TipoEscenario.OPERACION.toString().toUpperCase());
             if(pedidoEntity != null) {
                 pedidoService.save(pedidoEntity);
                 System.out.println("[*] PEDIDO: " + pedidoEntity.getCodigo());
                 for(Segmentacion segmentacion : pedido.getSegmentaciones()) {
-                    SegmentacionEntity segmentacionEntity = segmentacionAdapter.toEntity(segmentacion);
+                    SegmentacionEntity segmentacionEntity = segmentacionAdapter.toEntity(idTransaccion, segmentacion);
                     if(segmentacionEntity != null) {
                         segmentacionEntity.setFechaHoraAplicacionLocal(G4DUtility.Convertor.toLocal(segmentacionEntity.getFechaHoraAplicacionUTC(), pedidoEntity.getDestino().getHusoHorario()));
                         segmentacionEntity.setFechaHoraSustitucionLocal((segmentacionEntity.getFechaHoraSustitucionUTC() != null)? (G4DUtility.Convertor.toLocal(segmentacionEntity.getFechaHoraSustitucionUTC(), pedidoEntity.getDestino().getHusoHorario())) : null);
@@ -153,9 +153,9 @@ public class ContextService {
                         segmentacionService.save(segmentacionEntity);
                         System.out.println("[*] SEGMENTACION: " + segmentacion.getCodigo());
                         for(Map.Entry<Ruta, Lote> entry : segmentacion.getLotesPorRuta().entrySet()) {
-                            RutaEntity rutaEntity = rutaAdapter.toEntity(entry.getKey());
+                            RutaEntity rutaEntity = rutaAdapter.toEntity(idTransaccion, entry.getKey());
                             if(rutaEntity != null) {
-                                LoteEntity loteEntity = loteAdapter.toEntity(entry.getValue());
+                                LoteEntity loteEntity = loteAdapter.toEntity(idTransaccion, entry.getValue());
                                 loteEntity.setRuta(rutaEntity);
                                 loteEntity.setSegmentacion(segmentacionEntity);
                                 loteService.save(loteEntity);
@@ -168,12 +168,12 @@ public class ContextService {
         }
         // Aeropuertos && Registros && Lotes
         for(Aeropuerto aeropuerto : solucion.getAeropuertosTransitados()) {
-            AeropuertoEntity aeropuertoEntity = aeropuertoAdapter.toEntity(aeropuerto);
+            AeropuertoEntity aeropuertoEntity = aeropuertoAdapter.toEntity(idTransaccion, aeropuerto);
             if(aeropuertoEntity != null) {
                 aeropuertoService.save(aeropuertoEntity);
                 System.out.println("[*] AEROPUERTO: " + aeropuertoEntity.getCodigo());
                 for(Registro registro : aeropuerto.getRegistros()) {
-                    RegistroEntity registroEntity = registroAdapter.toEntity(registro);
+                    RegistroEntity registroEntity = registroAdapter.toEntity(idTransaccion, registro);
                     if(registroEntity.getLote().getId() != null) {
                         registroEntity.setFechaHoraIngresoLocal(G4DUtility.Convertor.toLocal(registroEntity.getFechaHoraIngresoUTC(), aeropuertoEntity.getHusoHorario()));
                         registroEntity.setFechaHoraEgresoLocal((registroEntity.getFechaHoraEgresoUTC() != null)? G4DUtility.Convertor.toLocal(registroEntity.getFechaHoraEgresoUTC(), aeropuertoEntity.getHusoHorario()): null);

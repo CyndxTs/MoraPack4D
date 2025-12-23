@@ -15,6 +15,7 @@ import java.time.LocalDateTime;
 import java.util.*;
 
 public class Problematica {
+    public String idTransaccion;
     public Integer maxDiasDeEntregaIntracontinental;
     public Integer maxDiasDeEntregaIntercontinental;
     public Double maxHorasDeRecojo;
@@ -62,6 +63,7 @@ public class Problematica {
 
     public Problematica replicar(Map<String, Cliente> poolClientes, Map<String, Aeropuerto> poolAeropuertos, Map<String, Ruta> poolRutas, Map<String, Lote> poolLotes, Map<String, Vuelo> poolVuelos, Map<String, Plan> poolPlanes){
         Problematica problematica = new Problematica();
+        problematica.idTransaccion = this.idTransaccion;
         problematica.maxDiasDeEntregaIntracontinental = this.maxDiasDeEntregaIntracontinental;
         problematica.maxDiasDeEntregaIntercontinental = this.maxDiasDeEntregaIntercontinental;
         problematica.maxHorasDeRecojo = this.maxHorasDeRecojo;
@@ -110,7 +112,7 @@ public class Problematica {
         System.out.println(">> Cargando aeropuertos..");
         List<AeropuertoEntity> aeropuertosEntity = aeropuertoService.findAll();
         aeropuertosEntity.forEach(entity -> {
-            Aeropuerto aeropuerto = aeropuertoAdapter.toAlgorithm(entity);
+            Aeropuerto aeropuerto = aeropuertoAdapter.toAlgorithm(idTransaccion, entity);
             if (this.origenes.containsKey(aeropuerto.getCodigo())) {
                 aeropuerto.setEsSede(true);
                 origenes.put(aeropuerto.getCodigo(), aeropuerto);
@@ -126,7 +128,7 @@ public class Problematica {
         System.out.println(">> Cargando planes..");
         List<PlanEntity> planesEntity = planService.findAll();
         planesEntity.forEach(entity -> {
-            Plan plan = planAdapter.toAlgorithm(entity);
+            Plan plan = planAdapter.toAlgorithm(idTransaccion, entity);
             planes.add(plan);
         });
         System.out.printf("[:] PLANES DE VUELO CARGADOS! | '%d' planes!%n", planes.size());
@@ -137,7 +139,7 @@ public class Problematica {
         List<ClienteEntity> clientesEntity = clienteService.findAllInRangeByScenario(this.inicioDePlanificacion, this.finDePlanificacion, this.tipoEscenario, new ArrayList<>(this.origenes.keySet()));
         clientesEntity.forEach(entity -> {
             if(clientes.stream().noneMatch(c -> c.getCodigo().equals(entity.getCodigo()))) {
-                Cliente cliente = usuarioAdapter.toAlgorithm(entity);
+                Cliente cliente = usuarioAdapter.toAlgorithm(idTransaccion, entity);
                 clientes.add(cliente);
             }
         });
@@ -149,7 +151,7 @@ public class Problematica {
         List<PedidoEntity> pedidosEntity = pedidoService.findAllInRangeByScenario(this.inicioDePlanificacion, this.finDePlanificacion, this.tipoEscenario, new ArrayList<>(this.origenes.keySet()));
         pedidosEntity.forEach(entity -> {
             if(pedidos.stream().noneMatch(p -> p.getCodigo().equals(entity.getCodigo()))) {
-                Pedido pedido = pedidoAdapter.toAlgorithm(entity);
+                Pedido pedido = pedidoAdapter.toAlgorithm(idTransaccion, entity);
                 if (pedido.getFechaHoraProcesamiento() == null) {
                     pedido.setFechaHoraProcesamiento(this.instanteDeProcesamiento);
                 }
@@ -164,7 +166,7 @@ public class Problematica {
         System.out.println(">> Cargando vuelos..");
         List<VueloEntity> vuelosEntity = vueloService.findAllInRangeByScenario(this.inicioDePlanificacion, this.finDePlanificacion, this.tipoEscenario, new ArrayList<>(this.origenes.keySet()));
         vuelosEntity.forEach(entity -> {
-            Vuelo vuelo = vueloAdapter.toAlgorithm(entity);
+            Vuelo vuelo = vueloAdapter.toAlgorithm(idTransaccion, entity);
             vuelos.add(vuelo);
         });
         System.out.printf("[:] VUELOS CARGADOS! | '%d' vuelos!%n", vuelos.size());
@@ -174,7 +176,7 @@ public class Problematica {
         System.out.println(">> Cargando rutas..");
         List<RutaEntity> rutasEntity = rutaService.findAllInRangeByScenario(this.inicioDePlanificacion, this.finDePlanificacion, this.tipoEscenario, new ArrayList<>(this.origenes.keySet()));
         rutasEntity.forEach(entity -> {
-            Ruta ruta = rutaAdapter.toAlgorithm(entity);
+            Ruta ruta = rutaAdapter.toAlgorithm(idTransaccion, entity);
             rutas.add(ruta);
         });
         rutas.stream().filter(r -> r.getEstado().equals(EstadoRuta.OPERATIVA)).forEach(r -> r.setEstado(EstadoRuta.REVISION_PENDIENTE));

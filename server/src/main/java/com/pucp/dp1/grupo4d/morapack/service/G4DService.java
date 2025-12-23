@@ -50,9 +50,14 @@ import java.util.concurrent.Future;
 public class G4DService {
     private static class G4DContext {
         public volatile boolean running = true;
+        public String id;
         public Future<?> task;
         public Problematica problematic;
         public Solucion solution;
+
+        public G4DContext(String id) {
+            this.id = id;
+        }
     }
 
     private final AeropuertoService aeropuertoService;
@@ -80,7 +85,7 @@ public class G4DService {
     private final ContextService contextService;
     private final ObjectMapper objectMapper;
     private final G4DExceptionHandlerAsync asyncExceptionHandler;
-    private final G4DContext operationContext = new G4DContext();
+    private final G4DContext operationContext = new G4DContext("OPERATION");
     private final Map<String, G4DContext> simulationContexts = new ConcurrentHashMap<>();
     private final Map<String, G4DContext> importationContexts = new ConcurrentHashMap<>();
     private final Map<String, G4DContext> exportationContexts = new ConcurrentHashMap<>();
@@ -122,7 +127,7 @@ public class G4DService {
     public GenericResponse iniciarImportacion(ImportRequest request) throws JsonProcessingException {
         GenericResponse response = new GenericResponse(true, "Importación iniciada!");
         String idTransaccion = response.getToken().substring(4);
-        G4DContext context = new G4DContext();
+        G4DContext context = new G4DContext(idTransaccion);
         importationContexts.put(idTransaccion, context);
         context.task = self.getObject().importar(idTransaccion, request)
                                        .whenComplete((r, ex) -> {
@@ -156,7 +161,7 @@ public class G4DService {
         String idTransaccion = response.getToken().substring(4);
         Path archivo = Files.createTempFile("import-" + idTransaccion + "-", "-" + file.getOriginalFilename());
         file.transferTo(archivo.toFile());
-        G4DContext context = new G4DContext();
+        G4DContext context = new G4DContext(idTransaccion);
         importationContexts.put(idTransaccion, context);
         context.task = self.getObject().importar(idTransaccion, archivo, request)
                                        .whenComplete((r, ex) -> {
@@ -188,12 +193,12 @@ public class G4DService {
     public GenericResponse iniciarSimulacion(SimulationRequest request) {
         GenericResponse response  = new GenericResponse(true, "Simulacion iniciada!");
         String idTransaccion = response.getToken().substring(4);
-        G4DContext context = new G4DContext();
+        G4DContext context = new G4DContext(idTransaccion);
         simulationContexts.put(idTransaccion, context);
         context.task = self.getObject().simular(idTransaccion, request)
                                        .thenCompose((exito) -> {
                                            if(exito) {
-                                               G4DContext contextoDeExportacion = new G4DContext();
+                                               G4DContext contextoDeExportacion = new G4DContext(idTransaccion);
                                                exportationContexts.put(idTransaccion, contextoDeExportacion);
                                                communicationService.enviar(String.format("/topic/exportation-status-%s", idTransaccion), EstadoEjecucion.INICIADO);
                                                return exportar(idTransaccion, new ExportationRequest(idTransaccion, "SIMULACION"))
@@ -225,11 +230,11 @@ public class G4DService {
     @Async("simulationExecutor")
     public CompletableFuture<Boolean> simular(String idTransaccion, SimulationRequest request) {
         CompletableFuture<Boolean> future = new CompletableFuture<>();
-        String solutionDestination = String.format("/topic/simulation-%s", idTransaccion), statusDestination = String.format("/topic/simulation-status-%s", idTransaccion);
+        G4DContext context = simulationContexts.get(idTransaccion);
+        String solutionDestination = String.format("/topic/simulation-%s", context.id), statusDestination = String.format("/topic/simulation-status-%s", context.id);
         try {
             System.out.println(">> Simulando..");
             boolean huboColapso = false;
-            G4DContext context = simulationContexts.get(idTransaccion);
             LocalDateTime inicioDeSimulacion = G4DUtility.Convertor.toDateTime(request.getFechaHoraInicio());
             LocalDateTime finDeSimulacion = G4DUtility.Convertor.toAdmissible(request.getFechaHoraFin(), LocalDateTime.MAX);
             ParametrosDTO parametros = request.getParametros();
@@ -296,7 +301,7 @@ public class G4DService {
             communicationService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.DETENIDO,  EstadoFinalizacion.ERRONEO));
             future.completeExceptionally(e);
         } finally {
-            limpiarPools();
+            limpiarPools(idTransaccion);
         }
         return future;
     }
@@ -359,7 +364,7 @@ public class G4DService {
             communicationService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.DETENIDO,  EstadoFinalizacion.ERRONEO));
             future.completeExceptionally(e);
         } finally {
-            limpiarPools();
+            limpiarPools(operationContext.id);
         }
         return future;
     }
@@ -367,7 +372,7 @@ public class G4DService {
     public GenericResponse iniciarExportacion(ExportationRequest request) {
         GenericResponse response  = new GenericResponse(true, "Exportación iniciada!");
         String idTransaccion = response.getToken().substring(4);
-        G4DContext context = new G4DContext();
+        G4DContext context = new G4DContext(idTransaccion);
         exportationContexts.put(idTransaccion, context);
         context.task = self.getObject().exportar(idTransaccion, request)
                 .whenComplete((r, ex) -> {
@@ -386,16 +391,16 @@ public class G4DService {
     @Async("exportationExecutor")
     public CompletableFuture<Void> exportar(String idTransaccion, ExportationRequest request) {
         CompletableFuture<Void> future = new CompletableFuture<>();
-        String linkDestination = String.format("/topic/exportation-%s", idTransaccion), statusDestination = String.format("/topic/exportation-status-%s", idTransaccion);
+        G4DContext context = exportationContexts.get(idTransaccion);
+        String linkDestination = String.format("/topic/exportation-%s", context.id), statusDestination = String.format("/topic/exportation-status-%s", context.id);
         try {
             System.out.println(">> Exportando solución..");
-            G4DContext contexto = exportationContexts.get(idTransaccion);
             String prefijo = G4DUtility.Convertor.toAdmissible(request.getPrefijo());
             String idTransaccionDeContextoDeSolucion = G4DUtility.Convertor.toAdmissible(request.getIdTransaccion(), G4DUtility.Generator.getUniqueString("TOK").substring(4));
-            contexto.solution = simulationContexts.getOrDefault(idTransaccionDeContextoDeSolucion, operationContext).solution;
+            context.solution = simulationContexts.getOrDefault(idTransaccionDeContextoDeSolucion, operationContext).solution;
             String nombreDelArchivo = String.format("%s__%s.txt", prefijo, idTransaccionDeContextoDeSolucion);
             String rutaDeLdirectorio = "exports" + File.separator;
-            contextService.exportSolutionAsTxt(contexto.solution, Paths.get(rutaDeLdirectorio, nombreDelArchivo).toString());
+            contextService.exportSolutionAsTxt(context.solution, Paths.get(rutaDeLdirectorio, nombreDelArchivo).toString());
             System.out.printf("[+] SOLUCION EXPORTADA! ('%s')%n", nombreDelArchivo);
             communicationService.enviar(linkDestination, new ExportationPayload(nombreDelArchivo, rutaDeLdirectorio));
             communicationService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.DETENIDO,  EstadoFinalizacion.EXITOSO));
@@ -422,7 +427,7 @@ public class G4DService {
         } else return null;
         System.out.printf("[*] BLOQUE TEMPORAL PLANIFICADO! ['%s' - '%s']%n", G4DUtility.Convertor.toDisplayString(inicioDePlanificacion), G4DUtility.Convertor.toDisplayString(finDePlanificacion));
         if(!esSimulacion) {
-            contextService.importSolution(solucion);
+            contextService.importSolution(context.id, solucion);
         }
         return devolverSolucion(solucion, tipoEscenario.toString().toUpperCase());
     }
@@ -449,15 +454,15 @@ public class G4DService {
         return solucionDTO;
     }
 
-    private void limpiarPools() {
-        aeropuertoAdapter.clearPools();
-        loteAdapter.clearPools();
-        pedidoAdapter.clearPools();
-        planAdapter.clearPools();
-        registroAdapter.clearPools();
-        rutaAdapter.clearPools();
-        segmentacionAdapter.clearPools();
-        usuarioAdapter.clearPools();
-        vueloAdapter.clearPools();
+    private void limpiarPools(String idTransaccion) {
+        aeropuertoAdapter.clearPools(idTransaccion);
+        loteAdapter.clearPools(idTransaccion);
+        pedidoAdapter.clearPools(idTransaccion);
+        planAdapter.clearPools(idTransaccion);
+        registroAdapter.clearPools(idTransaccion);
+        rutaAdapter.clearPools(idTransaccion);
+        segmentacionAdapter.clearPools(idTransaccion);
+        usuarioAdapter.clearPools(idTransaccion);
+        vueloAdapter.clearPools(idTransaccion);
     }
 }

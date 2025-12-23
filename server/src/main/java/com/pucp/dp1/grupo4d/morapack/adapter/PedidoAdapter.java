@@ -6,7 +6,6 @@
 
 package com.pucp.dp1.grupo4d.morapack.adapter;
 
-import com.pucp.dp1.grupo4d.morapack.algorithm.Problematica;
 import com.pucp.dp1.grupo4d.morapack.model.algorithm.*;
 import com.pucp.dp1.grupo4d.morapack.model.entity.*;
 import com.pucp.dp1.grupo4d.morapack.service.model.PedidoService;
@@ -16,15 +15,14 @@ import java.util.*;
 
 @Component
 public class PedidoAdapter {
-
     private final PedidoService pedidoService;
     private final UsuarioAdapter usuarioAdapter;
     private final AeropuertoAdapter aeropuertoAdapter;
     private final RutaAdapter rutaAdapter;
     private final LoteAdapter loteAdapter;
     private final SegmentacionAdapter segmentacionAdapter;
-    private final Map<String, Pedido> poolAlgorithm = new HashMap<>();
-    private final Map<String, PedidoEntity> poolEntity = new HashMap<>();
+    private final Map<String, Map<String, Pedido>> poolAlgorithm = new HashMap<>();
+    private final Map<String, Map<String, PedidoEntity>> poolEntity = new HashMap<>();
 
     public PedidoAdapter(UsuarioAdapter usuarioAdapter, AeropuertoAdapter aeropuertoAdapter, RutaAdapter rutaAdapter, LoteAdapter loteAdapter, PedidoService pedidoService, SegmentacionAdapter segmentacionAdapter) {
         this.usuarioAdapter = usuarioAdapter;
@@ -35,9 +33,9 @@ public class PedidoAdapter {
         this.segmentacionAdapter = segmentacionAdapter;
     }
 
-    public Pedido toAlgorithm(PedidoEntity entity) {
-        if (poolAlgorithm.containsKey(entity.getCodigo())) {
-            return poolAlgorithm.get(entity.getCodigo());
+    public Pedido toAlgorithm(String idTransaccion, PedidoEntity entity) {
+        if (poolAlgorithm.containsKey(idTransaccion) && poolAlgorithm.get(idTransaccion).containsKey(entity.getCodigo())) {
+            return poolAlgorithm.get(idTransaccion).get(entity.getCodigo());
         }
         Pedido algorithm = new Pedido();
         algorithm.setCodigo(entity.getCodigo());
@@ -46,44 +44,44 @@ public class PedidoAdapter {
         algorithm.setFechaHoraProcesamiento(entity.getFechaHoraProcesamientoUTC());
         algorithm.setFechaHoraExpiracion(entity.getFechaHoraExpiracionUTC());
         algorithm.setFueAtendido(entity.getFueAtendido());
-        Cliente cliente = usuarioAdapter.toAlgorithm(entity.getCliente());
-        algorithm.setCliente(cliente);
-        Aeropuerto destino = aeropuertoAdapter.toAlgorithm(entity.getDestino());
-        algorithm.setDestino(destino);
+        algorithm.setCliente(usuarioAdapter.toAlgorithm(idTransaccion, entity.getCliente()));
+        algorithm.setDestino(aeropuertoAdapter.toAlgorithm(idTransaccion, entity.getDestino()));
         List<Segmentacion> segmentaciones = new ArrayList<>();
         List<SegmentacionEntity> segmentacionesEntity = entity.getSegmentaciones();
-        for (SegmentacionEntity segmentacionEntity : segmentacionesEntity) {
-            Segmentacion segmentacion = segmentacionAdapter.toAlgorithm(segmentacionEntity);
-            segmentaciones.add(segmentacion);
-        }
+        segmentacionesEntity.forEach(e -> segmentaciones.add(segmentacionAdapter.toAlgorithm(idTransaccion, e)));
         algorithm.setSegmentaciones(segmentaciones);
-        poolAlgorithm.put(algorithm.getCodigo(), algorithm);
+        if(!poolAlgorithm.containsKey(idTransaccion)) {
+            poolAlgorithm.put(idTransaccion, new HashMap<>());
+        }
+        poolAlgorithm.get(idTransaccion).put(algorithm.getCodigo(), algorithm);
         return algorithm;
     }
 
-    public PedidoEntity toEntity(Pedido algorithm, String tipoEscenario) {
-        if(poolEntity.containsKey(algorithm.getCodigo())) {
-            return poolEntity.get(algorithm.getCodigo());
+    public PedidoEntity toEntity(String idTransaccion, Pedido algorithm, String tipoEscenario) {
+        if(poolEntity.containsKey(idTransaccion) && poolEntity.get(idTransaccion).containsKey(algorithm.getCodigo())) {
+            return poolEntity.get(idTransaccion).get(algorithm.getCodigo());
         }
         PedidoEntity entity = pedidoService.findByUniqueAttributes(algorithm.getCodigo(), tipoEscenario).orElse(null);
-        if (entity == null) {
-            return null;
+        if (entity != null) {
+            entity.setFechaHoraProcesamientoUTC(algorithm.getFechaHoraProcesamiento());
+            entity.setFechaHoraProcesamientoLocal(G4DUtility.Convertor.toLocal(algorithm.getFechaHoraProcesamiento(), algorithm.getDestino().getHusoHorario()));
+            entity.setFechaHoraExpiracionUTC(algorithm.getFechaHoraExpiracion());
+            entity.setFechaHoraExpiracionLocal(G4DUtility.Convertor.toLocal(algorithm.getFechaHoraExpiracion(), entity.getDestino().getHusoHorario()));
+            entity.setFueAtendido(algorithm.getFueAtendido());
+            if(!poolEntity.containsKey(idTransaccion)) {
+                poolEntity.put(idTransaccion, new HashMap<>());
+            }
+            poolEntity.get(idTransaccion).put(entity.getCodigo(), entity);
         }
-        entity.setFechaHoraProcesamientoUTC(algorithm.getFechaHoraProcesamiento());
-        entity.setFechaHoraProcesamientoLocal(G4DUtility.Convertor.toLocal(algorithm.getFechaHoraProcesamiento(), algorithm.getDestino().getHusoHorario()));
-        entity.setFechaHoraExpiracionUTC(algorithm.getFechaHoraExpiracion());
-        entity.setFechaHoraExpiracionLocal(G4DUtility.Convertor.toLocal(algorithm.getFechaHoraExpiracion(), entity.getDestino().getHusoHorario()));
-        entity.setFueAtendido(algorithm.getFueAtendido());
-        poolEntity.put(entity.getCodigo(), entity);
         return entity;
     }
 
-    public void clearPools() {
-        poolAlgorithm.clear();
-        poolEntity.clear();
-        usuarioAdapter.clearPools();
-        aeropuertoAdapter.clearPools();
-        rutaAdapter.clearPools();
-        loteAdapter.clearPools();
+    public void clearPools(String idTransaccion) {
+        poolAlgorithm.remove(idTransaccion);
+        poolEntity.remove(idTransaccion);
+        usuarioAdapter.clearPools(idTransaccion);
+        aeropuertoAdapter.clearPools(idTransaccion);
+        rutaAdapter.clearPools(idTransaccion);
+        loteAdapter.clearPools(idTransaccion);
     }
 }

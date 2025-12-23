@@ -13,7 +13,6 @@ import com.pucp.dp1.grupo4d.morapack.model.entity.LoteEntity;
 import com.pucp.dp1.grupo4d.morapack.model.entity.RutaEntity;
 import com.pucp.dp1.grupo4d.morapack.model.entity.SegmentacionEntity;
 import com.pucp.dp1.grupo4d.morapack.service.model.SegmentacionService;
-import com.pucp.dp1.grupo4d.morapack.util.G4DUtility;
 import org.springframework.stereotype.Component;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -24,8 +23,8 @@ import java.util.Map;
 public class SegmentacionAdapter {
     private final LoteAdapter loteAdapter;
     private final RutaAdapter rutaAdapter;
-    private final Map<String, Segmentacion> poolAlgorithm = new HashMap<>();
-    private final Map<String, SegmentacionEntity> poolEntity = new HashMap<>();
+    private final Map<String, Map<String, Segmentacion>> poolAlgorithm = new HashMap<>();
+    private final Map<String, Map<String, SegmentacionEntity>> poolEntity = new HashMap<>();
     private final SegmentacionService segmentacionService;
 
     public SegmentacionAdapter(LoteAdapter loteAdapter, RutaAdapter rutaAdapter, SegmentacionService segmentacionService, SegmentacionService segmentacionService1) {
@@ -34,9 +33,9 @@ public class SegmentacionAdapter {
         this.segmentacionService = segmentacionService1;
     }
 
-    public Segmentacion toAlgorithm(SegmentacionEntity entity) {
-        if (poolAlgorithm.containsKey(entity.getCodigo())) {
-            return poolAlgorithm.get(entity.getCodigo());
+    public Segmentacion toAlgorithm(String idTransaccion, SegmentacionEntity entity) {
+        if (poolAlgorithm.containsKey(idTransaccion) && poolAlgorithm.get(idTransaccion).containsKey(entity.getCodigo())) {
+            return poolAlgorithm.get(idTransaccion).get(entity.getCodigo());
         }
         Segmentacion algorithm = new Segmentacion();
         algorithm.setCodigo(entity.getCodigo());
@@ -44,47 +43,45 @@ public class SegmentacionAdapter {
         algorithm.setFechaHoraSustitucion(entity.getFechaHoraSustitucionUTC());
         Map<Ruta, Lote> lotesPorRuta = new HashMap<>();
         List<LoteEntity> lotesEntity = entity.getLotes();
-        for (LoteEntity loteEntity : lotesEntity) {
-            Lote lote = loteAdapter.toAlgorithm(loteEntity);
-            RutaEntity rutaEntity = loteEntity.getRuta();
-            Ruta ruta = rutaAdapter.toAlgorithm(rutaEntity);
-            lotesPorRuta.put(ruta, lote);
-        }
+        lotesEntity.forEach(l -> lotesPorRuta.put(rutaAdapter.toAlgorithm(idTransaccion, l.getRuta()), loteAdapter.toAlgorithm(idTransaccion, l)));
         algorithm.setLotesPorRuta(lotesPorRuta);
-        poolAlgorithm.put(algorithm.getCodigo(), algorithm);
+        if(!poolAlgorithm.containsKey(idTransaccion)) {
+            poolAlgorithm.put(idTransaccion, new HashMap<>());
+        }
+        poolAlgorithm.get(idTransaccion).put(algorithm.getCodigo(), algorithm);
         return algorithm;
     }
 
-    public SegmentacionEntity toEntity(Segmentacion algorithm) {
-        if (poolEntity.containsKey(algorithm.getCodigo())) {
-            return poolEntity.get(algorithm.getCodigo());
+    public SegmentacionEntity toEntity(String idTransaccion, Segmentacion algorithm) {
+        if (poolEntity.containsKey(idTransaccion) && poolEntity.get(idTransaccion).containsKey(algorithm.getCodigo())) {
+            return poolEntity.get(idTransaccion).get(algorithm.getCodigo());
         }
-        SegmentacionEntity entity = segmentacionService.findByCodigo(algorithm.getCodigo()).orElse(null);
-        if(entity == null) {
-            entity = new SegmentacionEntity();
-            entity.setCodigo(algorithm.getCodigo());
-            entity.setFechaHoraAplicacionUTC(algorithm.getFechaHoraAplicacion());
-        }
+        SegmentacionEntity entity = segmentacionService.findByCodigo(algorithm.getCodigo()).orElse(new SegmentacionEntity());
+        entity.setCodigo(algorithm.getCodigo());
+        entity.setFechaHoraAplicacionUTC(algorithm.getFechaHoraAplicacion());
         entity.setFechaHoraSustitucionUTC(algorithm.getFechaHoraSustitucion());
         List<LoteEntity> lotesEntity = new ArrayList<>();
         Map<Ruta, Lote> lotesPorRuta = algorithm.getLotesPorRuta();
         for (Map.Entry<Ruta, Lote> entry : lotesPorRuta.entrySet()) {
             Ruta ruta = entry.getKey();
-            RutaEntity rutaEntity = rutaAdapter.toEntity(ruta);
+            RutaEntity rutaEntity = rutaAdapter.toEntity(idTransaccion, ruta);
             Lote lote = entry.getValue();
-            LoteEntity loteEntity = loteAdapter.toEntity(lote);
+            LoteEntity loteEntity = loteAdapter.toEntity(idTransaccion, lote);
             loteEntity.setRuta(rutaEntity);
             lotesEntity.add(loteEntity);
         }
         entity.setLotes(lotesEntity);
-        poolEntity.put(algorithm.getCodigo(), entity);
+        if(!poolEntity.containsKey(idTransaccion)) {
+            poolEntity.put(idTransaccion, new HashMap<>());
+        }
+        poolEntity.get(idTransaccion).put(entity.getCodigo(), entity);
         return entity;
     }
 
-    public void clearPools() {
-        poolAlgorithm.clear();
-        poolEntity.clear();
-        loteAdapter.clearPools();
-        rutaAdapter.clearPools();
+    public void clearPools(String idTransaccion) {
+        poolAlgorithm.remove(idTransaccion);
+        poolEntity.remove(idTransaccion);
+        loteAdapter.clearPools(idTransaccion);
+        rutaAdapter.clearPools(idTransaccion);
     }
 }

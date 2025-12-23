@@ -7,10 +7,8 @@
 package com.pucp.dp1.grupo4d.morapack.adapter;
 
 import com.pucp.dp1.grupo4d.morapack.model.algorithm.Ruta;
-import com.pucp.dp1.grupo4d.morapack.model.algorithm.Aeropuerto;
 import com.pucp.dp1.grupo4d.morapack.model.algorithm.Vuelo;
 import com.pucp.dp1.grupo4d.morapack.model.entity.RutaEntity;
-import com.pucp.dp1.grupo4d.morapack.model.entity.AeropuertoEntity;
 import com.pucp.dp1.grupo4d.morapack.model.entity.VueloEntity;
 import com.pucp.dp1.grupo4d.morapack.service.model.RutaService;
 import com.pucp.dp1.grupo4d.morapack.util.G4DUtility;
@@ -22,8 +20,8 @@ public class RutaAdapter {
     private final RutaService rutaService;
     private final AeropuertoAdapter aeropuertoAdapter;
     private final VueloAdapter vueloAdapter;
-    private final Map<String, Ruta> poolAlgorithm = new HashMap<>();
-    private final Map<String, RutaEntity> poolEntity = new HashMap<>();
+    private final Map<String, Map<String, Ruta>> poolAlgorithm = new HashMap<>();
+    private final Map<String, Map<String, RutaEntity>> poolEntity = new HashMap<>();
 
     public RutaAdapter(AeropuertoAdapter aeropuertoAdapter, VueloAdapter vueloAdapter, RutaService rutaService) {
         this.aeropuertoAdapter = aeropuertoAdapter;
@@ -31,9 +29,9 @@ public class RutaAdapter {
         this.rutaService = rutaService;
     }
 
-    public Ruta toAlgorithm(RutaEntity entity) {
-        if (poolAlgorithm.containsKey(entity.getCodigo())) {
-            return poolAlgorithm.get(entity.getCodigo());
+    public Ruta toAlgorithm(String idTransaccion, RutaEntity entity) {
+        if (poolAlgorithm.containsKey(idTransaccion) && poolAlgorithm.get(idTransaccion).containsKey(entity.getCodigo())) {
+            return poolAlgorithm.get(idTransaccion).get(entity.getCodigo());
         }
         Ruta algorithm = new Ruta();
         algorithm.setCodigo(entity.getCodigo());
@@ -42,31 +40,26 @@ public class RutaAdapter {
         algorithm.setFechaHoraSalida(entity.getFechaHoraSalidaUTC());
         algorithm.setFechaHoraLlegada(entity.getFechaHoraLlegadaUTC());
         algorithm.setTipo(entity.getTipo());
-        Aeropuerto origen = aeropuertoAdapter.toAlgorithm(entity.getOrigen());
-        algorithm.setOrigen(origen);
-        Aeropuerto destino = aeropuertoAdapter.toAlgorithm(entity.getDestino());
-        algorithm.setDestino(destino);
+        algorithm.setOrigen(aeropuertoAdapter.toAlgorithm(idTransaccion, entity.getOrigen()));
+        algorithm.setDestino(aeropuertoAdapter.toAlgorithm(idTransaccion, entity.getDestino()));
+        algorithm.setEstado(entity.getEstado());
         List<Vuelo> vuelos = new ArrayList<>();
         List<VueloEntity> vuelosEntity = entity.getVuelos();
-        for (VueloEntity vueloEntity : vuelosEntity) {
-            Vuelo vuelo = vueloAdapter.toAlgorithm(vueloEntity);
-            vuelos.add(vuelo);
-        }
+        vuelosEntity.forEach(e -> vuelos.add(vueloAdapter.toAlgorithm(idTransaccion, e)));
         algorithm.setVuelos(vuelos);
-        algorithm.setEstado(entity.getEstado());
-        poolAlgorithm.put(algorithm.getCodigo(), algorithm);
+        if(!poolAlgorithm.containsKey(idTransaccion)) {
+            poolAlgorithm.put(idTransaccion, new HashMap<>());
+        }
+        poolAlgorithm.get(idTransaccion).put(algorithm.getCodigo(), algorithm);
         return algorithm;
     }
 
-    public RutaEntity toEntity(Ruta algorithm) {
-        if(poolEntity.containsKey(algorithm.getCodigo())) {
-            return  poolEntity.get(algorithm.getCodigo());
+    public RutaEntity toEntity(String idTransaccion, Ruta algorithm) {
+        if(poolEntity.containsKey(idTransaccion) && poolEntity.get(idTransaccion).containsKey(algorithm.getCodigo())) {
+            return  poolEntity.get(idTransaccion).get(algorithm.getCodigo());
         }
-        RutaEntity entity = rutaService.findByCodigo(algorithm.getCodigo()).orElse(null);
-        if (entity == null) {
-            entity = new RutaEntity();
-            entity.setCodigo(algorithm.getCodigo());
-        }
+        RutaEntity entity = rutaService.findByCodigo(algorithm.getCodigo()).orElse(new RutaEntity());
+        entity.setCodigo(algorithm.getCodigo());
         entity.setDuracion(algorithm.getDuracion());
         entity.setDistancia(algorithm.getDistancia());
         entity.setFechaHoraSalidaUTC(algorithm.getFechaHoraSalida());
@@ -74,19 +67,20 @@ public class RutaAdapter {
         entity.setFechaHoraLlegadaUTC(algorithm.getFechaHoraLlegada());
         entity.setFechaHoraLlegadaLocal(G4DUtility.Convertor.toLocal(algorithm.getFechaHoraLlegada(), algorithm.getDestino().getHusoHorario()));
         entity.setTipo(algorithm.getTipo());
-        AeropuertoEntity origenEntity = aeropuertoAdapter.toEntity(algorithm.getOrigen());
-        entity.setOrigen(origenEntity);
-        AeropuertoEntity destinoEntity = aeropuertoAdapter.toEntity(algorithm.getDestino());
-        entity.setDestino(destinoEntity);
+        entity.setOrigen(aeropuertoAdapter.toEntity(idTransaccion, algorithm.getOrigen()));
+        entity.setDestino(aeropuertoAdapter.toEntity(idTransaccion, algorithm.getDestino()));
         entity.setEstado(algorithm.getEstado());
-        poolEntity.put(entity.getCodigo(), entity);
+        if(!poolEntity.containsKey(idTransaccion)) {
+            poolEntity.put(idTransaccion, new HashMap<>());
+        }
+        poolEntity.get(idTransaccion).put(algorithm.getCodigo(), entity);
         return entity;
     }
 
-    public void clearPools() {
-        poolAlgorithm.clear();
-        poolEntity.clear();
-        aeropuertoAdapter.clearPools();
-        vueloAdapter.clearPools();
+    public void clearPools(String idTransaccion) {
+        poolAlgorithm.remove(idTransaccion);
+        poolEntity.remove(idTransaccion);
+        aeropuertoAdapter.clearPools(idTransaccion);
+        vueloAdapter.clearPools(idTransaccion);
     }
 }
