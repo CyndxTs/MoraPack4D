@@ -55,6 +55,8 @@ public class GVNS {
         G4DUtility.Logger.logf("[+] OPTIMIZACION INICIAL REALIZADA! (FITNESS: %.3f)%n", x.getFitness());
         G4DUtility.Logger.Stats.log_stat_local_sol();
         this.solucion = x;
+        */
+        /*
         // Optimización final (Variable Neighborhood Search)
         G4DUtility.Logger.Stats.set_local_start();
         G4DUtility.Logger.logln("Realizando optimización final.. ");
@@ -78,7 +80,7 @@ public class GVNS {
     private void solucionInicial(Problematica problematica, Solucion solucion) {
         G4DUtility.Logger.logln("[NN]");
         // Declaración & inicialización de variables
-        boolean errorDeEnrutamiento, haySolucion = false;
+        boolean haySolucion = false;
         Problematica pAux = new Problematica();
         // Iteración de exploraciones iniciales para encontrar 1 solución
         for(int i = 0; i < iMax; i++) {
@@ -90,12 +92,12 @@ public class GVNS {
             List<Pedido> pedidos = pAux.pedidos;
             Set<Vuelo> vuelosEnTransito = pAux.vuelos;
             Set<Ruta> rutasEnOperacion = pAux.rutas;
+            boolean errorDeEnrutamiento = false;
             G4DUtility.Logger.Stats.totalPed = pedidos.size();
             pedidos.forEach(p -> G4DUtility.Logger.Stats.totalProd += p.getCantidadSolicitada());
             G4DUtility.Logger.Stats.numPed = 1;
             G4DUtility.Logger.Stats.posPed = 0;
             G4DUtility.Logger.Stats.posProd = 0;
-            errorDeEnrutamiento = false;
             // Preparación de replanificación
             prepararReplanificacion(pAux, pedidos);
             // Atención & reatención de pedidos
@@ -144,7 +146,7 @@ public class GVNS {
                 solucion.setFitness(-9999.99);
                 this.solucion = null;
             } else problematica.reasignar(pAux);
-        } else solucion.setFitness(-9999.99);
+        }
     }
 
     private void prepararReplanificacion(Problematica problematica, List<Pedido> pedidos) {

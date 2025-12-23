@@ -278,8 +278,7 @@ public class G4DService {
                     break;
                 }
                 if(G4DUtility.Calculator.isProximatelyFewer(milisegundosRealesTranscurridos, saltoDeAlgoritmoEnMilisegundos, 0.125)) {
-                    // Thread.sleep(saltoDeAlgoritmoEnMilisegundos - milisegundosRealesTranscurridos);
-                    Thread.sleep(1500L);
+                    Thread.sleep(saltoDeAlgoritmoEnMilisegundos - milisegundosRealesTranscurridos);
                 }
             }
             if(context.running && !Thread.currentThread().isInterrupted()) {
@@ -415,6 +414,7 @@ public class G4DService {
     private SolucionDTO planificar(G4DContext context, ParametrosDTO parametros, TipoEscenario tipoEscenario, LocalDateTime inicioDePlanificacion, LocalDateTime finDePlanificacion, LocalDateTime umbralDeReplanificacion, LocalDateTime instanteDeProcesamiento) {
         boolean esSimulacion = tipoEscenario.equals(TipoEscenario.SIMULACION);
         context.problematic = contextService.getUpdatedProblematic(context.problematic, esSimulacion, parametros, inicioDePlanificacion, finDePlanificacion, umbralDeReplanificacion, instanteDeProcesamiento, tipoEscenario);
+        context.problematic.idTransaccion = context.id;
         if(esSimulacion) {
             System.out.printf("[*] SIMULANDO BLOQUE TEMPORAL! ['%s' - '%s']%n", G4DUtility.Convertor.toDisplayString(inicioDePlanificacion), G4DUtility.Convertor.toDisplayString(finDePlanificacion));
         } else System.out.printf("[*] OPERANDO BLOQUE TEMPORAL! ['%s' - '%s']%n", G4DUtility.Convertor.toDisplayString(inicioDePlanificacion), G4DUtility.Convertor.toDisplayString(finDePlanificacion));
