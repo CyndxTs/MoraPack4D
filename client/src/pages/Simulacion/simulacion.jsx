@@ -207,7 +207,7 @@ export default function Simulacion() {
   const [simStartMs, setSimStartMs] = useState(null);
   const [simNowMs, setSimNowMs] = useState(() => Date.now());
   const [simEndMs, setSimEndMs] = useState(null);
-  const [seconds, setSeconds] = useState(730);
+  const [seconds, setSeconds] = useState(775);
   const [timerRunning, setTimerRunning] = useState(false);
   const [timerActive, setTimerActive] = useState(false);
 
@@ -1204,9 +1204,9 @@ export default function Simulacion() {
 
     // Convertimos esa fecha específica a milisegundos
     const base = fromInputsToMsUTC(d, t);
-    const OFFSET_MS = 208800 * 1000;
+    const OFFSET_MS = 216060 * 1000;
     setSimNowMs(base);
-    setSimStartMs(base - OFFSET_MS);
+    setSimStartMs(base);
 
     lastRealMsRef.current = performance.now();
     setTimerRunning(true);
@@ -1235,7 +1235,7 @@ export default function Simulacion() {
     // 3. Limpieza de Lógica de Simulación
     setTimerRunning(false);
     setTimerActive(false);
-    setSeconds(730);
+    setSeconds(0);
 
     // Limpiar datos del mapa
     setFlights([]);
