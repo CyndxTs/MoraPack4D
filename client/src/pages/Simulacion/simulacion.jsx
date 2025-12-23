@@ -207,7 +207,7 @@ export default function Simulacion() {
   const [simStartMs, setSimStartMs] = useState(null);
   const [simNowMs, setSimNowMs] = useState(() => Date.now());
   const [simEndMs, setSimEndMs] = useState(null);
-  const [seconds, setSeconds] = useState(0);
+  const [seconds, setSeconds] = useState(775);
   const [timerRunning, setTimerRunning] = useState(false);
   const [timerActive, setTimerActive] = useState(false);
 
@@ -1235,7 +1235,7 @@ export default function Simulacion() {
     // 3. Limpieza de Lógica de Simulación
     setTimerRunning(false);
     setTimerActive(false);
-    setSeconds(0);
+    setSeconds(775);
 
     // Limpiar datos del mapa
     setFlights([]);
