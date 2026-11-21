@@ -133,7 +133,7 @@ public class ContextService {
                         rutaEntity.getVuelos().add(vueloEntity);
                     }
                 }
-                rutaEntity.getVuelos().sort(Comparator.comparing(VueloEntity::getFechaHoraSalidaUTC));
+                rutaEntity.getVuelos().sort(Comparator.comparing(VueloEntity::getFechaHoraSalida));
                 rutaService.save(rutaEntity);
                 System.out.println("[*] RUTA: " + rutaEntity.getCodigo() + " {'" + rutaEntity.getVuelos().size() + "' vuelos!}");
             }
@@ -147,8 +147,6 @@ public class ContextService {
                 for(Segmentacion segmentacion : pedido.getSegmentaciones()) {
                     SegmentacionEntity segmentacionEntity = segmentacionAdapter.toEntity(idTransaccion, segmentacion);
                     if(segmentacionEntity != null) {
-                        segmentacionEntity.setFechaHoraAplicacionLocal(G4DUtility.Convertor.toLocal(segmentacionEntity.getFechaHoraAplicacionUTC(), pedidoEntity.getDestino().getHusoHorario()));
-                        segmentacionEntity.setFechaHoraSustitucionLocal((segmentacionEntity.getFechaHoraSustitucionUTC() != null)? (G4DUtility.Convertor.toLocal(segmentacionEntity.getFechaHoraSustitucionUTC(), pedidoEntity.getDestino().getHusoHorario())) : null);
                         segmentacionEntity.setPedido(pedidoEntity);
                         segmentacionService.save(segmentacionEntity);
                         System.out.println("[*] SEGMENTACION: " + segmentacion.getCodigo());
@@ -175,8 +173,6 @@ public class ContextService {
                 for(Registro registro : aeropuerto.getRegistros()) {
                     RegistroEntity registroEntity = registroAdapter.toEntity(idTransaccion, registro);
                     if(registroEntity.getLote().getId() != null) {
-                        registroEntity.setFechaHoraIngresoLocal(G4DUtility.Convertor.toLocal(registroEntity.getFechaHoraIngresoUTC(), aeropuertoEntity.getHusoHorario()));
-                        registroEntity.setFechaHoraEgresoLocal((registroEntity.getFechaHoraEgresoUTC() != null)? G4DUtility.Convertor.toLocal(registroEntity.getFechaHoraEgresoUTC(), aeropuertoEntity.getHusoHorario()): null);
                         registroEntity.setAeropuerto(aeropuertoEntity);
                         registroService.save(registroEntity);
                         System.out.println("[*] REGISTRO: " + registroEntity.getCodigo());

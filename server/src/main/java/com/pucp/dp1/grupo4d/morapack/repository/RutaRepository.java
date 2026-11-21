@@ -18,7 +18,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface RutaRepository extends JpaRepository<RutaEntity, Integer> {
+public interface RutaRepository extends JpaRepository<RutaEntity, Long> {
     Optional<RutaEntity> findByCodigo(String codigo);
 
     // Listar todas las rutas pertenecientes a pedidos de un escenario dentro de cierto rango temporal
@@ -30,7 +30,7 @@ public interface RutaRepository extends JpaRepository<RutaEntity, Integer> {
         JOIN SEGMENTACION s ON s.id = l.id_segmentacion
         JOIN PEDIDO p ON p.id = s.id_pedido
         JOIN AEROPUERTO a ON a.id = p.id_aeropuerto_destino
-        WHERE p.fh_generacion_utc BETWEEN :fechaHoraInicio AND :fechaHoraFin
+        WHERE p.fh_generacion BETWEEN :fechaHoraInicio AND :fechaHoraFin
           AND p.tipo_escenario = :tipoEscenario
           AND a.codigo NOT IN (:codOrigenes)
         """,

@@ -54,8 +54,8 @@ public class SegmentacionMapper {
     public SegmentacionDTO toDTO(SegmentacionEntity entity) {
         SegmentacionDTO dto = new SegmentacionDTO();
         dto.setCodigo(entity.getCodigo());
-        dto.setFechaHoraAplicacion(G4DUtility.Convertor.toDisplayString(entity.getFechaHoraAplicacionUTC()));
-        dto.setFechaHoraSustitucion(G4DUtility.Convertor.toDisplayString(entity.getFechaHoraSustitucionUTC()));
+        dto.setFechaHoraAplicacion(G4DUtility.Convertor.toDisplayString(entity.getFechaHoraAplicacion()));
+        dto.setFechaHoraSustitucion(G4DUtility.Convertor.toDisplayString(entity.getFechaHoraSustitucion()));
         List<LotePorRutaDTO> lotesPorRutaDTO = new ArrayList<>();
         List<LoteEntity> lotesEntity = entity.getLotes();
         for (LoteEntity loteEntity : lotesEntity) {

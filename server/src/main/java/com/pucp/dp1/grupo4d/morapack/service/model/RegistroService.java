@@ -42,15 +42,15 @@ public class RegistroService {
         return registroRepository.findAll(pageable).getContent();
     }
 
-    public Optional<RegistroEntity> findById(Integer id) {
+    public Optional<RegistroEntity> findById(Long id) {
         return registroRepository.findById(id);
     }
 
-    public boolean existsById(Integer id) {
+    public boolean existsById(Long id) {
         return registroRepository.existsById(id);
     }
 
-    public void deleteById(Integer id) {
+    public void deleteById(Long id) {
         registroRepository.deleteById(id);
     }
 
@@ -63,7 +63,7 @@ public class RegistroService {
     }
 
     public ListResponse listar(ListRequest request) {
-        Pageable pageable = G4DUtility.Convertor.toAdmissible(request.getPagina(), request.getTamanio(), Sort.Order.asc("fechaHoraIngresoUTC"), Sort.Order.asc("fechaHoraEgresoUTC"));
+        Pageable pageable = G4DUtility.Convertor.toAdmissible(request.getPagina(), request.getTamanio(), Sort.Order.asc("fechaHoraIngreso"), Sort.Order.asc("fechaHoraEgreso"));
         List<DTO> dtos = new ArrayList<>();
         List<RegistroEntity> entities = this.findAll(pageable);
         entities.forEach(entity -> dtos.add(registroMapper.toDTO(entity)));

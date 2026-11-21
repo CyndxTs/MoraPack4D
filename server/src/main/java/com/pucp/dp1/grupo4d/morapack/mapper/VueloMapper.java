@@ -39,8 +39,8 @@ public class VueloMapper {
     public VueloDTO toDTO(VueloEntity entity) {
         VueloDTO dto = new VueloDTO();
         dto.setCodigo(entity.getCodigo());
-        dto.setFechaHoraSalida(G4DUtility.Convertor.toDisplayString(entity.getFechaHoraSalidaUTC()));
-        dto.setFechaHoraLlegada(G4DUtility.Convertor.toDisplayString(entity.getFechaHoraLlegadaUTC()));
+        dto.setFechaHoraSalida(G4DUtility.Convertor.toDisplayString(entity.getFechaHoraSalida()));
+        dto.setFechaHoraLlegada(G4DUtility.Convertor.toDisplayString(entity.getFechaHoraLlegada()));
         PlanEntity planEntity = entity.getPlan();
         AeropuertoEntity origenEntity = planEntity.getOrigen();
         dto.setCodOrigen(origenEntity.getCodigo());

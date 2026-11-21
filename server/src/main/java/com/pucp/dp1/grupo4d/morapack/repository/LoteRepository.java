@@ -12,6 +12,6 @@ import org.springframework.stereotype.Repository;
 import java.util.Optional;
 
 @Repository
-public interface LoteRepository extends JpaRepository<LoteEntity, Integer> {
+public interface LoteRepository extends JpaRepository<LoteEntity, Long> {
     Optional<LoteEntity> findByCodigo(String codigo);
 }

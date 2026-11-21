@@ -10,7 +10,9 @@ import lombok.Data;
 
 @Data
 public class SignUpRequest {
-    private String nombre;
+    private String nombres;
+    private String apellidos;
+    private String pais;
     private String correo;
     private String contrasenia;
     private String tipoUsuario;

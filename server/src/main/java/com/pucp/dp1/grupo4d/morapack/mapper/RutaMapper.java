@@ -47,8 +47,8 @@ public class RutaMapper {
         dto.setDuracion(entity.getDuracion());
         dto.setDistancia(entity.getDistancia());
         dto.setTipo(entity.getTipo().toString());
-        dto.setFechaHoraSalida(G4DUtility.Convertor.toDisplayString(entity.getFechaHoraSalidaUTC()));
-        dto.setFechaHoraLlegada(G4DUtility.Convertor.toDisplayString(entity.getFechaHoraLlegadaUTC()));
+        dto.setFechaHoraSalida(G4DUtility.Convertor.toDisplayString(entity.getFechaHoraSalida()));
+        dto.setFechaHoraLlegada(G4DUtility.Convertor.toDisplayString(entity.getFechaHoraLlegada()));
         AeropuertoEntity origenEntity = entity.getOrigen();
         dto.setCodOrigen(origenEntity.getCodigo());
         AeropuertoEntity destinoEntity = entity.getDestino();

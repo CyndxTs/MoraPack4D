@@ -12,6 +12,6 @@ import org.springframework.stereotype.Repository;
 import java.util.Optional;
 
 @Repository
-public interface RegistroRepository extends JpaRepository<RegistroEntity, Integer> {
+public interface RegistroRepository extends JpaRepository<RegistroEntity, Long> {
     Optional<RegistroEntity> findByCodigo(String codigo);
 }

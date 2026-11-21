@@ -14,10 +14,11 @@ import lombok.EqualsAndHashCode;
 public class EventoDTO implements DTO {
     @EqualsAndHashCode.Include
     private String codigo;
-
     private String tipo;
     private String fechaHoraInicio;
     private String fechaHoraFin;
-    private String fechaHoraSalida;
-    private String fechaHoraLlegada;
+    private String fechaHoraNuevaSalida;
+    private String fechaHoraNuevaLlegada;
+    private Integer nuevaCapacidad;
+    private String codPlan;
 }

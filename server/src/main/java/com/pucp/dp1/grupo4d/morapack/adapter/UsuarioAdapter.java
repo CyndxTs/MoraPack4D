@@ -10,6 +10,7 @@ import com.pucp.dp1.grupo4d.morapack.model.algorithm.Cliente;
 import com.pucp.dp1.grupo4d.morapack.model.entity.ClienteEntity;
 import com.pucp.dp1.grupo4d.morapack.model.entity.UsuarioEntity;
 import com.pucp.dp1.grupo4d.morapack.service.model.ClienteService;
+import com.pucp.dp1.grupo4d.morapack.util.G4DUtility;
 import org.springframework.stereotype.Component;
 import java.util.HashMap;
 import java.util.Map;
@@ -24,13 +25,14 @@ public class UsuarioAdapter {
         this.clienteService = clienteService;
     }
 
+    // Cliente real (OPERACION)
     public Cliente toAlgorithm(String idTransaccion, ClienteEntity entity) {
         if (poolAlgorithm.containsKey(idTransaccion) && poolAlgorithm.get(idTransaccion).containsKey(entity.getCodigo())) {
             return poolAlgorithm.get(idTransaccion).get(entity.getCodigo());
         }
         Cliente algorithm = new Cliente();
         algorithm.setCodigo(entity.getCodigo());
-        algorithm.setNombre(entity.getNombre());
+        algorithm.setNombre(entity.getNombreCompleto());
         if(!poolAlgorithm.containsKey(idTransaccion)) {
             poolAlgorithm.put(idTransaccion, new HashMap<>());
         }
@@ -38,6 +40,22 @@ public class UsuarioAdapter {
         return algorithm;
     }
 
+    // Cliente simulado (SIMULACION): no existe en BD, se genera en RAM una sola vez por transacción
+    public Cliente toAlgorithm(String idTransaccion, String codClienteSimulado) {
+        if (poolAlgorithm.containsKey(idTransaccion) && poolAlgorithm.get(idTransaccion).containsKey(codClienteSimulado)) {
+            return poolAlgorithm.get(idTransaccion).get(codClienteSimulado);
+        }
+        Cliente algorithm = new Cliente();
+        algorithm.setCodigo(codClienteSimulado);
+        algorithm.setNombre(G4DUtility.Generator.getUniqueName());
+        if(!poolAlgorithm.containsKey(idTransaccion)) {
+            poolAlgorithm.put(idTransaccion, new HashMap<>());
+        }
+        poolAlgorithm.get(idTransaccion).put(algorithm.getCodigo(), algorithm);
+        return algorithm;
+    }
+
+    // Solo devuelve clientes reales; los simulados no existen en BD (null)
     public ClienteEntity toEntity(String idTransaccion, Cliente algorithm) {
         if(poolEntity.containsKey(idTransaccion) && poolEntity.get(idTransaccion).containsKey(algorithm.getCodigo())) {
             return (ClienteEntity) poolEntity.get(idTransaccion).get(algorithm.getCodigo());

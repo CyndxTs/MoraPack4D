@@ -40,11 +40,13 @@ public class PedidoAdapter {
         Pedido algorithm = new Pedido();
         algorithm.setCodigo(entity.getCodigo());
         algorithm.setCantidadSolicitada(entity.getCantidadSolicitada());
-        algorithm.setFechaHoraGeneracion(entity.getFechaHoraGeneracionUTC());
-        algorithm.setFechaHoraProcesamiento(entity.getFechaHoraProcesamientoUTC());
-        algorithm.setFechaHoraExpiracion(entity.getFechaHoraExpiracionUTC());
+        algorithm.setFechaHoraGeneracion(entity.getFechaHoraGeneracion());
+        algorithm.setFechaHoraProcesamiento(entity.getFechaHoraProcesamiento());
+        algorithm.setFechaHoraExpiracion(entity.getFechaHoraExpiracion());
         algorithm.setFueAtendido(entity.getFueAtendido());
-        algorithm.setCliente(usuarioAdapter.toAlgorithm(idTransaccion, entity.getCliente()));
+        algorithm.setCliente((entity.getCliente() != null)
+                ? usuarioAdapter.toAlgorithm(idTransaccion, entity.getCliente())
+                : usuarioAdapter.toAlgorithm(idTransaccion, entity.getCodClienteSimulado()));
         algorithm.setDestino(aeropuertoAdapter.toAlgorithm(idTransaccion, entity.getDestino()));
         List<Segmentacion> segmentaciones = new ArrayList<>();
         List<SegmentacionEntity> segmentacionesEntity = entity.getSegmentaciones();
@@ -63,10 +65,8 @@ public class PedidoAdapter {
         }
         PedidoEntity entity = pedidoService.findByUniqueAttributes(algorithm.getCodigo(), tipoEscenario).orElse(null);
         if (entity != null) {
-            entity.setFechaHoraProcesamientoUTC(algorithm.getFechaHoraProcesamiento());
-            entity.setFechaHoraProcesamientoLocal(G4DUtility.Convertor.toLocal(algorithm.getFechaHoraProcesamiento(), algorithm.getDestino().getHusoHorario()));
-            entity.setFechaHoraExpiracionUTC(algorithm.getFechaHoraExpiracion());
-            entity.setFechaHoraExpiracionLocal(G4DUtility.Convertor.toLocal(algorithm.getFechaHoraExpiracion(), entity.getDestino().getHusoHorario()));
+            entity.setFechaHoraProcesamiento(algorithm.getFechaHoraProcesamiento());
+            entity.setFechaHoraExpiracion(algorithm.getFechaHoraExpiracion());
             entity.setFueAtendido(algorithm.getFueAtendido());
             if(!poolEntity.containsKey(idTransaccion)) {
                 poolEntity.put(idTransaccion, new HashMap<>());

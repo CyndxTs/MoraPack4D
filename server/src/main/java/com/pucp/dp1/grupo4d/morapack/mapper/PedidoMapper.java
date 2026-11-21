@@ -45,15 +45,14 @@ public class PedidoMapper {
         dto.setCodigo(entity.getCodigo());
         dto.setCantidadSolicitada(entity.getCantidadSolicitada());
         dto.setFueAtendido(entity.getFueAtendido());
-        dto.setFechaHoraGeneracion(G4DUtility.Convertor.toDisplayString(entity.getFechaHoraGeneracionUTC()));
-        dto.setFechaHoraGeneracion(G4DUtility.Convertor.toDisplayString(entity.getFechaHoraGeneracionUTC()));
-        dto.setFechaHoraExpiracion(G4DUtility.Convertor.toDisplayString(entity.getFechaHoraExpiracionUTC()));
-        ClienteEntity clienteEntity = entity.getCliente();
-        dto.setCodCliente(clienteEntity.getCodigo());
+        dto.setFechaHoraGeneracion(G4DUtility.Convertor.toDisplayString(entity.getFechaHoraGeneracion()));
+        dto.setFechaHoraProcesamiento(G4DUtility.Convertor.toDisplayString(entity.getFechaHoraProcesamiento()));
+        dto.setFechaHoraExpiracion(G4DUtility.Convertor.toDisplayString(entity.getFechaHoraExpiracion()));
+        dto.setCodCliente(entity.getCodCliente());
         AeropuertoEntity destinoEntity = entity.getDestino();
         dto.setCodDestino(destinoEntity.getCodigo());
         dto.setTipoEscenario(entity.getTipoEscenario().toString());
-        SegmentacionEntity sVigente = entity.getSegmentaciones().stream().filter(s -> s.getFechaHoraSustitucionUTC() == null).findFirst().orElse(null);
+        SegmentacionEntity sVigente = entity.getSegmentaciones().stream().filter(s -> s.getFechaHoraSustitucion() == null).findFirst().orElse(null);
         if(sVigente != null) {
             SegmentacionDTO sVigenteDTO = segmentacionMapper.toDTO(sVigente);
             dto.setSegmentacionVigente(sVigenteDTO);

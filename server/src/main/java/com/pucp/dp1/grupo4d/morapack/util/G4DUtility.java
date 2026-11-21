@@ -103,74 +103,40 @@ public class G4DUtility {
             }
             return duration;
         }
-        // Obtener todas las posibles combinaciones de una lista de elementos
-        public static <T> List<List<T>> getPossibleCombinations(List<T> elements, int groupSize) {
+        // Obtener todas las posibles combinaciones entre 2 grupos de elementos
+        public static <T> List<List<T>> getPossibleCombinations(List<T> elements_A, int groupSize_A, List<T> elements_B, int groupSize_B) {
             List<List<T>> result = new ArrayList<>();
-            generateCombinations(elements, groupSize, 0, new ArrayList<>(), result);
+            List<List<T>> combinations_A = getPossibleCombinations(elements_A, groupSize_A);
+            List<List<T>> combinations_B = getPossibleCombinations(elements_B, groupSize_B);
+            combinations_A.forEach(combination_A -> {
+                combinations_B.forEach(combination_B -> {
+                    List<T> crossed_combination = new ArrayList<>();
+                    crossed_combination.addAll(combination_A);
+                    crossed_combination.addAll(combination_B);
+                    result.add(crossed_combination);
+                });
+            });
             return result;
         }
-        // Generar todas las posibles combinaciones de una lista de elementos
-        private static <T> void generateCombinations(List<T> elements, int groupSize, int inicio, List<T> actual, List<List<T>> result) {
+        // Obtener todas las posibles combinaciones de un grupo de elementos
+        public static <T> List<List<T>> getPossibleCombinations(List<T> elements, int groupSize) {
+            List<List<T>> result = new ArrayList<>();
+            generatePossibleCombinations(elements, groupSize, 0, new ArrayList<>(), result);
+            return result;
+        }
+        // Generar todas las posibles combinaciones de una lista de elementos para cierto tamaño de grupo
+        private static <T> void generatePossibleCombinations(List<T> elements, int groupSize, int startPos, List<T> actual, List<List<T>> result) {
             if (actual.size() == groupSize) {
                 result.add(new ArrayList<>(actual));
                 return;
             }
             Set<T> used = new HashSet<>();
-            for (int i = inicio; i < elements.size(); i++) {
-                T elemento = elements.get(i);
-                if (used.contains(elemento)) {
-                    continue;
-                }
-                used.add(elemento);
-                actual.add(elemento);
-                generateCombinations(elements, groupSize, i + 1, actual, result);
-                actual.remove(actual.size() - 1);
-            }
-        }
-        // Obtener las combinaciones cruzadas entre 2 listas de elementos
-        public static <T> List<List<T>> getCrossedCombinations(List<T> listaA, List<T> listaB, int groupSizeA, int groupSizeB) {
-            List<List<T>> resultado = new ArrayList<>();
-            generateCrossedCombinations(listaA,listaB,groupSizeA,groupSizeB,0,0,new ArrayList<>(),new HashSet<>(),resultado);
-            return resultado;
-        }
-        // Generar las combinaciones cruzadas entre 2 listas de elementos
-        private static <T> void generateCrossedCombinations(List<T> listaA, List<T> listaB, int groupSizeA, int groupSizeB, int inicioA, int inicioB, List<T> actual, Set<T> usados, List<List<T>> resultado) {
-            int tamanioActual = actual.size();
-            int tamanioTotal = groupSizeA + groupSizeB;
-            if (tamanioActual == tamanioTotal) {
-                resultado.add(new ArrayList<>(actual));
-                return;
-            }
-            if (tamanioActual < groupSizeA) {
-                Set<T> usadosEnNivel = new HashSet<>();
-                for (int i = inicioA; i < listaA.size(); i++) {
-                    T elemento = listaA.get(i);
-                    if (usadosEnNivel.contains(elemento)) {
-                        continue;
-                    }
-                    usadosEnNivel.add(elemento);
-                    usados.add(elemento);
-                    actual.add(elemento);
-                    generateCrossedCombinations(listaA, listaB, groupSizeA, groupSizeB, i + 1, 0, actual, usados, resultado);
-                    actual.remove(actual.size() - 1);
-                    usados.remove(elemento);
-                }
-            } else {
-                Set<T> usadosEnNivel = new HashSet<>();
-                for (int i = inicioB; i < listaB.size(); i++) {
-                    T elemento = listaB.get(i);
-                    if (usados.contains(elemento)) {
-                        continue;
-                    }
-                    if (usadosEnNivel.contains(elemento)) {
-                        continue;
-                    }
-                    usadosEnNivel.add(elemento);
-                    usados.add(elemento);
-                    actual.add(elemento);
-                    generateCrossedCombinations(listaA, listaB, groupSizeA, groupSizeB, inicioA, i + 1, actual, usados, resultado);
-                    actual.remove(actual.size() - 1);
-                    usados.remove(elemento);
+            for (int i = startPos; i < elements.size(); i++) {
+                T element = elements.get(i);
+                if (used.add(element)) {
+                    actual.add(element);
+                    generatePossibleCombinations(elements, groupSize, i + 1, actual, result);
+                    actual.removeLast();
                 }
             }
         }
@@ -197,20 +163,20 @@ public class G4DUtility {
     }
     // Clase 'Auxiliar' para realizar conversiones
     public static class Convertor {
-        private static final DateTimeFormatter dtf_ds = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
-        private static final DateTimeFormatter dtf_db = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-        private static final DateTimeFormatter dtf_os = DateTimeFormatter.ofPattern("yyyyMMdd_HH-mm");
-        private static final DateTimeFormatter tf_ds = DateTimeFormatter.ofPattern("HH:mm");
-        private static final DateTimeFormatter tf_db = DateTimeFormatter.ofPattern("HH:mm:ss");
-        private static final DateTimeFormatter tf_os = DateTimeFormatter.ofPattern("HH-mm");
-        private static final DateTimeFormatter df_ds = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-        private static final DateTimeFormatter df_db = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-        private static final DateTimeFormatter df_os = DateTimeFormatter.ofPattern("yyyyMMdd");
-
+        private static final DateTimeFormatter dtf_display = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+        private static final DateTimeFormatter df_display = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+        private static final DateTimeFormatter tf_display = DateTimeFormatter.ofPattern("HH:mm");
+        private static final DateTimeFormatter dtf_sql = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        private static final DateTimeFormatter df_sql = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        private static final DateTimeFormatter tf_sql = DateTimeFormatter.ofPattern("HH:mm:ss");
+        private static final DateTimeFormatter dtf_file = DateTimeFormatter.ofPattern("yyyyMMdd_HH-mm");
+        private static final DateTimeFormatter df_file = DateTimeFormatter.ofPattern("yyyyMMdd");
+        private static final DateTimeFormatter tf_file = DateTimeFormatter.ofPattern("HH-mm");
+        
         // Obtener 'DisplayString' a partir de 'DateTime'
         public static String toDisplayString(LocalDateTime dt) {
             try {
-                return dt.format(dtf_ds);
+                return dt.format(dtf_display);
             } catch (Exception e) {
                 return null;
             }
@@ -218,7 +184,7 @@ public class G4DUtility {
         // Obtener 'DisplayString' a partir de 'Time'
         public static String toDisplayString(LocalTime t) {
             try {
-                return t.format(tf_ds);
+                return t.format(tf_display);
             } catch (Exception e) {
                 return null;
             }
@@ -226,7 +192,7 @@ public class G4DUtility {
         // Obtener 'DisplayString' a partir de 'Date'
         public static String toDisplayString(LocalDate d) {
             try {
-                return d.format(df_ds);
+                return d.format(df_display);
             } catch (Exception e) {
                 return null;
             }
@@ -241,50 +207,50 @@ public class G4DUtility {
                 return null;
             }
         }
-        // Obtener 'DatabaseString' a partir de 'DateTime'
-        public static String toDatabaseString(LocalDateTime dt) {
+        // Obtener 'SqlString' a partir de 'DateTime'
+        public static String toSqlString(LocalDateTime dt) {
             try {
-                return dt.format(dtf_db);
+                return dt.format(dtf_sql);
             } catch (Exception e) {
                 return null;
             }
         }
-        // Obtener 'DatabaseString' a partir de 'Time'
-        public static String toDatabaseString(LocalTime t) {
+        // Obtener 'SqlString' a partir de 'Time'
+        public static String toSqlString(LocalTime t) {
             try {
-                return t.format(tf_db);
+                return t.format(tf_sql);
             } catch (Exception e) {
                 return null;
             }
         }
-        // Obtener 'DatabaseString' a partir de 'Date'
-        public static String toDatabaseString(LocalDate d) {
+        // Obtener 'SqlString' a partir de 'Date'
+        public static String toSqlString(LocalDate d) {
             try {
-                return d.format(df_db);
+                return d.format(df_sql);
             } catch (Exception e) {
                 return null;
             }
         }
-        // Obtener 'SystemString' a partir de 'DateTime'
-        public static String toSystemString(LocalDateTime dt) {
+        // Obtener 'FileString' a partir de 'DateTime'
+        public static String toFileString(LocalDateTime dt) {
             try {
-                return dt.format(dtf_os);
+                return dt.format(dtf_file);
             } catch (Exception e) {
                 return null;
             }
         }
-        // Obtener 'SystemString' a partir de 'Time'
-        public static String toSystemString(LocalTime t) {
+        // Obtener 'FileString' a partir de 'Time'
+        public static String toFileString(LocalTime t) {
             try {
-                return t.format(tf_os);
+                return t.format(tf_file);
             } catch (Exception e) {
                 return null;
             }
         }
-        // Obtener 'SystemString' a partir de 'Date'
-        public static String toSystemString(LocalDate d) {
+        // Obtener 'FileString' a partir de 'Date'
+        public static String toFileString(LocalDate d) {
             try {
-                return d.format(df_os);
+                return d.format(df_file);
             } catch (Exception e) {
                 return null;
             }
@@ -305,13 +271,13 @@ public class G4DUtility {
         // Obtener 'DateTime' a partir de 'DateTimeString'
         public static LocalDateTime toDateTime(String dts) {
             try {
-                return LocalDateTime.parse(dts, dtf_ds);
+                return LocalDateTime.parse(dts, dtf_display);
             } catch (Exception e) {
                 try {
-                    return LocalDateTime.parse(dts, dtf_db);
+                    return LocalDateTime.parse(dts, dtf_sql);
                 } catch (Exception ex) {
                     try {
-                        return LocalDateTime.parse(dts, dtf_os);
+                        return LocalDateTime.parse(dts, dtf_file);
                     } catch (Exception exc) {
                         throw new RuntimeException();
                     }
@@ -341,13 +307,13 @@ public class G4DUtility {
         // Obtener 'Date' a partir de 'DateString'
         public static LocalDate toDate(String ds) {
             try {
-                return LocalDate.parse(ds, df_ds);
+                return LocalDate.parse(ds, df_display);
             } catch (Exception e) {
                 try {
-                    return LocalDate.parse(ds, df_db);
+                    return LocalDate.parse(ds, df_sql);
                 } catch (Exception ex) {
                     try {
-                        return LocalDate.parse(ds, df_os);
+                        return LocalDate.parse(ds, df_file);
                     } catch (Exception exc) {
                         throw new RuntimeException();
                     }
@@ -364,13 +330,13 @@ public class G4DUtility {
         // Obtener 'Time' a partir de 'TimeString'
         public static LocalTime toTime(String ts) {
             try {
-                return LocalTime.parse(ts, tf_ds);
+                return LocalTime.parse(ts, tf_display);
             } catch (Exception e) {
                 try {
-                    return LocalTime.parse(ts, tf_db);
+                    return LocalTime.parse(ts, tf_sql);
                 } catch (Exception ex) {
                     try {
-                        return LocalTime.parse(ts, tf_os);
+                        return LocalTime.parse(ts, tf_file);
                     } catch (Exception exc) {
                         throw new RuntimeException();
                     }
@@ -426,7 +392,7 @@ public class G4DUtility {
         // Obtener 'AdmissibleEnum' de 'EnumString'
         public static <E extends Enum<E>> E toAdmissible(String es, Class<E> enumType) {
             try {
-                return Enum.valueOf(enumType, es);
+                return Enum.valueOf(enumType, es.trim().toUpperCase());
             } catch (Exception e) {
                 return null;
             }
@@ -447,10 +413,19 @@ public class G4DUtility {
                 return defaultValue;
             }
         }
+        // Obtener [nombres, apellidos] a partir de un nombre completo (2 primeras palabras = nombres)
+        public static String[] toNombresApellidos(String nombreCompleto) {
+            String[] palabras = nombreCompleto.trim().split("\\s+");
+            if (palabras.length == 1) return new String[] { palabras[0], "" };
+            int cantNombres = (palabras.length >= 4) ? 2 : 1;
+            String nombres = String.join(" ", Arrays.copyOfRange(palabras, 0, cantNombres));
+            String apellidos = String.join(" ", Arrays.copyOfRange(palabras, cantNombres, palabras.length));
+            return new String[] { nombres, apellidos };
+        }
         // Obtener 'AdmissibleDateTimeString' de 'DateTimeString'
         public static String toAdmissibleDateTimeString(String dts) {
             try {
-                return toDatabaseString(toDateTime(dts));
+                return toSqlString(toDateTime(dts));
             } catch (Exception e) {
                 return null;
             }
@@ -676,25 +651,40 @@ public class G4DUtility {
                 this.code = code;
             }
 
-            public static String delete(int numChars) {
-                return getAnsiString("D",numChars) + getAnsiString("P",numChars);
+            public static String getCustomAction(String actions) {
+                StringBuilder ansiString = new StringBuilder();
+                Pattern pattern = Pattern.compile("[A-Z][a-z]?\\d*");
+                Matcher matcher = pattern.matcher(actions);
+                while (matcher.find()) {
+                    int mode;
+                    String action = matcher.group();
+                    String id = String.valueOf(action.charAt(0));
+                    if(action.length() > 1) {
+                        if(Character.isLowerCase(action.charAt(1))) {
+                            id += action.charAt(1);
+                            if(action.length() > 2) {
+                                mode = Integer.parseInt(action.substring(2));
+                            } else {
+                                mode = 1;
+                            }
+                        } else {
+                            mode = Integer.parseInt(action.substring(1));
+                        }
+                    } else {
+                        mode = 1;
+                    }
+                    ansiString.append(Action.toAnsiString(id, mode));
+                }
+                return ansiString.toString();
             }
 
-            public static String delete_current_line() {
-                return getAnsiString("K",2) + getAnsiString("G",1);
-            }
-
-            public static String to_ansi(String actionId, int mode) {
+            private static String toAnsiString(String actionId, int mode) {
                 for(Action action : Action.values()) {
                     if(actionId.compareTo(action.id) == 0) {
-                        return getAnsiString(action.code, mode);
+                        return "\u001B[" + mode + action.code;
                     }
                 }
                 return "";
-            }
-
-            private static String getAnsiString(String code, int mode) {
-                return "\u001B[" + mode + code;
             }
         }
         // Enumeración 'Auxiliar' para manejor de colores en logger
@@ -714,25 +704,21 @@ public class G4DUtility {
                 this.code = code;
             }
 
-            public static String set_color(String colorId) {
-                return to_ansi(colorId);
+            public static String set(String colorId) {
+                return toAnsiString(colorId);
             }
 
-            public static String reset_color() {
-                return getAnsiString("0");
+            public static String reset() {
+                return toAnsiString("0");
             }
 
-            public static String to_ansi(String colorId){
+            private static String toAnsiString(String colorId){
                 for(Color color : Color.values()) {
                     if(colorId.compareTo(color.id) == 0) {
-                        return getAnsiString(color.code);
+                        return "\u001B[" + color.code + "m";
                     }
                 }
                 return "";
-            }
-
-            private static String getAnsiString(String code) {
-                return "\u001B[" + code + "m";
             }
         }
 
@@ -778,85 +764,63 @@ public class G4DUtility {
             logger.info(String.format(msgFormat, args));
         }
 
+        public static void log_warn(String msg) {
+            logger.warning(Color.set("Y"));
+            logger.warning(String.format(msg));
+            logger.warning(Color.reset());
+        }
+
+        public static void logln_warn(String msg) {
+            logger.warning(Color.set("Y"));
+            logger.warning(String.format(msg + "%n"));
+            logger.warning(Color.reset());
+        }
+
+        public static void logf_warn(String msgFormat, Object... args) {
+            logger.warning(Color.set("Y"));
+            logger.warning(String.format(msgFormat, args));
+            logger.warning(Color.reset());
+        }
+
         public static void log_err(String msg) {
-            set_color("R");
+            logger.severe(Color.set("R"));
             logger.severe(String.format(msg));
-            reset_color();
+            logger.severe(Color.reset());
         }
 
         public static void logln_err(String msg) {
-            set_color("R");
+            logger.severe(Color.set("R"));
             logger.severe(String.format(msg + "%n"));
-            reset_color();
+            logger.severe(Color.reset());
         }
 
         public static void logf_err(String msgFormat, Object... args) {
-            set_color("R");
+            logger.severe(Color.set("R"));
             logger.severe(String.format(msgFormat, args));
-            reset_color();
+            logger.severe(Color.reset());
         }
 
         public static void delete(int numChars) {
-            logger.info(Action.delete(numChars));
+            logger.info(Action.getCustomAction("D" + numChars + "P" + numChars));
         }
 
         public static void delete_current_line() {
-            logger.info(Action.delete_current_line());
+            logger.info(Action.getCustomAction("K2G1"));
         }
 
         public static void delete_upper_line() {
-            G4DUtility.Logger.delete_current_line();
-            logger.info(getCustomAction("U1Cl2"));
+            logger.info(Action.getCustomAction("K2G1U1Cl2"));
         }
 
         public static void delete_lines(int numLines) {
             if(numLines > 0) {
-                logger.info(Action.delete_current_line());
+                delete_current_line();
                 for(int i = 0;i < numLines - 1;i++) {
-                    logger.info(Action.to_ansi("U",1));
-                    logger.info(Action.delete_current_line());
+                    delete_upper_line();
                 }
             }
         }
-
-        public static void set_color(String colorId) {
-            logger.info(Color.set_color(colorId));
-        }
-
-        public static void reset_color() {
-            logger.info(Color.reset_color());
-        }
-
-        public static void custom_action(String actions) {
-            logger.info(getCustomAction(actions));
-        }
-
-        private static String getCustomAction(String actions) {
-            StringBuilder ansiString = new StringBuilder();
-            Pattern pattern = Pattern.compile("[A-Z][a-z]?\\d*");
-            Matcher matcher = pattern.matcher(actions);
-            while (matcher.find()) {
-                int mode;
-                String action = matcher.group();
-                String id = String.valueOf(action.charAt(0));
-                if(action.length() > 1) {
-                    if(Character.isLowerCase(action.charAt(1))) {
-                        id += action.charAt(1);
-                        if(action.length() > 2) {
-                            mode = Integer.parseInt(action.substring(2));
-                        } else {
-                            mode = 1;
-                        }
-                    } else {
-                        mode = Integer.parseInt(action.substring(1));
-                    }
-                } else {
-                    mode = 1;
-                }
-                ansiString.append(Action.to_ansi(id, mode));
-            }
-            return ansiString.toString();
-        }
+        
         // Clase 'Auxiliar' para manejo de estadistícas de ejecución de algoritmo en el logger
         public static class Stats {
             private static Instant g_start;
@@ -864,23 +828,37 @@ public class G4DUtility {
             private static Instant p_start;
             private static long duration;
             public static int posPed;
-            public static int numPed;
-            public static int totalPed;
+            public static int cantPed;
             public static int posProd;
-            public static int numProd;
-            public static int totalProd;
+            public static int cantProd;
 
             static {
-                totalPed = 0;
-                totalProd = 0;
-                reset_count();
+                posPed = 0;
+                cantPed = 0;
+                posProd = 0;
+                cantProd = 0;
             }
 
-            public static void reset_count() {
-                posPed = 0;
-                numPed = 1;
-                posProd = 0;
-                numProd = 0;
+            public static void reset_ped_count(int cantPed) {
+                posPed = 1;
+                Stats.cantPed = cantPed;
+            }
+
+            public static void reset_prod_count(int ped_cantProd) {
+                posProd = 1;
+                Stats.cantProd = ped_cantProd;
+            }
+
+            public static void next_ped() {
+                posPed++;
+            }
+
+            public static void next_prod() {
+                posProd++;
+            }
+
+            public static void next_prod_lot(int lot_cantProd) {
+                posProd += lot_cantProd;
             }
 
             public static void set_global_start() {
@@ -923,36 +901,25 @@ public class G4DUtility {
             }
 
             public static void log_stat_ped() {
-                G4DUtility.Logger.logf("[#] TOTAL DE PEDIDOS ATENDIDOS: %d de' %d'%n", posPed, totalPed);
-                G4DUtility.Logger.logf("[#] TIEMPO PROMEDIO DE ATENCION DE PEDIDO: %.3f ms.%n", get_mean_time_by_ped());
+                G4DUtility.Logger.logf("[##] TOTAL DE PEDIDOS ATENDIDOS: '%d' de '%d'%n", posPed, cantPed);
+                G4DUtility.Logger.logf("[##] TIEMPO PROMEDIO DE ATENCION: %.3f ms.%n", get_mean_time_by_ped());
             }
 
             public static void log_stat_prod() {
-                G4DUtility.Logger.logf("[#] TOTAL DE PRODUCTOS ENRUTADOS: %d de '%d'%n", posProd, totalProd);
-                G4DUtility.Logger.logf("[#] TIEMPO PROMEDIO DE ENRUTAMIENTO DE PRODUCTO: %.3f us.%n", get_mean_time_by_prod());
-            }
-
-            public static void log_stat_local_sol() {
-                G4DUtility.Logger.logf("[#] TIEMPO DE CONVERGENCIA: %.2f seg.%n", get_convergence_time());
+                G4DUtility.Logger.logf("[>] TOTAL DE PRODUCTOS ENRUTADOS: '%d' de '%d'%n", posProd, cantProd);
+                G4DUtility.Logger.logf("[#] TIEMPO PROMEDIO DE ENRUTAMIENTO: %.3f us.%n", get_mean_time_by_prod());
             }
 
             public static void log_stat_global_sol() {
                 G4DUtility.Logger.logf("[#] TIEMPO TOTAL DE REALIZACION: %.2f seg.%n", get_convergence_time());
             }
 
+            public static void log_stat_local_sol() {
+                G4DUtility.Logger.logf("[#] TIEMPO DE CONVERGENCIA: %.2f seg.%n", get_convergence_time());
+            }
+
             public static void log_err_stat() {
-                G4DUtility.Logger.logf_err("[ERROR] No se pudo enrutar el producto #%d del pedido #%s.%n", numProd, numPed);
-                G4DUtility.Logger.logf_err("[ERROR] Solo se atendieron %d de '%d' pedidos. (%d de '%d' productos)%n", posPed, totalPed, posProd, totalProd);
-            }
-
-            public static void next_lot(int cantProd) {
-                posProd += cantProd;
-                numProd += cantProd;
-            }
-
-            public static void next_ped() {
-                posPed++;
-                numPed++;
+                G4DUtility.Logger.logf_err("[ERROR] No se pudo enrutar el producto #%d del pedido #%s.%n", posProd + 1, posPed + 1);
             }
         }
     }
@@ -1141,7 +1108,7 @@ public class G4DUtility {
             return prefix + "-" + base36Millis + base36Uuid;
         }
         // Obtener 'UniqueName'
-        public static String getUniqueName() {
+        public static String[] getUniqueFullName() {
             Random random = new Random();
             int idioma = random.nextInt(6);
             int cantNombres, cantApellidos;
@@ -1152,7 +1119,7 @@ public class G4DUtility {
                 case 0 -> { // ES
                     nombresPosibles = (genero == 'H') ? NOMBRES_ES_H : NOMBRES_ES_M;
                     apellidosPosibles = APELLIDOS_ES;
-                    cantNombres = 2 + random.nextInt(2); // 2 o 3 nombres
+                    cantNombres = 2 + random.nextInt(2);
                 }
                 case 1 -> { // BR
                     nombresPosibles = (genero == 'H') ? NOMBRES_BR_H : NOMBRES_BR_M;
@@ -1167,7 +1134,7 @@ public class G4DUtility {
                 case 3 -> { // RU
                     nombresPosibles = (genero == 'H') ? NOMBRES_RU_H : NOMBRES_RU_M;
                     apellidosPosibles = (genero == 'H') ? APELLIDOS_RU_H : APELLIDOS_RU_M;
-                    cantNombres = 1 + random.nextInt(2); // 1 o 2 nombres + patronimico
+                    cantNombres = 1 + random.nextInt(2);
                 }
                 case 4 -> { // KR
                     nombresPosibles = (genero == 'H') ? NOMBRES_KR_H : NOMBRES_KR_M;
@@ -1187,22 +1154,27 @@ public class G4DUtility {
                 cantNombres = 1 + random.nextInt(2);
                 cantApellidos = 1;
             }
-            List<String> partes = new ArrayList<>();
-            while (partes.size() < cantNombres) {
-                partes.add(nombresPosibles[random.nextInt(nombresPosibles.length)]);
+            List<String> nombres = new ArrayList<>();
+            while (nombres.size() < cantNombres) {
+                nombres.add(nombresPosibles[random.nextInt(nombresPosibles.length)]);
             }
-            // Patronímico ruso
             if (idioma == 3) {
                 String padre = NOMBRES_RU_H[random.nextInt(NOMBRES_RU_H.length)];
                 String patronimico = (genero == 'H') ? padre + "ovich" : padre + "ovna";
-                partes.add(patronimico);
+                nombres.add(patronimico);
             }
-            // Apellidos
-            while (partes.size() < cantNombres + cantApellidos) {
-                partes.add(apellidosPosibles[random.nextInt(apellidosPosibles.length)]);
+            List<String> apellidos = new ArrayList<>();
+            while (apellidos.size() < cantApellidos) {
+                apellidos.add(apellidosPosibles[random.nextInt(apellidosPosibles.length)]);
             }
-            return String.join(" ", partes);
+            return new String[] { String.join(" ", nombres), String.join(" ", apellidos) };
         }
+        // Obtener 'UniqueName' (nombres + apellidos en una sola cadena)
+        public static String getUniqueName() {
+            String[] nombreCompleto = getUniqueFullName();
+            return nombreCompleto[0] + " " + nombreCompleto[1];
+        }
+
         // Obtener 'UniqueEmail'
         public static String getUniqueEmail() {
             Random random = new Random();

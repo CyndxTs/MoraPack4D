@@ -33,8 +33,8 @@ public class RegistroMapper {
         RegistroDTO dto = new RegistroDTO();
         dto.setCodigo(entity.getCodigo());
         dto.setSigueVigente(entity.getSigueVigente());
-        dto.setFechaHoraIngreso(G4DUtility.Convertor.toDisplayString(entity.getFechaHoraIngresoUTC()));
-        dto.setFechaHoraEgreso(G4DUtility.Convertor.toDisplayString(entity.getFechaHoraEgresoUTC()));
+        dto.setFechaHoraIngreso(G4DUtility.Convertor.toDisplayString(entity.getFechaHoraIngreso()));
+        dto.setFechaHoraEgreso(G4DUtility.Convertor.toDisplayString(entity.getFechaHoraEgreso()));
         LoteEntity loteEntity = entity.getLote();
         dto.setCodLote(loteEntity.getCodigo());
         dto.setTamLote(loteEntity.getTamanio());

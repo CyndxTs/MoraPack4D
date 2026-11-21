@@ -32,8 +32,8 @@ public class RegistroAdapter {
         Registro algorithm = new Registro();
         algorithm.setCodigo(entity.getCodigo());
         algorithm.setSigueVigente(entity.getSigueVigente());
-        algorithm.setFechaHoraIngreso(entity.getFechaHoraIngresoUTC());
-        algorithm.setFechaHoraEgreso(entity.getFechaHoraEgresoUTC());
+        algorithm.setFechaHoraIngreso(entity.getFechaHoraIngreso());
+        algorithm.setFechaHoraEgreso(entity.getFechaHoraEgreso());
         algorithm.setLote(loteAdapter.toAlgorithm(idTransaccion, entity.getLote()));
         if(!poolAlgorithm.containsKey(idTransaccion)) {
             poolAlgorithm.put(idTransaccion, new HashMap<>());
@@ -49,8 +49,8 @@ public class RegistroAdapter {
         RegistroEntity entity = registroService.findByCodigo(algorithm.getCodigo()).orElse(new RegistroEntity());
         entity.setCodigo(algorithm.getCodigo());
         entity.setSigueVigente(algorithm.getSigueVigente());
-        entity.setFechaHoraIngresoUTC(algorithm.getFechaHoraIngreso());
-        entity.setFechaHoraEgresoUTC(algorithm.getFechaHoraEgreso());
+        entity.setFechaHoraIngreso(algorithm.getFechaHoraIngreso());
+        entity.setFechaHoraEgreso(algorithm.getFechaHoraEgreso());
         entity.setLote(loteAdapter.toEntity(idTransaccion, algorithm.getLote()));
         if(!poolEntity.containsKey(idTransaccion)) {
             poolEntity.put(idTransaccion, new HashMap<>());

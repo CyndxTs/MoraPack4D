@@ -6,6 +6,11 @@
 
 package com.pucp.dp1.grupo4d.morapack.service;
 
+import com.pucp.dp1.grupo4d.morapack.model.dto.PaisDTO;
+import com.pucp.dp1.grupo4d.morapack.model.dto.UsuarioDTO;
+import com.pucp.dp1.grupo4d.morapack.model.enumeration.TipoUsuario;
+import com.pucp.dp1.grupo4d.morapack.service.model.TrabajadorService;
+import com.pucp.dp1.grupo4d.morapack.service.model.PaisService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -77,6 +82,8 @@ public class G4DService {
     private final SegmentacionAdapter segmentacionAdapter;
     private final AdministradorService administradorService;
     private final ClienteService clienteService;
+    private final TrabajadorService trabajadorService;
+    private final PaisService paisService;
     private final UsuarioAdapter usuarioAdapter;
     private final VueloAdapter vueloAdapter;
     private final VueloMapper vueloMapper;
@@ -94,7 +101,7 @@ public class G4DService {
                       LoteAdapter loteAdapter, ParametrosService parametrosService, ParametrosMapper parametrosMapper,
                       PedidoService pedidoService, PedidoAdapter pedidoAdapter, PedidoMapper pedidoMapper, PlanService planService, PlanAdapter planAdapter,
                       RegistroAdapter registroAdapter, RutaAdapter rutaAdapter, RutaMapper rutaMapper,
-                      SegmentacionAdapter segmentacionAdapter, AdministradorService administradorService, ClienteService clienteService, UsuarioAdapter usuarioAdapter,
+                      SegmentacionAdapter segmentacionAdapter, AdministradorService administradorService, ClienteService clienteService, TrabajadorService trabajadorService, PaisService paisService, UsuarioAdapter usuarioAdapter,
                       VueloAdapter vueloAdapter, VueloMapper vueloMapper, ObjectProvider<G4DService> self,
                       CommunicationService communicationService, ContextService contextService, ObjectMapper objectMapper, G4DExceptionHandlerAsync asyncExceptionHandler) {
         this.aeropuertoService = aeropuertoService;
@@ -114,6 +121,8 @@ public class G4DService {
         this.segmentacionAdapter = segmentacionAdapter;
         this.administradorService = administradorService;
         this.clienteService = clienteService;
+        this.trabajadorService = trabajadorService;
+        this.paisService = paisService;
         this.usuarioAdapter = usuarioAdapter;
         this.vueloAdapter = vueloAdapter;
         this.vueloMapper = vueloMapper;
@@ -151,6 +160,17 @@ public class G4DService {
             case "PLAN" -> planService.importar(idTransaccion, objectMapper.treeToValue(dto, PlanDTO.class));
             case "PEDIDO" -> pedidoService.importar(idTransaccion, objectMapper.treeToValue(dto, PedidoDTO.class));
             case "PARAMETROS" -> parametrosService.importar(idTransaccion, objectMapper.treeToValue(dto, ParametrosDTO.class));
+            case "PAIS" -> paisService.importar(idTransaccion, objectMapper.treeToValue(dto, PaisDTO.class));
+            case "USUARIO" -> {
+                UsuarioDTO usuarioDTO = objectMapper.treeToValue(dto, UsuarioDTO.class);
+                TipoUsuario tipoUsuario = G4DUtility.Convertor.toAdmissible(usuarioDTO.getTipoUsuario(), TipoUsuario.class);
+                if (tipoUsuario == null) throw new G4DException(String.format("Tipo de usuario ('%s') inválido!", usuarioDTO.getTipoUsuario()));
+                switch (tipoUsuario) {
+                    case CLIENTE -> clienteService.importar(idTransaccion, usuarioDTO);
+                    case TRABAJADOR -> trabajadorService.importar(idTransaccion, usuarioDTO);
+                    case ADMINISTRADOR -> administradorService.importar(idTransaccion, usuarioDTO);
+                }
+            }
             default -> throw new G4DException("Tipo de dato inválido!");
         }
         return CompletableFuture.completedFuture(null);
@@ -182,6 +202,7 @@ public class G4DService {
         switch (request.getTipoArchivo().toUpperCase()) {
             case "ADMINISTRADORES" -> administradorService.importar(idTransaccion, archivo);
             case "CLIENTES" -> clienteService.importar(idTransaccion, archivo);
+            case "TRABAJADORES" -> trabajadorService.importar(idTransaccion, archivo);
             case "AEROPUERTOS" -> aeropuertoService.importar(idTransaccion, archivo);
             case "PLANES" -> planService.importar(idTransaccion, archivo);
             case "PEDIDOS" -> pedidoService.importar(idTransaccion, archivo, request);

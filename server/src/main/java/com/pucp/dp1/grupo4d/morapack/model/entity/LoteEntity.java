@@ -1,8 +1,8 @@
-/**
+/**]
  >> Project:    MoraPack
  >> Author:     Grupo 4D
  >> File:       LoteEntity.java
- **/
+ [**/
 
 package com.pucp.dp1.grupo4d.morapack.model.entity;
 
@@ -14,14 +14,14 @@ import java.util.List;
 import java.util.Objects;
 
 @Entity
-@Table(name = "LOTE", schema = "morapack4d")
+@Table(name = "LOTE")
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class LoteEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+    private Long id;
 
-    @Column(nullable = false, unique = true, length = 30)
+    @Column(nullable = false, unique = true, length = 20)
     private String codigo;
 
     @Column(nullable = false)
@@ -57,8 +57,8 @@ public class LoteEntity {
         return Objects.hash(id);
     }
 
-    public Integer getId() { return id; }
-    public void setId(Integer id) { this.id = id; }
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
     public String getCodigo() { return codigo; }
     public void setCodigo(String codigo) { this.codigo = codigo; }
     public Integer getTamanio() { return tamanio; }

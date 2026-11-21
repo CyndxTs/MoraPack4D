@@ -1,0 +1,27 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Server: ejecutar (dev)",
+      "type": "shell",
+      "command": "./mvnw spring-boot:run",
+      "windows": { "command": ".\\mvnw.cmd spring-boot:run" },
+      "problemMatcher": []
+    },
+    {
+      "label": "Server: seed (reiniciar BD)",
+      "type": "shell",
+      "command": "./mvnw spring-boot:run -Dspring-boot.run.arguments=--seed",
+      "windows": { "command": ".\\mvnw.cmd spring-boot:run \"-Dspring-boot.run.arguments=--seed\"" },
+      "problemMatcher": []
+    },
+    {
+      "label": "Server: compilar",
+      "type": "shell",
+      "command": "./mvnw -q compile",
+      "windows": { "command": ".\\mvnw.cmd -q compile" },
+      "group": "build",
+      "problemMatcher": []
+    }
+  ]
+}

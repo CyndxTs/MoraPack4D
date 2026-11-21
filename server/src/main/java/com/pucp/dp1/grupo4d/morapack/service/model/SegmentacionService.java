@@ -40,15 +40,15 @@ public class SegmentacionService {
         return segmentacionRepository.findAll(pageable).getContent();
     }
 
-    public Optional<SegmentacionEntity> findById(Integer id) {
+    public Optional<SegmentacionEntity> findById(Long id) {
         return segmentacionRepository.findById(id);
     }
 
-    public boolean existsById(Integer id) {
+    public boolean existsById(Long id) {
         return segmentacionRepository.existsById(id);
     }
 
-    public void deleteById(Integer id) {
+    public void deleteById(Long id) {
         segmentacionRepository.deleteById(id);
     }
 
@@ -61,7 +61,7 @@ public class SegmentacionService {
     }
 
     public ListResponse listar(ListRequest request) {
-        Pageable pageable = G4DUtility.Convertor.toAdmissible(request.getPagina(), request.getTamanio(), Sort.Order.asc("fechaHoraAplicacionUTC"));
+        Pageable pageable = G4DUtility.Convertor.toAdmissible(request.getPagina(), request.getTamanio(), Sort.Order.asc("fechaHoraAplicacion"));
         List<DTO> dtos = new ArrayList<>();
         List<SegmentacionEntity> entities = this.findAll(pageable);
         entities.forEach(entity -> dtos.add(segmentacionMapper.toDTO(entity)));

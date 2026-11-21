@@ -1,8 +1,8 @@
-/**
+/**]
  >> Project:    MoraPack
  >> Author:     Grupo 4D
  >> File:       RegistroEntity.java
- **/
+ [**/
 
 package com.pucp.dp1.grupo4d.morapack.model.entity;
 
@@ -12,30 +12,24 @@ import java.time.LocalDateTime;
 import java.util.Objects;
 
 @Entity
-@Table(name = "REGISTRO", schema = "morapack4d")
+@Table(name = "REGISTRO")
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class RegistroEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+    private Long id;
 
-    @Column(nullable = false, unique = true, length = 30)
+    @Column(nullable = false, unique = true, length = 20)
     private String codigo;
 
     @Column(name = "sigue_vigente", nullable = false)
     private Boolean sigueVigente = true;
 
-    @Column(name = "fh_ingreso_local", nullable = false)
-    private LocalDateTime fechaHoraIngresoLocal;
+    @Column(name = "fh_ingreso", nullable = false)
+    private LocalDateTime fechaHoraIngreso;
 
-    @Column(name = "fh_ingreso_utc", nullable = false)
-    private LocalDateTime fechaHoraIngresoUTC;
-
-    @Column(name = "fh_egreso_local", nullable = false)
-    private LocalDateTime fechaHoraEgresoLocal;
-
-    @Column(name = "fh_egreso_utc", nullable = false)
-    private LocalDateTime fechaHoraEgresoUTC;
+    @Column(name = "fh_egreso", nullable = false)
+    private LocalDateTime fechaHoraEgreso;
 
     @ManyToOne
     @JoinColumn(name = "id_aeropuerto", nullable = false)
@@ -60,20 +54,16 @@ public class RegistroEntity {
         return Objects.hash(id);
     }
 
-    public Integer getId() { return id; }
-    public void setId(Integer id) { this.id = id; }
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
     public String getCodigo() { return codigo; }
     public void setCodigo(String codigo) { this.codigo = codigo; }
     public Boolean getSigueVigente() { return sigueVigente; }
     public void setSigueVigente(Boolean sigueVigente) { this.sigueVigente = sigueVigente; }
-    public LocalDateTime getFechaHoraIngresoLocal() { return fechaHoraIngresoLocal; }
-    public void setFechaHoraIngresoLocal(LocalDateTime fechaHoraIngresoLocal) { this.fechaHoraIngresoLocal = fechaHoraIngresoLocal; }
-    public LocalDateTime getFechaHoraIngresoUTC() { return fechaHoraIngresoUTC; }
-    public void setFechaHoraIngresoUTC(LocalDateTime fechaHoraIngresoUTC) { this.fechaHoraIngresoUTC = fechaHoraIngresoUTC; }
-    public LocalDateTime getFechaHoraEgresoLocal() { return fechaHoraEgresoLocal; }
-    public void setFechaHoraEgresoLocal(LocalDateTime fechaHoraEgresoLocal) { this.fechaHoraEgresoLocal = fechaHoraEgresoLocal; }
-    public LocalDateTime getFechaHoraEgresoUTC() { return fechaHoraEgresoUTC; }
-    public void setFechaHoraEgresoUTC(LocalDateTime fechaHoraEgresoUTC) { this.fechaHoraEgresoUTC = fechaHoraEgresoUTC; }
+    public LocalDateTime getFechaHoraIngreso() { return fechaHoraIngreso; }
+    public void setFechaHoraIngreso(LocalDateTime fechaHoraIngreso) { this.fechaHoraIngreso = fechaHoraIngreso; }
+    public LocalDateTime getFechaHoraEgreso() { return fechaHoraEgreso; }
+    public void setFechaHoraEgreso(LocalDateTime fechaHoraEgreso) { this.fechaHoraEgreso = fechaHoraEgreso; }
     public AeropuertoEntity getAeropuerto() { return aeropuerto; }
     public void setAeropuerto(AeropuertoEntity aeropuerto) { this.aeropuerto = aeropuerto; }
     public LoteEntity getLote() { return lote; }

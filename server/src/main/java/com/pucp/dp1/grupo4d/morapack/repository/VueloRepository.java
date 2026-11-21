@@ -16,7 +16,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface VueloRepository extends JpaRepository<VueloEntity, Integer> {
+public interface VueloRepository extends JpaRepository<VueloEntity, Long> {
     Optional<VueloEntity> findByCodigo(String codigo);
 
     // Listar todos los vuelos pertenecientes a rutas pertenecientes a pedidos de un escenario dentro de cierto rango temporal
@@ -30,7 +30,7 @@ public interface VueloRepository extends JpaRepository<VueloEntity, Integer> {
         JOIN SEGMENTACION s ON s.id = l.id_segmentacion
         JOIN PEDIDO p ON p.id = s.id_pedido
         JOIN AEROPUERTO a ON a.id = p.id_aeropuerto_destino
-        WHERE p.fh_generacion_utc BETWEEN :fechaHoraInicio AND :fechaHoraFin
+        WHERE p.fh_generacion BETWEEN :fechaHoraInicio AND :fechaHoraFin
           AND p.tipo_escenario = :tipoEscenario
           AND a.codigo NOT IN (:codOrigenes)
         """,

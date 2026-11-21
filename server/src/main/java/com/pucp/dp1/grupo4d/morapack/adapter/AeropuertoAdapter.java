@@ -36,8 +36,8 @@ public class AeropuertoAdapter {
         Aeropuerto algorithm = new Aeropuerto();
         algorithm.setCodigo(entity.getCodigo());
         algorithm.setCiudad(entity.getCiudad());
-        algorithm.setPais(entity.getPais());
-        algorithm.setContinente(entity.getContinente());
+        algorithm.setPais(entity.getNombrePais());
+        algorithm.setContinente(entity.getNombreContinente());
         algorithm.setAlias(entity.getAlias());
         algorithm.setHusoHorario(entity.getHusoHorario());
         algorithm.setCapacidad(entity.getCapacidad());

@@ -15,6 +15,7 @@ import com.pucp.dp1.grupo4d.morapack.model.dto.request.FilterRequest;
 import com.pucp.dp1.grupo4d.morapack.model.dto.request.ListRequest;
 import com.pucp.dp1.grupo4d.morapack.model.dto.response.ListResponse;
 import com.pucp.dp1.grupo4d.morapack.model.entity.AeropuertoEntity;
+import com.pucp.dp1.grupo4d.morapack.model.entity.PaisEntity;
 import com.pucp.dp1.grupo4d.morapack.model.enumeration.EstadoEjecucion;
 import com.pucp.dp1.grupo4d.morapack.model.enumeration.EstadoFinalizacion;
 import com.pucp.dp1.grupo4d.morapack.model.exception.G4DException;
@@ -39,12 +40,14 @@ public class AeropuertoService {
     private final AeropuertoMapper aeropuertoMapper;
     private final CommunicationService communicationService;
     private final ImportationService importationService;
+    private final PaisService paisService;
 
-    public AeropuertoService(AeropuertoRepository aeropuertoRepository, AeropuertoMapper aeropuertoMapper, CommunicationService communicationService, ImportationService importationService) {
+    public AeropuertoService(AeropuertoRepository aeropuertoRepository, AeropuertoMapper aeropuertoMapper, CommunicationService communicationService, ImportationService importationService, PaisService paisService) {
         this.aeropuertoRepository = aeropuertoRepository;
         this.aeropuertoMapper = aeropuertoMapper;
         this.communicationService = communicationService;
         this.importationService = importationService;
+        this.paisService = paisService;
     }
 
     public AeropuertoEntity save(AeropuertoEntity aeropuerto) {
@@ -130,31 +133,35 @@ public class AeropuertoService {
     public void importar(String idTransaccion, AeropuertoDTO dto) {
         String progressDestination = String.format("/topic/importation-%s", idTransaccion), statusDestination = String.format("/topic/importation-status-%s", idTransaccion);
         try {
-            AeropuertoEntity aeropuerto = new AeropuertoEntity();
+            System.out.println("Importando aeropuerto..");
             communicationService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.INICIADO));
             communicationService.enviar(progressDestination, new ProgressPayload("Cargando aeropuerto", 0, 1));
+            if (this.existsByCodigo(dto.getCodigo())) {
+                throw new G4DException(String.format("El aeropuerto ('%s') ya existe.", dto.getCodigo()));
+            }
+            AeropuertoEntity aeropuerto = new AeropuertoEntity();
             aeropuerto.setCodigo(dto.getCodigo());
             aeropuerto.setCiudad(dto.getCiudad());
-            aeropuerto.setPais(dto.getPais());
-            aeropuerto.setContinente(dto.getContinente());
+            aeropuerto.setPais(paisService.obtenerOCrear(dto.getPais(), dto.getHusoHorario(), dto.getContinente(), null));
             aeropuerto.setAlias(dto.getAlias());
-            aeropuerto.setHusoHorario(dto.getHusoHorario());
             aeropuerto.setCapacidad(dto.getCapacidad());
-            aeropuerto.setEsSede(dto.getEsSede());
+            aeropuerto.setEsSede(dto.getEsSede() != null ? dto.getEsSede() : false);
             aeropuerto.setLatitudDEC(dto.getLatitud());
             aeropuerto.setLatitudDMS(G4DUtility.Calculator.getLatDMS(aeropuerto.getLatitudDEC()));
             aeropuerto.setLongitudDEC(dto.getLongitud());
             aeropuerto.setLongitudDMS(G4DUtility.Calculator.getLonDMS(aeropuerto.getLongitudDEC()));
             this.save(aeropuerto);
-            G4DUtility.Logger.logln("[<] AEROPUERTO CARGADO!");
+            System.out.println("[<] AEROPUERTO CARGADO!");
             communicationService.enviar(progressDestination, new ProgressPayload("Cargando aeropuerto", 1, 1));
             communicationService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.EXITOSO));
         } catch (Exception e) {
             communicationService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.ERRONEO));
-            throw new RuntimeException(e);
+            throw (e instanceof G4DException g4dEx) ? g4dEx : new RuntimeException(e);
         }
     }
 
+    // Formato del profesor: encabezado de 2 líneas, luego bloques "<Continente>." seguidos de filas
+    // "NN  CODIGO  CIUDAD  PAIS  ALIAS  GMT  CAPACIDAD  Latitude: ...  Longitude: ..."
     public void importar(String idTransaccion, Path archivo) {
         String progressDestination = String.format("/topic/importation-%s", idTransaccion), statusDestination = String.format("/topic/importation-status-%s", idTransaccion);
         try {
@@ -162,8 +169,9 @@ public class AeropuertoService {
             communicationService.enviar(progressDestination, new ProgressPayload("Cargando recursos de importación", 0, 2));
             BufferedReader br = Files.newBufferedReader(archivo, G4DUtility.Reader.getFileCharset(archivo));
             communicationService.enviar(progressDestination, new ProgressPayload("Cargando recursos de importación", 1, 2));
+            Map<String, PaisEntity> poolPaises = new HashMap<>();
             int lTotales = (int) G4DUtility.Reader.getLineCount(archivo);
-            int lProcesadas = 2;
+            int lProcesadas = 2, omitidos = 0;
             communicationService.enviar(progressDestination, new ProgressPayload("Cargando recursos de importación", 2, 2));
             List<AeropuertoEntity> aeropuertos = new ArrayList<>();
             String continente = "";
@@ -173,44 +181,53 @@ public class AeropuertoService {
             communicationService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.INICIADO));
             communicationService.enviar(progressDestination, new ProgressPayload("Leyendo archivo", lProcesadas, lTotales));
             while ((linea = br.readLine()) != null) {
-                linea = linea.trim();
+                linea = linea.replace("\uFEFF", "").trim();
                 if(!linea.isBlank()) {
                     if(Character.isDigit(linea.charAt(0))) {
                         String[] partes = linea.split("\\s{2,}");
-                        AeropuertoEntity aeropuerto = new AeropuertoEntity();
-                        aeropuerto.setCodigo(partes[1].trim());
-                        aeropuerto.setCiudad(partes[2].trim());
-                        aeropuerto.setPais(partes[3].trim());
-                        aeropuerto.setContinente(continente);
-                        aeropuerto.setAlias(partes[4].trim());
-                        aeropuerto.setHusoHorario(Integer.parseInt(partes[5].trim()));
-                        aeropuerto.setCapacidad(Integer.parseInt(partes[6].trim()));
-                        String latDMS = partes[7].replace("Latitude:", "").trim();
-                        String lonDMS = partes[9].trim();
-                        aeropuerto.setLatitudDMS(latDMS);
-                        aeropuerto.setLatitudDEC(G4DUtility.Calculator.getLatDEC(latDMS));
-                        aeropuerto.setLongitudDMS(lonDMS);
-                        aeropuerto.setLongitudDEC(G4DUtility.Calculator.getLonDEC(lonDMS));
-                        aeropuerto.setEsSede(false);
-                        aeropuertos.add(aeropuerto);
+                        String codigo = partes[1].trim();
+                        if(!this.existsByCodigo(codigo)) {
+                            AeropuertoEntity aeropuerto = new AeropuertoEntity();
+                            aeropuerto.setCodigo(codigo);
+                            aeropuerto.setCiudad(partes[2].trim());
+                            aeropuerto.setPais(paisService.obtenerOCrear(partes[3].trim(), Integer.parseInt(partes[5].trim()), continente, poolPaises));
+                            aeropuerto.setAlias(partes[4].trim());
+                            aeropuerto.setCapacidad(Integer.parseInt(partes[6].trim()));
+                            String latDMS = partes[7].replace("Latitude:", "").trim();
+                            String lonDMS = partes[9].trim();
+                            aeropuerto.setLatitudDMS(latDMS);
+                            aeropuerto.setLatitudDEC(G4DUtility.Calculator.getLatDEC(latDMS));
+                            aeropuerto.setLongitudDMS(lonDMS);
+                            aeropuerto.setLongitudDEC(G4DUtility.Calculator.getLonDEC(lonDMS));
+                            aeropuerto.setEsSede(false);
+                            aeropuertos.add(aeropuerto);
+                        } else omitidos++;
                     } else continente = linea.split("\\.")[0].trim();
                 }
                 lProcesadas++;
                 communicationService.enviar(progressDestination, new ProgressPayload("Leyendo archivo", lProcesadas, lTotales));
-                if (aeropuertos.size() % 500 == 0 || lProcesadas == lTotales) {
+                if (aeropuertos.size() >= 500 || (lProcesadas >= lTotales && !aeropuertos.isEmpty())) {
                     importationService.batchSave(aeropuertos, progressDestination, "aeropuertos");
                     System.out.printf("[<] AEROPUERTOS IMPORTADOS! ('%d')%n", aeropuertos.size());
                     aeropuertos.clear();
                 }
             }
+            if (!aeropuertos.isEmpty()) {
+                importationService.batchSave(aeropuertos, progressDestination, "aeropuertos");
+                System.out.printf("[<] AEROPUERTOS IMPORTADOS! ('%d')%n", aeropuertos.size());
+            }
+            if (omitidos > 0) System.out.printf("[*] AEROPUERTOS OMITIDOS POR CODIGO REPETIDO: '%d'%n", omitidos);
             br.close();
             communicationService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.EXITOSO));
-        } catch (ArrayIndexOutOfBoundsException e) {
+        } catch (ArrayIndexOutOfBoundsException | NumberFormatException e) {
             communicationService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.ERRONEO));
             throw new G4DException(String.format("El archivo '%s' no sigue el formato esperado.", archivo.getFileName()));
         } catch (IOException e) {
             communicationService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.ERRONEO));
             throw new G4DException(String.format("No se pudo cargar el archivo '%s'.", archivo.getFileName()));
+        } catch (G4DException e) {
+            communicationService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.ERRONEO));
+            throw e;
         }
     }
 }

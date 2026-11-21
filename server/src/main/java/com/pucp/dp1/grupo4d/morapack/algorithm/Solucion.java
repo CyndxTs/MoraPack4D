@@ -19,7 +19,7 @@ import java.util.Set;
 
 public class Solucion {
     private Double fitness;
-    public Double f_UA = 1.025;
+    public Double f_UA = 1.015;
     private Double ratioPromedioDeUtilizacionTemporal;
     public Double f_UT = 5000.0;
     private Double ratioPromedioDeDesviacionEspacial;

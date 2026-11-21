@@ -12,6 +12,6 @@ import org.springframework.stereotype.Repository;
 import java.util.Optional;
 
 @Repository
-public interface SegmentacionRepository extends JpaRepository<SegmentacionEntity, Integer> {
+public interface SegmentacionRepository extends JpaRepository<SegmentacionEntity, Long> {
     Optional<SegmentacionEntity> findByCodigo(String codigo);
 }

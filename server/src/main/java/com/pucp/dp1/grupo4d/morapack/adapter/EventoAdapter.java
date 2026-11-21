@@ -32,8 +32,8 @@ public class EventoAdapter {
         algorithm.setTipo(entity.getTipo());
         algorithm.setFechaHoraInicio(entity.getFechaHoraInicio());
         algorithm.setFechaHoraFin(entity.getFechaHoraFin());
-        algorithm.setFechaHoraSalida(entity.getFechaHoraSalidaUTC());
-        algorithm.setFechaHoraLlegada(entity.getFechaHoraLlegadaUTC());
+        algorithm.setFechaHoraSalida(entity.getFechaHoraNuevaSalida());
+        algorithm.setFechaHoraLlegada(entity.getFechaHoraNuevaLlegada());
         if(!poolAlgorithm.containsKey(idTransaccion)) {
             poolAlgorithm.put(idTransaccion, new HashMap<>());
         }

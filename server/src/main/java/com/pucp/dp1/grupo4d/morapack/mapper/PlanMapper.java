@@ -56,8 +56,8 @@ public class PlanMapper {
         planDTO.setCodOrigen(origenEntity.getCodigo());
         AeropuertoEntity destinoEntity = entity.getDestino();
         planDTO.setCodDestino(destinoEntity.getCodigo());
-        planDTO.setHoraSalida(G4DUtility.Convertor.toDisplayString(entity.getHoraSalidaUTC()));
-        planDTO.setHoraLlegada(G4DUtility.Convertor.toDisplayString(entity.getHoraLlegadaUTC()));
+        planDTO.setHoraSalida(G4DUtility.Convertor.toDisplayString(entity.getHoraSalida()));
+        planDTO.setHoraLlegada(G4DUtility.Convertor.toDisplayString(entity.getHoraLlegada()));
         planDTO.setCapacidad(entity.getCapacidad());
         planDTO.setDuracion(entity.getDuracion());
         planDTO.setDistancia(entity.getDistancia());

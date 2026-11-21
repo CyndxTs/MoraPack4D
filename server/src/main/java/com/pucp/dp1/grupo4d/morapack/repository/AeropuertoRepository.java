@@ -48,22 +48,26 @@ public interface AeropuertoRepository extends JpaRepository<AeropuertoEntity, In
     // Listar pagina de aeropuertos por sus atributos
     @Query(
         value = """
-        SELECT *
+        SELECT a.*
         FROM AEROPUERTO a
+        INNER JOIN PAIS p ON p.id = a.id_pais
+        INNER JOIN CONTINENTE c ON c.id = p.id_continente
         WHERE (:codigo IS NULL OR LOWER(a.codigo) LIKE LOWER(CONCAT('%', :codigo, '%')))
           AND (:alias IS NULL OR LOWER(a.alias) LIKE LOWER(CONCAT('%', :alias, '%')))
-          AND (:continente IS NULL OR LOWER(a.continente) LIKE LOWER(CONCAT('%', :continente, '%')))
-          AND (:pais IS NULL OR LOWER(a.pais) LIKE LOWER(CONCAT('%', :pais, '%')))
+          AND (:continente IS NULL OR LOWER(c.nombre) LIKE LOWER(CONCAT('%', :continente, '%')))
+          AND (:pais IS NULL OR LOWER(p.nombre) LIKE LOWER(CONCAT('%', :pais, '%')))
           AND (:ciudad IS NULL OR LOWER(a.ciudad) LIKE LOWER(CONCAT('%', :ciudad, '%')))
           AND (:esSede IS NULL OR a.es_sede = :esSede)
         """,
         countQuery = """
         SELECT COUNT(*)
         FROM AEROPUERTO a
+        INNER JOIN PAIS p ON p.id = a.id_pais
+        INNER JOIN CONTINENTE c ON c.id = p.id_continente
         WHERE (:codigo IS NULL OR LOWER(a.codigo) LIKE LOWER(CONCAT('%', :codigo, '%')))
           AND (:alias IS NULL OR LOWER(a.alias) LIKE LOWER(CONCAT('%', :alias, '%')))
-          AND (:continente IS NULL OR LOWER(a.continente) LIKE LOWER(CONCAT('%', :continente, '%')))
-          AND (:pais IS NULL OR LOWER(a.pais) LIKE LOWER(CONCAT('%', :pais, '%')))
+          AND (:continente IS NULL OR LOWER(c.nombre) LIKE LOWER(CONCAT('%', :continente, '%')))
+          AND (:pais IS NULL OR LOWER(p.nombre) LIKE LOWER(CONCAT('%', :pais, '%')))
           AND (:ciudad IS NULL OR LOWER(a.ciudad) LIKE LOWER(CONCAT('%', :ciudad, '%')))
           AND (:esSede IS NULL OR a.es_sede = :esSede)
         """,

@@ -1,33 +1,35 @@
-HELP.md
+### Maven ###
 target/
-.mvn/wrapper/maven-wrapper.jar
+!.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
+HELP.md
 
-### STS ###
-.apt_generated
+### Variables locales (contraseñas) ###
+.env
+!.env.example
+
+### Exportaciones generadas en tiempo de ejecución ###
+exports/*
+!exports/.gitkeep
+
+### VS Code (se versiona solo la configuración compartida) ###
+.vscode/*
+!.vscode/settings.json
+!.vscode/launch.json
+!.vscode/tasks.json
+!.vscode/extensions.json
+
+### Extensión Java de VS Code / Eclipse JDT ###
 .classpath
 .factorypath
 .project
-.settings
-.springBeans
-.sts4-cache
+.settings/
+bin/
 
-### IntelliJ IDEA ###
-.idea
-*.iws
-*.iml
-*.ipr
+### Sistema operativo ###
+.DS_Store
+Thumbs.db
 
-### NetBeans ###
-/nbproject/private/
-/nbbuild/
-/dist/
-/nbdist/
-/.nb-gradle/
-build/
-!**/src/main/**/build/
-!**/src/test/**/build/
-
-### VS Code ###
-.vscode/
+### Logs ###
+*.log

@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.Objects;
 
 @Entity
-@Table(name = "PARAMETROS", schema = "morapack4d")
+@Table(name = "PARAMETROS")
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class ParametrosEntity {
     @Id
@@ -35,7 +35,7 @@ public class ParametrosEntity {
     @Column(name = "min_horas_estancia", nullable = false)
     private Double minHorasEstancia = 1.0;
 
-    @Column(name = "probabilidad_replanificacion", nullable = false)
+    @Column(name = "prob_replanificacion", nullable = false)
     private Double probabilidadReplanificacion = 0.350;
 
     @Column(name = "d_min", nullable = false)

@@ -104,7 +104,7 @@ public class Aeropuerto {
 
     @Override
     public String toString() {
-        return String.format("%s - %s, %s", this.codigo, this.ciudad, this.pais);
+        return this.codigo;
     }
 
     @Override

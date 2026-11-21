@@ -37,8 +37,8 @@ public class RutaAdapter {
         algorithm.setCodigo(entity.getCodigo());
         algorithm.setDuracion(entity.getDuracion());
         algorithm.setDistancia(entity.getDistancia());
-        algorithm.setFechaHoraSalida(entity.getFechaHoraSalidaUTC());
-        algorithm.setFechaHoraLlegada(entity.getFechaHoraLlegadaUTC());
+        algorithm.setFechaHoraSalida(entity.getFechaHoraSalida());
+        algorithm.setFechaHoraLlegada(entity.getFechaHoraLlegada());
         algorithm.setTipo(entity.getTipo());
         algorithm.setOrigen(aeropuertoAdapter.toAlgorithm(idTransaccion, entity.getOrigen()));
         algorithm.setDestino(aeropuertoAdapter.toAlgorithm(idTransaccion, entity.getDestino()));
@@ -62,10 +62,8 @@ public class RutaAdapter {
         entity.setCodigo(algorithm.getCodigo());
         entity.setDuracion(algorithm.getDuracion());
         entity.setDistancia(algorithm.getDistancia());
-        entity.setFechaHoraSalidaUTC(algorithm.getFechaHoraSalida());
-        entity.setFechaHoraSalidaLocal(G4DUtility.Convertor.toLocal(algorithm.getFechaHoraSalida(), algorithm.getOrigen().getHusoHorario()));
-        entity.setFechaHoraLlegadaUTC(algorithm.getFechaHoraLlegada());
-        entity.setFechaHoraLlegadaLocal(G4DUtility.Convertor.toLocal(algorithm.getFechaHoraLlegada(), algorithm.getDestino().getHusoHorario()));
+        entity.setFechaHoraSalida(algorithm.getFechaHoraSalida());
+        entity.setFechaHoraLlegada(algorithm.getFechaHoraLlegada());
         entity.setTipo(algorithm.getTipo());
         entity.setOrigen(aeropuertoAdapter.toEntity(idTransaccion, algorithm.getOrigen()));
         entity.setDestino(aeropuertoAdapter.toEntity(idTransaccion, algorithm.getDestino()));

@@ -84,7 +84,7 @@ public class PlanService {
     }
 
     public ListResponse listar(ListRequest request) {
-        Pageable pageable = G4DUtility.Convertor.toAdmissible(request.getPagina(), request.getTamanio(), Sort.Order.asc("horaSalidaUTC"), Sort.Order.asc("horaLlegadaUTC"));
+        Pageable pageable = G4DUtility.Convertor.toAdmissible(request.getPagina(), request.getTamanio(), Sort.Order.asc("horaSalida"), Sort.Order.asc("horaLlegada"));
         List<DTO> dtos = new ArrayList<>();
         List<PlanEntity> entities = this.findAll(pageable);
         entities.forEach(entity -> dtos.add(planMapper.toDTO(entity)));
@@ -102,9 +102,8 @@ public class PlanService {
             communicationService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.INICIADO));
             communicationService.enviar(progressDestination, new ProgressPayload("Cargando plan", 0, 1));
             PlanEntity plan =  new PlanEntity();
-            plan.setCodigo(dto.getCodigo());
-            plan.setDistancia(dto.getDistancia());
-            plan.setDuracion(dto.getDuracion());
+            plan.setCodigo(G4DUtility.Convertor.toAdmissible(dto.getCodigo(), G4DUtility.Generator.getUniqueString("PLA")));
+            plan.setCapacidad(dto.getCapacidad());
             String codOrigen = dto.getCodOrigen();
             AeropuertoEntity origen = poolAeropuertos.getOrDefault(codOrigen, null);
             if(origen != null) {
@@ -113,10 +112,10 @@ public class PlanService {
                 if(destino != null) {
                     plan.setOrigen(origen);
                     plan.setDestino(destino);
-                    plan.setHoraSalidaUTC(G4DUtility.Convertor.toTime(dto.getHoraSalida()));
-                    plan.setHoraSalidaLocal(G4DUtility.Convertor.toLocal(plan.getHoraSalidaUTC(), origen.getHusoHorario()));
-                    plan.setHoraLlegadaUTC(G4DUtility.Convertor.toTime(dto.getHoraLlegada()));
-                    plan.setHoraLlegadaLocal(G4DUtility.Convertor.toLocal(plan.getHoraLlegadaUTC(), destino.getHusoHorario()));
+                    plan.setHoraSalida(G4DUtility.Convertor.toTime(dto.getHoraSalida()));
+                    plan.setHoraLlegada(G4DUtility.Convertor.toTime(dto.getHoraLlegada()));
+                    plan.setDistancia(G4DUtility.Convertor.toAdmissible(dto.getDistancia(), G4DUtility.Calculator.getGeodesicDistance(origen.getLatitudDEC(), origen.getLongitudDEC(), destino.getLatitudDEC(), destino.getLongitudDEC())));
+                    plan.setDuracion(G4DUtility.Convertor.toAdmissible(dto.getDuracion(), G4DUtility.Calculator.getElapsedHours(plan.getHoraSalida(), plan.getHoraLlegada())));
                     this.save(plan);
                 } else throw new G4DException(String.format("El destino ('%s') del plan es inválido.", codDestino));
             } else throw new G4DException(String.format("El origen ('%s') del plan es inválido.", codOrigen));
@@ -163,11 +162,9 @@ public class PlanService {
                             plan.setOrigen(origen);
                             plan.setDestino(destino);
                             plan.setDistancia(G4DUtility.Calculator.getGeodesicDistance(origen.getLatitudDEC(), origen.getLongitudDEC(), destino.getLatitudDEC(), destino.getLongitudDEC()));
-                            plan.setHoraSalidaLocal(horaSalidaLocal);
-                            plan.setHoraSalidaUTC(G4DUtility.Convertor.toUTC(horaSalidaLocal, origen.getHusoHorario()));
-                            plan.setHoraLlegadaLocal(horaLlegadaLocal);
-                            plan.setHoraLlegadaUTC(G4DUtility.Convertor.toUTC(horaLlegadaLocal, destino.getHusoHorario()));
-                            plan.setDuracion(G4DUtility.Calculator.getElapsedHours(plan.getHoraSalidaUTC(), plan.getHoraLlegadaUTC()));
+                            plan.setHoraSalida(G4DUtility.Convertor.toUTC(horaSalidaLocal, origen.getHusoHorario()));
+                            plan.setHoraLlegada(G4DUtility.Convertor.toUTC(horaLlegadaLocal, destino.getHusoHorario()));
+                            plan.setDuracion(G4DUtility.Calculator.getElapsedHours(plan.getHoraSalida(), plan.getHoraLlegada()));
                             plan.setCapacidad(capacidad);
                             planes.add(plan);
                         } else throw new G4DException(String.format("Destino '%s' inválido en línea #%d", codDestino, lProcesadas + 1));

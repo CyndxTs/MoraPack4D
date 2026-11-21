@@ -25,7 +25,7 @@ public class Cliente {
 
     @Override
     public String toString() {
-        return String.format("%s - %s", this.codigo, this.nombre);
+        return this.codigo;
     }
 
     @Override

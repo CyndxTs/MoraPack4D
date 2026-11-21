@@ -42,15 +42,15 @@ public class LoteService {
         return loteRepository.findAll(pageable).getContent();
     }
 
-    public Optional<LoteEntity> findById(Integer id) {
+    public Optional<LoteEntity> findById(Long id) {
         return loteRepository.findById(id);
     }
 
-    public boolean existsById(Integer id) {
+    public boolean existsById(Long id) {
         return loteRepository.existsById(id);
     }
 
-    public void deleteById(Integer id) {
+    public void deleteById(Long id) {
         loteRepository.deleteById(id);
     }
 

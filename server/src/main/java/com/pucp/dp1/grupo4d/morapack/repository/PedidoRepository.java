@@ -8,6 +8,7 @@ package com.pucp.dp1.grupo4d.morapack.repository;
 
 import com.pucp.dp1.grupo4d.morapack.model.entity.AeropuertoEntity;
 import com.pucp.dp1.grupo4d.morapack.model.entity.PedidoEntity;
+import com.pucp.dp1.grupo4d.morapack.model.enumeration.TipoEscenario;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -19,35 +20,38 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface PedidoRepository extends JpaRepository<PedidoEntity, Integer> {
+public interface PedidoRepository extends JpaRepository<PedidoEntity, Long> {
     List<PedidoEntity> findAllByDestino(AeropuertoEntity destino);
 
-    // Listar pagina de pedidos por sus atributos
+    // Encontrar pedido por sus atributos únicos (codigo + tipo_escenario)
+    Optional<PedidoEntity> findByCodigoAndTipoEscenario(String codigo, TipoEscenario tipoEscenario);
+
+    // Listar pagina de pedidos por sus atributos (el cliente puede ser real (OPERACION) o simulado (SIMULACION))
     @Query(
         value = """
         SELECT p.*
         FROM PEDIDO p
-        INNER JOIN CLIENTE c ON p.id_cliente = c.id
+        LEFT JOIN CLIENTE c ON p.id_cliente = c.id
         INNER JOIN AEROPUERTO a ON p.id_aeropuerto_destino = a.id
         WHERE (:tipoEscenario IS NULL OR p.tipo_escenario = :tipoEscenario)
-          AND (:codCliente IS NULL OR c.codigo = :codCliente)
+          AND (:codCliente IS NULL OR COALESCE(c.codigo, p.cod_cliente_simulado) = :codCliente)
           AND (:codigoPedido IS NULL OR p.codigo = :codigoPedido)
           AND (:fueAtendido IS NULL OR p.fue_atendido = :fueAtendido)
-          AND (:fechaHoraGeneracion IS NULL OR p.fh_generacion_utc >= :fechaHoraGeneracion)
-          AND (:fechaHoraExpiracion IS NULL OR (p.fh_expiracion_utc IS NOT NULL AND p.fh_expiracion_utc >= :fechaHoraExpiracion))
+          AND (:fechaHoraGeneracion IS NULL OR p.fh_generacion >= :fechaHoraGeneracion)
+          AND (:fechaHoraExpiracion IS NULL OR (p.fh_expiracion IS NOT NULL AND p.fh_expiracion >= :fechaHoraExpiracion))
           AND (:codDestino IS NULL OR UPPER(a.codigo) LIKE CONCAT(UPPER(:codDestino), '%'))
         """,
         countQuery = """
         SELECT COUNT(*)
         FROM PEDIDO p
-        INNER JOIN CLIENTE c ON p.id_cliente = c.id
+        LEFT JOIN CLIENTE c ON p.id_cliente = c.id
         INNER JOIN AEROPUERTO a ON p.id_aeropuerto_destino = a.id
         WHERE (:tipoEscenario IS NULL OR p.tipo_escenario = :tipoEscenario)
-          AND (:codCliente IS NULL OR c.codigo = :codCliente)
+          AND (:codCliente IS NULL OR COALESCE(c.codigo, p.cod_cliente_simulado) = :codCliente)
           AND (:codigoPedido IS NULL OR p.codigo = :codigoPedido)
           AND (:fueAtendido IS NULL OR p.fue_atendido = :fueAtendido)
-          AND (:fechaHoraGeneracion IS NULL OR p.fh_generacion_utc >= :fechaHoraGeneracion)
-          AND (:fechaHoraExpiracion IS NULL OR (p.fh_expiracion_utc IS NOT NULL AND p.fh_expiracion_utc >= :fechaHoraExpiracion))
+          AND (:fechaHoraGeneracion IS NULL OR p.fh_generacion >= :fechaHoraGeneracion)
+          AND (:fechaHoraExpiracion IS NULL OR (p.fh_expiracion IS NOT NULL AND p.fh_expiracion >= :fechaHoraExpiracion))
           AND (:codDestino IS NULL OR UPPER(a.codigo) LIKE CONCAT(UPPER(:codDestino), '%'))
         """,
         nativeQuery = true
@@ -63,17 +67,17 @@ public interface PedidoRepository extends JpaRepository<PedidoEntity, Integer> {
             Pageable pageable
     );
 
-    // Listar todos los pedidos de un escenario dentro de cierto rango temporal
+    // Listar todos los pedidos de un escenario dentro de cierto rango temporal (excluye destinos sede: se atienden al instante)
     @Query(
-            value = """
+        value = """
         SELECT p.*
         FROM PEDIDO p
         JOIN AEROPUERTO a ON a.id = p.id_aeropuerto_destino
-        WHERE (p.fh_generacion_utc BETWEEN :fechaHoraInicio AND :fechaHoraFin)
+        WHERE (p.fh_generacion BETWEEN :fechaHoraInicio AND :fechaHoraFin)
           AND (p.tipo_escenario = :tipoEscenario)
           AND (a.codigo NOT IN (:codOrigenes))
         """,
-            nativeQuery = true
+        nativeQuery = true
     )
     List<PedidoEntity> findAllInRangeByScenario(
             @Param("fechaHoraInicio") LocalDateTime fechaHoraInicio,
@@ -85,8 +89,8 @@ public interface PedidoRepository extends JpaRepository<PedidoEntity, Integer> {
     // Listar los máximos códigos asignados por cada destino a partir del tipo de escenario
     @Query(
         value = """
-        SELECT 
-          LEFT(codigo, 4) AS clave, 
+        SELECT
+          LEFT(codigo, 4) AS clave,
           MAX(CAST(SUBSTRING(codigo, 5) AS UNSIGNED)) AS max_numero
         FROM PEDIDO
         WHERE tipo_escenario = :tipoEscenario
@@ -98,33 +102,18 @@ public interface PedidoRepository extends JpaRepository<PedidoEntity, Integer> {
         @Param("tipoEscenario") String tipoEscenario
     );
 
-    // Encontrar pedido por sus atributos únicos
-    @Query(
-            value = """
-        SELECT *
-        FROM PEDIDO
-        WHERE (codigo = :codigo)
-          AND (tipo_escenario = :tipoEscenario)
-        """,
-            nativeQuery = true
-    )
-    Optional<PedidoEntity> findByUniqueAttributes(
-            @Param("codigo") String codigo,
-            @Param("tipoEscenario") String tipoEscenario
-    );
-
     // Encontrar el máximo número de código para un destino a partir del tipo de escenario
     @Query(
-            value = """
+        value = """
         SELECT MAX(CAST(SUBSTRING(codigo, 5) AS UNSIGNED))
         FROM PEDIDO
         WHERE tipo_escenario = :tipoEscenario
           AND LEFT(codigo, 4) = :codDestino
         """,
-            nativeQuery = true
+        nativeQuery = true
     )
     Integer findMaxCodeOfDestinationByScenario(
-            @Param("codDestino") String codDestino,
-            @Param("tipoEscenario") String tipoEscenario
+        @Param("codDestino") String codDestino,
+        @Param("tipoEscenario") String tipoEscenario
     );
 }

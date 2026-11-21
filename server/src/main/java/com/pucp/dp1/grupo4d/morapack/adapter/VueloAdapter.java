@@ -33,8 +33,8 @@ public class VueloAdapter {
         Vuelo algorithm = new Vuelo();
         algorithm.setCodigo(entity.getCodigo());
         algorithm.setCapacidadDisponible(entity.getCapacidadDisponible());
-        algorithm.setFechaHoraSalida(entity.getFechaHoraSalidaUTC());
-        algorithm.setFechaHoraLlegada(entity.getFechaHoraLlegadaUTC());
+        algorithm.setFechaHoraSalida(entity.getFechaHoraSalida());
+        algorithm.setFechaHoraLlegada(entity.getFechaHoraLlegada());
         algorithm.setPlan(planAdapter.toAlgorithm(idTransaccion, entity.getPlan()));
         if(!poolAlgorithm.containsKey(idTransaccion)) {
             poolAlgorithm.put(idTransaccion, new HashMap<>());
@@ -49,10 +49,8 @@ public class VueloAdapter {
         }
         VueloEntity entity = vueloService.findByCodigo(algorithm.getCodigo()).orElse(new VueloEntity());
         entity.setCodigo(algorithm.getCodigo());
-        entity.setFechaHoraSalidaUTC(algorithm.getFechaHoraSalida());
-        entity.setFechaHoraSalidaLocal(G4DUtility.Convertor.toLocal(algorithm.getFechaHoraSalida(), algorithm.getPlan().getOrigen().getHusoHorario()));
-        entity.setFechaHoraLlegadaUTC(algorithm.getFechaHoraLlegada());
-        entity.setFechaHoraLlegadaLocal(G4DUtility.Convertor.toLocal(algorithm.getFechaHoraLlegada(), algorithm.getPlan().getDestino().getHusoHorario()));
+        entity.setFechaHoraSalida(algorithm.getFechaHoraSalida());
+        entity.setFechaHoraLlegada(algorithm.getFechaHoraLlegada());
         entity.setCapacidadDisponible(algorithm.getCapacidadDisponible());
         entity.setPlan(planAdapter.toEntity(idTransaccion, algorithm.getPlan()));
         if(!poolEntity.containsKey(idTransaccion)) {

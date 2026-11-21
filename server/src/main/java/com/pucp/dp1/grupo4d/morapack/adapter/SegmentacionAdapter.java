@@ -39,8 +39,8 @@ public class SegmentacionAdapter {
         }
         Segmentacion algorithm = new Segmentacion();
         algorithm.setCodigo(entity.getCodigo());
-        algorithm.setFechaHoraAplicacion(entity.getFechaHoraAplicacionUTC());
-        algorithm.setFechaHoraSustitucion(entity.getFechaHoraSustitucionUTC());
+        algorithm.setFechaHoraAplicacion(entity.getFechaHoraAplicacion());
+        algorithm.setFechaHoraSustitucion(entity.getFechaHoraSustitucion());
         Map<Ruta, Lote> lotesPorRuta = new HashMap<>();
         List<LoteEntity> lotesEntity = entity.getLotes();
         lotesEntity.forEach(l -> lotesPorRuta.put(rutaAdapter.toAlgorithm(idTransaccion, l.getRuta()), loteAdapter.toAlgorithm(idTransaccion, l)));
@@ -58,8 +58,8 @@ public class SegmentacionAdapter {
         }
         SegmentacionEntity entity = segmentacionService.findByCodigo(algorithm.getCodigo()).orElse(new SegmentacionEntity());
         entity.setCodigo(algorithm.getCodigo());
-        entity.setFechaHoraAplicacionUTC(algorithm.getFechaHoraAplicacion());
-        entity.setFechaHoraSustitucionUTC(algorithm.getFechaHoraSustitucion());
+        entity.setFechaHoraAplicacion(algorithm.getFechaHoraAplicacion());
+        entity.setFechaHoraSustitucion(algorithm.getFechaHoraSustitucion());
         List<LoteEntity> lotesEntity = new ArrayList<>();
         Map<Ruta, Lote> lotesPorRuta = algorithm.getLotesPorRuta();
         for (Map.Entry<Ruta, Lote> entry : lotesPorRuta.entrySet()) {

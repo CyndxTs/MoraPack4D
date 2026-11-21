@@ -1,8 +1,8 @@
-/**
+/**]
  >> Project:    MoraPack
  >> Author:     Grupo 4D
  >> File:       AeropuertoEntity.java
- **/
+ [**/
 
 package com.pucp.dp1.grupo4d.morapack.model.entity;
 
@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.Objects;
 
 @Entity
-@Table(name = "AEROPUERTO", schema = "morapack4d")
+@Table(name = "AEROPUERTO")
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class AeropuertoEntity {
     @Id
@@ -26,17 +26,8 @@ public class AeropuertoEntity {
     @Column(nullable = false, length = 30)
     private String ciudad;
 
-    @Column(nullable = false, length = 20)
-    private String pais;
-
-    @Column(nullable = false, length = 20)
-    private String continente;
-
     @Column(nullable = false, unique = true, length = 4)
     private String alias;
-
-    @Column(name = "huso_horario", nullable = false)
-    private Integer husoHorario;
 
     @Column(nullable = false)
     private Integer capacidad;
@@ -56,6 +47,10 @@ public class AeropuertoEntity {
     @Column(name = "es_sede", nullable = false)
     private Boolean esSede = false;
 
+    @ManyToOne
+    @JoinColumn(name = "id_pais", nullable = false)
+    private PaisEntity pais;
+
     @OneToMany(mappedBy = "destino")
     private List<PedidoEntity> pedidosComoDestino = new ArrayList<>();
 
@@ -66,7 +61,7 @@ public class AeropuertoEntity {
     private List<RutaEntity> rutasComoDestino = new ArrayList<>();
 
     @OneToMany(mappedBy = "aeropuerto")
-    @OrderBy("fechaHoraIngresoUTC ASC, fechaHoraEgresoUTC DESC")
+    @OrderBy("fechaHoraIngreso ASC, fechaHoraEgreso DESC")
     private List<RegistroEntity> registros = new ArrayList<>();
 
     @OneToMany(mappedBy = "origen")
@@ -76,6 +71,11 @@ public class AeropuertoEntity {
     private List<PlanEntity> planesComoDestino = new ArrayList<>();
 
     public AeropuertoEntity() {}
+
+    // Atajos derivados del país (no son columnas)
+    public Integer getHusoHorario() { return (pais != null) ? pais.getHusoHorario() : null; }
+    public String getNombrePais() { return (pais != null) ? pais.getNombre() : null; }
+    public String getNombreContinente() { return (pais != null && pais.getContinente() != null) ? pais.getContinente().getNombre() : null; }
 
     @Override
     public boolean equals(Object o) {
@@ -96,14 +96,8 @@ public class AeropuertoEntity {
     public void setCodigo(String codigo) { this.codigo = codigo; }
     public String getCiudad() { return ciudad; }
     public void setCiudad(String ciudad) { this.ciudad = ciudad; }
-    public String getPais() { return pais; }
-    public void setPais(String pais) { this.pais = pais; }
-    public String getContinente() { return continente; }
-    public void setContinente(String continente) { this.continente = continente; }
     public String getAlias() { return alias; }
     public void setAlias(String alias) { this.alias = alias; }
-    public Integer getHusoHorario() { return husoHorario; }
-    public void setHusoHorario(Integer husoHorario) { this.husoHorario = husoHorario; }
     public Integer getCapacidad() { return capacidad; }
     public void setCapacidad(Integer capacidad) { this.capacidad = capacidad; }
     public String getLatitudDMS() { return latitudDMS; }
@@ -116,6 +110,8 @@ public class AeropuertoEntity {
     public void setLongitudDEC(Double longitudDEC) { this.longitudDEC = longitudDEC; }
     public Boolean getEsSede() { return esSede; }
     public void setEsSede(Boolean esSede) { this.esSede = esSede; }
+    public PaisEntity getPais() { return pais; }
+    public void setPais(PaisEntity pais) { this.pais = pais; }
     public List<PedidoEntity> getPedidosComoDestino() { return pedidosComoDestino; }
     public void setPedidosComoDestino(List<PedidoEntity> pedidosComoDestino) { this.pedidosComoDestino = pedidosComoDestino; }
     public List<RutaEntity> getRutasComoOrigen() { return rutasComoOrigen; }

@@ -12,12 +12,12 @@ import lombok.EqualsAndHashCode;
 @Data
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class UsuarioDTO implements DTO {
-
     @EqualsAndHashCode.Include
     private String codigo;
-
-    private String nombre;
+    private String nombres;
+    private String apellidos;
     private String correo;
     private String tipoUsuario;
     private String estado;
+    private String pais;
 }

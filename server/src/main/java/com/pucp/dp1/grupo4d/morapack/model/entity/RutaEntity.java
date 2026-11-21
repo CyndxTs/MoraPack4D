@@ -1,8 +1,8 @@
-/**
+/**]
  >> Project:    MoraPack
  >> Author:     Grupo 4D
  >> File:       RutaEntity.java
- **/
+ [**/
 
 package com.pucp.dp1.grupo4d.morapack.model.entity;
 
@@ -16,37 +16,32 @@ import java.util.List;
 import java.util.Objects;
 
 @Entity
-@Table(name = "RUTA", schema = "morapack4d")
+@Table(name = "RUTA")
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class RutaEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+    private Long id;
 
-    @Column(nullable = false, unique = true, length = 30)
+    @Column(nullable = false, unique = true, length = 20)
     private String codigo;
 
+    // Horas
     @Column(nullable = false)
     private Double duracion;
 
     @Column(nullable = false)
     private Double distancia;
 
-    @Column(name = "fh_salida_local", nullable = false)
-    private LocalDateTime fechaHoraSalidaLocal;
+    @Column(name = "fh_salida", nullable = false)
+    private LocalDateTime fechaHoraSalida;
 
-    @Column(name = "fh_salida_utc", nullable = false)
-    private LocalDateTime fechaHoraSalidaUTC;
-
-    @Column(name = "fh_llegada_local", nullable = false)
-    private LocalDateTime fechaHoraLlegadaLocal;
-
-    @Column(name = "fh_llegada_utc", nullable = false)
-    private LocalDateTime fechaHoraLlegadaUTC;
+    @Column(name = "fh_llegada", nullable = false)
+    private LocalDateTime fechaHoraLlegada;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "estado", nullable = false)
-    private EstadoRuta estado;
+    private EstadoRuta estado = EstadoRuta.OPERATIVA;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "tipo", nullable = false)
@@ -69,7 +64,7 @@ public class RutaEntity {
             joinColumns = @JoinColumn(name = "id_ruta"),
             inverseJoinColumns = @JoinColumn(name = "id_vuelo")
     )
-    @OrderBy("fechaHoraSalidaUTC ASC")
+    @OrderBy("fechaHoraSalida ASC")
     private List<VueloEntity> vuelos = new ArrayList<>();
 
     public RutaEntity() {}
@@ -87,22 +82,18 @@ public class RutaEntity {
         return Objects.hash(id);
     }
 
-    public Integer getId() { return id; }
-    public void setId(Integer id) { this.id = id; }
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
     public String getCodigo() { return codigo; }
     public void setCodigo(String codigo) { this.codigo = codigo; }
     public Double getDuracion() { return duracion; }
     public void setDuracion(Double duracion) { this.duracion = duracion; }
     public Double getDistancia() { return distancia; }
     public void setDistancia(Double distancia) { this.distancia = distancia; }
-    public LocalDateTime getFechaHoraSalidaLocal() { return fechaHoraSalidaLocal; }
-    public void setFechaHoraSalidaLocal(LocalDateTime fechaHoraSalidaLocal) { this.fechaHoraSalidaLocal = fechaHoraSalidaLocal; }
-    public LocalDateTime getFechaHoraSalidaUTC() { return fechaHoraSalidaUTC; }
-    public void setFechaHoraSalidaUTC(LocalDateTime fechaHoraSalidaUTC) { this.fechaHoraSalidaUTC = fechaHoraSalidaUTC; }
-    public LocalDateTime getFechaHoraLlegadaLocal() { return fechaHoraLlegadaLocal; }
-    public void setFechaHoraLlegadaLocal(LocalDateTime fechaHoraLlegadaLocal) { this.fechaHoraLlegadaLocal = fechaHoraLlegadaLocal; }
-    public LocalDateTime getFechaHoraLlegadaUTC() { return fechaHoraLlegadaUTC; }
-    public void setFechaHoraLlegadaUTC(LocalDateTime fechaHoraLlegadaUTC) { this.fechaHoraLlegadaUTC = fechaHoraLlegadaUTC; }
+    public LocalDateTime getFechaHoraSalida() { return fechaHoraSalida; }
+    public void setFechaHoraSalida(LocalDateTime fechaHoraSalida) { this.fechaHoraSalida = fechaHoraSalida; }
+    public LocalDateTime getFechaHoraLlegada() { return fechaHoraLlegada; }
+    public void setFechaHoraLlegada(LocalDateTime fechaHoraLlegada) { this.fechaHoraLlegada = fechaHoraLlegada; }
     public EstadoRuta getEstado() { return estado; }
     public void setEstado(EstadoRuta estado) { this.estado = estado; }
     public TipoRuta getTipo() { return tipo; }

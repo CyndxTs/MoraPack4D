@@ -1,8 +1,8 @@
-/**
+/**]
  >> Project:    MoraPack
  >> Author:     Grupo 4D
  >> File:       PlanEntity.java
- **/
+ [**/
 
 package com.pucp.dp1.grupo4d.morapack.model.entity;
 
@@ -14,36 +14,31 @@ import java.util.List;
 import java.util.Objects;
 
 @Entity
-@Table(name = "PLAN", schema = "morapack4d")
+@Table(name = "PLAN")
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class PlanEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @Column(nullable = false, unique = true, length = 30)
+    @Column(nullable = false, unique = true, length = 20)
     private String codigo;
 
     @Column(nullable = false)
     private Integer capacidad;
 
+    // Horas
     @Column(nullable = false)
     private Double duracion;
 
     @Column(nullable = false)
     private Double distancia;
 
-    @Column(name = "h_salida_local", nullable = false)
-    private LocalTime horaSalidaLocal;
+    @Column(name = "h_salida", nullable = false)
+    private LocalTime horaSalida;
 
-    @Column(name = "h_salida_utc", nullable = false)
-    private LocalTime horaSalidaUTC;
-
-    @Column(name = "h_llegada_local", nullable = false)
-    private LocalTime horaLlegadaLocal;
-
-    @Column(name = "h_llegada_utc", nullable = false)
-    private LocalTime horaLlegadaUTC;
+    @Column(name = "h_llegada", nullable = false)
+    private LocalTime horaLlegada;
 
     @ManyToOne
     @JoinColumn(name = "id_aeropuerto_origen", nullable = false)
@@ -85,14 +80,10 @@ public class PlanEntity {
     public void setDuracion(Double duracion) { this.duracion = duracion; }
     public Double getDistancia() { return distancia; }
     public void setDistancia(Double distancia) { this.distancia = distancia; }
-    public LocalTime getHoraSalidaLocal() { return horaSalidaLocal; }
-    public void setHoraSalidaLocal(LocalTime horaSalidaLocal) { this.horaSalidaLocal = horaSalidaLocal; }
-    public LocalTime getHoraSalidaUTC() { return horaSalidaUTC; }
-    public void setHoraSalidaUTC(LocalTime horaSalidaUTC) { this.horaSalidaUTC = horaSalidaUTC; }
-    public LocalTime getHoraLlegadaLocal() { return horaLlegadaLocal; }
-    public void setHoraLlegadaLocal(LocalTime horaLlegadaLocal) { this.horaLlegadaLocal = horaLlegadaLocal; }
-    public LocalTime getHoraLlegadaUTC() { return horaLlegadaUTC; }
-    public void setHoraLlegadaUTC(LocalTime horaLlegadaUTC) { this.horaLlegadaUTC = horaLlegadaUTC; }
+    public LocalTime getHoraSalida() { return horaSalida; }
+    public void setHoraSalida(LocalTime horaSalida) { this.horaSalida = horaSalida; }
+    public LocalTime getHoraLlegada() { return horaLlegada; }
+    public void setHoraLlegada(LocalTime horaLlegada) { this.horaLlegada = horaLlegada; }
     public AeropuertoEntity getOrigen() { return origen; }
     public void setOrigen(AeropuertoEntity origen) { this.origen = origen; }
     public AeropuertoEntity getDestino() { return destino; }

@@ -1,8 +1,8 @@
-/**
+/**]
  >> Project:    MoraPack
  >> Author:     Grupo 4D
  >> File:       PedidoEntity.java
- **/
+ [**/
 
 package com.pucp.dp1.grupo4d.morapack.model.entity;
 
@@ -15,36 +15,27 @@ import java.util.List;
 import java.util.Objects;
 
 @Entity
-@Table(name = "PEDIDO", schema = "morapack4d", uniqueConstraints = {@UniqueConstraint(name = "UK_CODIGO_TIPO_ESCENARIO", columnNames = {"codigo", "tipo_escenario"})})
+@Table(name = "PEDIDO", uniqueConstraints = {@UniqueConstraint(name = "UK_PEDIDO_CODIGO_TIPO_ESCENARIO", columnNames = {"codigo", "tipo_escenario"})})
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class PedidoEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+    private Long id;
 
-    @Column(nullable = false, length = 15)
+    @Column(nullable = false, length = 20)
     private String codigo;
 
     @Column(name = "cantidad_solicitada", nullable = false)
     private Integer cantidadSolicitada;
 
-    @Column(name = "fh_generacion_local", nullable = false, columnDefinition = "DATETIME")
-    private LocalDateTime fechaHoraGeneracionLocal;
+    @Column(name = "fh_generacion", nullable = false)
+    private LocalDateTime fechaHoraGeneracion;
 
-    @Column(name = "fh_generacion_utc", nullable = false, columnDefinition = "DATETIME")
-    private LocalDateTime fechaHoraGeneracionUTC;
+    @Column(name = "fh_procesamiento")
+    private LocalDateTime fechaHoraProcesamiento;
 
-    @Column(name = "fh_procesamiento_local", columnDefinition = "DATETIME")
-    private LocalDateTime fechaHoraProcesamientoLocal;
-
-    @Column(name = "fh_procesamiento_utc", columnDefinition = "DATETIME")
-    private LocalDateTime fechaHoraProcesamientoUTC;
-
-    @Column(name = "fh_expiracion_local", columnDefinition = "DATETIME")
-    private LocalDateTime fechaHoraExpiracionLocal;
-
-    @Column(name = "fh_expiracion_utc", columnDefinition = "DATETIME")
-    private LocalDateTime fechaHoraExpiracionUTC;
+    @Column(name = "fh_expiracion")
+    private LocalDateTime fechaHoraExpiracion;
 
     @Column(name = "fue_atendido", nullable = false)
     private Boolean fueAtendido = false;
@@ -53,8 +44,13 @@ public class PedidoEntity {
     @Column(name = "tipo_escenario", nullable = false)
     private TipoEscenario tipoEscenario = TipoEscenario.SIMULACION;
 
+    // Solo SIMULACION: el cliente no existe en BD, se genera en RAM a partir de este código
+    @Column(name = "cod_cliente_simulado", length = 20)
+    private String codClienteSimulado;
+
+    // Solo OPERACION
     @ManyToOne
-    @JoinColumn(name = "id_cliente", nullable = false)
+    @JoinColumn(name = "id_cliente")
     private ClienteEntity cliente;
 
     @ManyToOne
@@ -62,10 +58,15 @@ public class PedidoEntity {
     private AeropuertoEntity destino;
 
     @OneToMany(mappedBy = "pedido")
-    @OrderBy("fechaHoraAplicacionUTC ASC")
+    @OrderBy("fechaHoraAplicacion ASC")
     private List<SegmentacionEntity> segmentaciones = new ArrayList<>();
 
     public PedidoEntity() {}
+
+    // Código del cliente sin importar el escenario
+    public String getCodCliente() {
+        return (cliente != null) ? cliente.getCodigo() : codClienteSimulado;
+    }
 
     @Override
     public boolean equals(Object o) {
@@ -80,28 +81,24 @@ public class PedidoEntity {
         return Objects.hash(id);
     }
 
-    public Integer getId() { return id; }
-    public void setId(Integer id) { this.id = id; }
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
     public String getCodigo() { return codigo; }
     public void setCodigo(String codigo) { this.codigo = codigo; }
     public Integer getCantidadSolicitada() { return cantidadSolicitada; }
     public void setCantidadSolicitada(Integer cantidadSolicitada) { this.cantidadSolicitada = cantidadSolicitada; }
-    public LocalDateTime getFechaHoraGeneracionLocal() { return fechaHoraGeneracionLocal; }
-    public void setFechaHoraGeneracionLocal(LocalDateTime fechaHoraGeneracionLocal) { this.fechaHoraGeneracionLocal = fechaHoraGeneracionLocal; }
-    public LocalDateTime getFechaHoraGeneracionUTC() { return fechaHoraGeneracionUTC; }
-    public void setFechaHoraGeneracionUTC(LocalDateTime fechaHoraGeneracionUTC) { this.fechaHoraGeneracionUTC = fechaHoraGeneracionUTC; }
-    public LocalDateTime getFechaHoraProcesamientoLocal() { return fechaHoraProcesamientoLocal; }
-    public void setFechaHoraProcesamientoLocal(LocalDateTime fechaHoraProcesamientoLocal) { this.fechaHoraProcesamientoLocal = fechaHoraProcesamientoLocal; }
-    public LocalDateTime getFechaHoraProcesamientoUTC() { return fechaHoraProcesamientoUTC; }
-    public void setFechaHoraProcesamientoUTC(LocalDateTime fechaHoraProcesamientoUTC) { this.fechaHoraProcesamientoUTC = fechaHoraProcesamientoUTC; }
-    public LocalDateTime getFechaHoraExpiracionLocal() { return fechaHoraExpiracionLocal; }
-    public void setFechaHoraExpiracionLocal(LocalDateTime fechaHoraExpiracionLocal) { this.fechaHoraExpiracionLocal = fechaHoraExpiracionLocal; }
-    public LocalDateTime getFechaHoraExpiracionUTC() { return fechaHoraExpiracionUTC; }
-    public void setFechaHoraExpiracionUTC(LocalDateTime fechaHoraExpiracionUTC) { this.fechaHoraExpiracionUTC = fechaHoraExpiracionUTC; }
+    public LocalDateTime getFechaHoraGeneracion() { return fechaHoraGeneracion; }
+    public void setFechaHoraGeneracion(LocalDateTime fechaHoraGeneracion) { this.fechaHoraGeneracion = fechaHoraGeneracion; }
+    public LocalDateTime getFechaHoraProcesamiento() { return fechaHoraProcesamiento; }
+    public void setFechaHoraProcesamiento(LocalDateTime fechaHoraProcesamiento) { this.fechaHoraProcesamiento = fechaHoraProcesamiento; }
+    public LocalDateTime getFechaHoraExpiracion() { return fechaHoraExpiracion; }
+    public void setFechaHoraExpiracion(LocalDateTime fechaHoraExpiracion) { this.fechaHoraExpiracion = fechaHoraExpiracion; }
     public Boolean getFueAtendido() { return fueAtendido; }
     public void setFueAtendido(Boolean fueAtendido) { this.fueAtendido = fueAtendido; }
     public TipoEscenario getTipoEscenario() { return tipoEscenario; }
     public void setTipoEscenario(TipoEscenario tipoEscenario) { this.tipoEscenario = tipoEscenario; }
+    public String getCodClienteSimulado() { return codClienteSimulado; }
+    public void setCodClienteSimulado(String codClienteSimulado) { this.codClienteSimulado = codClienteSimulado; }
     public ClienteEntity getCliente() { return cliente; }
     public void setCliente(ClienteEntity cliente) { this.cliente = cliente; }
     public AeropuertoEntity getDestino() { return destino; }

@@ -37,8 +37,8 @@ public class PlanAdapter {
         algorithm.setCapacidad(entity.getCapacidad());
         algorithm.setDuracion(entity.getDuracion());
         algorithm.setDistancia(entity.getDistancia());
-        algorithm.setHoraSalida(entity.getHoraSalidaUTC());
-        algorithm.setHoraLlegada(entity.getHoraLlegadaUTC());
+        algorithm.setHoraSalida(entity.getHoraSalida());
+        algorithm.setHoraLlegada(entity.getHoraLlegada());
         algorithm.setOrigen(aeropuertoAdapter.toAlgorithm(idTransaccion, entity.getOrigen()));
         algorithm.setDestino(aeropuertoAdapter.toAlgorithm(idTransaccion, entity.getDestino()));
         List<Evento> eventos = new ArrayList<>();

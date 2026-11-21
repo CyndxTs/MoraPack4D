@@ -48,15 +48,15 @@ public class VueloService {
         return vueloRepository.findAllInRangeByScenario(fechaHoraInicio, fechaHoraFin, tipoEscenario, codOrigenes);
     }
 
-    public Optional<VueloEntity> findById(Integer id) {
+    public Optional<VueloEntity> findById(Long id) {
         return vueloRepository.findById(id);
     }
 
-    public boolean existsById(Integer id) {
+    public boolean existsById(Long id) {
         return vueloRepository.existsById(id);
     }
 
-    public void deleteById(Integer id) {
+    public void deleteById(Long id) {
         vueloRepository.deleteById(id);
     }
 
@@ -69,7 +69,7 @@ public class VueloService {
     }
 
     public ListResponse listar(ListRequest request) {
-        Pageable pageable = G4DUtility.Convertor.toAdmissible(request.getPagina(), request.getTamanio(), Sort.Order.asc("fechaHoraSalidaUTC"), Sort.Order.asc("fechaHoraLlegadaUTC"));
+        Pageable pageable = G4DUtility.Convertor.toAdmissible(request.getPagina(), request.getTamanio(), Sort.Order.asc("fechaHoraSalida"), Sort.Order.asc("fechaHoraLlegada"));
         List<DTO> dtos = new ArrayList<>();
         List<VueloEntity> entities = this.findAll(pageable);
         entities.forEach(entity -> dtos.add(vueloMapper.toDTO(entity)));

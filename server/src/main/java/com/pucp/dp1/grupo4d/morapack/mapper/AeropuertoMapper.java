@@ -50,8 +50,8 @@ public class AeropuertoMapper {
         AeropuertoDTO dto = new AeropuertoDTO();
         dto.setCodigo(entity.getCodigo());
         dto.setCiudad(entity.getCiudad());
-        dto.setPais(entity.getPais());
-        dto.setContinente(entity.getContinente());
+        dto.setPais(entity.getNombrePais());
+        dto.setContinente(entity.getNombreContinente());
         dto.setAlias(entity.getAlias());
         dto.setHusoHorario(entity.getHusoHorario());
         dto.setCapacidad(entity.getCapacidad());

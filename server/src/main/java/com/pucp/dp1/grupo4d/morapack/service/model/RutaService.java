@@ -47,15 +47,15 @@ public class RutaService {
         return rutaRepository.findAllInRangeByScenario(fechaHoraInicio, fechaHoraFin, tipoEscenario, codOrigenes);
     }
 
-    public Optional<RutaEntity> findById(Integer id) {
+    public Optional<RutaEntity> findById(Long id) {
         return rutaRepository.findById(id);
     }
 
-    public boolean existsById(Integer id) {
+    public boolean existsById(Long id) {
         return rutaRepository.existsById(id);
     }
 
-    public void deleteById(Integer id) {
+    public void deleteById(Long id) {
         rutaRepository.deleteById(id);
     }
 
@@ -68,7 +68,7 @@ public class RutaService {
     }
     
     public ListResponse listar(ListRequest request) {
-        Pageable pageable = G4DUtility.Convertor.toAdmissible(request.getPagina(), request.getTamanio(), Sort.Order.asc("fechaHoraSalidaUTC"), Sort.Order.asc("fechaHoraLlegadaUTC"));
+        Pageable pageable = G4DUtility.Convertor.toAdmissible(request.getPagina(), request.getTamanio(), Sort.Order.asc("fechaHoraSalida"), Sort.Order.asc("fechaHoraLlegada"));
         List<DTO> dtos = new ArrayList<>();
         List<RutaEntity> entities = this.findAll(pageable);
         entities.forEach(entity -> dtos.add(rutaMapper.toDTO(entity)));
