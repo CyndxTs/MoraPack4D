@@ -967,3 +967,10 @@
     color: darkred;
   }
 }
+
+
+/* Modal ancho (formularios largos) y errores de formulario */
+.modal-content.modal-content--wide { max-width: 640px; max-height: 85vh; }
+.form-error { color: #b91c1c; font-size: 13px; font-weight: 600; margin: 8px 0 0; }
+.btn:disabled { opacity: 0.6; cursor: not-allowed; }
+.btnAdd-icon:disabled { opacity: 0.6; cursor: not-allowed; }

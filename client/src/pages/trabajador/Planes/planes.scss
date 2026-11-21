@@ -1,0 +1,26 @@
+.content-header-title { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+
+// Pestañas Planes / Eventos
+.planes-tabs {
+  display: flex;
+  gap: 4px;
+  background: #f1f5f9;
+  padding: 4px;
+  border-radius: 8px;
+
+  button {
+    border: none;
+    background: transparent;
+    padding: 6px 16px;
+    border-radius: 6px;
+    font-weight: 700;
+    font-size: 13px;
+    color: #475569;
+    cursor: pointer;
+    &.active { background: #fff; color: var(--color-dark-blue); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); }
+  }
+}
+
+.content-count { font-weight: 400; color: #64748b; font-size: 0.9em; }
+
+.inline-fields { display: flex; gap: 8px; .custom-input { width: 100%; } }

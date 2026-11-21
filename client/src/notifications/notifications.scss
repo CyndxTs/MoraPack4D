@@ -1,0 +1,27 @@
+// Pila de notificaciones arriba a la derecha, por encima de modales y del mapa
+.notification-stack {
+  position: fixed;
+  top: calc(var(--nav-height) + 12px);
+  right: 20px;
+  z-index: 99999;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: min(400px, calc(100vw - 40px));
+  pointer-events: none;
+
+  .notification {
+    position: static;
+    transform: none;
+    min-width: 0;
+    max-width: 100%;
+    width: 100%;
+    pointer-events: auto;
+    animation: notificationIn 0.25s ease;
+  }
+}
+
+@keyframes notificationIn {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}

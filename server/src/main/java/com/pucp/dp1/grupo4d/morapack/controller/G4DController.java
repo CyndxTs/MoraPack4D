@@ -15,6 +15,7 @@ import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import com.pucp.dp1.grupo4d.morapack.model.dto.payload.SolutionPayload;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -65,6 +66,12 @@ public class G4DController {
     public ResponseEntity<GenericResponse> replanificarOperacion(@RequestBody ReplanificationRequest request) {
         GenericResponse response = g4dService.replanificarOperacion(request);
         return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/operation-current")
+    public ResponseEntity<SolutionPayload> obtenerOperacionActual() {
+        SolutionPayload payload = g4dService.obtenerOperacionActual();
+        return (payload != null) ? ResponseEntity.ok(payload) : ResponseEntity.noContent().build();
     }
 
     @PostMapping("/operation-purge")

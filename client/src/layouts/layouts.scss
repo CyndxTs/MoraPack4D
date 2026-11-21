@@ -1,0 +1,16 @@
+.layout {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: var(--color-blanco);
+}
+
+.layout-main { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+
+// Vistas de mapa: ocupan exactamente la ventana menos la barra superior
+.layout--app { height: 100vh; overflow: hidden; }
+.layout--app .layout-main { overflow: hidden; }
+.layout--app .layout-main > .page:not(.scenario-root) { height: calc(100vh - var(--nav-height)); overflow: hidden; }
+.layout--app .layout-main > .page > .contenido { overflow: auto; }
+
+.vista-cargando { padding: 40px; color: #64748b; font-style: italic; }

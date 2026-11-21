@@ -61,3 +61,9 @@ sin uso, y eventos de operación vencidos. No corre mientras hay una replanifica
 5. Pedidos:
    - SIMULACION: el cliente no se busca en BD; se genera en RAM al simular.
    - OPERACION: se omiten los pedidos de clientes inexistentes; si el destino es una sede, se guardan como atendidos al instante.
+
+## Endpoints agregados para el cliente
+
+- `POST /api/auth/iniciar-sesion` `{ correo, contrasenia, tipoUsuario? }` → `{ exito, mensaje, usuario }` (BCrypt; marca ONLINE).
+- `POST /api/auth/cerrar-sesion` `{ correo, tipoUsuario? }` → marca OFFLINE.
+- `POST /api/operation-current` → última solución de la operación (`{ solucion }`) o 204 si el server aún no replanificó.

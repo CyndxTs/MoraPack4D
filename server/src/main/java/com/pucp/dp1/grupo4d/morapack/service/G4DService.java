@@ -65,6 +65,8 @@ public class G4DService {
         // Simulación: reporte parcial con los pedidos ya desalojados de la RAM
         public String archivoParcial;
         public int cantidadDesalojada = 0;
+        // Operación: última solución enviada (para que un cliente que recién abre la vista no la vea vacía)
+        public SolucionDTO solutionDTO;
 
         public G4DContext(String id) {
             this.id = id;
@@ -357,6 +359,12 @@ public class G4DService {
         return new GenericResponse(true, "Simulación en detenimiento!");
     }
 
+    // Última solución de la operación (null si el server aún no replanificó desde que arrancó)
+    public SolutionPayload obtenerOperacionActual() {
+        SolucionDTO solucion = operationContext.solutionDTO;
+        return (solucion != null) ? new SolutionPayload(solucion) : null;
+    }
+
     public GenericResponse replanificarOperacion(ReplanificationRequest request) {
         synchronized (operationContext) {
             if(operationContext.task != null && operationContext.running) {
@@ -434,6 +442,7 @@ public class G4DService {
             LocalDateTime umbralDeReplanificacion = fechaHoraActual.plusSeconds(180L); // Predicción por tiempo maximo de replanificacion
             LocalDateTime instanteDeProcesamiento = fechaHoraActual.plusSeconds(90L); // Predicción por tiempo maximo de carga
             SolucionDTO solucion = planificar(operationContext, parametros, escenario, inicioPlanificacion, fechaHoraActual, umbralDeReplanificacion, instanteDeProcesamiento);
+            operationContext.solutionDTO = solucion;
             communicationService.enviar(solutionDestination, new SolutionPayload(solucion));
             System.out.println("[>] OPERACION ACTUALIZADA!");
             if(!solucion.getPedidosNoAtendidos().isEmpty()) {

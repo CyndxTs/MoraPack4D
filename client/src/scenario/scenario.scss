@@ -1,0 +1,1131 @@
+// Estilos de Operación y Simulación. Todo va dentro de .scenario-root para no afectar a otras páginas
+// (antes este archivo redefinía .page/.sidebar/.contenido de TODA la app).
+.scenario-root {
+/* ==========================================================================
+   1. LAYOUT GENERAL DE LA PÁGINA
+   Estructura principal que contiene el sidebar y el mapa.
+   ========================================================================== */
+
+.page {
+  display: flex;
+  width: 100%;
+  max-width: 100vw;
+  height: calc(100vh - var(--nav-height));
+  overflow: hidden; 
+  background-color: #f8fafc;
+}
+
+.contenido {
+  flex: 1;
+  min-width: 0; 
+  padding: 0;
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Contenedor del mapa y sus overlays */
+.map-and-info {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 100%;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+}
+
+.map-and-info #map {
+  width: 100%;
+  height: 100%; 
+  min-height: 0;
+  z-index: 1;
+}
+
+/* ==========================================================================
+   2. CONTROLES DEL MAPA (FLOTANTES)
+   Botones de Generar/Detener, Leyenda, Estado de Flota.
+   ========================================================================== */
+
+/* --- Wrapper para posicionar elementos sobre el mapa --- */
+.map-wrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+/* --- Panel de Controles (Arriba Izquierda) --- */
+.controls-dropdown {
+  position: absolute;
+  top: 12px;
+  left: 60px; 
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.controls-toggle {
+  border: none;
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  background-color: rgba(15, 23, 42, 0.9);
+  color: #fff;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.35);
+  margin-bottom: 8px;
+  transition: filter 0.2s;
+}
+.controls-toggle:hover {
+  filter: brightness(1.1);
+}
+
+.control-bar {
+  background: #fff;
+  padding: 16px; 
+  display: flex;
+  flex-direction: column;
+  gap: 10px; 
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.15);
+  border: 1px solid #e2e8f0;
+  width: 380px;      
+  min-width: 380px;
+}
+
+.control-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 12px; 
+}
+.control-row-main {
+  justify-content: flex-start; 
+  margin-bottom: 4px;
+}
+
+.control-label,
+.info-label {
+  font-family: 'Inter', sans-serif; 
+  font-weight: 600;
+  font-size: 13px;
+  color: #64748b;
+  white-space: nowrap; 
+}
+
+.control-label-buttons{
+  display: flex;           
+  gap: 12px;               
+  flex-wrap: wrap;
+}
+
+.value {
+  font-family: 'Inter', sans-serif; 
+  font-size: 15px;                  
+  font-weight: 600;                 
+  color: #1e293b;                   
+  text-align: right;
+  white-space: nowrap;              
+  letter-spacing: -0.02em;          
+}
+
+/* Botones dentro del control bar (Generar / Detener) */
+.control-bar .btnAdd-icon {
+  height: 36px;
+  padding: 0 16px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: auto;
+  cursor: pointer;
+}
+.control-bar .btnAdd-icon img { width: 16px; height: 16px; }
+
+/* Estilo específico botón Detener */
+.control-bar .btnAdd-icon.btn-stop {
+  background-color: #dc3545 !important;
+  color: #fff !important;
+  border: none !important;
+}
+.control-bar .btnAdd-icon.btn-stop:not(:disabled):hover {
+  filter: brightness(0.9);
+}
+.control-bar .btnAdd-icon.btn-stop:disabled {
+  background-color: #f3b3bc !important;
+  cursor: not-allowed;
+  opacity: 0.8;
+}
+
+/* --- Leyenda (Abajo Izquierda) --- */
+.legend-overlay {
+  position: absolute;
+  left: 16px;
+  bottom: 24px;
+  z-index: 1000;
+}
+
+.legend-card {
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);
+  padding: 8px 12px;
+  max-width: 260px;
+  font-size: 12px;
+}
+
+.legend-card-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  color: #334155;
+}
+
+.legend-card-info-icon {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+  background: #e5f0ff;
+  color: #1d4ed8;
+}
+.legend-card-title { font-weight: 600; }
+.legend-card-toggle { margin-left: auto; font-size: 10px; opacity: 0.6; }
+
+.legend-card-body { margin-top: 8px; }
+.legend-item { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+.legend-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+.legend-dot--green { background: #16a34a; }
+.legend-dot--yellow { background: #facc15; }
+.legend-dot--red { background: #dc2626; }
+.legend-footnote { margin-top: 6px; font-size: 10px; color: #6b7280; font-style: italic; }
+
+/* --- Estado de Flota (Arriba Derecha) --- */
+.map-wrapper .fleet-overlay {
+  position: absolute;
+  right: 16px;
+  top: 16px;
+  z-index: 1000;
+}
+
+/* Responsive para controles */
+@media (max-width: 900px) {
+  .map-wrapper .fleet-overlay { top: auto; bottom: 80px; right: 16px; }
+  .control-bar { width: auto; min-width: 200px; }
+}
+
+/* ==========================================================================
+   3. SIDEBAR: ESTRUCTURA Y COMPORTAMIENTO
+   Manejo del ancho, colapso y layout interno.
+   ========================================================================== */
+
+.sidebar {
+  /* Ancho FIJO cuando está abierto */
+  flex: 0 0 500px !important;
+  width: 500px !important;
+  max-width: 500px !important;
+
+  background: #fff;
+  border-right: 1px solid #e5e7eb;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  z-index: 1100;
+  position: relative;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.04);
+}
+
+/* --- Estado COLAPSADO (Cerrado) --- */
+.sidebar.collapsed {
+  flex: 0 0 56px !important;
+  width: 56px !important;
+  min-width: 56px !important;
+  overflow: hidden; 
+}
+
+/* Ocultar elementos cuando está cerrado */
+.sidebar.collapsed .sidebar-title,
+.sidebar.collapsed .pin-button,
+.sidebar.collapsed .sidebar-tabs,
+.sidebar.collapsed .filters-row,
+.sidebar.collapsed .sidebar-content {
+  opacity: 0;
+  pointer-events: none;
+  display: none !important;
+}
+
+/* Ajustes del Header cuando está cerrado */
+.sidebar.collapsed .sidebar-header {
+  padding: 0;
+  justify-content: center;
+  height: 60px;
+}
+/* Rotar flecha */
+.sidebar.collapsed .hide-icon {
+  transform: rotate(180deg);
+  margin: 0 !important;
+  display: block !important;
+}
+
+/* --- Header del Sidebar --- */
+.sidebar-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid #f1f5f9;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #ffffff;
+  flex-shrink: 0;
+  height: 64px;
+}
+
+.sidebar-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.hide-icon {
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
+  opacity: 0.6;
+  transition: opacity 0.2s, transform 0.3s;
+}
+.hide-icon:hover { opacity: 1; }
+
+/* --- Contenido con Scroll --- */
+.sidebar-content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-bottom: 20px;
+  background: #fff;
+}
+
+/* ==========================================================================
+   4. SIDEBAR: COMPONENTES INTERNOS (TABS Y FILTROS)
+   ========================================================================== */
+
+/* --- Pestañas (Tabs) --- */
+.sidebar-tabs {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  gap: 8px;
+  padding: 12px 16px;
+  background: #fff;
+  border-bottom: 1px solid #f1f5f9;
+  overflow-x: auto;
+  flex-shrink: 0;
+}
+
+.sidebar-tab {
+  flex: 1;
+  min-width: 80px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 4px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  cursor: pointer;
+  color: #64748b;
+  transition: all 0.2s;
+}
+
+.sidebar-tab:hover { background: #f1f5f9; color: #334155; }
+.sidebar-tab.active {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border-color: #bfdbfe;
+}
+
+.sidebar-tab-badge {
+  margin-top: 4px;
+  font-size: 10px;
+  background: rgba(0,0,0,0.05);
+  padding: 1px 6px;
+  border-radius: 10px;
+}
+.sidebar-tab.active .sidebar-tab-badge {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+/* --- Filtros y Buscadores --- */
+.filters-row {
+  display: flex;
+  gap: 8px;
+  padding: 12px 16px;
+  flex-wrap: nowrap;
+}
+
+.filter-select,
+.orders-search-input {
+  flex: 1;
+  width: 100%;
+  border-radius: 99px;
+  border: 1px solid #d1d5db;
+  padding: 6px 12px;
+  font-size: 12px;
+  background-color: #f9fafb;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.filter-select:focus,
+.orders-search-input:focus {
+  border-color: #1a73e8;
+  background: #fff;
+}
+
+/* Flecha custom para selects */
+select.filter-select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 20 20'%3E%3Cpath fill='none' stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4' /%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 28px;
+}
+
+.airports-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #475569;
+  margin-left: 4px;
+}
+
+/* ==========================================================================
+   5. LISTAS Y CARDS (Vuelos, Pedidos, Aeropuertos)
+   Estilos unificados para las tarjetas de la lista.
+   ========================================================================== */
+
+.active-flights-list,
+.orders-list,
+.routes-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 0 16px;
+}
+
+/* --- Estilo Base de Card --- */
+.flight-card,
+.order-card,
+.route-card,
+.airport-card {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 12px 14px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 2px 4px rgba(15, 23, 42, 0.04);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.flight-card:hover,
+.order-card:hover,
+.route-card:hover,
+.airport-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(15, 23, 42, 0.08);
+  border-color: #cbd5e1;
+}
+
+/* Colores de Hover específicos */
+.flight-card:hover { border-color: #3b82f6; } /* Azul */
+.order-card:hover { border-color: #10b981; }  /* Verde */
+.route-card:hover { border-color: #8b5cf6; }  /* Morado */
+
+/* --- Headers de Card --- */
+.flight-card-header,
+.order-card-header,
+.route-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+/* Badges de Código */
+.flight-code,
+.order-code,
+.route-code {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 99px;
+  white-space: nowrap;
+}
+
+.flight-code { background: #f1f5f9; color: #475569; }
+.order-code { background: #0f172a; color: #fff; }
+.route-code { background: #312e81; color: #fff; }
+
+.flight-route,
+.order-destination {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+/* --- Body de Card --- */
+.flight-card-body,
+.order-card-body,
+.route-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.flight-card-row,
+.order-row,
+.route-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+}
+
+.flight-label, .order-label, .route-label { color: #64748b; }
+.flight-value, .order-value, .route-value { color: #0f172a; font-weight: 500; }
+
+/* Semáforos de Aeropuerto */
+.airport-card--low { border-left: 4px solid #22c55e; }
+.airport-card--medium { border-left: 4px solid #eab308; }
+.airport-card--high { border-left: 4px solid #ef4444; }
+
+/* ==========================================================================
+   6. VISTA DETALLE (INFO SHELLS)
+   El reemplazo del antiguo info-panel.
+   ========================================================================== */
+
+.sidebar-detail-view {
+  padding: 0 16px; 
+  animation: fadeIn 0.3s ease;
+  display: flex;
+  flex-direction: column;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Botón Volver */
+.detail-back-btn {
+  align-self: flex-start; 
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 16px 0 16px 4px; 
+  padding: 8px 16px;
+  background-color: #f1f5f9;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+  border-radius: 99px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.detail-back-btn:hover {
+  background-color: #e2e8f0;
+  color: #0f172a;
+}
+
+/* --- Info Shell (Contenedor Principal) --- */
+.info-shell {
+  padding: 0;
+  font-family: 'Inter', sans-serif;
+  
+  background: #fff;
+  border-radius: 16px; 
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  border: 1px solid #e2e8f0; 
+  overflow: hidden; 
+}
+
+/* Cabeceras Temáticas */
+.info-shell-header {
+  padding: 24px;
+  color: white;
+  background: #334155;
+}
+.header-airport { background: linear-gradient(135deg, #f16c06, #f16c06); }
+.flight-theme   { background: linear-gradient(135deg, #3b82f6, #2563eb); }
+.order-theme    { background: linear-gradient(135deg, #10b981, #059669); }
+.route-theme    { background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
+
+.header-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+.header-type-badge { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; opacity: 0.9; }
+.header-title { 
+  font-size: 26px; 
+  font-weight: 700; 
+  margin: 0; 
+  line-height: 1.1; 
+}
+.header-code { 
+  background: rgba(255,255,255,0.25); 
+  padding: 4px 8px; 
+  border-radius: 6px; 
+  font-size: 13px; 
+  font-family: monospace; 
+  font-weight: 700;
+}
+.header-subtitle { font-size: 14px; opacity: 0.95; margin: 4px 0 20px; font-weight: 500;}
+
+/* Grid de Métricas en el Header */
+.stats-grid {
+  display: flex; 
+  justify-content: space-between;
+  gap: 16px;
+  background: rgba(255,255,255,0.15);
+  padding: 16px;
+  border-radius: 12px;
+  backdrop-filter: blur(4px);
+}
+.stat-box {
+  display: flex;
+  flex-direction: column;  
+  flex: 1; 
+  min-width: auto; 
+}
+.stat-box label { 
+  font-size: 10px; 
+  opacity: 0.8; 
+  text-transform: uppercase; 
+  margin-bottom: 2px;
+}
+.stat-box span {
+  font-size: 12px;
+  font-weight: 700;
+  color: #0f172a; 
+  
+  white-space: nowrap;
+  overflow: visible;  
+  
+  
+  letter-spacing: -0.03em; 
+}
+
+/* Mini Barra de Progreso en Stats */
+.mini-progress-wrapper { display: flex; flex-direction: column; gap: 3px; }
+.mini-progress-bar { width: 100%; height: 4px; background: rgba(255,255,255,0.3); border-radius: 2px; }
+.mini-progress-bar div { height: 100%; border-radius: 2px; }
+
+/* --- Pestañas Internas (Salidas/Llegadas) --- */
+.detail-tabs {
+  display: flex;
+  background: #f1f5f9;
+  padding: 4px;
+  margin: 16px 20px 8px;
+  border-radius: 8px;
+}
+.detail-tab {
+  flex: 1;
+  padding: 8px;
+  border: none;
+  background: transparent;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.detail-tab.active { background: #fff; color: #0f172a; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+
+/* --- Cuerpo de Listas Modernas --- */
+.info-shell-body { padding: 0 20px 20px; }
+.info-section-title { font-size: 13px; font-weight: 700; color: #334155; margin: 16px 0 8px; }
+
+.info-list-modern {
+  list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px;
+}
+
+.info-list-item {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 10px 12px;
+  transition: transform 0.1s;
+}
+.info-list-item:hover { border-color: #cbd5e1; }
+
+.info-item-row { display: flex; justify-content: space-between; align-items: center; }
+.info-item-row.main { margin-bottom: 4px; }
+.flight-route-text { font-weight: 600; font-size: 12px; color: #1e293b; }
+.flight-code-badge { font-size: 10px; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; color: #64748b; }
+.info-item-row.sub { font-size: 11px; color: #64748b; }
+
+.info-empty-state { text-align: center; color: #94a3b8; font-size: 12px; font-style: italic; padding: 20px 0; }
+
+/* ==========================================================================
+   7. TOOLTIPS DE LEAFLET
+   Estilos para los popups al pasar el mouse por aviones/aeropuertos.
+   ========================================================================== */
+
+/* Reset de estilos default de Leaflet */
+.leaflet-tooltip {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 0;
+}
+.leaflet-tooltip-top:before, .leaflet-tooltip-bottom:before,
+.leaflet-tooltip-left:before, .leaflet-tooltip-right:before {
+  display: none;
+}
+
+/* Tooltip Aeropuerto */
+.airport-popup {
+  min-width: 260px;
+  background: #fff;
+  border-radius: 12px;
+  padding: 12px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+  font-size: 12px;
+  font-family: 'Inter', sans-serif;
+}
+.airport-popup__header { display: flex; justify-content: space-between; margin-bottom: 8px; font-weight: 600; }
+.airport-popup__code { background: #f3f4f6; padding: 2px 6px; border-radius: 4px; font-size: 10px; }
+.airport-popup__progress { height: 4px; background: #e5e7eb; border-radius: 2px; margin: 6px 0; overflow: hidden; }
+.airport-popup__progress-fill { height: 100%; background: linear-gradient(90deg, #22c55e, #eab308, #ef4444); }
+
+.airport-popup-tabs { display: flex; gap: 4px; margin: 8px 0; }
+.airport-popup-tab { flex: 1; border: 1px solid #e5e7eb; background: #f9fafb; padding: 4px; font-size: 11px; cursor: pointer; border-radius: 4px; }
+.airport-popup-tab.active { background: #1a73e8; color: #fff; border-color: #1a73e8; }
+
+.airport-popup__list { list-style: none; padding: 0; margin: 0; }
+.airport-popup__list li { padding: 4px 0; border-bottom: 1px dashed #f1f5f9; }
+.airport-popup__flight-main { display: flex; justify-content: space-between; font-weight: 600; font-size: 11px; }
+
+/* Tooltip Avión */
+.plane-tooltip {
+  min-width: 220px;
+  background: #fff;
+  border-radius: 12px;
+  padding: 12px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+  font-size: 12px;
+}
+.plane-tooltip__route { font-weight: 700; color: #1e293b; margin-bottom: 4px; }
+.plane-tooltip__code { display: inline-block; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-size: 10px; margin-bottom: 8px; }
+.plane-tooltip__row { display: flex; justify-content: space-between; margin-bottom: 2px; color: #4b5563; }
+.plane-tooltip__progress { height: 4px; background: #e5e7eb; border-radius: 2px; margin-top: 6px; overflow: hidden; }
+.plane-tooltip__progress-fill { height: 100%; background: #3b82f6; }
+
+/////////////////////
+// OPERACION ///////////
+///////////////////
+
+.flight-toggle-row {
+  display: flex;
+  gap: 80px;
+  margin-bottom: 8px;
+}
+
+.flight-toggle-btn {
+  flex: 1;
+  padding: 6px;
+  font-size: 12px;
+  border-radius: 6px;
+  border: 1px solid #cbd5f5;
+  background: #f8fafc;
+  cursor: pointer;
+}
+
+.flight-toggle-btn.active {
+  background: #2563eb;
+  color: white;
+  border-color: #2563eb;
+}
+
+.flight-toggle-btn:hover {
+  background: #2563eb;
+  color: white;
+  border-color: #2563eb;
+}
+
+/* ==========================================================================
+   8. MODAL DE REPORTE (DISEÑO MEJORADO)
+   ========================================================================== */
+
+/* Fondo oscuro con desenfoque */
+.report-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(15, 23, 42, 0.6); 
+  backdrop-filter: blur(4px); 
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999; 
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* Contenedor del Modal */
+.report-modal-content {
+  background: #ffffff;
+  width: 90%;
+  max-width: 650px;
+  border-radius: 16px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  border: 1px solid #e2e8f0;
+}
+
+/* Header */
+.report-modal-header {
+  background: #0f172a;
+  padding: 20px 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid #1e293b;
+}
+
+.report-modal-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: #f8fafc;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Cuerpo */
+.report-modal-body {
+  padding: 24px;
+  background: #fff;
+}
+
+.report-info-text {
+  font-size: 14px;
+  color: #475569; 
+  margin-bottom: 16px;
+  line-height: 1.5;
+}
+
+.report-filename {
+  font-weight: 600;
+  color: #0f172a;
+  background: #f1f5f9;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: monospace;
+}
+
+/* Área de Previsualización (Consola/Papel) */
+.report-preview-box {
+  background-color: #f8fafc; 
+  border: 1px solid #cbd5e1; 
+  border-radius: 8px;
+  padding: 16px;
+  height: 320px;
+  overflow-y: auto;
+  font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
+  font-size: 12px;
+  line-height: 1.6;
+  color: #334155;
+  white-space: pre-wrap; 
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.03);
+}
+
+/* Scrollbar personalizado para el preview */
+.report-preview-box::-webkit-scrollbar {
+  width: 8px;
+}
+.report-preview-box::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+.report-preview-box::-webkit-scrollbar-thumb {
+  background-color: #cbd5e1;
+  border-radius: 4px;
+}
+
+/* Footer de botones */
+.report-modal-footer {
+  padding: 16px 24px;
+  background: #f8fafc;
+  border-top: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Botones Base */
+.btn-report-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.btn-report-action:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.btn-report-action:active {
+  transform: translateY(0);
+}
+
+/* Variantes de botones */
+.btn-report-close {
+  background-color: #fff;
+  color: #ef4444; /* Rojo */
+  border: 1px solid #fecaca;
+}
+.btn-report-close:hover {
+  background-color: #fef2f2;
+  border-color: #ef4444;
+}
+
+.btn-report-download {
+  background-color: #0f172a; /* Azul oscuro */
+  color: white;
+}
+.btn-report-download:hover {
+  background-color: #1e293b;
+}
+
+/* Animaciones */
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px) scale(0.95); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ==========================================================================
+   ALERTAS VISUALES (COLAPSO)
+   ========================================================================== */
+
+.system-collapse-alert {
+  position: absolute;
+  top: 20px; 
+  left: 50%;
+  transform: translateX(-50%);
+  
+  background-color: #ef4444;
+  color: white;
+  
+  padding: 10px 24px;
+  border-radius: 99px; 
+  z-index: 2000;
+  
+  font-weight: 700;
+  font-size: 14px;
+  box-shadow: 0 4px 15px rgba(220, 38, 38, 0.5);
+  border: 1px solid #fca5a5; 
+  
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  
+ 
+  animation: slideDownAlert 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes slideDownAlert {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -100%); 
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+/* ==========================================================================
+   EXTRAS (antes en planificacion.scss y estilos en línea)
+   ========================================================================== */
+.selected-codes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.chip {
+  background: #e5e7eb;
+  padding: 6px 10px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  font-size: 13px;
+}
+
+.chip-remove {
+  background: transparent;
+  border: none;
+  margin-left: 6px;
+  font-size: 16px;
+  cursor: pointer;
+  color: #444;
+  padding: 0;
+  line-height: 1;
+}
+
+.chip-remove:hover {
+  color: #d00;
+}
+
+
+/////////////////////
+// OPERACION ///////////
+///////////////////
+
+.flight-toggle-row {
+  display: flex;
+  gap: 80px;
+  margin-bottom: 8px;
+}
+
+.flight-toggle-btn {
+  flex: 1;
+  padding: 6px;
+  font-size: 12px;
+  border-radius: 6px;
+  border: 1px solid #cbd5f5;
+  background: #f8fafc;
+  cursor: pointer;
+}
+
+.flight-toggle-btn.active {
+  background: #2563eb;
+  color: white;
+  border-color: #2563eb;
+}
+
+.flight-toggle-btn:hover {
+  background: #2563eb;
+  color: white;
+  border-color: #2563eb;
+}
+
+//////////////
+/// REPORTE OPERACION
+//////////////
+.report-overlay {
+  position: absolute;
+  bottom: 16px;
+  right: 16px;
+  z-index: 1000;
+}
+
+.pin-button {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 6px;
+  border-radius: 6px;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+.pin-button--on { background: #e0f2fe; color: #0284c7; }
+
+.control-divider { width: 100%; border: none; border-top: 1px solid #eee; margin: 4px 0; }
+
+.order-card--fallido { border-left: 4px solid #ef4444; cursor: default; }
+
+.fleet-body { display: flex; flex-direction: column; gap: 8px; }
+.fleet-status { display: flex; align-items: center; gap: 8px; font-size: 13px; margin-bottom: 4px; }
+.fleet-dot { width: 12px; height: 12px; border-radius: 50%; }
+.fleet-status-label { font-weight: 600; color: #374151; }
+.fleet-row { display: flex; justify-content: space-between; font-size: 12px; color: #6b7280; strong { color: #111827; } }
+.fleet-row--divider { border-bottom: 1px solid #f3f4f6; padding-bottom: 4px; }
+.fleet-bar { width: 100%; height: 6px; background: #e5e7eb; border-radius: 4px; overflow: hidden; div { height: 100%; transition: width 0.5s ease; } }
+.fleet-total { font-size: 11px; color: #9ca3af; text-align: right; }
+
+/* Botón flotante para abrir el dashboard sobre la operación */
+.dashboard-fab {
+  position: absolute;
+  right: 16px;
+  bottom: 24px;
+  z-index: 1000;
+  border: none;
+  border-radius: 999px;
+  padding: 10px 18px;
+  font-size: 13px;
+  font-weight: 700;
+  background: var(--color-dark-blue, #14213d);
+  color: var(--color-gold, #fca311);
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.35);
+  &:hover { filter: brightness(1.15); }
+}
+
+/* Aviso de estado (replanificación programada, conexión) sobre el mapa */
+.scenario-banner {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  background: rgba(15, 23, 42, 0.9);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 999px;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.35);
+  &.scenario-banner--warn { background: #b45309; }
+}
+
+
+/* Modales de reporte / colapso */
+.report-modal-overlay--danger { background-color: rgba(69, 10, 10, 0.8); }
+.report-modal-content--danger { border: 2px solid #ef4444; }
+.report-modal-header--danger { background: #7f1d1d; }
+.btn-report-danger { background-color: #dc2626; color: #fff; border: none; &:disabled { opacity: 0.6; cursor: not-allowed; } }
+.collapse-report-ready { margin-top: 12px; padding: 8px; background: #fef2f2; border: 1px solid #fca5a5; border-radius: 6px; color: #b91c1c; }
+.collapse-report-wait { margin-top: 12px; font-style: italic; color: #666; }
+}

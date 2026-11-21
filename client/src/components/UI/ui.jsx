@@ -16,8 +16,6 @@ import careIcon from "../../assets/icons/care.svg";
 import filterIcon from "../../assets/icons/filter.svg";
 import cleanIcon from "../../assets/icons/clean.svg";
 
-import { Client } from "@stomp/stompjs";
-import { subscribeImportation } from "../../services/loaderService";
 
 export function Button({ icon, label, onClick, type = "button" }) {
   return (
@@ -57,15 +55,17 @@ export function Input({
   onChange,
   disabled = false,
   type = "text",
+  ...rest
 }) {
   return (
     <input
       type={type}
       className={`custom-input ${disabled ? "disabled" : ""}`}
       placeholder={placeholder}
-      value={value}
+      value={value ?? ""}
       onChange={onChange}
       disabled={disabled}
+      {...rest}
     />
   );
 }
@@ -322,7 +322,8 @@ export function TriPieSelector({ labels, valores, setters }) {
                 <input
                   type="text"
                   className="custom-tri-pie-input"
-                  value={valores[i]}
+                  value={valores[i] ?? ""}
+                  readOnly
                 />
               </div>
             ))}
@@ -477,6 +478,12 @@ export function Dropdown2({
   multiple = false,
 }) {
   const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  useEffect(() => {
+    const fuera = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    document.addEventListener("mousedown", fuera);
+    return () => document.removeEventListener("mousedown", fuera);
+  }, []);
 
   const handleSelect = (opt) => {
     if (multiple) {
@@ -506,7 +513,7 @@ export function Dropdown2({
   };
 
   return (
-    <div className={`custom-dropdown ${open ? "open" : ""}`}>
+    <div ref={ref} className={`custom-dropdown ${open ? "open" : ""}`}>
       <div className="selected" onClick={() => setOpen(!open)}>
         {getLabel()}
       </div>
@@ -516,7 +523,7 @@ export function Dropdown2({
           {options.map((opt, i) => (
             <li
               key={i}
-              className={value.includes(opt.value) ? "selected-option" : ""}
+              className={(multiple ? value.includes(opt.value) : value === opt.value) ? "selected-option" : ""}
               onClick={() => handleSelect(opt)}
             >
               {opt.label}
@@ -661,8 +668,13 @@ export function Table({ headers = [], data = [], statusColors = {} }) {
         <tbody>
           {data.length ? (
             data.map((row, i) => (
-              <tr key={i}>
+              <tr key={row.codigo ?? i}>
                 {headers.map((h, j) => {
+                  // Celda con contenido propio
+                  if (typeof h.render === "function") {
+                    return <td key={j} className={h.key === "acciones" ? "acciones" : ""}>{h.render(row)}</td>;
+                  }
+
                   // Columna de acciones
                   if (h.key === "acciones") {
                     return (
@@ -818,159 +830,27 @@ export function Legend({ items }) {
   );
 }
 
-/*export function LoadingOverlay({ text = "Cargando..." }) {
+/**
+ * Overlay de carga. 'progreso' (opcional) = { proceso, completado, total } tal como lo publica el server.
+ * Antes cada overlay abría su propio WebSocket; ahora la página le pasa el progreso.
+ */
+export function LoadingOverlay({ text = "Cargando...", progreso = null }) {
   const [seconds, setSeconds] = useState(0);
-
   useEffect(() => {
-    const timer = setInterval(() => {
-      setSeconds((prev) => prev + 1);
-    }, 1000);
-
-    return () => clearInterval(timer); // limpiar al desmontar
-  }, []);
-
-  return (
-    <div className="loading-overlay">
-      <div className="spinner"></div>
-      <p>
-        {text} <strong>({seconds}s)</strong>
-      </p>
-    </div>
-  );
-}*/
-
-export function getImportationId(token) {
-  if (!token || !token.startsWith("TOK-")) return null;
-  return token.substring(4); // TODO el id
-}
-
-export function useLoaderProgress(token) {
-  const [payload, setPayload] = useState(null);
-  const [status, setStatus] = useState(null);
-
-  useEffect(() => {
-    if (!token) return;
-
-    const importId = getImportationId(token);
-    if (!importId) return;
-
-    let unsubscribe;
-
-    subscribeImportation(
-      importId,
-      (progress) => setPayload(progress),
-      (status) => setStatus(status)
-    ).then((unsub) => (unsubscribe = unsub));
-
-    return () => {
-      if (unsubscribe) unsubscribe();
-    };
-  }, [token]);
-
-  return { payload, status };
-}
-
-export function LoadingOverlay({ token, onFinish }) {
-  const [seconds, setSeconds] = useState(0);
-  const { payload, status } = useLoaderProgress(token);
-
-  const [procesos, setProcesos] = useState({});
-  const [detenido, setDetenido] = useState(false);
-
-  // contador visual
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setSeconds((prev) => prev + 1);
-    }, 1000);
-
+    const timer = setInterval(() => setSeconds((s) => s + 1), 1000);
     return () => clearInterval(timer);
   }, []);
-
-  // progreso por proceso
-  useEffect(() => {
-    if (!payload) return;
-
-    const { proceso, completado, total } = payload;
-    if (!proceso || total == null || completado == null) return;
-
-    setProcesos((prev) => ({
-      ...prev,
-      [proceso]: { completado, total },
-    }));
-  }, [payload]);
-
-  // marcar detenido
-  useEffect(() => {
-    if (status?.estadoEjecucion === "DETENIDO") {
-      setDetenido(true);
-    }
-  }, [status]);
-
-  // totales globales
-  const totalGlobal = Object.values(procesos).reduce(
-    (acc, p) => acc + (p.total || 0),
-    0
-  );
-
-  const completadoGlobal = Object.values(procesos).reduce(
-    (acc, p) => acc + (p.completado || 0),
-    0
-  );
-
-  const porcentaje =
-    totalGlobal > 0 ? Math.floor((completadoGlobal / totalGlobal) * 100) : 0;
-
-  // --- CORRECCIÓN AQUÍ ---
-  // Cerrar cuando se detiene, independientemente del porcentaje
-  useEffect(() => {
-    if (!detenido) return;
-
-    // Agregamos un pequeño delay (2 segundos) para que el usuario 
-    // pueda leer "Importación finalizada" antes de que se cierre solo.
-    const timeout = setTimeout(() => {
-        onFinish?.(status);
-    }, 2000);
-
-    return () => clearTimeout(timeout);
-  }, [detenido, status, onFinish]); 
-  // ------------------------
-
-  // texto X / TOTAL
-  const texto = payload
-    ? `${payload.proceso} (${completadoGlobal}/${totalGlobal})`
-    : `Cargando... (${seconds}s)`;
-
-  // estado final visible
-  if (status?.estadoEjecucion === "DETENIDO") {
-    return (
-      <div className="loading-overlay">
-        <p>
-          {status.estadoFinalizacion === "EXITOSO"
-            ? "Importación finalizada"
-            : "Error en la importación"}
-        </p>
-
-        <div className="progress-bar">
-          <div className="progress-fill" style={{ width: "100%" }} />
-        </div>
-
-        <p className="percent">100%</p>
-      </div>
-    );
-  }
-
-  // progreso normal
+  const porcentaje = progreso && progreso.total > 0 ? Math.min(100, Math.floor((progreso.completado / progreso.total) * 100)) : null;
   return (
     <div className="loading-overlay">
       <div className="spinner" />
-
-      <p>{texto}</p>
-
-      <div className="progress-bar">
-        <div className="progress-fill" style={{ width: `${porcentaje}%` }} />
-      </div>
-
-      <p className="percent">{porcentaje}%</p>
+      <p>{progreso?.proceso ? `${progreso.proceso} (${progreso.completado}/${progreso.total})` : `${text} (${seconds}s)`}</p>
+      {porcentaje != null && (
+        <>
+          <div className="progress-bar"><div className="progress-fill" style={{ width: `${porcentaje}%` }} /></div>
+          <p className="percent">{porcentaje}%</p>
+        </>
+      )}
     </div>
   );
 }
