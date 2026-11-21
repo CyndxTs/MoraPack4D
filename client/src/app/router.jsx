@@ -15,8 +15,8 @@ const Operacion = lazy(() => import("../pages/trabajador/Operacion/Operacion"));
 const Simulacion = lazy(() => import("../pages/trabajador/Simulacion/Simulacion"));
 const Pedidos = lazy(() => import("../pages/trabajador/Pedidos/Pedidos"));
 const Planes = lazy(() => import("../pages/trabajador/Planes/Planes"));
-import ClienteInicio from "../pages/cliente/ClienteInicio";
-import NuevoPedido from "../pages/cliente/NuevoPedido";
+const MisEnvios = lazy(() => import("../pages/cliente/MisEnvios"));
+const NuevoPedido = lazy(() => import("../pages/cliente/NuevoPedido"));
 const AdminParametros = lazy(() => import("../pages/admin/Parametros"));
 const AdminUbicaciones = lazy(() => import("../pages/admin/Ubicaciones"));
 const AdminAeropuertos = lazy(() => import("../pages/admin/Aeropuertos"));
@@ -61,8 +61,8 @@ const router = createBrowserRouter([
         path: "/cliente",
         element: <RequireRole roles={[ROLES.CLIENTE]}><ClienteLayout /></RequireRole>,
         children: [
-          { index: true, element: <ClienteInicio /> },
-          { path: "pedidos/nuevo", element: <NuevoPedido /> },
+          { index: true, element: diferida(MisEnvios) },
+          { path: "pedidos/nuevo", element: diferida(NuevoPedido) },
           cuenta,
         ],
       },

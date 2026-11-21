@@ -165,19 +165,18 @@ function RegistrarAeropuertos({ onCerrar, onListo, onImportar }) {
       <Segmentado nombre="Modo" opciones={[{ value: "uno", label: "Un aeropuerto" }, { value: "archivo", label: "Archivo" }]} value={modo} onChange={(v) => { setModo(v); setError(null); }} />
       {modo === "uno" ? (
         <div className="campos">
-          <Campo label="Código OACI"><input value={f.codigo} maxLength={4} onChange={set("codigo")} placeholder="SPIM" style={{ textTransform: "uppercase" }} /></Campo>
-          <Campo label="Ciudad"><input value={f.ciudad} onChange={set("ciudad")} placeholder="Lima" /></Campo>
-          <Campo label="País" hint="El huso horario sale del país."><Selector opciones={opcionesPaises} value={f.pais} onChange={set("pais")} placeholder="Busca el país" /></Campo>
-          <Campo label="Alias (opcional)"><input value={f.alias} maxLength={10} onChange={set("alias")} placeholder="lima" /></Campo>
-          <Campo label="Capacidad del almacén (paquetes)"><input inputMode="numeric" value={f.capacidad} onChange={(e) => /^\d*$/.test(e.target.value) && set("capacidad")(e)} /></Campo>
+          <Campo req label="Código OACI"><input value={f.codigo} maxLength={4} onChange={set("codigo")} placeholder="SPIM" style={{ textTransform: "uppercase" }} /></Campo>
+          <Campo req label="Ciudad"><input value={f.ciudad} onChange={set("ciudad")} placeholder="Lima" /></Campo>
+          <Campo req label="País" hint="El huso horario sale del país."><Selector opciones={opcionesPaises} value={f.pais} onChange={set("pais")} placeholder="Busca el país" /></Campo>
+          <Campo opc label="Alias"><input value={f.alias} maxLength={10} onChange={set("alias")} placeholder="lima" /></Campo>
+          <Campo req label="Capacidad del almacén (paquetes)"><input inputMode="numeric" value={f.capacidad} onChange={(e) => /^\d*$/.test(e.target.value) && set("capacidad")(e)} /></Campo>
           <div />
-          <Campo label="Latitud (decimal)" hint="Sur negativa, p. ej. -12.022"><input inputMode="decimal" value={f.latitud} onChange={set("latitud")} /></Campo>
-          <Campo label="Longitud (decimal)" hint="Oeste negativa, p. ej. -77.114"><input inputMode="decimal" value={f.longitud} onChange={set("longitud")} /></Campo>
+          <Campo req label="Latitud (decimal)" hint="Sur negativa, p. ej. -12.022"><input inputMode="decimal" value={f.latitud} onChange={set("latitud")} /></Campo>
+          <Campo req label="Longitud (decimal)" hint="Oeste negativa, p. ej. -77.114"><input inputMode="decimal" value={f.longitud} onChange={set("longitud")} /></Campo>
         </div>
       ) : (
         <>
-          <ZonaArchivo archivo={archivo} onArchivo={setArchivo} ayuda="El archivo de aeropuertos del curso (agrupado por continente, con coordenadas en grados, minutos y segundos). El país de cada aeropuerto debe existir." />
-          <p className="modal2__nota">Si todavía no hay sedes, se marcan SPIM, EBCI y UBBB al importar.</p>
+          <ZonaArchivo archivo={archivo} onArchivo={setArchivo} ayuda="El archivo de aeropuertos del curso (agrupado por continente, con coordenadas en grados, minutos y segundos). El país de cada aeropuerto debe existir. Solo quedan como sede las líneas que terminen con la palabra SEDE; las demás sedes se marcan aquí con «Hacer sede»." />
         </>
       )}
       {error && <p className="modal2__error" role="alert">{error}</p>}

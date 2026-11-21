@@ -264,18 +264,18 @@ function RegistrarPedidosModal({ onCerrar, onListo, onImportar }) {
       {modo === "uno" ? (
         <div className="campos">
           {esOperacion ? (
-            <Campo label="Cliente" ancho="completo">
+            <Campo req label="Cliente" ancho="completo">
               <Selector opciones={opcionesClientes} value={codCliente} onChange={setCodCliente} placeholder="Busca por código, nombre o correo" />
             </Campo>
           ) : (
-            <Campo label="Cliente simulado" hint="No existe en la base: se crea en memoria durante la simulación.">
+            <Campo req label="Cliente simulado" hint="No existe en la base: se crea en memoria durante la simulación.">
               <input inputMode="numeric" maxLength={7} placeholder="7 dígitos, p. ej. 0000102" value={codClienteSim} onChange={(e) => /^\d*$/.test(e.target.value) && setCodClienteSim(e.target.value)} />
             </Campo>
           )}
-          <Campo label="Destino" ancho={esOperacion ? undefined : undefined}>
+          <Campo req label="Destino">
             <Selector opciones={opcionesAeropuertos} value={codDestino} onChange={setCodDestino} placeholder="Busca un aeropuerto" />
           </Campo>
-          <Campo label="Cantidad de paquetes" hint="Entre 1 y 999">
+          <Campo req label="Cantidad de paquetes" hint="Entre 1 y 999">
             <input inputMode="numeric" maxLength={3} value={cantidad} onChange={(e) => /^\d*$/.test(e.target.value) && setCantidad(e.target.value)} />
           </Campo>
           {esOperacion ? (
@@ -284,8 +284,8 @@ function RegistrarPedidosModal({ onCerrar, onListo, onImportar }) {
             </Campo>
           ) : (
             <>
-              <Campo label={`Fecha de generación (${zonaCorta()})`}><input type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} /></Campo>
-              <Campo label="Hora"><input type="time" value={hora} onChange={(e) => setHora(e.target.value)} /></Campo>
+              <Campo req label={`Fecha de generación (${zonaCorta()})`}><input type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} /></Campo>
+              <Campo req label="Hora"><input type="time" value={hora} onChange={(e) => setHora(e.target.value)} /></Campo>
             </>
           )}
           {esOperacion && destino?.esSede && <p className="modal2__nota campo--completo">El destino es una sede: el pedido se entrega al instante.</p>}
@@ -299,11 +299,11 @@ function RegistrarPedidosModal({ onCerrar, onListo, onImportar }) {
               ? "Una línea por pedido: AAAAMMDD-HH-MM-DEST-CANT-CLIENTE (hora local del destino). Se omiten los pedidos de clientes que no existen."
               : "Una línea por pedido: NNNNNNNNN-AAAAMMDD-HH-MM-DEST-CANT-CLIENTE (hora local del destino). El cliente es un código de 7 dígitos."}
           />
-          <span className="modal2__subtitulo">Solo pedidos generados en este rango (opcional, {zonaLarga()})</span>
+          <span className="modal2__subtitulo">Solo pedidos generados en este rango ({zonaLarga()})</span>
           <div className="campos">
-            <Campo label="Desde"><input type="date" value={desde.fecha} onChange={(e) => setDesde({ ...desde, fecha: e.target.value })} /></Campo>
+            <Campo opc label="Desde"><input type="date" value={desde.fecha} onChange={(e) => setDesde({ ...desde, fecha: e.target.value })} /></Campo>
             <Campo label="Hora"><input type="time" value={desde.hora} onChange={(e) => setDesde({ ...desde, hora: e.target.value })} disabled={!desde.fecha} /></Campo>
-            <Campo label="Hasta"><input type="date" value={hasta.fecha} onChange={(e) => setHasta({ ...hasta, fecha: e.target.value })} /></Campo>
+            <Campo opc label="Hasta"><input type="date" value={hasta.fecha} onChange={(e) => setHasta({ ...hasta, fecha: e.target.value })} /></Campo>
             <Campo label="Hora"><input type="time" value={hasta.hora} onChange={(e) => setHasta({ ...hasta, hora: e.target.value })} disabled={!hasta.fecha} /></Campo>
           </div>
         </>

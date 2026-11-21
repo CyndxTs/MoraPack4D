@@ -12,6 +12,7 @@ import empresa from "../../../assets/images/empresa.png";
 
 const Globo = lazy(() => import("../../../components/Globo/Globo"));
 
+const CTA_POR_ROL = { CLIENTE: "Ver mis envíos", TRABAJADOR: "Ir a la operación", ADMINISTRADOR: "Ir a parámetros" };
 const FOTO_SEDE = { SPIM: limaMora, EBCI: bruselasMora, UBBB: arzeMora };
 const PAIS_SEDE = { SPIM: "Perú", EBCI: "Bélgica", UBBB: "Azerbaiyán" };
 const CIUDAD_SEDE = { SPIM: "Lima", EBCI: "Bruselas", UBBB: "Bakú" };
@@ -40,7 +41,10 @@ export default function Home() {
           </p>
           <div className="hero__acciones">
             {usuario ? (
-              <Link to={RUTA_INICIO_POR_ROL[usuario.tipoUsuario]} className="boton boton--primario boton--grande">Ir a mi espacio</Link>
+              <>
+                <Link to={RUTA_INICIO_POR_ROL[usuario.tipoUsuario]} className="boton boton--primario boton--grande">{CTA_POR_ROL[usuario.tipoUsuario] ?? "Continuar"}</Link>
+                {usuario.tipoUsuario === "CLIENTE" && <Link to="/cliente/pedidos/nuevo" className="boton boton--fantasma boton--grande">Nuevo pedido</Link>}
+              </>
             ) : (
               <>
                 <button type="button" className="boton boton--primario boton--grande" onClick={() => abrirAuth("registro")}>Crear cuenta</button>

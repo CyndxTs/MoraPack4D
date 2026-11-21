@@ -83,11 +83,12 @@ export function BarraFiltros({ busqueda, onBusqueda, placeholder = "Buscar...", 
   );
 }
 
-export function Campo({ label, hint, children, ancho }) {
+// req: obligatorio (asterisco rojo) · opc: opcional (etiqueta tenue)
+export function Campo({ label, hint, children, ancho, req, opc }) {
   const id = useId();
   return (
     <div className={`campo${ancho ? ` campo--${ancho}` : ""}`}>
-      <label htmlFor={id}>{label}</label>
+      <label htmlFor={id}>{label}{req && <span className="campo__req" aria-hidden="true"> *</span>}{opc && <span className="campo__opc"> opcional</span>}</label>
       {React.isValidElement(children) && !children.props.id ? React.cloneElement(children, { id }) : children}
       {hint && <small>{hint}</small>}
     </div>

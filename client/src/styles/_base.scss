@@ -2,6 +2,8 @@
 
 html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
 
+html { color-scheme: only dark; background: var(--abismo); color: var(--tinta); forced-color-adjust: none; }
+
 body {
   margin: 0;
   font-family: var(--fuente);
@@ -21,7 +23,20 @@ figure { margin: 0; }
 a { color: var(--cielo); text-decoration: none; }
 a:hover { text-decoration: underline; text-underline-offset: 3px; }
 
-button, input, select, textarea { font-family: inherit; }
+button, input, select, textarea { font-family: inherit; color: inherit; }
+// Colores fijos para controles nativos (sin colores del sistema)
+input, select, textarea { background-color: var(--marino-2); }
+option, optgroup { background-color: var(--marino); color: var(--tinta); }
+input::placeholder, textarea::placeholder { color: var(--tinta-3); opacity: 1; }
+input:-webkit-autofill, input:-webkit-autofill:hover, input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--tinta);
+  -webkit-box-shadow: 0 0 0 1000px var(--marino-2) inset;
+  caret-color: var(--cielo);
+  transition: background-color 9999s ease-out 0s;
+}
+// Requerido / opcional en formularios
+.campo__req { color: var(--alerta); font-weight: 700; }
+.campo__opc { margin-left: 6px; font-size: 0.72rem; font-weight: 500; color: var(--tinta-3); text-transform: lowercase; letter-spacing: 0.02em; }
 
 ::selection { background: rgba(120, 198, 255, 0.32); color: #fff; }
 input, textarea { caret-color: var(--cielo); }

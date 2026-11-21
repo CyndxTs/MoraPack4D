@@ -46,7 +46,7 @@ export default function Parametros() {
   const cambios = useMemo(() => p && original && JSON.stringify(p) !== JSON.stringify(original), [p, original]);
   const set = (k) => (v) => setP((x) => ({ ...x, [k]: v }));
   const num = (k, label, hint) => (
-    <Campo label={label} hint={hint}>
+    <Campo req label={label} hint={hint}>
       <input type="number" min={NUMEROS[k].min} max={NUMEROS[k].max} step={NUMEROS[k].paso} value={p[k] ?? ""} onChange={(e) => set(k)(e.target.value === "" ? "" : Number(e.target.value))} />
     </Campo>
   );

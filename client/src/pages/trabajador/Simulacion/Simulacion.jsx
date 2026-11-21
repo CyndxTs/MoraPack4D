@@ -105,12 +105,12 @@ export default function Simulacion() {
       guardarSolucion(idTransaccion, solucion);
     });
     const offEst = suscribir(`/topic/simulation-status-${idTransaccion}`, (status) => {
-      const { estadoEjecucion, estadoFinalizacion } = normalizarEstado(status);
+      const { estadoEjecucion, estadoFinalizacion, mensaje } = normalizarEstado(status);
       if (estadoEjecucion === "INICIADO") {
         if (!metaRef.current?.realInicioMs) actualizarMeta({ realInicioMs: Date.now() });
         notify("success", "¡Simulación en curso!");
       } else if (estadoEjecucion === "DETENIDO") {
-        actualizarMeta({ terminada: estadoFinalizacion ?? "EXITOSO" });
+        actualizarMeta({ terminada: estadoFinalizacion ?? "EXITOSO", ...(mensaje ? { mensajeColapso: mensaje } : {}) });
         if (estadoFinalizacion === "EXITOSO") notify("success", "El server terminó de planificar la semana.");
         else if (estadoFinalizacion === "COLAPSO") { notify("danger", "¡ALERTA DE COLAPSO LOGÍSTICO!"); setColapsoAbierto(true); }
         else if (estadoFinalizacion === "ERRONEO") notify("danger", "La simulación terminó con un error en el server.");
@@ -275,7 +275,15 @@ export default function Simulacion() {
             </div>
             <div className="report-modal-body">
               <div className="report-info-text" style={{ fontSize: "16px", color: "var(--tinta)" }}>
-                <p>La simulación llegó a un estado en el que no puede cumplir con todos los pedidos ({escenario.noAtendidos.length} sin atender).</p>
+                <p>{meta?.mensajeColapso || "Hay pedidos que ya no pueden entregarse dentro de su plazo."} ({escenario.noAtendidos.length} sin atender en el último bloque)</p>
+                {escenario.noAtendidos.length > 0 && (
+                  <ul className="colapso-lista">
+                    {escenario.noAtendidos.slice(0, 6).map((p) => (
+                      <li key={p.codigo}><strong>{p.codigo}</strong> → {p.codDestino} · {p.cantidadSolicitada} u. — {p.motivo}</li>
+                    ))}
+                    {escenario.noAtendidos.length > 6 && <li>… y {escenario.noAtendidos.length - 6} más (ver panel de pedidos)</li>}
+                  </ul>
+                )}
                 <p><strong>¿Qué desea hacer?</strong></p>
                 {meta?.reporte
                   ? <div className="collapse-report-ready">📄 Reporte listo: <strong>{meta.reporte.nombre}</strong></div>

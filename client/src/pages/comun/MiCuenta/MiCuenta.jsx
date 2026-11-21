@@ -82,8 +82,8 @@ export default function MiCuenta() {
         <form className="mi-cuenta__tarjeta" onSubmit={guardarPerfil} noValidate>
           <h2>Datos personales</h2>
           <div className="auth-fila">
-            <Campo label="Nombres" value={perfil.nombres} onChange={(v) => setPerfil((p) => ({ ...p, nombres: v }))} autoComplete="given-name" disabled={guardando === "perfil"} />
-            <Campo label="Apellidos (opcional)" value={perfil.apellidos} onChange={(v) => setPerfil((p) => ({ ...p, apellidos: v }))} autoComplete="family-name" disabled={guardando === "perfil"} />
+            <Campo req label="Nombres" value={perfil.nombres} onChange={(v) => setPerfil((p) => ({ ...p, nombres: v }))} autoComplete="given-name" disabled={guardando === "perfil"} />
+            <Campo opc label="Apellidos" value={perfil.apellidos} onChange={(v) => setPerfil((p) => ({ ...p, apellidos: v }))} autoComplete="family-name" disabled={guardando === "perfil"} />
           </div>
           <Campo label="Correo" type="email" value={cuenta.correo} onChange={() => {}} disabled hint="El correo no se puede cambiar." />
           <SelectPais value={perfil.pais} onChange={(v) => setPerfil((p) => ({ ...p, pais: v }))} paises={paises} disabled={guardando === "perfil"} />
@@ -97,10 +97,10 @@ export default function MiCuenta() {
           <h2>{tieneContrasenia ? "Cambiar contraseña" : "Crear contraseña"}</h2>
           {!tieneContrasenia && <p className="mi-cuenta__nota">Tu cuenta usa Google. Crea una contraseña para ingresar también con tu correo.</p>}
           {tieneContrasenia && (
-            <Campo label="Contraseña actual" type="password" value={clave.contraseniaActual} onChange={(v) => setClave((c) => ({ ...c, contraseniaActual: v }))} autoComplete="current-password" disabled={guardando === "clave"} />
+            <Campo req label="Contraseña actual" type="password" value={clave.contraseniaActual} onChange={(v) => setClave((c) => ({ ...c, contraseniaActual: v }))} autoComplete="current-password" disabled={guardando === "clave"} />
           )}
-          <Campo label="Nueva contraseña" type="password" value={clave.contrasenia} onChange={(v) => setClave((c) => ({ ...c, contrasenia: v }))} autoComplete="new-password" disabled={guardando === "clave"} hint="Mínimo 8 caracteres" />
-          <Campo label="Repite la nueva contraseña" type="password" value={clave.confirmacion} onChange={(v) => setClave((c) => ({ ...c, confirmacion: v }))} autoComplete="new-password" disabled={guardando === "clave"} />
+          <Campo req label="Nueva contraseña" type="password" value={clave.contrasenia} onChange={(v) => setClave((c) => ({ ...c, contrasenia: v }))} autoComplete="new-password" disabled={guardando === "clave"} hint="Mínimo 8 caracteres" />
+          <Campo req label="Repite la nueva contraseña" type="password" value={clave.confirmacion} onChange={(v) => setClave((c) => ({ ...c, confirmacion: v }))} autoComplete="new-password" disabled={guardando === "clave"} />
           {errorClave && <p className="auth-msg auth-msg--error" role="alert">{errorClave}</p>}
           <button type="submit" className="auth-primario" disabled={guardando === "clave" || clave.contrasenia.length < 8 || !clave.confirmacion || (tieneContrasenia && !clave.contraseniaActual)}>
             {guardando === "clave" ? "Guardando..." : tieneContrasenia ? "Cambiar contraseña" : "Crear contraseña"}

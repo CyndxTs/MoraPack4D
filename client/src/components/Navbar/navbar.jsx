@@ -9,7 +9,7 @@ import "./navbar.scss";
  * Barra superior. 'items': [{ to, label, end? }] o grupos [{ label, children: [...] }]; la arma cada layout según el rol.
  * 'publica': en la portada se superpone al hero y se vuelve sólida al hacer scroll.
  */
-export default function Navbar({ items = [], inicio = "/", usuario = null, onLogout, mostrarLogin = false, cuenta = null, publica = false }) {
+export default function Navbar({ items = [], usuario = null, onLogout, mostrarLogin = false, cuenta = null, publica = false }) {
   const { abrirAuth } = useAuth();
   const location = useLocation();
   const [abierto, setAbierto] = useState(false);
@@ -47,7 +47,7 @@ export default function Navbar({ items = [], inicio = "/", usuario = null, onLog
   return (
     <nav id="top-nav" className={`nav${publica ? " nav--publica" : ""}${solida ? " is-solida" : ""}${abierto ? " is-abierta" : ""}`}>
       <div className="nav__fila">
-        <Link to={inicio} className="nav__marca" aria-label="MoraPack, inicio"><Logo size={34} /></Link>
+        <Link to="/" className="nav__marca" aria-label="MoraPack, inicio"><Logo size={34} /></Link>
 
         <button type="button" className="nav__hamburguesa" aria-expanded={abierto} aria-controls="nav-menu" onClick={() => setAbierto((v) => !v)}>
           <span className="sr-only">Menú</span>

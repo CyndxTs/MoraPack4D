@@ -1,12 +1,12 @@
 import React, { useId, useState } from "react";
 
-export function Campo({ label, type = "text", value, onChange, autoComplete, autoFocus, disabled, placeholder, hint }) {
+export function Campo({ label, type = "text", value, onChange, autoComplete, autoFocus, disabled, placeholder, hint, req, opc }) {
   const id = useId();
   const [ver, setVer] = useState(false);
   const esClave = type === "password";
   return (
     <div className="auth-campo">
-      <label htmlFor={id}>{label}</label>
+      <label htmlFor={id}>{label}{req && <span className="campo__req" aria-hidden="true"> *</span>}{opc && <span className="campo__opc"> opcional</span>}</label>
       <div className="auth-campo__control">
         <input
           id={id}

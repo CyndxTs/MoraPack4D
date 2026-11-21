@@ -194,12 +194,12 @@ function CrearUsuario({ onCerrar, onListo }) {
       <Segmentado nombre="Rol" value={f.rol} onChange={set("rol")}
         opciones={[{ value: ROLES.TRABAJADOR, label: "Trabajador" }, { value: ROLES.ADMINISTRADOR, label: "Administrador" }, { value: ROLES.CLIENTE, label: "Cliente" }]} />
       <div className="campos">
-        <Campo label="Nombres"><input value={f.nombres} onChange={set("nombres")} autoComplete="off" /></Campo>
-        <Campo label="Apellidos (opcional)"><input value={f.apellidos} onChange={set("apellidos")} autoComplete="off" /></Campo>
-        <Campo label="Correo"><input type="email" value={f.correo} onChange={set("correo")} autoComplete="off" /></Campo>
-        <Campo label="País"><Selector opciones={opciones} value={f.pais} onChange={set("pais")} placeholder="Busca el país" /></Campo>
-        <Campo label="Contraseña inicial" hint="Mínimo 8 caracteres"><input type="password" value={f.contrasenia} onChange={set("contrasenia")} autoComplete="new-password" /></Campo>
-        <Campo label="Repite la contraseña"><input type="password" value={f.confirmacion} onChange={set("confirmacion")} autoComplete="new-password" /></Campo>
+        <Campo req label="Nombres"><input value={f.nombres} onChange={set("nombres")} autoComplete="off" /></Campo>
+        <Campo opc label="Apellidos"><input value={f.apellidos} onChange={set("apellidos")} autoComplete="off" /></Campo>
+        <Campo req label="Correo"><input type="email" value={f.correo} onChange={set("correo")} autoComplete="off" /></Campo>
+        <Campo req label="País"><Selector opciones={opciones} value={f.pais} onChange={set("pais")} placeholder="Busca el país" /></Campo>
+        <Campo req label="Contraseña inicial" hint="Mínimo 8 caracteres"><input type="password" value={f.contrasenia} onChange={set("contrasenia")} autoComplete="new-password" /></Campo>
+        <Campo req label="Repite la contraseña"><input type="password" value={f.confirmacion} onChange={set("confirmacion")} autoComplete="new-password" /></Campo>
       </div>
       <p className="modal2__nota">Recibirá el siguiente código libre de su rol ({PREFIJO[f.rol].replace(/1$/, "…")}).</p>
       {error && <p className="modal2__error" role="alert">{error}</p>}

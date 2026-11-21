@@ -31,7 +31,7 @@ Variables (en `.env.local`, que no se sube; en Render, en el static site):
 | `/trabajador/simulacion[/:idTransaccion]` | TRABAJADOR | Simulación semanal (el id va en la URL: cada pestaña sigue la suya y F5 la retoma) |
 | `/trabajador/pedidos` | TRABAJADOR | Pedidos: filtrar, registrar (operación), importar archivo, cancelar |
 | `/trabajador/planes` | TRABAJADOR | Planes de vuelo y eventos (listar e importar) |
-| `/cliente`, `/cliente/pedidos/nuevo` | CLIENTE | Pendiente (pantallas provisionales) |
+| `/cliente`, `/cliente/pedidos/nuevo` | CLIENTE | Mis envíos (lista + mapa solo con sus pedidos, cancelar) y nuevo pedido |
 | `/admin` | ADMINISTRADOR | Parámetros (operación automática, plazos, algoritmo) |
 | `/admin/ubicaciones` | ADMINISTRADOR | Países y continentes |
 | `/admin/aeropuertos` | ADMINISTRADOR | Aeropuertos y sedes (alta uno a uno o por archivo, cambiar sedes) |

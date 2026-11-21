@@ -188,10 +188,6 @@ public class AeropuertoService {
             int lProcesadas = 2, omitidos = 0;
             communicationService.enviar(progressDestination, new ProgressPayload("Cargando recursos de importación", 2, 2));
             List<AeropuertoEntity> aeropuertos = new ArrayList<>();
-            // Sedes: las ya registradas o, si no hay ninguna, las sedes por defecto (SPIM, EBCI, UBBB)
-            Set<String> codSedes = new HashSet<>();
-            this.findAllByEsSede(true).forEach(a -> codSedes.add(a.getCodigo()));
-            if (codSedes.isEmpty()) codSedes.addAll(ParametrosService.COD_SEDES_POR_DEFECTO);
             Set<String> codigosDelArchivo = new HashSet<>();
             String continente = "";
             String linea;
@@ -203,6 +199,9 @@ public class AeropuertoService {
                 linea = linea.replace("\uFEFF", "").trim();
                 if(!linea.isBlank()) {
                     if(Character.isDigit(linea.charAt(0))) {
+                        // Sede solo si la línea lo indica (palabra SEDE al final); si no, la marca el administrador
+                        boolean esSede = linea.toUpperCase().matches(".*\\sSEDE$");
+                        if(esSede) linea = linea.substring(0, linea.length() - 4).trim();
                         String[] partes = linea.split("\\s{2,}");
                         String codigo = partes[1].trim();
                         if(!codigosDelArchivo.add(codigo)) throw new G4DException(String.format("El aeropuerto '%s' está repetido en el archivo (línea #%d).", codigo, lProcesadas + 1));
@@ -227,7 +226,7 @@ public class AeropuertoService {
                             aeropuerto.setLatitudDEC(G4DUtility.Calculator.getLatDEC(latDMS));
                             aeropuerto.setLongitudDMS(lonDMS);
                             aeropuerto.setLongitudDEC(G4DUtility.Calculator.getLonDEC(lonDMS));
-                            aeropuerto.setEsSede(codSedes.contains(codigo));
+                            aeropuerto.setEsSede(esSede);
                             aeropuertos.add(aeropuerto);
                         } else omitidos++;
                     } else continente = linea.split("\\.")[0].trim();

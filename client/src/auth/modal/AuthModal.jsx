@@ -242,14 +242,14 @@ function Modal({ modal, cerrar, abrir, login, completarIngreso }) {
           {vista === "registro" && (
             <form onSubmit={registrarse} noValidate>
               <div className="auth-fila">
-                <Campo label="Nombres" value={nombres} onChange={setNombres} autoComplete="given-name" autoFocus disabled={enviando} />
-                <Campo label="Apellidos (opcional)" value={apellidos} onChange={setApellidos} autoComplete="family-name" disabled={enviando} />
+                <Campo req label="Nombres" value={nombres} onChange={setNombres} autoComplete="given-name" autoFocus disabled={enviando} />
+                <Campo opc label="Apellidos" value={apellidos} onChange={setApellidos} autoComplete="family-name" disabled={enviando} />
               </div>
-              <Campo label="Correo" type="email" value={correo} onChange={setCorreo} autoComplete="email" disabled={enviando} />
+              <Campo req label="Correo" type="email" value={correo} onChange={setCorreo} autoComplete="email" disabled={enviando} />
               <SelectPais value={pais} onChange={setPais} paises={paises} disabled={enviando} />
               <div className="auth-fila">
-                <Campo label="Contraseña" type="password" value={contrasenia} onChange={setContrasenia} autoComplete="new-password" disabled={enviando} hint="Mínimo 8 caracteres" />
-                <Campo label="Repite la contraseña" type="password" value={confirmacion} onChange={setConfirmacion} autoComplete="new-password" disabled={enviando} />
+                <Campo req label="Contraseña" type="password" value={contrasenia} onChange={setContrasenia} autoComplete="new-password" disabled={enviando} hint="Mínimo 8 caracteres" />
+                <Campo req label="Repite la contraseña" type="password" value={confirmacion} onChange={setConfirmacion} autoComplete="new-password" disabled={enviando} />
               </div>
               {terminos}
               {error && <p className="auth-msg auth-msg--error" role="alert">{error}</p>}
@@ -267,8 +267,8 @@ function Modal({ modal, cerrar, abrir, login, completarIngreso }) {
               <CodigoInput value={codigo} onChange={setCodigo} disabled={enviando} />
               {proposito === "RECUPERACION" && (
                 <div className="auth-fila">
-                  <Campo label="Nueva contraseña" type="password" value={contrasenia} onChange={setContrasenia} autoComplete="new-password" disabled={enviando} hint="Mínimo 8 caracteres" />
-                  <Campo label="Repite la contraseña" type="password" value={confirmacion} onChange={setConfirmacion} autoComplete="new-password" disabled={enviando} />
+                  <Campo req label="Nueva contraseña" type="password" value={contrasenia} onChange={setContrasenia} autoComplete="new-password" disabled={enviando} hint="Mínimo 8 caracteres" />
+                  <Campo req label="Repite la contraseña" type="password" value={confirmacion} onChange={setConfirmacion} autoComplete="new-password" disabled={enviando} />
                 </div>
               )}
               {error && <p className="auth-msg auth-msg--error" role="alert">{error}</p>}

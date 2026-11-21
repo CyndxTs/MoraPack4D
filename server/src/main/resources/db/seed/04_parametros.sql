@@ -1,7 +1,7 @@
 -- =====================================================================================
 --  MoraPack4D - DML: parámetros iniciales (fila única, id = 1)
---  - Las sedes NO van aquí: son AEROPUERTO.es_sede. Al importar el archivo de aeropuertos se marcan
---    SPIM, EBCI y UBBB (si aún no hay sedes). Luego el administrador puede cambiarlas con PARAMETROS.
+--  - Las sedes NO van aquí: son AEROPUERTO.es_sede. Las marca el administrador en "Aeropuertos y sedes"
+--    (o el archivo de aeropuertos, si la línea termina con la palabra SEDE).
 -- =====================================================================================
 
 INSERT INTO `PARAMETROS` (

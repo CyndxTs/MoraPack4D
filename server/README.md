@@ -70,6 +70,28 @@ Las credenciales nunca van en los `.properties`: van en `.env` (ignorado por git
 | `POST /api/auth/mi-cuenta[/perfil \| /contrasenia]` | Datos propios y contraseña (cuentas de Google la crean sin la actual) |
 | `POST /api/usuarios/{listar,filtrar,crear,cambiar-rol,cambiar-estado,eliminar}` | Administrador |
 
+## Espacio del cliente (`/api/cliente/**`)
+
+El código del cliente siempre sale de la sesión (nunca del cuerpo).
+
+| Endpoint (POST) | Qué hace |
+|---|---|
+| `/api/cliente/aeropuertos` | Catálogo mínimo de aeropuertos (sin almacenes) |
+| `/api/cliente/condiciones` | Plazos vigentes (días intra/intercontinental, horas de recojo, máx. paquetes) |
+| `/api/cliente/operacion` | Última solución de la operación recortada a sus pedidos, vuelos y paquetes |
+| `/api/cliente/pedidos` | Sus pedidos de operación (más recientes primero) con primera salida, última llegada y si se pueden cancelar |
+| `/api/cliente/pedidos/registrar` | `{ codDestino, cantidadSolicitada }`: pedido con fecha "ahora"; si el destino es sede se entrega al instante |
+| `/api/cliente/pedidos/cancelar` | `{ codigo }`: solo pedidos propios, activos y sin vuelos despegados |
+
+Tras cada replanificación cada cliente recibe su parte en `/topic/cliente/<codigo>/operacion`.
+
+## Colapso en la simulación
+
+Un pedido sin atender en un bloque se reintenta en el siguiente (desde el umbral actual). La simulación se detiene
+por colapso solo cuando algún pedido sin atender ya no puede llegar dentro de su plazo. La consola muestra cada
+pedido sin atender con su motivo (`[!] SIN ATENDER: ...`). La simulación arranca con los almacenes vacíos: no usa
+los registros de la operación.
+
 ## Replanificación automática y purga
 
 Las gobierna el server con los parámetros de `PARAMETROS` (los edita el administrador):
@@ -92,7 +114,7 @@ sin uso, y eventos de operación vencidos. No corre mientras hay una replanifica
 
 ## Orden de carga recomendado
 
-1. Aeropuertos (el país de cada aeropuerto debe existir; si no, se cancela toda la importación. Marca SPIM, EBCI y UBBB como sedes si aún no hay ninguna).
+1. Aeropuertos (el país de cada aeropuerto debe existir; si no, se cancela toda la importación. No marca sedes, salvo las líneas que terminen con la palabra SEDE; las sedes las administra el administrador).
 2. Planes de vuelo.
 3. Eventos (necesitan los planes).
 4. Pedidos:

@@ -54,5 +54,6 @@
   --color-azul: var(--cielo-fuerte);
   --color-azul-oscuro: var(--marino-3);
 
-  color-scheme: dark;
+  // Tema fijo: no depende del modo claro/oscuro del sistema ni del oscurecido automático del navegador
+  color-scheme: only dark;
 }

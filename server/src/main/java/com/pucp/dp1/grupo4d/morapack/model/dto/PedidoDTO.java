@@ -26,4 +26,9 @@ public class PedidoDTO implements DTO {
     private String codDestino;
     private String tipoEscenario;
     private SegmentacionDTO segmentacionVigente;
+    // Solo en la vista del cliente: primer despegue y última llegada del plan vigente, y si aún puede cancelarse
+    private String fechaHoraPrimeraSalida;
+    private String fechaHoraUltimaLlegada;
+    private Boolean cancelable;
+    private String ciudadDestino;
 }

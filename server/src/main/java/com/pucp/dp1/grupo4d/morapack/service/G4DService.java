@@ -32,6 +32,7 @@ import com.pucp.dp1.grupo4d.morapack.model.exception.G4DException;
 import com.pucp.dp1.grupo4d.morapack.model.exception.G4DExceptionHandlerAsync;
 import com.pucp.dp1.grupo4d.morapack.service.model.*;
 import com.pucp.dp1.grupo4d.morapack.util.G4DUtility;
+import com.pucp.dp1.grupo4d.morapack.util.FiltroSolucionCliente;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -303,13 +304,6 @@ public class G4DService {
                 SolucionDTO solucion = planificar(context, parametros, TipoEscenario.SIMULACION, inicioDePlanificacion, finDePlanificacion, umbralDeReplanificacion, null);
                 System.out.println("[>] SOLUCIÓN ENVIADA!");
                 communicationService.enviar(solutionDestination, new SolutionPayload(solucion));
-                if(!solucion.getPedidosNoAtendidos().isEmpty()) {
-                    // Colapso: la ventana se entrega con sus pedidos no atendidos y la simulación se detiene
-                    System.out.printf("[*] COLAPSO LOGÍSTICO! ('%d' pedidos no atendidos)%n", solucion.getPedidosNoAtendidos().size());
-                    huboColapso = true;
-                    communicationService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.COLAPSO));
-                    break;
-                }
                 if(esPrimeraIteracion) {
                     communicationService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.INICIADO));
                     esPrimeraIteracion = false;
@@ -318,6 +312,23 @@ public class G4DService {
                 long milisegundosRealesTranscurridos = Duration.between(start, end).toMillis();
                 long segundosSimuladosTranscurridos = (long)(multiplicadorTemporal*milisegundosRealesTranscurridos/500.0); // pongo el doble para aprovechar de manera exacta respecto de la duración de la ultima ejecución en lugar de fijarlo en 30s
                 umbralDeReplanificacion = finDePlanificacion.plusSeconds(segundosSimuladosTranscurridos);
+                // Colapso: solo cuando un pedido sin atender ya no llega a tiempo. Mientras su plazo siga abierto,
+                // se reintenta en el siguiente bloque (un fallo puntual por capacidad no detiene la simulación).
+                if(!context.solution.getPedidosNoAtendidos().isEmpty()) {
+                    final LocalDateTime umbral = umbralDeReplanificacion;
+                    List<Pedido> vencidos = context.solution.getPedidosNoAtendidos().keySet().stream()
+                            .filter(p -> !context.problematic.obtenerPlazoMaximo(p).isAfter(umbral)).toList();
+                    context.solution.getPedidosNoAtendidos().forEach((p, motivo) -> System.out.printf("[!] SIN ATENDER: '%s' -> '%s' (%d u., generado %s): %s%n",
+                            p.getCodigo(), p.getDestino().getCodigo(), p.getCantidadSolicitada(), G4DUtility.Convertor.toDisplayString(p.getFechaHoraGeneracion()), motivo));
+                    if(!vencidos.isEmpty()) {
+                        System.out.printf("[*] COLAPSO LOGÍSTICO! ('%d' pedidos ya no llegan a tiempo)%n", vencidos.size());
+                        huboColapso = true;
+                        communicationService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.COLAPSO,
+                                String.format("%d pedido(s) ya no pueden entregarse dentro de su plazo.", vencidos.size())));
+                        break;
+                    }
+                    System.out.printf("[~] '%d' pedidos sin atender en este bloque: se reintentan en el siguiente.%n", context.solution.getPedidosNoAtendidos().size());
+                }
                 minutosPlanificados += saltoDeConsumoEnMinutos;
                 long desfaseTemporal = Math.min(minutosPlanificados, limiteDeDesfaseTemporalEnMinutos);
                 if(minutosPlanificados > desfaseTemporal || finDePlanificacion.equals(finDeSimulacion)) {
@@ -374,6 +385,12 @@ public class G4DService {
     public SolutionPayload obtenerOperacionActual() {
         SolucionDTO solucion = operationContext.solutionDTO;
         return (solucion != null) ? new SolutionPayload(solucion) : null;
+    }
+
+    // La operación vista por un cliente: solo sus pedidos, vuelos y paquetes
+    public SolutionPayload obtenerOperacionDeCliente(String codCliente) {
+        SolucionDTO solucion = operationContext.solutionDTO;
+        return new SolutionPayload(FiltroSolucionCliente.filtrar(solucion, codCliente));
     }
 
     public GenericResponse replanificarOperacion(ReplanificationRequest request) {
@@ -519,14 +536,18 @@ public class G4DService {
             }
             long desfaseTemporal = 1440L*(Math.max(parametros.getMaxDiasEntregaIntracontinental(), parametros.getMaxDiasEntregaIntercontinental()));
             LocalDateTime fechaHoraActual = G4DUtility.Convertor.toAdmissible(request.getFechaHoraActual(), (LocalDateTime) null);
-            LocalDateTime inicioPlanificacion = fechaHoraActual.minusMinutes(desfaseTemporal);
             if(fechaHoraActual == null) fechaHoraActual = LocalDateTime.now();
+            LocalDateTime inicioPlanificacion = fechaHoraActual.minusMinutes(desfaseTemporal);
             long segundosDeUmbral = this.segundosDeUmbral();
             LocalDateTime umbralDeReplanificacion = fechaHoraActual.plusSeconds(segundosDeUmbral); // Predicción por tiempo maximo de replanificacion
             LocalDateTime instanteDeProcesamiento = fechaHoraActual.plusSeconds(segundosDeUmbral / 2); // Predicción por tiempo maximo de carga
             SolucionDTO solucion = planificar(operationContext, parametros, escenario, inicioPlanificacion, fechaHoraActual, umbralDeReplanificacion, instanteDeProcesamiento);
             operationContext.solutionDTO = solucion;
             communicationService.enviar(solutionDestination, new SolutionPayload(solucion));
+            // Cada cliente recibe solo su parte de la operación
+            for (String codCliente : FiltroSolucionCliente.clientesDe(solucion)) {
+                communicationService.enviar(String.format("/topic/cliente/%s/operacion", codCliente), new SolutionPayload(FiltroSolucionCliente.filtrar(solucion, codCliente)));
+            }
             System.out.println("[>] OPERACION ACTUALIZADA!");
             if(!solucion.getPedidosNoAtendidos().isEmpty()) {
                 // En operación no se detiene nada: solo se avisa (el front muestra los pedidos no atendidos)
@@ -589,6 +610,9 @@ public class G4DService {
 
     private SolucionDTO planificar(G4DContext context, ParametrosDTO parametros, TipoEscenario tipoEscenario, LocalDateTime inicioDePlanificacion, LocalDateTime finDePlanificacion, LocalDateTime umbralDeReplanificacion, LocalDateTime instanteDeProcesamiento) {
         boolean esSimulacion = tipoEscenario.equals(TipoEscenario.SIMULACION);
+        if(parametros.getCodOrigenes() != null && parametros.getCodOrigenes().isEmpty()) {
+            throw new G4DException("No hay sedes registradas: el administrador debe marcar al menos una sede.");
+        }
         context.problematic = contextService.getUpdatedProblematic(context.id, context.problematic, esSimulacion, parametros, inicioDePlanificacion, finDePlanificacion, umbralDeReplanificacion, instanteDeProcesamiento, tipoEscenario);
         if(esSimulacion) {
             System.out.printf("[*] SIMULANDO BLOQUE TEMPORAL! ['%s' - '%s']%n", G4DUtility.Convertor.toDisplayString(inicioDePlanificacion), G4DUtility.Convertor.toDisplayString(finDePlanificacion));

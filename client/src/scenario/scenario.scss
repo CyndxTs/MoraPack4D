@@ -371,7 +371,7 @@
 }
 .sidebar-tab.active .sidebar-tab-badge {
   background: rgba(120,198,255,0.16);
-  color: #1e40af;
+  color: var(--cielo);
 }
 
 /* --- Filtros y Buscadores --- */
@@ -1156,4 +1156,12 @@ select.filter-select {
 .icono-aeropuerto { background: none; border: 0;
   svg { display: block; filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.7)); transition: transform 160ms var(--ease-out); }
   &:hover svg { transform: scale(1.18); }
+}
+
+.colapso-lista {
+  margin: 8px 0 12px; padding: 10px 14px; list-style: none;
+  max-height: 180px; overflow-y: auto;
+  background: rgba(255, 92, 92, 0.08); border: 1px solid rgba(255, 92, 92, 0.25); border-radius: 10px;
+  font-size: 13px; line-height: 1.6; color: var(--tinta);
+  li strong { font-variant-numeric: tabular-nums; }
 }

@@ -199,11 +199,11 @@ function RegistrarPlanesModal({ onCerrar, onListo, onImportar }) {
       <Segmentado nombre="Modo" opciones={[{ value: "uno", label: "Un plan" }, { value: "archivo", label: "Archivo" }]} value={modo} onChange={(v) => { setModo(v); setError(null); }} />
       {modo === "uno" ? (
         <div className="campos">
-          <Campo label="Origen"><Selector opciones={opciones} value={origen} onChange={setOrigen} placeholder="Busca el aeropuerto de salida" /></Campo>
-          <Campo label="Destino"><Selector opciones={opciones} value={destino} onChange={setDestino} placeholder="Busca el aeropuerto de llegada" /></Campo>
-          <Campo label={`Salida, hora local del origen${huso(ao)}`}><input type="time" value={salida} onChange={(e) => setSalida(e.target.value)} /></Campo>
-          <Campo label={`Llegada, hora local del destino${huso(ad)}`}><input type="time" value={llegada} onChange={(e) => setLlegada(e.target.value)} /></Campo>
-          <Campo label="Capacidad (paquetes)"><input inputMode="numeric" value={capacidad} onChange={(e) => /^\d*$/.test(e.target.value) && setCapacidad(e.target.value)} /></Campo>
+          <Campo req label="Origen"><Selector opciones={opciones} value={origen} onChange={setOrigen} placeholder="Busca el aeropuerto de salida" /></Campo>
+          <Campo req label="Destino"><Selector opciones={opciones} value={destino} onChange={setDestino} placeholder="Busca el aeropuerto de llegada" /></Campo>
+          <Campo req label={`Salida, hora local del origen${huso(ao)}`}><input type="time" value={salida} onChange={(e) => setSalida(e.target.value)} /></Campo>
+          <Campo req label={`Llegada, hora local del destino${huso(ad)}`}><input type="time" value={llegada} onChange={(e) => setLlegada(e.target.value)} /></Campo>
+          <Campo req label="Capacidad (paquetes)"><input inputMode="numeric" value={capacidad} onChange={(e) => /^\d*$/.test(e.target.value) && setCapacidad(e.target.value)} /></Campo>
         </div>
       ) : (
         <ZonaArchivo archivo={archivo} onArchivo={setArchivo} ayuda="Una línea por plan: ORIG-DEST-HH:MM-HH:MM-CAPACIDAD (horas locales de cada aeropuerto). Los planes repetidos se omiten." />
@@ -367,11 +367,11 @@ function RegistrarEventosModal({ onCerrar, onListo, onImportar }) {
       </div>
       {modo === "uno" ? (
         <div className="campos">
-          <Campo label="Plan de vuelo" ancho="completo"><Selector opciones={opciones} value={codPlan} onChange={setCodPlan} placeholder="Busca por ruta (SPIM) o código" /></Campo>
-          <Campo label={`Día del vuelo (${zonaCorta()})`} hint={salida != null ? `Sale ${fechaServerALocal(toServerDateTime(salida))} y llega ${fechaServerALocal(toServerDateTime(llegada))}` : undefined}>
+          <Campo req label="Plan de vuelo" ancho="completo"><Selector opciones={opciones} value={codPlan} onChange={setCodPlan} placeholder="Busca por ruta (SPIM) o código" /></Campo>
+          <Campo req label={`Día del vuelo (${zonaCorta()})`} hint={salida != null ? `Sale ${fechaServerALocal(toServerDateTime(salida))} y llega ${fechaServerALocal(toServerDateTime(llegada))}` : undefined}>
             <input type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} />
           </Campo>
-          <Campo label="Tipo de evento">
+          <Campo req label="Tipo de evento">
             <select value={tipo} onChange={(e) => setTipo(e.target.value)}>
               <option value="CANCELACION">Cancelación</option>
               <option value="REPROGRAMACION">Reprogramación</option>
@@ -380,14 +380,14 @@ function RegistrarEventosModal({ onCerrar, onListo, onImportar }) {
           </Campo>
           {tipo === "REPROGRAMACION" && (
             <>
-              <Campo label={`Nueva salida (${zonaCorta()})`}><input type="date" value={nueva.fs} onChange={(e) => setNueva({ ...nueva, fs: e.target.value })} /></Campo>
-              <Campo label="Hora"><input type="time" value={nueva.hs} onChange={(e) => setNueva({ ...nueva, hs: e.target.value })} /></Campo>
-              <Campo label={`Nueva llegada (${zonaCorta()})`}><input type="date" value={nueva.fl} onChange={(e) => setNueva({ ...nueva, fl: e.target.value })} /></Campo>
-              <Campo label="Hora"><input type="time" value={nueva.hl} onChange={(e) => setNueva({ ...nueva, hl: e.target.value })} /></Campo>
+              <Campo req label={`Nueva salida (${zonaCorta()})`}><input type="date" value={nueva.fs} onChange={(e) => setNueva({ ...nueva, fs: e.target.value })} /></Campo>
+              <Campo req label="Hora"><input type="time" value={nueva.hs} onChange={(e) => setNueva({ ...nueva, hs: e.target.value })} /></Campo>
+              <Campo req label={`Nueva llegada (${zonaCorta()})`}><input type="date" value={nueva.fl} onChange={(e) => setNueva({ ...nueva, fl: e.target.value })} /></Campo>
+              <Campo req label="Hora"><input type="time" value={nueva.hl} onChange={(e) => setNueva({ ...nueva, hl: e.target.value })} /></Campo>
             </>
           )}
           {tipo === "REAJUSTE_CAPACIDAD" && (
-            <Campo label="Nueva capacidad" hint={plan ? `Capacidad actual: ${plan.capacidad}` : undefined}>
+            <Campo req label="Nueva capacidad" hint={plan ? `Capacidad actual: ${plan.capacidad}` : undefined}>
               <input inputMode="numeric" value={capacidad} onChange={(e) => /^\d*$/.test(e.target.value) && setCapacidad(e.target.value)} />
             </Campo>
           )}
@@ -397,8 +397,8 @@ function RegistrarEventosModal({ onCerrar, onListo, onImportar }) {
           <ZonaArchivo archivo={archivo} onArchivo={setArchivo}
             ayuda="Una línea por evento: DD-ORIG-DEST-HH:MM-HH:MM-TIPO[-HH:MM-HH:MM | -CAPACIDAD] (horas locales). Si una línea es inválida se cancela toda la importación." />
           <div className="campos">
-            <Campo label="Mes de los días del archivo"><input type="number" min={1} max={12} value={mes} onChange={(e) => setMes(e.target.value)} /></Campo>
-            <Campo label="Año"><input type="number" min={2000} max={2100} value={anio} onChange={(e) => setAnio(e.target.value)} /></Campo>
+            <Campo req label="Mes de los días del archivo"><input type="number" min={1} max={12} value={mes} onChange={(e) => setMes(e.target.value)} /></Campo>
+            <Campo req label="Año"><input type="number" min={2000} max={2100} value={anio} onChange={(e) => setAnio(e.target.value)} /></Campo>
           </div>
           <p className="modal2__nota">Las horas del archivo son locales de cada aeropuerto; en la tabla se muestran en {zonaLarga()}.</p>
         </>

@@ -21,7 +21,7 @@ const FILTROS_INICIALES = {
  *  - mostrarVuelos : false antes de que empiece la simulación
  *  - children : modales de la página (quedan dentro de .scenario-root para tomar sus estilos)
  */
-export default function ScenarioWorkspace({ escenario, nowMs, controles, overlays, mostrarVuelos = true, children }) {
+export default function ScenarioWorkspace({ escenario, nowMs, controles, overlays, mostrarVuelos = true, mostrarFlota = true, children }) {
   const mapRef = useRef(null);
   const [collapsed, setCollapsed] = useState(true);
   const [pinned, setPinned] = useState(false);
@@ -183,7 +183,7 @@ export default function ScenarioWorkspace({ escenario, nowMs, controles, overlay
               onMapClick={onMapClick}
             />
             <LegendOverlay />
-            <FleetOverlay activos={vista.activeFlights.length} fleet={vista.fleet} />
+            {mostrarFlota && <FleetOverlay activos={vista.activeFlights.length} fleet={vista.fleet} />}
             {overlays}
           </div>
         </div>

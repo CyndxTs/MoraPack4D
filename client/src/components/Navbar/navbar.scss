@@ -40,11 +40,15 @@
     &.is-solida { background: rgba(6, 11, 26, 0.9); border-bottom-color: var(--trazo-suave); backdrop-filter: blur(10px); }
   }
 
-  &__fila { height: 100%; display: flex; align-items: center; gap: 28px; padding: 0 24px; max-width: 1440px; margin: 0 auto; }
-  &__marca { display: inline-flex; color: var(--tinta); &:hover { text-decoration: none; } }
-  &__menu { flex: 1; display: flex; align-items: center; gap: 24px; min-width: 0; }
-  &__enlaces { display: flex; align-items: center; gap: 4px; list-style: none; margin: 0; padding: 0; }
-  &__acciones { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+  // Escritorio: logo | opciones del rol (centradas) | cuenta
+  &__fila {
+    height: 100%; padding: 0 24px; max-width: 1440px; margin: 0 auto;
+    display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 20px;
+  }
+  &__marca { justify-self: start; display: inline-flex; color: var(--tinta); &:hover { text-decoration: none; } }
+  &__menu { display: contents; }
+  &__enlaces { grid-column: 2; justify-self: center; display: flex; align-items: center; gap: 4px; list-style: none; margin: 0; padding: 0; }
+  &__acciones { grid-column: 3; justify-self: end; display: flex; align-items: center; gap: 10px; }
 
   &__hamburguesa {
     display: none;
@@ -121,8 +125,11 @@
 
 @media (max-width: 900px) {
   .nav {
+    &__fila { display: flex; gap: 12px; }
     &__hamburguesa { display: inline-flex; }
+    &__enlaces, &__acciones { grid-column: auto; justify-self: stretch; }
     &__menu {
+      display: flex;
       position: fixed; inset: var(--nav-height) 0 auto 0;
       flex-direction: column; align-items: stretch; gap: 12px;
       padding: 16px; background: var(--abismo); border-bottom: 1px solid var(--trazo);

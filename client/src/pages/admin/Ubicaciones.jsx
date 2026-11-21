@@ -106,19 +106,19 @@ function RegistrarPais({ continentes, onCerrar, onListo }) {
         <button type="button" className="boton boton--primario" onClick={registrar} disabled={enviando}>{enviando ? "Registrando..." : "Registrar país"}</button>
       </>}>
       <div className="campos">
-        <Campo label="Nombre" ancho="completo"><input value={nombre} maxLength={30} onChange={(e) => setNombre(e.target.value)} placeholder="p. ej. Ecuador" /></Campo>
-        <Campo label="Huso horario">
+        <Campo req label="Nombre" ancho="completo"><input value={nombre} maxLength={30} onChange={(e) => setNombre(e.target.value)} placeholder="p. ej. Ecuador" /></Campo>
+        <Campo req label="Huso horario">
           <select value={huso} onChange={(e) => setHuso(e.target.value)}>
             {Array.from({ length: 27 }, (_, i) => i - 12).map((h) => <option key={h} value={h}>{husoTexto(h)}</option>)}
           </select>
         </Campo>
-        <Campo label="Continente">
+        <Campo req label="Continente">
           <select value={continente} onChange={(e) => setContinente(e.target.value)}>
             {continentes.map((c) => <option key={c} value={c}>{c}</option>)}
             <option value="__nuevo">Otro continente...</option>
           </select>
         </Campo>
-        {esNuevo && <Campo label="Nombre del continente nuevo" ancho="completo"><input value={nuevoContinente} maxLength={30} onChange={(e) => setNuevoContinente(e.target.value)} /></Campo>}
+        {esNuevo && <Campo req label="Nombre del continente nuevo" ancho="completo"><input value={nuevoContinente} maxLength={30} onChange={(e) => setNuevoContinente(e.target.value)} /></Campo>}
       </div>
       {error && <p className="modal2__error" role="alert">{error}</p>}
     </Modal>

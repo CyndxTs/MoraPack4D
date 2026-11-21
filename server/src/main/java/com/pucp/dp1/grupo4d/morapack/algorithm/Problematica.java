@@ -122,6 +122,8 @@ public class Problematica {
         List<AeropuertoEntity> aeropuertosEntity = aeropuertoService.findAll();
         aeropuertosEntity.forEach(entity -> {
             Aeropuerto aeropuerto = aeropuertoAdapter.toAlgorithm(idTransaccion, entity);
+            // La simulación arranca con los almacenes vacíos: los registros guardados en BD son de la operación
+            if ("SIMULACION".equals(this.tipoEscenario)) aeropuerto.setRegistros(new ArrayList<>());
             if (this.origenes.containsKey(aeropuerto.getCodigo())) {
                 aeropuerto.setEsSede(true);
                 origenes.put(aeropuerto.getCodigo(), aeropuerto);
@@ -163,6 +165,13 @@ public class Problematica {
         List<PedidoEntity> pedidosEntity = pedidoService.findAllInRangeByScenario(this.inicioDePlanificacion, this.finDePlanificacion, this.tipoEscenario, new ArrayList<>(this.origenes.keySet()));
         Set<String> codigosCargados = new HashSet<>();
         pedidos.forEach(p -> codigosCargados.add(p.getCodigo()));
+        // Pedidos que quedaron sin atender en un bloque anterior: se reintentan desde el umbral actual
+        // (los vuelos anteriores al umbral ya despegaron en el tiempo simulado)
+        if (this.umbralDeReplanificacion != null) {
+            pedidos.stream().filter(p -> !p.getFueAtendido())
+                            .filter(p -> p.getFechaHoraProcesamiento() == null || p.getFechaHoraProcesamiento().isBefore(this.umbralDeReplanificacion))
+                            .forEach(p -> p.setFechaHoraProcesamiento(this.umbralDeReplanificacion));
+        }
         pedidosEntity.forEach(entity -> {
             if(codigosCargados.add(entity.getCodigo())) {
                 Pedido pedido = pedidoAdapter.toAlgorithm(idTransaccion, entity);
@@ -195,6 +204,18 @@ public class Problematica {
         });
         rutas.stream().filter(r -> r.getEstado().equals(EstadoRuta.OPERATIVA)).forEach(r -> r.setEstado(EstadoRuta.REVISION_PENDIENTE));
         G4DUtility.Logger.logf("[:] RUTAS CARGADAS! | '%d' rutas!%n", rutas.size());
+    }
+
+    // Último instante en que un pedido aún podría entregarse a tiempo (el mayor plazo entre sus posibles orígenes)
+    public LocalDateTime obtenerPlazoMaximo(Pedido pedido) {
+        int dias = 0;
+        for (Aeropuerto origen : this.origenes.values()) {
+            if (origen == null || pedido.getDestino() == null) continue;
+            boolean mismoContinente = java.util.Objects.equals(origen.getContinente(), pedido.getDestino().getContinente());
+            dias = Math.max(dias, mismoContinente ? this.maxDiasDeEntregaIntracontinental : this.maxDiasDeEntregaIntercontinental);
+        }
+        if (dias == 0) dias = Math.max(this.maxDiasDeEntregaIntracontinental, this.maxDiasDeEntregaIntercontinental);
+        return pedido.getFechaHoraGeneracion().plusDays(dias);
     }
 
     // Libera de la RAM lo que ya terminó antes de 'instanteDeCorte' (inicio de la siguiente ventana):

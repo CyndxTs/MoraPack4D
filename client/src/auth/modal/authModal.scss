@@ -177,7 +177,14 @@
 }
 
 .auth-google { display: flex; flex-direction: column; align-items: center; min-height: 44px; }
-.auth-google__slot { width: 100%; display: flex; justify-content: center; }
+.auth-google__slot {
+  width: 100%; display: flex; justify-content: center;
+  // El botón personalizado de Google ("Continuar como …") es un iframe de tema claro. Si hereda el tema
+  // oscuro de la página, el navegador le pinta un fondo blanco opaco: se le deja su propio esquema.
+  color-scheme: light;
+  background: transparent;
+  iframe { color-scheme: light; background: transparent !important; border-radius: 999px; }
+}
 
 .auth-pie { margin: 16px 0 0; text-align: center; font-size: 0.88rem; color: var(--auth-tenue); }
 .auth-espera { font-variant-numeric: tabular-nums; color: var(--auth-texto); }

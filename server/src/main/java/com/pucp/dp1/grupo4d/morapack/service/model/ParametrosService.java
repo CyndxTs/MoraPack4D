@@ -44,11 +44,8 @@ public class ParametrosService {
         this.communicationService = communicationService;
     }
 
+    // Las sedes no se tocan aquí: las administra el administrador desde "Aeropuertos y sedes"
     public ParametrosEntity save(ParametrosEntity parametros) {
-        aeropuertoService.unsetAllOriginFlags();
-        if(!parametros.getCodOrigenes().isEmpty()) {
-            aeropuertoService.setOriginFlagsByList(parametros.getCodOrigenes());
-        }
         parametros.setId(1);
         return parametrosRepository.save(parametros);
     }

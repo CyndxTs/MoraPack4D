@@ -61,10 +61,9 @@ export default function Operacion() {
     const offEst = suscribir("/topic/operation-status", (status) => {
       const e = normalizarEstado(status);
       setEstado(e);
-      if (e.estadoEjecucion === "INICIADO") notify("info", "Replanificando la operación...");
+      // El estado "replanificando / replanificada" ya se ve en el panel: solo se avisa lo que requiere atención
       if (e.estadoEjecucion === "DETENIDO") {
-        if (e.estadoFinalizacion === "EXITOSO") notify("success", "Operación replanificada.");
-        else if (e.estadoFinalizacion === "COLAPSO") notify("warning", "Replanificación con pedidos no atendidos (ver panel de pedidos).");
+        if (e.estadoFinalizacion === "COLAPSO") notify("warning", "Replanificación con pedidos no atendidos (ver panel de pedidos).");
         else if (e.estadoFinalizacion === "ERRONEO") notify("danger", "Error al replanificar la operación.");
       }
     });

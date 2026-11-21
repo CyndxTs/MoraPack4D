@@ -177,7 +177,57 @@ public class PedidoService {
         return new Object[] { segmentacion, lote, registro };
     }
 
-    // Cancelación por el cliente: solo pedidos de OPERACION activos cuyo plan aún no inició (ningún vuelo ha salido).
+    // Lotes del plan vigente de un pedido (vacío si aún no se planificó)
+    private List<LoteEntity> lotesVigentes(PedidoEntity pedido) {
+        SegmentacionEntity sVigente = pedido.getSegmentaciones().stream().filter(sg -> sg.getFechaHoraSustitucion() == null).findFirst().orElse(null);
+        return (sVigente != null) ? sVigente.getLotes() : new ArrayList<>();
+    }
+
+    // Se puede cancelar si está activo, no es una entrega en sede y ningún vuelo de su plan despegó
+    public boolean esCancelable(PedidoEntity pedido) {
+        if (pedido.getTipoEscenario() != TipoEscenario.OPERACION || pedido.getEstado() != EstadoPedido.ACTIVO) return false;
+        if (Boolean.TRUE.equals(pedido.getDestino().getEsSede())) return false;
+        LocalDateTime ahora = LocalDateTime.now();
+        return this.lotesVigentes(pedido).stream().noneMatch(l -> l.getRuta() != null && !l.getRuta().getFechaHoraSalida().isAfter(ahora));
+    }
+
+    // Pedidos de operación de un cliente (más recientes primero), con salida/llegada del plan vigente
+    @Transactional(readOnly = true)
+    public ListResponse listarDeCliente(String codCliente, ListRequest request) {
+        int pagina = (request != null && request.getPagina() != null && request.getPagina() >= 0) ? request.getPagina() : 0;
+        int tamanio = (request != null && request.getTamanio() != null && request.getTamanio() > 0) ? Math.min(request.getTamanio(), 200) : 50;
+        List<PedidoEntity> todos = new ArrayList<>(this.findAllByAttributes(TipoEscenario.OPERACION.toString(), codCliente, null, null, null, null, null, org.springframework.data.domain.PageRequest.of(0, 2000)));
+        todos.sort(Comparator.comparing(PedidoEntity::getFechaHoraGeneracion).reversed());
+        List<DTO> dtos = new ArrayList<>();
+        todos.stream().skip((long) pagina * tamanio).limit(tamanio).forEach(entity -> {
+            PedidoDTO dto = pedidoMapper.toDTO(entity);
+            LocalDateTime salida = null, llegada = null;
+            for (LoteEntity lote : this.lotesVigentes(entity)) {
+                if (lote.getRuta() == null) continue;
+                if (salida == null || lote.getRuta().getFechaHoraSalida().isBefore(salida)) salida = lote.getRuta().getFechaHoraSalida();
+                if (llegada == null || lote.getRuta().getFechaHoraLlegada().isAfter(llegada)) llegada = lote.getRuta().getFechaHoraLlegada();
+            }
+            if (salida == null && Boolean.TRUE.equals(entity.getFueAtendido())) { salida = entity.getFechaHoraGeneracion(); llegada = entity.getFechaHoraGeneracion(); }
+            dto.setFechaHoraPrimeraSalida(salida != null ? G4DUtility.Convertor.toDisplayString(salida) : null);
+            dto.setFechaHoraUltimaLlegada(llegada != null ? G4DUtility.Convertor.toDisplayString(llegada) : null);
+            dto.setCancelable(this.esCancelable(entity));
+            dto.setCiudadDestino(entity.getDestino().getCiudad());
+            dtos.add(dto);
+        });
+        return new ListResponse(true, String.format("%d", todos.size()), dtos);
+    }
+
+    // Cancelación pedida por el propio cliente: solo sus pedidos
+    @Transactional
+    public GenericResponse cancelarDeCliente(String codigo, String codCliente) {
+        PedidoEntity pedido = this.findByUniqueAttributes(codigo, TipoEscenario.OPERACION.toString()).orElseThrow(() -> new G4DException(String.format("El pedido ('%s') no existe.", codigo)));
+        if (pedido.getCliente() == null || !pedido.getCliente().getCodigo().equals(codCliente)) {
+            throw new G4DException(String.format("El pedido ('%s') no existe.", codigo));
+        }
+        return this.cancelar(codigo);
+    }
+
+    // Cancelación: solo pedidos de OPERACION activos cuyo plan aún no inició (ningún vuelo ha salido).
     // Libera la capacidad de los vuelos y deja los registros como no vigentes (soft delete).
     @Transactional
     public GenericResponse cancelar(String codigo) {

@@ -172,11 +172,16 @@ public class PlanService {
                 }
                 lProcesadas++;
                 communicationService.enviar(progressDestination, new ProgressPayload("Leyendo archivo", lProcesadas, lTotales));
-                if(planes.size() % 500 == 0 || lProcesadas == lTotales) {
+                if(planes.size() >= 500) {
                     importationService.batchSave(planes, progressDestination, "planes de vuelo");
                     System.out.printf("[<] PLANES IMPORTADOS! ('%d')%n", planes.size());
                     planes.clear();
                 }
+            }
+            if(!planes.isEmpty()) {
+                importationService.batchSave(planes, progressDestination, "planes de vuelo");
+                System.out.printf("[<] PLANES IMPORTADOS! ('%d')%n", planes.size());
+                planes.clear();
             }
             poolAeropuertos.clear();
             br.close();
