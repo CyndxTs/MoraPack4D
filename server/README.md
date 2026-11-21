@@ -67,3 +67,10 @@ sin uso, y eventos de operación vencidos. No corre mientras hay una replanifica
 - `POST /api/auth/iniciar-sesion` `{ correo, contrasenia, tipoUsuario? }` → `{ exito, mensaje, usuario }` (BCrypt; marca ONLINE).
 - `POST /api/auth/cerrar-sesion` `{ correo, tipoUsuario? }` → marca OFFLINE.
 - `POST /api/operation-current` → última solución de la operación (`{ solucion }`) o 204 si el server aún no replanificó.
+
+## Producción (Render + TiDB Cloud)
+
+- Render despliega con el `Dockerfile` de esta carpeta (perfil `tidb` por defecto).
+- Variables en Render: `DB_HOST`, `DB_PORT` (4000), `DB_NAME`, `DB_USER` (con prefijo `xxxx.root`), `DB_PASSWORD`,
+  `CORS_ORIGINS` (URL del front). `PORT` lo pone Render.
+- El seed contra TiDB se corre desde tu PC: en `.env` pon `SPRING_PROFILES_ACTIVE=tidb` y los datos de TiDB, y ejecuta `.\seed.ps1`.

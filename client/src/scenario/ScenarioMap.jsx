@@ -4,6 +4,7 @@ import { MapContainer, TileLayer, Marker, Polyline, Tooltip, useMapEvent } from 
 import "leaflet/dist/leaflet.css";
 import { AirportTooltipContent, PlaneTooltipContent } from "./MapTooltips";
 import { airportIcon, planeIcon } from "./mapIcons";
+import { MAPA_TILES_ATRIBUCION, MAPA_TILES_URL } from "../config";
 
 function ClickHandler({ onMapClick }) {
   useMapEvent("click", () => onMapClick());
@@ -47,7 +48,7 @@ export default function ScenarioMap({
       maxBounds={[[-90, -180], [90, 180]]}
       worldCopyJump={false}
     >
-      <TileLayer url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png" attribution='&copy; <a href="https://carto.com/">Carto</a>' />
+      <TileLayer url={MAPA_TILES_URL} attribution={MAPA_TILES_ATRIBUCION} />
 
       {airports.map((ap) => {
         const atenuado = (highlightedAirportCode && highlightedAirportCode !== ap.code) || hayResaltados;

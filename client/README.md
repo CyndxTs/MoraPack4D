@@ -55,3 +55,10 @@ src/
 Al registrar o importar pedidos de OPERACIÓN se programa una replanificación para dentro de
 `REPLANIFICACION_DIFERIDA_MIN` minutos (`config.js`, 15 por defecto). La cuenta regresiva se ve en
 "Mostrar controles" de la Operación, y el botón "Replanificar" la adelanta.
+
+## Producción (Render, static site)
+
+- Build: `npm ci && npm run build` · Publish directory: `dist`
+- Variable de entorno: `VITE_API_URL=https://<tu-server>.onrender.com` (se lee al compilar; si la cambias, vuelve a desplegar).
+- Rewrite: `/*` → `/index.html` (para que las rutas como `/trabajador/pedidos` funcionen al recargar).
+- `Dockerfile` y `nginx.conf` no se usan en Render (quedan por si se despliega en otro lado).

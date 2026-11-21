@@ -4,7 +4,6 @@
 --  - Todas las fechas/horas se guardan en UTC. Convención: fh_ = DATETIME, f_ = DATE, h_ = TIME.
 --  - duracion (PLAN, RUTA) se expresa en horas (DOUBLE).
 -- =====================================================================================
-SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0;
 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0;
 
 DROP TABLE IF EXISTS `RUTA_POR_VUELO`;
@@ -345,4 +344,3 @@ CREATE TABLE `PARAMETROS` (
 );
 
 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS;
-SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS;
