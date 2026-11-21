@@ -21,7 +21,7 @@ const FILTROS_INICIALES = {
  *  - mostrarVuelos : false antes de que empiece la simulación
  *  - children : modales de la página (quedan dentro de .scenario-root para tomar sus estilos)
  */
-export default function ScenarioWorkspace({ escenario, nowMs, controles, overlays, mostrarVuelos = true, mostrarFlota = true, children }) {
+export default function ScenarioWorkspace({ escenario, nowMs, controles, overlays, mostrarVuelos = true, mostrarFlota = true, mostrarPanel = true, children }) {
   const mapRef = useRef(null);
   const [collapsed, setCollapsed] = useState(true);
   const [pinned, setPinned] = useState(false);
@@ -147,6 +147,7 @@ export default function ScenarioWorkspace({ escenario, nowMs, controles, overlay
   return (
     <div className="scenario-root">
     <div className="page">
+      {mostrarPanel && (
       <ScenarioSidebar
         collapsed={collapsed} setCollapsed={setCollapsed}
         pinned={pinned} setPinned={setPinned}
@@ -161,6 +162,7 @@ export default function ScenarioWorkspace({ escenario, nowMs, controles, overlay
         getAirportLabel={getAirportLabel}
         getOrdersForFlight={getOrdersForFlight}
       />
+      )}
 
       <section className="contenido">
         <div className="map-and-info">

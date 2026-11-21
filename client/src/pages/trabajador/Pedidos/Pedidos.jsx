@@ -1,14 +1,15 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { LoadingOverlay } from "../../../components/UI/ui";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   BarraFiltros, Campo, Confirmacion, Etiqueta, IconoMas, Modal, PaginaGestion, Paginador, Segmentado, Selector, Tabla, ZonaArchivo,
 } from "../../../components/Gestion/Gestion";
-import { cancelarPedido, filtrarPedidos, listarClientes, listarTodosLosAeropuertos } from "../../../api/catalogos";
-import { importarArchivo, registrarPedido, TIPO_ARCHIVO } from "../../../api/importacion";
+import { cancelarPedido, filtrarPedidosPagina, listarClientes, listarTodosLosAeropuertos } from "../../../api/catalogos";
+import { invalidarPaginado, usePaginado } from "../../../paginacion/usePaginado";
+import { useImportaciones } from "../../../importaciones/ImportacionesContext";
+import { registrarPedido, TIPO_ARCHIVO } from "../../../api/importacion";
 import { useNotify } from "../../../notifications/NotificationContext";
 import { fechaServerALocal, formatFecha, fromInputs, toInputDate, toInputTime, toServerDateTime } from "../../../utils/fechas";
 import { zonaCorta, zonaLarga } from "../../../utils/zona";
-import { TAMANIO_CATALOGO, TAMANIO_PAGINA } from "../../../config";
+import { TAMANIO_CATALOGO } from "../../../config";
 
 const VACIOS = { codigo: "", tipoEscenario: "", codCliente: "", codDestino: "", fueAtendido: "", fecha: "", hora: "" };
 const ESCENARIOS = [{ value: "", label: "Todos" }, { value: "OPERACION", label: "Operación" }, { value: "SIMULACION", label: "Simulación" }];
@@ -38,35 +39,23 @@ function chips(f) {
 
 export default function Pedidos() {
   const notify = useNotify();
+  const { iniciar } = useImportaciones();
   const [filtros, setFiltros] = useState(VACIOS);
   const [aplicados, setAplicados] = useState(VACIOS);
   const [panel, setPanel] = useState(false);
-  const [pagina, setPagina] = useState(1);
-  const [pedidos, setPedidos] = useState([]);
-  const [hayMas, setHayMas] = useState(false);
-  const [cargando, setCargando] = useState(true);
   const [modal, setModal] = useState(null); // "registrar" | { cancelar }
-  const [progreso, setProgreso] = useState(null);
 
   const set = (k, v) => setFiltros((f) => ({ ...f, [k]: v }));
 
-  const cargar = useCallback(async (pag, f) => {
-    setCargando(true);
-    try {
-      const lista = await filtrarPedidos(aModelo(f), pag - 1, TAMANIO_PAGINA);
-      setPedidos(lista);
-      setPagina(pag);
-      setHayMas(lista.length === TAMANIO_PAGINA);
-    } catch (e) {
-      notify("danger", e.message);
-    } finally {
-      setCargando(false);
-    }
-  }, [notify]);
+  // Paginación desde el servidor por bloques de 3 páginas, con memoria en la sesión
+  const { filas: pedidos, pagina, setPagina, hayMas, totalPaginas, total, cargando, recargar } = usePaginado({
+    recurso: "pedidos",
+    filtros: aplicados,
+    cargarBloque: (pag, tam) => filtrarPedidosPagina(aModelo(aplicados), pag, tam),
+    onError: (e) => notify("danger", e.message),
+  });
 
-  useEffect(() => { cargar(1, VACIOS); }, [cargar]);
-
-  const aplicar = (f = filtros) => { setAplicados(f); setFiltros(f); cargar(1, f); setPanel(false); };
+  const aplicar = (f = filtros) => { setAplicados(f); setFiltros(f); setPanel(false); };
   const limpiar = () => aplicar(VACIOS);
   const quitar = (clave) => aplicar({ ...aplicados, [clave]: VACIOS[clave], ...(clave === "fecha" ? { hora: "" } : {}) });
 
@@ -94,8 +83,6 @@ export default function Pedidos() {
       descripcion="Pedidos de operación y de simulación. Los de operación activos se pueden cancelar mientras ningún vuelo haya despegado."
       acciones={<button type="button" className="boton boton--primario" onClick={() => setModal("registrar")}><IconoMas /> Registrar pedidos</button>}
     >
-      {progreso && <LoadingOverlay text="Importando pedidos..." progreso={progreso.proceso ? progreso : null} />}
-
       <BarraFiltros
         busqueda={filtros.codigo}
         onBusqueda={(v) => set("codigo", v)}
@@ -106,7 +93,7 @@ export default function Pedidos() {
         onQuitar={quitar}
         onLimpiar={limpiar}
         onAplicar={() => aplicar()}
-        resumen={!cargando && `${pedidos.length} en esta página`}
+        resumen={total != null ? `${total.toLocaleString("es-PE")} pedidos` : null}
       >
         <Campo label="Escenario"><Segmentado nombre="Escenario" opciones={ESCENARIOS} value={filtros.tipoEscenario} onChange={(v) => set("tipoEscenario", v)} /></Campo>
         <Campo label="Cliente"><input placeholder="Código exacto" value={filtros.codCliente} onChange={(e) => set("codCliente", e.target.value)} /></Campo>
@@ -121,31 +108,21 @@ export default function Pedidos() {
       </BarraFiltros>
 
       <Tabla columnas={columnas} filas={pedidos} cargando={cargando} vacio="No hay pedidos con estos filtros." />
-      <Paginador pagina={pagina} hayMas={hayMas} onCambiar={(p) => cargar(p, aplicados)} />
+      <Paginador pagina={pagina} total={totalPaginas} hayMas={hayMas} onCambiar={setPagina} />
 
       {modal === "registrar" && (
         <RegistrarPedidosModal
           onCerrar={() => setModal(null)}
-          onListo={() => { setModal(null); cargar(1, aplicados); }}
-          onImportar={async (archivo, request) => {
+          onListo={() => { setModal(null); invalidarPaginado("pedidos"); }}
+          onImportar={(archivo, request) => {
             setModal(null);
-            setProgreso({});
-            try {
-              const fin = await importarArchivo(archivo, request, (p) => setProgreso(p));
-              if (fin.estadoFinalizacion === "DESCONOCIDO") notify("warning", "No se pudo confirmar el final de la importación; revisa la tabla.");
-              else notify("success", fin.mensaje || "Pedidos importados.");
-            } catch (e) {
-              notify("danger", e.message);
-            } finally {
-              setProgreso(null);
-              cargar(1, aplicados);
-            }
+            iniciar({ archivo, request, tipo: "PEDIDOS" }).catch((e) => notify("danger", e.message));
           }}
         />
       )}
 
       {modal?.cancelar && (
-        <CancelarPedido pedido={modal.cancelar} onCerrar={() => setModal(null)} onListo={() => { setModal(null); cargar(pagina, aplicados); }} />
+        <CancelarPedido pedido={modal.cancelar} onCerrar={() => setModal(null)} onListo={() => { setModal(null); recargar(); }} />
       )}
     </PaginaGestion>
   );

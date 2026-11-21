@@ -9,6 +9,7 @@ package com.pucp.dp1.grupo4d.morapack.controller.model;
 import com.pucp.dp1.grupo4d.morapack.model.dto.PlanDTO;
 import com.pucp.dp1.grupo4d.morapack.model.dto.request.ImportRequest;
 import com.pucp.dp1.grupo4d.morapack.model.dto.request.ListRequest;
+import com.pucp.dp1.grupo4d.morapack.model.dto.request.PlanSearchRequest;
 import com.pucp.dp1.grupo4d.morapack.model.dto.response.GenericResponse;
 import com.pucp.dp1.grupo4d.morapack.model.dto.response.ListResponse;
 import com.pucp.dp1.grupo4d.morapack.service.model.PlanService;
@@ -30,6 +31,11 @@ public class PlanController {
         ListRequest request = new ListRequest(0, 30);
         ListResponse response = planService.listar(request);
         return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/buscar")
+    public ResponseEntity<ListResponse> buscar(@RequestBody PlanSearchRequest request) {
+        return ResponseEntity.ok(planService.buscar(request));
     }
 
     @PostMapping("/listar")

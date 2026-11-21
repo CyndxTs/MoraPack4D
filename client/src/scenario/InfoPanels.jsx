@@ -5,18 +5,19 @@ import "./detalle.scss";
 
 // Paneles de detalle del panel lateral (vuelo, pedido, aeropuerto, ruta). Horas en la zona de la sesión.
 
-const nivel = (pct) => (pct < 50 ? "ok" : pct < 80 ? "aviso" : "alerta");
+// Mismos umbrales que la leyenda: aviones 50/90 %, aeropuertos 50/80 %
+const nivel = (pct, alto = 80) => (pct < 50 ? "ok" : pct < alto ? "aviso" : "alerta");
 const pct = (v, max) => (max > 0 ? Math.min(100, Math.round((v / max) * 100)) : 0);
 
-function Medidor({ etiqueta, valor, maximo, unidad = "u." }) {
+function Medidor({ etiqueta, valor, maximo, unidad = "u.", alto = 80 }) {
   const p = pct(valor, maximo);
   return (
     <div className="det-medidor">
       <div className="det-medidor__fila">
         <span>{etiqueta}</span>
-        <strong>{valor} / {maximo} {unidad} <em className={`det-tono--${nivel(p)}`}>{p}%</em></strong>
+        <strong>{valor} / {maximo} {unidad} <em className={`det-tono--${nivel(p, alto)}`}>{p}%</em></strong>
       </div>
-      <div className="det-medidor__barra"><span className={`det-fondo--${nivel(p)}`} style={{ width: `${p}%` }} /></div>
+      <div className="det-medidor__barra"><span className={`det-fondo--${nivel(p, alto)}`} style={{ width: `${p}%` }} /></div>
     </div>
   );
 }
@@ -62,7 +63,7 @@ export function FlightInfoPanel({ flight, getOrdersForFlight, nowMs }) {
       </header>
 
       <section className="det-seccion">
-        <Medidor etiqueta="Carga del avión" valor={flight.capacity || 0} maximo={flight.planeCapacity || 0} />
+        <Medidor etiqueta="Carga del avión" valor={flight.capacity || 0} maximo={flight.planeCapacity || 0} alto={90} />
       </section>
 
       {flight.rutas?.length > 0 && (

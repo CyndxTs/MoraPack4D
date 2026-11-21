@@ -208,7 +208,10 @@ public class UsuarioService {
         String estado = G4DUtility.Convertor.toAdmissibleEnumString(modelo.getEstado(), EstadoUsuario.class);
         String pais = G4DUtility.Convertor.toAdmissible(modelo.getPais());
         List<DTO> dtos = new ArrayList<>();
-        usuarioRepository.findAllByAttributes(rol, codigo, nombres, apellidos, correo, estado, pais, pageable).getContent().forEach(u -> dtos.add(usuarioMapper.toDTO(u)));
-        return new ListResponse(true, String.format("Usuarios filtrados correctamente! ('%d')", dtos.size()), dtos);
+        org.springframework.data.domain.Page<UsuarioEntity> pagina = usuarioRepository.findAllByAttributes(rol, codigo, nombres, apellidos, correo, estado, pais, pageable);
+        pagina.getContent().forEach(u -> dtos.add(usuarioMapper.toDTO(u)));
+        ListResponse response = new ListResponse(true, String.format("Usuarios filtrados correctamente! ('%d')", dtos.size()), dtos);
+        response.setTotal(pagina.getTotalElements());
+        return response;
     }
 }

@@ -12,6 +12,7 @@ import com.pucp.dp1.grupo4d.morapack.model.dto.PlanDTO;
 import com.pucp.dp1.grupo4d.morapack.model.dto.payload.ProgressPayload;
 import com.pucp.dp1.grupo4d.morapack.model.dto.payload.StatusPayload;
 import com.pucp.dp1.grupo4d.morapack.model.dto.request.ListRequest;
+import com.pucp.dp1.grupo4d.morapack.model.dto.request.PlanSearchRequest;
 import com.pucp.dp1.grupo4d.morapack.model.dto.response.ListResponse;
 import com.pucp.dp1.grupo4d.morapack.model.entity.AeropuertoEntity;
 import com.pucp.dp1.grupo4d.morapack.model.entity.PlanEntity;
@@ -91,6 +92,25 @@ public class PlanService {
         return new ListResponse(true, String.format("Planes listados correctamente! ('%d')", dtos.size()), dtos);
     }
 
+    // Búsqueda paginada desde el servidor (la tabla de planes ya no descarga todo)
+    @Transactional(readOnly = true)
+    public ListResponse buscar(PlanSearchRequest request) {
+        int pagina = (request.getPagina() != null && request.getPagina() >= 0) ? request.getPagina() : 0;
+        int tamanio = (request.getTamanio() != null && request.getTamanio() > 0) ? Math.min(request.getTamanio(), 500) : 30;
+        String texto = G4DUtility.Convertor.toAdmissible(request.getTexto() != null ? request.getTexto().trim().toUpperCase() : null);
+        String codOrigen = G4DUtility.Convertor.toAdmissible(request.getCodOrigen());
+        String codDestino = G4DUtility.Convertor.toAdmissible(request.getCodDestino());
+        Pageable pageable = org.springframework.data.domain.PageRequest.of(pagina, tamanio);
+        org.springframework.data.domain.Page<PlanEntity> resultado = "desc".equalsIgnoreCase(request.getOrden())
+                ? planRepository.buscarDesc(texto, codOrigen, codDestino, pageable)
+                : planRepository.buscarAsc(texto, codOrigen, codDestino, pageable);
+        List<DTO> dtos = new ArrayList<>();
+        resultado.getContent().forEach(entity -> dtos.add(planMapper.toDTO(entity)));
+        ListResponse response = new ListResponse(true, String.format("Planes encontrados: %d", resultado.getTotalElements()), dtos);
+        response.setTotal(resultado.getTotalElements());
+        return response;
+    }
+
     @Transactional
     public void importar(String idTransaccion, PlanDTO dto) {
         String progressDestination = String.format("/topic/importation-%s", idTransaccion), statusDestination = String.format("/topic/importation-status-%s", idTransaccion);
@@ -123,7 +143,6 @@ public class PlanService {
             communicationService.enviar(progressDestination, new ProgressPayload("Cargando plan", 1, 1));
             communicationService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.EXITOSO));
         } catch (Exception e) {
-            communicationService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.ERRONEO));
             throw new RuntimeException(e);
         }
     }
@@ -142,7 +161,7 @@ public class PlanService {
             communicationService.enviar(progressDestination, new ProgressPayload("Cargando recursos de importación", 3, 3));
             List<PlanEntity> planes = new ArrayList<>();
             String linea;
-            communicationService.enviar(progressDestination, new ProgressPayload("Leyendo archivo", lProcesadas, lTotales));
+            if (lProcesadas % 20 == 0 || lProcesadas >= lTotales) communicationService.enviar(progressDestination, new ProgressPayload("Leyendo archivo", lProcesadas, lTotales));
             communicationService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.INICIADO));
             while ((linea = br.readLine()) != null) {
                 linea = linea.trim();
@@ -171,7 +190,7 @@ public class PlanService {
                     } else throw new G4DException(String.format("Origen '%s' inválido en línea #%d", codOrigen, lProcesadas + 1));
                 }
                 lProcesadas++;
-                communicationService.enviar(progressDestination, new ProgressPayload("Leyendo archivo", lProcesadas, lTotales));
+                if (lProcesadas % 20 == 0 || lProcesadas >= lTotales) communicationService.enviar(progressDestination, new ProgressPayload("Leyendo archivo", lProcesadas, lTotales));
                 if(planes.size() >= 500) {
                     importationService.batchSave(planes, progressDestination, "planes de vuelo");
                     System.out.printf("[<] PLANES IMPORTADOS! ('%d')%n", planes.size());
@@ -187,10 +206,8 @@ public class PlanService {
             br.close();
             communicationService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.EXITOSO));
         } catch (ArrayIndexOutOfBoundsException | NoSuchElementException e) {
-            communicationService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.ERRONEO));
             throw new G4DException(String.format("El archivo '%s' no sigue el formato esperado.", archivo.getFileName()));
         } catch (IOException e) {
-            communicationService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.ERRONEO));
             throw new G4DException(String.format("No se pudo cargar el archivo '%s'.", archivo.getFileName()));
         }
     }

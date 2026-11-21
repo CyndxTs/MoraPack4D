@@ -169,7 +169,6 @@ public class AeropuertoService {
             communicationService.enviar(progressDestination, new ProgressPayload("Cargando aeropuerto", 1, 1));
             communicationService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.EXITOSO));
         } catch (Exception e) {
-            communicationService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.ERRONEO));
             throw (e instanceof G4DException g4dEx) ? g4dEx : new RuntimeException(e);
         }
     }
@@ -194,7 +193,7 @@ public class AeropuertoService {
             br.readLine();
             br.readLine();
             communicationService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.INICIADO));
-            communicationService.enviar(progressDestination, new ProgressPayload("Leyendo archivo", lProcesadas, lTotales));
+            if (lProcesadas % 20 == 0 || lProcesadas >= lTotales) communicationService.enviar(progressDestination, new ProgressPayload("Leyendo archivo", lProcesadas, lTotales));
             while ((linea = br.readLine()) != null) {
                 linea = linea.replace("\uFEFF", "").trim();
                 if(!linea.isBlank()) {
@@ -232,7 +231,7 @@ public class AeropuertoService {
                     } else continente = linea.split("\\.")[0].trim();
                 }
                 lProcesadas++;
-                communicationService.enviar(progressDestination, new ProgressPayload("Leyendo archivo", lProcesadas, lTotales));
+                if (lProcesadas % 20 == 0 || lProcesadas >= lTotales) communicationService.enviar(progressDestination, new ProgressPayload("Leyendo archivo", lProcesadas, lTotales));
             }
             // Se guarda todo al final: si alguna línea falla, la importación se cancela sin guardar nada
             if (!aeropuertos.isEmpty()) {
@@ -243,13 +242,10 @@ public class AeropuertoService {
             br.close();
             communicationService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.EXITOSO));
         } catch (ArrayIndexOutOfBoundsException | NumberFormatException e) {
-            communicationService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.ERRONEO));
             throw new G4DException(String.format("El archivo '%s' no sigue el formato esperado.", archivo.getFileName()));
         } catch (IOException e) {
-            communicationService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.ERRONEO));
             throw new G4DException(String.format("No se pudo cargar el archivo '%s'.", archivo.getFileName()));
         } catch (G4DException e) {
-            communicationService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.ERRONEO));
             throw e;
         }
     }

@@ -105,3 +105,14 @@ export const listar = async (recurso, pagina = 0, tamanio = 30) =>
 
 export const filtrar = async (recurso, modelo, pagina = 0, tamanio = 30) =>
   (await post(`/${recurso}/filtrar`, { pagina, tamanio, modelo })).dtos ?? [];
+
+// Igual que listar/filtrar pero con el total del servidor (para paginar por bloques): { filas, total }
+export const listarPagina = async (recurso, pagina = 0, tamanio = 30) => {
+  const r = await post(`/${recurso}/listar`, { pagina, tamanio });
+  return { filas: r.dtos ?? [], total: typeof r.total === "number" ? r.total : null };
+};
+
+export const filtrarPagina = async (recurso, modelo, pagina = 0, tamanio = 30) => {
+  const r = await post(`/${recurso}/filtrar`, { pagina, tamanio, modelo });
+  return { filas: r.dtos ?? [], total: typeof r.total === "number" ? r.total : null };
+};

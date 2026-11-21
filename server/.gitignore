@@ -8,6 +8,7 @@ HELP.md
 ### Variables locales (contraseñas) ###
 .env
 .env.*
+!.env.example
 
 ### Exportaciones generadas en tiempo de ejecución ###
 exports/*

@@ -176,22 +176,27 @@ public class G4DService {
 
     @Async("importationExecutor")
     public CompletableFuture<Void> importar(String idTransaccion, ImportRequest request) throws JsonProcessingException {
-        JsonNode dto = request.getDto();
-        switch (request.getTipoDto().toUpperCase()) {
-            case "AEROPUERTO" -> aeropuertoService.importar(idTransaccion, objectMapper.treeToValue(dto, AeropuertoDTO.class));
-            case "PLAN" -> planService.importar(idTransaccion, objectMapper.treeToValue(dto, PlanDTO.class));
-            case "PEDIDO" -> {
-                var pedido = pedidoService.importar(idTransaccion, objectMapper.treeToValue(dto, PedidoDTO.class));
-                if (pedido != null && pedido.getTipoEscenario() == TipoEscenario.OPERACION) this.programarReplanificacion(false);
+        try {
+            JsonNode dto = request.getDto();
+            switch (request.getTipoDto().toUpperCase()) {
+                case "AEROPUERTO" -> aeropuertoService.importar(idTransaccion, objectMapper.treeToValue(dto, AeropuertoDTO.class));
+                case "PLAN" -> planService.importar(idTransaccion, objectMapper.treeToValue(dto, PlanDTO.class));
+                case "PEDIDO" -> {
+                    var pedido = pedidoService.importar(idTransaccion, objectMapper.treeToValue(dto, PedidoDTO.class));
+                    if (pedido != null && pedido.getTipoEscenario() == TipoEscenario.OPERACION) this.programarReplanificacion(false);
+                }
+                case "PARAMETROS" -> parametrosService.importar(idTransaccion, objectMapper.treeToValue(dto, ParametrosDTO.class));
+                case "PAIS" -> paisService.importar(idTransaccion, objectMapper.treeToValue(dto, PaisDTO.class));
+                case "EVENTO" -> {
+                    EventoDTO eventoDTO = objectMapper.treeToValue(dto, EventoDTO.class);
+                    eventoService.importar(idTransaccion, eventoDTO);
+                    if (G4DUtility.Convertor.toAdmissible(eventoDTO.getTipoEscenario(), TipoEscenario.class) == TipoEscenario.OPERACION) this.programarReplanificacion(true);
+                }
+                default -> throw new G4DException("Tipo de dato inválido!");
             }
-            case "PARAMETROS" -> parametrosService.importar(idTransaccion, objectMapper.treeToValue(dto, ParametrosDTO.class));
-            case "PAIS" -> paisService.importar(idTransaccion, objectMapper.treeToValue(dto, PaisDTO.class));
-            case "EVENTO" -> {
-                EventoDTO eventoDTO = objectMapper.treeToValue(dto, EventoDTO.class);
-                eventoService.importar(idTransaccion, eventoDTO);
-                if (G4DUtility.Convertor.toAdmissible(eventoDTO.getTipoEscenario(), TipoEscenario.class) == TipoEscenario.OPERACION) this.programarReplanificacion(true);
-            }
-            default -> throw new G4DException("Tipo de dato inválido!");
+        } catch (RuntimeException | JsonProcessingException e) {
+            this.reportarErrorDeImportacion(idTransaccion, e);
+            throw e;
         }
         return CompletableFuture.completedFuture(null);
     }
@@ -220,22 +225,35 @@ public class G4DService {
 
     @Async("importationExecutor")
     public CompletableFuture<Void> importar(String idTransaccion, Path archivo, ImportFileRequest request) {
-        // Los usuarios ya no se importan por archivo: se crean uno a uno (registro o administrador)
-        boolean esOperacion = G4DUtility.Convertor.toAdmissible(request.getTipoEscenario(), TipoEscenario.class) == TipoEscenario.OPERACION;
-        switch (request.getTipoArchivo().toUpperCase()) {
-            case "AEROPUERTOS" -> aeropuertoService.importar(idTransaccion, archivo);
-            case "PLANES" -> planService.importar(idTransaccion, archivo);
-            case "PEDIDOS" -> {
-                int importados = pedidoService.importar(idTransaccion, archivo, request);
-                if (esOperacion && importados > 0) this.programarReplanificacion(false);
+        try {
+            // Los usuarios ya no se importan por archivo: se crean uno a uno (registro o administrador)
+            boolean esOperacion = G4DUtility.Convertor.toAdmissible(request.getTipoEscenario(), TipoEscenario.class) == TipoEscenario.OPERACION;
+            switch (request.getTipoArchivo().toUpperCase()) {
+                case "AEROPUERTOS" -> aeropuertoService.importar(idTransaccion, archivo);
+                case "PLANES" -> planService.importar(idTransaccion, archivo);
+                case "PEDIDOS" -> {
+                    int importados = pedidoService.importar(idTransaccion, archivo, request);
+                    if (esOperacion && importados > 0) this.programarReplanificacion(false);
+                }
+                case "EVENTOS" -> {
+                    eventoService.importar(idTransaccion, archivo, request);
+                    if (esOperacion) this.programarReplanificacion(true);
+                }
+                default -> throw new G4DException("Tipo de archivo inválido!");
             }
-            case "EVENTOS" -> {
-                eventoService.importar(idTransaccion, archivo, request);
-                if (esOperacion) this.programarReplanificacion(true);
-            }
-            default -> throw new G4DException("Tipo de archivo inválido!");
+        } catch (RuntimeException e) {
+            this.reportarErrorDeImportacion(idTransaccion, e);
+            throw e;
+        } finally {
+            try { Files.deleteIfExists(archivo); } catch (IOException ignored) { }
         }
         return CompletableFuture.completedFuture(null);
+    }
+
+    // El error de una importación llega al front con su motivo (línea, país inexistente, formato...)
+    private void reportarErrorDeImportacion(String idTransaccion, Exception e) {
+        String mensaje = (e instanceof G4DException && e.getMessage() != null) ? e.getMessage() : "El archivo no se pudo importar. Revisa el formato o los datos.";
+        communicationService.enviar(String.format("/topic/importation-status-%s", idTransaccion), new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.ERRONEO, mensaje));
     }
 
     public GenericResponse iniciarSimulacion(SimulationRequest request) {

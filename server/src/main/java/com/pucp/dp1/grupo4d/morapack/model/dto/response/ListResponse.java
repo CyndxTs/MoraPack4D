@@ -16,6 +16,8 @@ import java.util.List;
 @Setter
 public class ListResponse extends GenericResponse {
     private List<DTO> dtos;
+    // Total de registros que cumplen el filtro (para paginar desde el servidor); null si no se calculó
+    private Long total;
 
     public ListResponse(Boolean exito, String mensaje) {
         super(exito, mensaje);

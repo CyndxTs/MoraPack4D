@@ -90,9 +90,11 @@ public class EventoService {
     public ListResponse listar(ListRequest request) {
         Pageable pageable = G4DUtility.Convertor.toAdmissible(request.getPagina(), request.getTamanio(), Sort.Order.desc("fechaHoraInicio"), Sort.Order.desc("fechaHoraFin"));
         List<DTO> dtos = new ArrayList<>();
-        List<EventoEntity> entities = this.findAll(pageable);
-        entities.forEach(entity -> dtos.add(eventoMapper.toDTO(entity)));
-        return new ListResponse(true, String.format("Eventos listados correctamente! ('%d')", dtos.size()), dtos);
+        org.springframework.data.domain.Page<EventoEntity> pagina = eventoRepository.findAll(pageable);
+        pagina.getContent().forEach(entity -> dtos.add(eventoMapper.toDTO(entity)));
+        ListResponse response = new ListResponse(true, String.format("Eventos listados correctamente! ('%d')", dtos.size()), dtos);
+        response.setTotal(pagina.getTotalElements());
+        return response;
     }
 
     // Clave de un plan por origen, destino y horas UTC
@@ -160,7 +162,6 @@ public class EventoService {
             communicationService.enviar(progressDestination, new ProgressPayload("Cargando evento", 1, 1));
             communicationService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.EXITOSO));
         } catch (Exception e) {
-            communicationService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.ERRONEO));
             throw (e instanceof G4DException g4dEx) ? g4dEx : new RuntimeException(e);
         }
     }
@@ -192,7 +193,7 @@ public class EventoService {
             List<EventoEntity> eventos = new ArrayList<>();
             String linea;
             communicationService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.INICIADO));
-            communicationService.enviar(progressDestination, new ProgressPayload("Leyendo archivo", lProcesadas, lTotales));
+            if (lProcesadas % 20 == 0 || lProcesadas >= lTotales) communicationService.enviar(progressDestination, new ProgressPayload("Leyendo archivo", lProcesadas, lTotales));
             while ((linea = br.readLine()) != null) {
                 linea = linea.replace("﻿", "").trim();
                 if (!linea.isBlank()) {
@@ -225,21 +226,18 @@ public class EventoService {
                     eventos.add(evento);
                 }
                 lProcesadas++;
-                communicationService.enviar(progressDestination, new ProgressPayload("Leyendo archivo", lProcesadas, lTotales));
+                if (lProcesadas % 20 == 0 || lProcesadas >= lTotales) communicationService.enviar(progressDestination, new ProgressPayload("Leyendo archivo", lProcesadas, lTotales));
             }
             br.close();
             importationService.batchSave(eventos, progressDestination, "eventos");
             System.out.printf("[<] EVENTOS IMPORTADOS! ('%d')%n", eventos.size());
             communicationService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.EXITOSO));
         } catch (G4DException e) {
-            communicationService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.ERRONEO));
             throw e;
         } catch (IOException e) {
-            communicationService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.ERRONEO));
             throw new G4DException(String.format("No se pudo cargar el archivo '%s'.", archivo.getFileName()));
         } catch (RuntimeException e) {
             // Índices, números, horas o fechas inválidas (p. ej. día 31 en un mes de 30)
-            communicationService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.ERRONEO));
             throw new G4DException(String.format("El archivo '%s' no sigue el formato esperado (línea #%d).", archivo.getFileName(), lProcesadas + 1));
         }
     }

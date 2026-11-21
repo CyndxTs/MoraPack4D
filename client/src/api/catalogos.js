@@ -1,4 +1,4 @@
-import { listar, filtrar, get, post } from "./http";
+import { listar, filtrar, get, post, listarPagina, filtrarPagina } from "./http";
 import { TAMANIO_CATALOGO } from "../config";
 
 // ---------- Aeropuertos ----------
@@ -61,3 +61,13 @@ export const listarPedidos = (pagina, tamanio) => listar("pedidos", pagina, tama
 export const filtrarPedidos = (modelo, pagina, tamanio) => filtrar("pedidos", modelo, pagina, tamanio);
 // Solo OPERACION, ACTIVO y sin vuelos ya despegados
 export const cancelarPedido = (codigo) => post("/pedidos/cancelar", { codigo });
+
+// ---------- Páginas con total (tablas paginadas desde el servidor) ----------
+export const filtrarPedidosPagina = (modelo, pagina, tamanio) => filtrarPagina("pedidos", modelo, pagina, tamanio);
+export const listarEventosPagina = (pagina, tamanio) => listarPagina("eventos", pagina, tamanio);
+export const filtrarUsuariosPagina = (modelo, pagina, tamanio) => filtrarPagina("usuarios", modelo, pagina, tamanio);
+// filtros: { texto, codOrigen, codDestino, orden }
+export async function buscarPlanesPagina(filtros, pagina, tamanio) {
+  const r = await post("/planes/buscar", { ...filtros, pagina, tamanio });
+  return { filas: r.dtos ?? [], total: typeof r.total === "number" ? r.total : null };
+}

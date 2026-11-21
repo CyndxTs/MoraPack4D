@@ -178,7 +178,6 @@ public class PaisService {
             communicationService.enviar(progressDestination, new ProgressPayload("Cargando país", 1, 1));
             communicationService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.EXITOSO));
         } catch (Exception e) {
-            communicationService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.ERRONEO));
             throw (e instanceof G4DException g4dEx) ? g4dEx : new RuntimeException(e);
         }
     }

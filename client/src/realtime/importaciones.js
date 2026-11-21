@@ -5,4 +5,4 @@ const seguidor = crearSeguidor("/topic/importation-", "/topic/importation-status
 export const prepararSeguimientoDeImportaciones = () => seguidor.preparar();
 
 // onProgress recibe { proceso, completado, total }
-export const esperarImportacion = (id, onProgress) => seguidor.esperar(id, onProgress);
+export const esperarImportacion = (id, onProgress, silencioMs) => seguidor.esperar(id, onProgress, silencioMs);

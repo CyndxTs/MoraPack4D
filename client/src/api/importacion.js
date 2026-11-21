@@ -48,3 +48,17 @@ export const registrarEvento = (dto) => importarDto(TIPO_DTO.EVENTO, dto);
 export const registrarPais = (dto) => importarDto(TIPO_DTO.PAIS, dto);
 export const registrarAeropuerto = (dto) => importarDto(TIPO_DTO.AEROPUERTO, dto);
 export const registrarPlan = (dto) => importarDto(TIPO_DTO.PLAN, dto);
+
+// Lanza la importación de un archivo y devuelve su id apenas el server la acepta (el seguimiento lo hace
+// el panel de importaciones, que sigue visible aunque se cambie de pantalla)
+export async function lanzarImportacionDeArchivo(archivo, request) {
+  await prepararSeguimientoDeImportaciones();
+  const form = new FormData();
+  form.append("file", archivo);
+  form.append("request", new Blob([JSON.stringify(request)], { type: "application/json" }));
+  const { data } = await http.post("/importation-init-file", form);
+  if (data?.exito === false) throw new ApiError(data.mensaje);
+  return idDeToken(data.token);
+}
+
+export const seguirImportacion = (id, onProgress) => esperarImportacion(id, onProgress, 45000);

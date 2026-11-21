@@ -174,3 +174,10 @@
     &__resumen { position: static; }
   }
 }
+
+// Aviso del mapa: abajo al centro, sin tapar los controles
+.mis-envios .scenario-banner.mis-envios__aviso {
+  top: auto; bottom: 18px; left: auto; right: 18px; transform: none;
+  white-space: nowrap; max-width: calc(100% - 36px);
+  background: rgba(12, 22, 49, 0.92); border: 1px solid var(--trazo); color: var(--tinta-2);
+}

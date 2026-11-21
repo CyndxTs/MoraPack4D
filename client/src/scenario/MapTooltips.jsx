@@ -2,10 +2,11 @@ import { formatFecha } from "../utils/fechas";
 import React, { useState } from "react";
 
 // Helper para obtener color según porcentaje
-const getProgressColor = (percentage) => {
-  if (percentage < 50) return "#22c55e"; // Verde
-  if (percentage < 80) return "#eab308"; // Amarillo
-  return "#ef4444"; // Rojo
+// Mismos umbrales que la leyenda: aeropuertos 50/80 %, aviones 50/90 %
+const getProgressColor = (percentage, alto = 80) => {
+  if (percentage < 50) return "var(--ok)";
+  if (percentage < alto) return "var(--aviso)";
+  return "var(--alerta)";
 };
 
 // === TOOLTIP AEROPUERTO ===
@@ -41,7 +42,7 @@ export function AirportTooltipContent({
           {airport.city} ({airport.code})
         </span>
         <span className="airport-popup__code">
-          {airport.esSede ? "Principal" : "Intermedio"}
+          {airport.esSede ? "Sede" : "Destino"}
         </span>
       </div>
 
@@ -55,7 +56,7 @@ export function AirportTooltipContent({
       <div className="airport-popup__row">
         <span className="airport-popup__label">Stock actual: </span>
         <span className="airport-popup__value">
-          {airport.stockActual} u ({ocupPct}%)
+          {airport.stockActual} u (<span style={{ color: barColor }}>{ocupPct}%</span>)
         </span>
       </div>
 
@@ -163,8 +164,7 @@ export function PlaneTooltipContent({
       ? Math.round((flight.capacity * 100) / flight.planeCapacity)
       : 0;
 
-  // Obtenemos el color dinámico
-  const barColor = getProgressColor(ocupPct);
+  const barColor = getProgressColor(ocupPct, 90);
 
   return (
     <div
@@ -189,7 +189,7 @@ export function PlaneTooltipContent({
       <div className="plane-tooltip__row">
         <span>Capacidad</span>
         <span>
-          {flight.capacity}/{flight.planeCapacity} u ({ocupPct}%)
+          {flight.capacity}/{flight.planeCapacity} u (<span style={{ color: barColor }}>{ocupPct}%</span>)
         </span>
       </div>
 

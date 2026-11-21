@@ -1,10 +1,10 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { LoadingOverlay } from "../../components/UI/ui";
+import { useAlTerminarImportacion, useImportaciones } from "../../importaciones/ImportacionesContext";
 import {
   BarraFiltros, Campo, Confirmacion, Etiqueta, IconoMas, Modal, PaginaGestion, Paginador, Segmentado, Selector, Tabla, ZonaArchivo,
 } from "../../components/Gestion/Gestion";
 import { actualizarSedes, listarPaises, listarTodosLosAeropuertos } from "../../api/catalogos";
-import { importarArchivo, registrarAeropuerto, TIPO_ARCHIVO } from "../../api/importacion";
+import { registrarAeropuerto, TIPO_ARCHIVO } from "../../api/importacion";
 import { useNotify } from "../../notifications/NotificationContext";
 import { TAMANIO_PAGINA } from "../../config";
 
@@ -18,7 +18,7 @@ export default function Aeropuertos() {
   const [vista, setVista] = useState("todos");
   const [pagina, setPagina] = useState(1);
   const [modal, setModal] = useState(null); // "registrar" | { sede, activar }
-  const [progreso, setProgreso] = useState(null);
+  const { iniciar } = useImportaciones();
   const [enviando, setEnviando] = useState(false);
 
   const cargar = useCallback(async () => {
@@ -26,6 +26,8 @@ export default function Aeropuertos() {
     try { setAeropuertos(await listarTodosLosAeropuertos()); } catch (e) { notify("danger", e.message); } finally { setCargando(false); }
   }, [notify]);
   useEffect(() => { cargar(); }, [cargar]);
+  // El catálogo es pequeño (decenas de aeropuertos): se recarga entero al terminar una importación
+  useAlTerminarImportacion("AEROPUERTOS", cargar);
 
   const sedes = aeropuertos.filter((a) => a.esSede);
   const filtrados = useMemo(() => {
@@ -77,7 +79,6 @@ export default function Aeropuertos() {
       descripcion="Las sedes son el origen de todos los envíos. Cambiarlas afecta a la próxima planificación de la operación."
       acciones={<button type="button" className="boton boton--primario" onClick={() => setModal("registrar")}><IconoMas /> Registrar aeropuertos</button>}
     >
-      {progreso && <LoadingOverlay text="Importando aeropuertos..." progreso={progreso.proceso ? progreso : null} />}
       <BarraFiltros busqueda={texto} onBusqueda={setTexto} placeholder="Buscar código, ciudad, país o continente" resumen={!cargando && `${filtrados.length} aeropuertos · ${sedes.length} sedes`} />
       <div style={{ marginBottom: 14 }}>
         <Segmentado nombre="Tipo" value={vista} onChange={setVista} opciones={[{ value: "todos", label: "Todos" }, { value: "sedes", label: "Sedes" }, { value: "destinos", label: "Destinos" }]} />
@@ -89,18 +90,9 @@ export default function Aeropuertos() {
         <RegistrarAeropuertos
           onCerrar={() => setModal(null)}
           onListo={() => { setModal(null); cargar(); }}
-          onImportar={async (archivo) => {
+          onImportar={(archivo) => {
             setModal(null);
-            setProgreso({});
-            try {
-              await importarArchivo(archivo, { tipoArchivo: TIPO_ARCHIVO.AEROPUERTOS }, setProgreso);
-              notify("success", "Aeropuertos importados.");
-            } catch (e) {
-              notify("danger", e.message);
-            } finally {
-              setProgreso(null);
-              cargar();
-            }
+            iniciar({ archivo, request: { tipoArchivo: TIPO_ARCHIVO.AEROPUERTOS }, tipo: "AEROPUERTOS" }).catch((e) => notify("danger", e.message));
           }}
         />
       )}

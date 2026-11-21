@@ -1,0 +1,104 @@
+// Panel de importaciones en segundo plano (abajo a la derecha, sobre todas las pantallas)
+.imp-panel {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 1900; // sobre el mapa y la barra; debajo de los modales
+  width: min(360px, calc(100vw - 32px));
+  border: 1px solid #22356A;
+  border-radius: 14px;
+  background: #0C1631;
+  color: #EAF0FF;
+  box-shadow: 0 24px 48px -20px rgba(0, 0, 0, 0.8);
+  overflow: hidden;
+  transform-origin: bottom right;
+  animation: imp-entrada 260ms cubic-bezier(0.23, 1, 0.32, 1);
+  transition: opacity 320ms ease, transform 320ms cubic-bezier(0.23, 1, 0.32, 1);
+
+  &.is-saliendo { opacity: 0; transform: translateY(12px) scale(0.98); }
+
+  &__cabecera {
+    display: flex; align-items: center; gap: 10px;
+    padding: 12px 10px 12px 16px;
+    background: #12204A;
+  }
+  &__titulo { flex: 1; font-size: 0.9rem; font-weight: 650; }
+  &__pct { font-size: 0.82rem; font-weight: 650; color: #FFB547; font-variant-numeric: tabular-nums; }
+  &__min {
+    width: 30px; height: 30px; display: grid; place-items: center;
+    border: 0; border-radius: 8px; background: transparent; color: #A7B6DA; cursor: pointer;
+    transition: background-color 150ms ease, color 150ms ease;
+    svg { transition: transform 220ms cubic-bezier(0.23, 1, 0.32, 1); }
+    &:hover { background: rgba(120, 198, 255, 0.1); color: #FFFFFF; }
+  }
+  &.is-minimizado &__min svg { transform: rotate(180deg); }
+
+  &__cuerpo {
+    display: grid; grid-template-rows: 1fr;
+    transition: grid-template-rows 260ms cubic-bezier(0.23, 1, 0.32, 1);
+    > .imp-lista { min-height: 0; overflow: hidden; }
+  }
+  &.is-minimizado &__cuerpo { grid-template-rows: 0fr; }
+}
+
+.imp-lista {
+  list-style: none; margin: 0; padding: 0;
+  max-height: 340px; overflow-y: auto !important;
+}
+
+.imp-item {
+  padding: 10px 16px 12px;
+  border-top: 1px solid rgba(120, 150, 220, 0.12);
+  animation: imp-item-entrada 240ms cubic-bezier(0.23, 1, 0.32, 1);
+  &:first-child { border-top: 0; }
+
+  &__fila { display: flex; align-items: center; gap: 10px; }
+  &__textos { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+  &__nombre { font-size: 0.86rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  &__tipo { font-size: 0.75rem; color: #A7B6DA; font-variant-numeric: tabular-nums; }
+
+  &__ver {
+    margin-top: 6px; padding: 0; border: 0; background: none;
+    font: inherit; font-size: 0.74rem; font-weight: 600; color: #78C6FF; cursor: pointer;
+    &:hover { text-decoration: underline; text-underline-offset: 3px; }
+  }
+  &__detalle {
+    margin-top: 6px; padding: 8px 10px; border-radius: 8px; background: #060B1A;
+    display: flex; flex-direction: column; gap: 6px;
+    font-size: 0.75rem; color: #A7B6DA; line-height: 1.4;
+  }
+
+  &--error .imp-item__tipo { color: #FF8A95; }
+  &--error .imp-barra span { background: #FF6B7A; }
+  &--ok .imp-barra span { background: #39D98A; }
+}
+
+.imp-barra {
+  position: relative; height: 5px; margin-top: 8px; border-radius: 4px; overflow: hidden; background: #182A5C;
+  span {
+    position: absolute; inset: 0; border-radius: 4px; background: #78C6FF;
+    transform-origin: left center; transition: transform 400ms cubic-bezier(0.23, 1, 0.32, 1), background-color 200ms ease;
+  }
+  &--tarea { margin-top: 0; height: 3px; span { background: #FFB547; } }
+  &--mini { margin: 0; height: 3px; border-radius: 0; }
+}
+
+.imp-icono {
+  flex-shrink: 0; width: 22px; height: 22px; border-radius: 50%;
+  display: grid; place-items: center; font-size: 0.75rem; font-weight: 800;
+  &--girando { border: 2px solid #22356A; border-top-color: #78C6FF; animation: imp-giro 900ms linear infinite; }
+  &--ok { background: rgba(57, 217, 138, 0.16); color: #5FE3A1; }
+  &--error { background: rgba(255, 107, 122, 0.16); color: #FF8A95; }
+}
+
+@keyframes imp-entrada { from { opacity: 0; transform: translateY(16px) scale(0.97); } to { opacity: 1; transform: none; } }
+@keyframes imp-item-entrada { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@keyframes imp-giro { to { transform: rotate(360deg); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .imp-panel, .imp-item { animation: none; }
+  .imp-icono--girando { animation-duration: 2.4s; }
+}
+@media (max-width: 600px) {
+  .imp-panel { right: 16px; bottom: 16px; }
+}

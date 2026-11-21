@@ -1,12 +1,12 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   BarraFiltros, Campo, Confirmacion, Etiqueta, IconoMas, Modal, PaginaGestion, Paginador, Segmentado, Selector, Tabla,
 } from "../../components/Gestion/Gestion";
-import { cambiarEstadoUsuario, cambiarRolUsuario, crearUsuario, eliminarUsuario, filtrarUsuarios, listarPaises } from "../../api/catalogos";
+import { cambiarEstadoUsuario, cambiarRolUsuario, crearUsuario, eliminarUsuario, filtrarUsuariosPagina, listarPaises } from "../../api/catalogos";
 import { useAuth } from "../../auth/AuthContext";
 import { ETIQUETA_ROL, ROLES } from "../../auth/session";
 import { useNotify } from "../../notifications/NotificationContext";
-import { TAMANIO_PAGINA } from "../../config";
+import { usePaginado } from "../../paginacion/usePaginado";
 
 const VACIOS = { correo: "", tipoUsuario: "", estado: "", pais: "" };
 const TONO_ROL = { ADMINISTRADOR: "ambar", TRABAJADOR: "info", CLIENTE: "neutro" };
@@ -19,23 +19,17 @@ export default function Usuarios() {
   const [filtros, setFiltros] = useState(VACIOS);
   const [aplicados, setAplicados] = useState(VACIOS);
   const [panel, setPanel] = useState(false);
-  const [pagina, setPagina] = useState(1);
-  const [usuarios, setUsuarios] = useState([]);
-  const [hayMas, setHayMas] = useState(false);
-  const [cargando, setCargando] = useState(true);
   const [modal, setModal] = useState(null); // "crear" | { rol } | { estado } | { eliminar }
 
-  const cargar = useCallback(async (pag, f) => {
-    setCargando(true);
-    try {
-      const modelo = { correo: f.correo.trim() || null, tipoUsuario: f.tipoUsuario || null, estado: f.estado || null, pais: f.pais.trim() || null };
-      const lista = await filtrarUsuarios(modelo, pag - 1, TAMANIO_PAGINA);
-      setUsuarios(lista); setPagina(pag); setHayMas(lista.length === TAMANIO_PAGINA);
-    } catch (e) { notify("danger", e.message); } finally { setCargando(false); }
-  }, [notify]);
-  useEffect(() => { cargar(1, VACIOS); }, [cargar]);
+  const modelo = { correo: aplicados.correo.trim() || null, tipoUsuario: aplicados.tipoUsuario || null, estado: aplicados.estado || null, pais: aplicados.pais.trim() || null };
+  const { filas: usuarios, pagina, setPagina, hayMas, totalPaginas, total, cargando, recargar: recargarTabla } = usePaginado({
+    recurso: "usuarios",
+    filtros: modelo,
+    cargarBloque: (pag, tam) => filtrarUsuariosPagina(modelo, pag, tam),
+    onError: (e) => notify("danger", e.message),
+  });
 
-  const aplicar = (f = filtros) => { setAplicados(f); setFiltros(f); setPanel(false); cargar(1, f); };
+  const aplicar = (f = filtros) => { setAplicados(f); setFiltros(f); setPanel(false); };
   const activos = [];
   if (aplicados.correo.trim()) activos.push({ clave: "correo", texto: `Correo contiene "${aplicados.correo.trim()}"` });
   if (aplicados.tipoUsuario) activos.push({ clave: "tipoUsuario", texto: ETIQUETA_ROL[aplicados.tipoUsuario] });
@@ -63,7 +57,7 @@ export default function Usuarios() {
     },
   ];
 
-  const recargar = () => { setModal(null); cargar(pagina, aplicados); };
+  const recargar = () => { setModal(null); recargarTabla(); };
 
   return (
     <PaginaGestion
@@ -95,7 +89,7 @@ export default function Usuarios() {
       </BarraFiltros>
 
       <Tabla columnas={columnas} filas={usuarios} cargando={cargando} vacio="No hay usuarios con estos filtros." />
-      <Paginador pagina={pagina} hayMas={hayMas} onCambiar={(p) => cargar(p, aplicados)} />
+      <Paginador pagina={pagina} total={totalPaginas} hayMas={hayMas} onCambiar={setPagina} />
 
       {modal === "crear" && <CrearUsuario onCerrar={() => setModal(null)} onListo={recargar} />}
       {modal?.rol && <CambiarRol usuario={modal.rol} onCerrar={() => setModal(null)} onListo={recargar} />}

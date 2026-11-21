@@ -107,7 +107,6 @@ export default function MisEnvios() {
             <h1>Mis envíos</h1>
             <p>Horas en {zonaCorta()}. Se actualiza solo cuando cambia la planificación.</p>
           </div>
-          <Link to="/cliente/pedidos/nuevo" className="boton boton--primario">Nuevo pedido</Link>
         </header>
 
         <div className="mis-envios__resumen">
@@ -165,14 +164,14 @@ export default function MisEnvios() {
       </aside>
 
       <section className="mis-envios__mapa" aria-label="Mapa de mis envíos">
-        <ScenarioWorkspace escenario={escenario} nowMs={nowMs} mostrarFlota={false}
+        <ScenarioWorkspace escenario={escenario} nowMs={nowMs} mostrarFlota={false} mostrarPanel={false}
           controles={(
             <ControlsDropdown>
               <ControlRow label={`Hora actual (${zonaCorta()}):`} value={formatFecha(nowMs, true)} color="var(--tinta-3)" />
               <ControlRow label="Última planificación:" value={escenario.recibidoEn ? formatFecha(escenario.recibidoEn, true) : "—"} />
             </ControlsDropdown>
           )}
-          overlays={escenario.flights.length === 0 && !cargando ? <div className="scenario-banner">Ningún paquete tuyo vuela en este momento</div> : null} />
+          overlays={escenario.flights.length === 0 && !cargando ? <div className="scenario-banner mis-envios__aviso">Ningún paquete tuyo vuela en este momento</div> : null} />
       </section>
 
       {porCancelar && (

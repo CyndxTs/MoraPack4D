@@ -3,3 +3,5 @@ dist
 .env
 .vscode
 *.local
+.env.local
+.env.*.local

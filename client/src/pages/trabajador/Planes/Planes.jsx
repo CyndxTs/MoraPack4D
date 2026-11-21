@@ -1,14 +1,14 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { LoadingOverlay } from "../../../components/UI/ui";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   BarraFiltros, Campo, Etiqueta, IconoMas, Modal, PaginaGestion, Paginador, Segmentado, Selector, Tabla, ZonaArchivo,
 } from "../../../components/Gestion/Gestion";
-import { listarEventos, listarTodosLosAeropuertos, listarTodosLosPlanes } from "../../../api/catalogos";
-import { importarArchivo, registrarEvento, registrarPlan, TIPO_ARCHIVO } from "../../../api/importacion";
+import { buscarPlanesPagina, listarEventosPagina, listarTodosLosAeropuertos } from "../../../api/catalogos";
+import { invalidarPaginado, usePaginado } from "../../../paginacion/usePaginado";
+import { useImportaciones } from "../../../importaciones/ImportacionesContext";
+import { registrarEvento, registrarPlan, TIPO_ARCHIVO } from "../../../api/importacion";
 import { useNotify } from "../../../notifications/NotificationContext";
 import { fechaServerALocal, fromInputs, horaUTCALocal, toInputDate, toServerDateTime } from "../../../utils/fechas";
 import { zonaCorta, zonaLarga } from "../../../utils/zona";
-import { TAMANIO_PAGINA } from "../../../config";
 
 const TIPOS_EVENTO = { CANCELACION: ["alerta", "Cancelación"], REPROGRAMACION: ["aviso", "Reprogramación"], REAJUSTE_CAPACIDAD: ["info", "Reajuste de capacidad"] };
 const ESCENARIOS = [{ value: "OPERACION", label: "Operación" }, { value: "SIMULACION", label: "Simulación" }];
@@ -23,7 +23,7 @@ function localAUtc(hhmm, huso) {
   return `${pad(Math.floor(min / 60))}:${pad(min % 60)}`;
 }
 
-// Planes de vuelo (catálogo completo, filtrado en el navegador) y eventos sobre sus vuelos
+// Planes de vuelo y eventos sobre sus vuelos (ambos paginados desde el servidor)
 export default function Planes() {
   const [tab, setTab] = useState("planes");
   const pestanas = (
@@ -39,41 +39,32 @@ const VACIOS = { texto: "", origen: "", destino: "", orden: "asc" };
 
 function PlanesTab({ pestanas }) {
   const notify = useNotify();
-  const [planes, setPlanes] = useState([]);
-  const [cargando, setCargando] = useState(true);
+  const { iniciar } = useImportaciones();
+  const [aeropuertos, setAeropuertos] = useState([]);
   const [filtros, setFiltros] = useState(VACIOS);
   const [aplicados, setAplicados] = useState(VACIOS);
+  const [texto, setTexto] = useState("");
   const [panel, setPanel] = useState(false);
-  const [pagina, setPagina] = useState(1);
   const [modal, setModal] = useState(false);
-  const [progreso, setProgreso] = useState(null);
 
-  const cargar = useCallback(async () => {
-    setCargando(true);
-    try { setPlanes(await listarTodosLosPlanes()); } catch (e) { notify("danger", e.message); } finally { setCargando(false); }
-  }, [notify]);
-  useEffect(() => { cargar(); }, [cargar]);
+  useEffect(() => { listarTodosLosAeropuertos().then(setAeropuertos).catch(() => {}); }, []);
+  // La búsqueda se manda al server cuando se deja de escribir
+  useEffect(() => {
+    const t = setTimeout(() => setTexto(filtros.texto.trim().toUpperCase()), 350);
+    return () => clearTimeout(t);
+  }, [filtros.texto]);
 
-  const codigos = useMemo(() => ({
-    origenes: [...new Set(planes.map((p) => p.codOrigen))].sort(),
-    destinos: [...new Set(planes.map((p) => p.codDestino))].sort(),
-  }), [planes]);
+  const consulta = { texto: texto || null, codOrigen: aplicados.origen || null, codDestino: aplicados.destino || null, orden: aplicados.orden };
+  const { filas: visibles, pagina, setPagina, hayMas, totalPaginas, total, cargando } = usePaginado({
+    recurso: "planes",
+    filtros: consulta,
+    cargarBloque: (pag, tam) => buscarPlanesPagina(consulta, pag, tam),
+    onError: (e) => notify("danger", e.message),
+  });
 
-  const filtrados = useMemo(() => {
-    const t = filtros.texto.trim().toUpperCase();
-    const lista = planes.filter((p) =>
-      (!t || p.codigo.toUpperCase().includes(t) || `${p.codOrigen}-${p.codDestino}`.includes(t))
-      && (!aplicados.origen || p.codOrigen === aplicados.origen)
-      && (!aplicados.destino || p.codDestino === aplicados.destino));
-    const clave = (p) => p.horaSalida ?? "";
-    lista.sort((a, b) => (aplicados.orden === "asc" ? clave(a).localeCompare(clave(b)) : clave(b).localeCompare(clave(a))));
-    return lista;
-  }, [planes, aplicados, filtros.texto]);
-
-  useEffect(() => setPagina(1), [filtros.texto]);
-  const visibles = filtrados.slice((pagina - 1) * TAMANIO_PAGINA, pagina * TAMANIO_PAGINA);
-  const totalPaginas = Math.max(1, Math.ceil(filtrados.length / TAMANIO_PAGINA));
-  const aplicar = (f = filtros) => { setAplicados(f); setFiltros(f); setPagina(1); setPanel(false); };
+  const codigos = useMemo(() => [...aeropuertos.map((a) => a.codigo)].sort(), [aeropuertos]);
+  const codigosOrigen = codigos, codigosDestino = codigos;
+  const aplicar = (f = filtros) => { setAplicados(f); setFiltros(f); setPanel(false); };
 
   const activos = [];
   if (aplicados.origen) activos.push({ clave: "origen", texto: `Origen ${aplicados.origen}` });
@@ -97,7 +88,6 @@ function PlanesTab({ pestanas }) {
       descripcion="Vuelos diarios de Aerolínea PACK entre aeropuertos de la red."
       acciones={<button type="button" className="boton boton--primario" onClick={() => setModal(true)}><IconoMas /> Registrar planes</button>}
     >
-      {progreso && <LoadingOverlay text="Importando planes..." progreso={progreso.proceso ? progreso : null} />}
       <BarraFiltros
         busqueda={filtros.texto}
         onBusqueda={(v) => setFiltros((f) => ({ ...f, texto: v }))}
@@ -108,16 +98,16 @@ function PlanesTab({ pestanas }) {
         onQuitar={(k) => aplicar({ ...aplicados, texto: filtros.texto, [k]: VACIOS[k] })}
         onLimpiar={() => aplicar({ ...VACIOS, texto: filtros.texto })}
         onAplicar={() => aplicar()}
-        resumen={!cargando && `${filtrados.length} planes`}
+        resumen={total != null ? `${total.toLocaleString("es-PE")} planes` : null}
       >
         <Campo label="Origen">
           <select value={filtros.origen} onChange={(e) => setFiltros({ ...filtros, origen: e.target.value })}>
-            <option value="">Todos</option>{codigos.origenes.map((c) => <option key={c}>{c}</option>)}
+            <option value="">Todos</option>{codigosOrigen.map((c) => <option key={c}>{c}</option>)}
           </select>
         </Campo>
         <Campo label="Destino">
           <select value={filtros.destino} onChange={(e) => setFiltros({ ...filtros, destino: e.target.value })}>
-            <option value="">Todos</option>{codigos.destinos.map((c) => <option key={c}>{c}</option>)}
+            <option value="">Todos</option>{codigosDestino.map((c) => <option key={c}>{c}</option>)}
           </select>
         </Campo>
         <Campo label="Orden por salida">
@@ -126,24 +116,15 @@ function PlanesTab({ pestanas }) {
       </BarraFiltros>
 
       <Tabla columnas={columnas} filas={visibles} cargando={cargando} vacio="No hay planes con estos filtros." />
-      <Paginador pagina={pagina} total={totalPaginas} hayMas={pagina < totalPaginas} onCambiar={setPagina} />
+      <Paginador pagina={pagina} total={totalPaginas} hayMas={hayMas} onCambiar={setPagina} />
 
       {modal && (
         <RegistrarPlanesModal
           onCerrar={() => setModal(false)}
-          onListo={() => { setModal(false); cargar(); }}
-          onImportar={async (archivo) => {
+          onListo={() => { setModal(false); invalidarPaginado("planes"); }}
+          onImportar={(archivo) => {
             setModal(false);
-            setProgreso({});
-            try {
-              await importarArchivo(archivo, { tipoArchivo: TIPO_ARCHIVO.PLANES }, setProgreso);
-              notify("success", "Planes importados.");
-            } catch (e) {
-              notify("danger", e.message);
-            } finally {
-              setProgreso(null);
-              cargar();
-            }
+            iniciar({ archivo, request: { tipoArchivo: TIPO_ARCHIVO.PLANES }, tipo: "PLANES" }).catch((e) => notify("danger", e.message));
           }}
         />
       )}
@@ -215,27 +196,14 @@ function RegistrarPlanesModal({ onCerrar, onListo, onImportar }) {
 
 function EventosTab({ pestanas }) {
   const notify = useNotify();
-  const [eventos, setEventos] = useState([]);
-  const [pagina, setPagina] = useState(1);
-  const [hayMas, setHayMas] = useState(false);
-  const [cargando, setCargando] = useState(true);
+  const { iniciar } = useImportaciones();
   const [modal, setModal] = useState(false);
-  const [progreso, setProgreso] = useState(null);
-
-  const cargar = useCallback(async (pag) => {
-    setCargando(true);
-    try {
-      const lista = await listarEventos(pag - 1, TAMANIO_PAGINA);
-      setEventos(lista);
-      setPagina(pag);
-      setHayMas(lista.length === TAMANIO_PAGINA);
-    } catch (e) {
-      notify("danger", e.message);
-    } finally {
-      setCargando(false);
-    }
-  }, [notify]);
-  useEffect(() => { cargar(1); }, [cargar]);
+  const { filas: eventos, pagina, setPagina, hayMas, totalPaginas, cargando } = usePaginado({
+    recurso: "eventos",
+    filtros: {},
+    cargarBloque: (pag, tam) => listarEventosPagina(pag, tam),
+    onError: (e) => notify("danger", e.message),
+  });
 
   const columnas = [
     { label: "Código", key: "codigo", render: (e) => <span className="codigo">{e.codigo}</span> },
@@ -256,26 +224,16 @@ function EventosTab({ pestanas }) {
       descripcion="Cancelaciones, reprogramaciones y reajustes de capacidad de vuelos concretos."
       acciones={<button type="button" className="boton boton--primario" onClick={() => setModal(true)}><IconoMas /> Registrar eventos</button>}
     >
-      {progreso && <LoadingOverlay text="Importando eventos..." progreso={progreso.proceso ? progreso : null} />}
       <Tabla columnas={columnas} filas={eventos} cargando={cargando} vacio="Aún no hay eventos registrados." />
-      <Paginador pagina={pagina} hayMas={hayMas} onCambiar={cargar} />
+      <Paginador pagina={pagina} total={totalPaginas} hayMas={hayMas} onCambiar={setPagina} />
 
       {modal && (
         <RegistrarEventosModal
           onCerrar={() => setModal(false)}
-          onListo={() => { setModal(false); cargar(1); }}
-          onImportar={async (archivo, extra) => {
+          onListo={() => { setModal(false); invalidarPaginado("eventos"); invalidarPaginado("planes"); }}
+          onImportar={(archivo, extra) => {
             setModal(false);
-            setProgreso({});
-            try {
-              await importarArchivo(archivo, { tipoArchivo: TIPO_ARCHIVO.EVENTOS, ...extra }, setProgreso);
-              notify("success", "Eventos importados.");
-            } catch (e) {
-              notify("danger", e.message);
-            } finally {
-              setProgreso(null);
-              cargar(1);
-            }
+            iniciar({ archivo, request: { tipoArchivo: TIPO_ARCHIVO.EVENTOS, ...extra }, tipo: "EVENTOS" }).catch((e) => notify("danger", e.message));
           }}
         />
       )}
@@ -313,7 +271,21 @@ function RegistrarEventosModal({ onCerrar, onListo, onImportar }) {
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState(null);
 
-  useEffect(() => { listarTodosLosPlanes().then(setPlanes).catch((e) => notify("danger", e.message)); }, [notify]);
+  // Se elige la ruta y solo se piden al server los planes de esa ruta (no todo el catálogo)
+  const [aeropuertos, setAeropuertos] = useState([]);
+  const [origen, setOrigen] = useState(null);
+  const [destino, setDestino] = useState(null);
+  useEffect(() => { listarTodosLosAeropuertos().then(setAeropuertos).catch((e) => notify("danger", e.message)); }, [notify]);
+  useEffect(() => {
+    setCodPlan(null);
+    if (!origen || !destino) { setPlanes([]); return undefined; }
+    let vivo = true;
+    buscarPlanesPagina({ codOrigen: origen, codDestino: destino, orden: "asc" }, 0, 200)
+      .then(({ filas }) => { if (vivo) setPlanes(filas); })
+      .catch((e) => notify("danger", e.message));
+    return () => { vivo = false; };
+  }, [origen, destino, notify]);
+  const opcionesAeropuertos = useMemo(() => aeropuertos.map((a) => ({ value: a.codigo, label: `${a.codigo} · ${a.ciudad}`, detalle: a.pais })), [aeropuertos]);
   const opciones = useMemo(() => planes.map((p) => ({ value: p.codigo, label: `${p.codOrigen} → ${p.codDestino} · ${horaUTCALocal(p.horaSalida)}`, detalle: p.codigo })), [planes]);
   const plan = planes.find((p) => p.codigo === codPlan);
   const salida = plan && fecha ? salidaEnElDia(fecha, plan.horaSalida) : null;
@@ -367,7 +339,11 @@ function RegistrarEventosModal({ onCerrar, onListo, onImportar }) {
       </div>
       {modo === "uno" ? (
         <div className="campos">
-          <Campo req label="Plan de vuelo" ancho="completo"><Selector opciones={opciones} value={codPlan} onChange={setCodPlan} placeholder="Busca por ruta (SPIM) o código" /></Campo>
+          <Campo req label="Origen"><Selector opciones={opcionesAeropuertos} value={origen} onChange={setOrigen} placeholder="Aeropuerto de salida" /></Campo>
+          <Campo req label="Destino"><Selector opciones={opcionesAeropuertos} value={destino} onChange={setDestino} placeholder="Aeropuerto de llegada" /></Campo>
+          <Campo req label="Plan de vuelo" ancho="completo" hint={origen && destino && planes.length === 0 ? "No hay planes en esta ruta." : undefined}>
+            <Selector opciones={opciones} value={codPlan} onChange={setCodPlan} disabled={!origen || !destino} placeholder={origen && destino ? "Elige la hora de salida" : "Primero elige origen y destino"} />
+          </Campo>
           <Campo req label={`Día del vuelo (${zonaCorta()})`} hint={salida != null ? `Sale ${fechaServerALocal(toServerDateTime(salida))} y llega ${fechaServerALocal(toServerDateTime(llegada))}` : undefined}>
             <input type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} />
           </Campo>

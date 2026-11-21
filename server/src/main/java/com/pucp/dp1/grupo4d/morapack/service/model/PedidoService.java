@@ -31,6 +31,7 @@ import com.pucp.dp1.grupo4d.morapack.repository.PedidoRepository;
 import com.pucp.dp1.grupo4d.morapack.service.CommunicationService;
 import com.pucp.dp1.grupo4d.morapack.service.ImportationService;
 import com.pucp.dp1.grupo4d.morapack.util.G4DUtility;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -136,9 +137,11 @@ public class PedidoService {
         String fechaHoraExpiracion = G4DUtility.Convertor.toAdmissibleDateTimeString(modelo.getFechaHoraExpiracion());
         String codDestino = G4DUtility.Convertor.toAdmissible(modelo.getCodDestino());
         List<DTO> dtos = new ArrayList<>();
-        List<PedidoEntity> entities = this.findAllByAttributes(tipoEscenario, codCliente, codigo, fueAtendido, fechaHoraGeneracion, fechaHoraExpiracion, codDestino, pageable);
-        entities.forEach(entity -> dtos.add(pedidoMapper.toDTO(entity)));
-        return new ListResponse(true, String.format("Pedidos filtrados correctamente! ('%d')", dtos.size()), dtos);
+        Page<PedidoEntity> pagina = pedidoRepository.findAllByAttributes(tipoEscenario, codCliente, codigo, fueAtendido, fechaHoraGeneracion, fechaHoraExpiracion, codDestino, pageable);
+        pagina.getContent().forEach(entity -> dtos.add(pedidoMapper.toDTO(entity)));
+        ListResponse response = new ListResponse(true, String.format("Pedidos filtrados correctamente! ('%d')", dtos.size()), dtos);
+        response.setTotal(pagina.getTotalElements());
+        return response;
     }
 
     // Un pedido de OPERACION cuyo destino es una sede se atiende al instante: no genera vuelos ni rutas.
@@ -311,7 +314,6 @@ public class PedidoService {
             communicationService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.EXITOSO));
             return pedido;
         } catch (Exception e) {
-            communicationService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.ERRONEO));
             throw (e instanceof G4DException g4dEx) ? g4dEx : new RuntimeException(e);
         }
     }
@@ -369,7 +371,7 @@ public class PedidoService {
             LocalDateTime fechaHoraFin = G4DUtility.Convertor.toAdmissible(request.getFechaHoraFin(), LocalDateTime.MAX);
             String linea;
             communicationService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.INICIADO));
-            communicationService.enviar(progressDestination, new ProgressPayload("Leyendo archivo", lProcesadas, lTotales));
+            if (lProcesadas % 20 == 0 || lProcesadas >= lTotales) communicationService.enviar(progressDestination, new ProgressPayload("Leyendo archivo", lProcesadas, lTotales));
             while ((linea = br.readLine()) != null) {
                 linea = linea.replace("\uFEFF", "").trim();
                 if (!linea.isBlank()) {
@@ -425,7 +427,7 @@ public class PedidoService {
                     }
                 }
                 lProcesadas++;
-                communicationService.enviar(progressDestination, new ProgressPayload("Leyendo archivo", lProcesadas, lTotales));
+                if (lProcesadas % 20 == 0 || lProcesadas >= lTotales) communicationService.enviar(progressDestination, new ProgressPayload("Leyendo archivo", lProcesadas, lTotales));
                 if (pedidos.size() >= 500 || (lProcesadas == lTotales && !pedidos.isEmpty())) {
                     this.guardarLote(pedidos, entregasDirectas, progressDestination);
                 }
@@ -443,13 +445,10 @@ public class PedidoService {
             communicationService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.EXITOSO, detalle));
             return importados;
         } catch (ArrayIndexOutOfBoundsException | NoSuchElementException | NumberFormatException e) {
-            communicationService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.ERRONEO));
             throw new G4DException(String.format("El archivo '%s' no sigue el formato esperado.", archivo.getFileName()));
         } catch (IOException e) {
-            communicationService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.ERRONEO));
             throw new G4DException(String.format("No se pudo cargar el archivo '%s'.", archivo.getFileName()));
         } catch (G4DException e) {
-            communicationService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.ERRONEO));
             throw e;
         }
     }

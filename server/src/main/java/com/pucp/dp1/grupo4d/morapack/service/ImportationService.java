@@ -43,7 +43,10 @@ public class ImportationService {
     @Transactional
     public <T> void batchSave(List<T> entities, String progressDestination, String type) {
         for (int i = 0; i < entities.size(); i++) {
-            communicationService.enviar(progressDestination, new ProgressPayload(String.format("Guardando %s", type), i + 1, entities.size()));
+            // Se avisa cada 25 registros (y el último) para no saturar el WebSocket
+            if (i % 25 == 0 || i == entities.size() - 1) {
+                communicationService.enviar(progressDestination, new ProgressPayload(String.format("Guardando %s", type), i + 1, entities.size()));
+            }
             em.persist(entities.get(i));
         }
         em.flush();
