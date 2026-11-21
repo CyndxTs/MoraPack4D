@@ -900,31 +900,12 @@ export function SimulationLoadingOverlay({ text = "Cargando..." }) {
 //NOTIFICACIONES
 export function Notification({ type = "success", message = "", onClose }) {
   const config = {
-    success: {
-      title: "Éxito",
-      icon: successIcon,
-      bg: "#E7FFEC",
-      color: "#008027",
-    },
-    danger: {
-      title: "Error",
-      icon: dangerIcon,
-      bg: "#FFE7E9",
-      color: "#AA000E",
-    },
-    info: {
-      title: "Información",
-      icon: infoIcon,
-      bg: "#E6F4FF",
-      color: "#00448D",
-    },
-    warning: {
-      title: "Cuidado",
-      icon: careIcon,
-      bg: "#FFF5E7",
-      color: "#B26000",
-    },
+    success: { title: "Éxito", icon: successIcon, bg: "#0D2620", color: "#5FE3A1" },
+    danger: { title: "Error", icon: dangerIcon, bg: "#2A1020", color: "#FF8A95" },
+    info: { title: "Información", icon: infoIcon, bg: "#0E1F3D", color: "#8FD0FF" },
+    warning: { title: "Cuidado", icon: careIcon, bg: "#2A2010", color: "#FFC864" },
   };
+
 
   const { title, icon, bg, color } = config[type] || config.info;
 
@@ -933,7 +914,8 @@ export function Notification({ type = "success", message = "", onClose }) {
       className="notification"
       style={{
         backgroundColor: bg,
-        border: `1px solid ${color}`,
+        border: `1px solid ${color}55`,
+        boxShadow: "0 18px 40px -18px rgba(0,0,0,0.7)",
         color,
       }}
     >

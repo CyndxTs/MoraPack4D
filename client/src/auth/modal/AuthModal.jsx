@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import * as api from "../../api/auth";
 import { useAuth } from "../AuthContext";
@@ -8,7 +8,9 @@ import GoogleButton from "./GoogleButton";
 import { GOOGLE_CLIENT_ID } from "../../config";
 import CodigoInput from "./CodigoInput";
 import { Campo, SelectPais } from "./Campo";
-import logo from "../../assets/images/mora.png";
+import { LogoMark } from "../../components/Brand/Logo";
+
+const Globo = lazy(() => import("../../components/Globo/Globo"));
 import "./authModal.scss";
 
 // Roles que pueden ver una ruta (para decidir si quedarse en la página tras iniciar sesión)
@@ -34,7 +36,7 @@ const TITULOS = {
   registro: ["Crea tu cuenta", "Registra tus datos para enviar y seguir tus paquetes."],
   codigo: ["Revisa tu correo", ""],
   olvido: ["Recupera tu contraseña", "Te enviaremos un código de 6 dígitos a tu correo."],
-  google: ["Completa tus datos", "Es la primera vez que ingresas con Google."],
+  google: ["Un último paso", "Es la primera vez que ingresas con Google. Elige tu país para crear tu cuenta."],
 };
 
 export default function AuthModal() {
@@ -63,6 +65,7 @@ function Modal({ modal, cerrar, abrir, login, completarIngreso }) {
   const [codigo, setCodigo] = useState("");
   const [proposito, setProposito] = useState("REGISTRO");
   const [credencialGoogle, setCredencialGoogle] = useState(null);
+  const [aceptaTerminos, setAceptaTerminos] = useState(false);
   const [reenvio, setReenvio] = useCuentaRegresiva(0);
   const panelRef = useRef(null);
 
@@ -124,7 +127,7 @@ function Modal({ modal, cerrar, abrir, login, completarIngreso }) {
       setCredencialGoogle(credencial);
       setCorreo(r.correo ?? r.usuario?.correo ?? "");
       setNombres(r.usuario?.nombres ?? "");
-      setApellidos(r.usuario?.apellidos ?? "");
+      setAceptaTerminos(false);
       irA("google");
       return;
     }
@@ -134,14 +137,14 @@ function Modal({ modal, cerrar, abrir, login, completarIngreso }) {
 
   const completarGoogle = (e) => {
     e.preventDefault();
-    conGoogle(credencialGoogle, { nombres, apellidos, pais });
+    conGoogle(credencialGoogle, { pais, aceptaTerminos });
   };
 
   const registrarse = (e) => {
     e.preventDefault();
     if (contrasenia !== confirmacion) { setError("Las contraseñas no coinciden."); return; }
     ejecutar(async () => {
-      const r = await api.registrar({ nombres, apellidos, correo, contrasenia, confirmacion, pais });
+      const r = await api.registrar({ nombres, apellidos, correo, contrasenia, confirmacion, pais, aceptaTerminos });
       setCorreo(r.correo ?? correo);
       setProposito("REGISTRO");
       setCodigo("");
@@ -195,15 +198,25 @@ function Modal({ modal, cerrar, abrir, login, completarIngreso }) {
     ? <>Enviamos un código de 6 dígitos a <strong>{correo}</strong>. Ingrésalo para crear tu cuenta.</>
     : <>Si <strong>{correo}</strong> tiene una cuenta, recibirás un código. Ingrésalo junto con tu nueva contraseña.</>;
 
-  const registroIncompleto = !nombres.trim() || !apellidos.trim() || !correo.trim() || !pais || contrasenia.length < 8 || !confirmacion;
+  const registroIncompleto = !nombres.trim() || !correo.trim() || !pais || contrasenia.length < 8 || !confirmacion || !aceptaTerminos;
+
+  const terminos = (
+    <label className="auth-check">
+      <input type="checkbox" checked={aceptaTerminos} onChange={(e) => setAceptaTerminos(e.target.checked)} disabled={enviando} />
+      <span>Acepto los <a href="/terminos" target="_blank" rel="noreferrer">Términos y condiciones</a> y la <a href="/privacidad" target="_blank" rel="noreferrer">Política de privacidad</a>.</span>
+    </label>
+  );
 
   return (
     <div className="auth-overlay" role="presentation" onMouseDown={(e) => { if (e.target === e.currentTarget && !enviando) cerrar(); }}>
+      {location.pathname !== "/" && (
+        <div className="auth-globo" aria-hidden="true"><Suspense fallback={null}><Globo /></Suspense></div>
+      )}
       <div className="auth-panel" role="dialog" aria-modal="true" aria-labelledby="auth-titulo" ref={panelRef}>
         <button type="button" className="auth-cerrar" onClick={cerrar} aria-label="Cerrar" disabled={enviando}>✕</button>
 
         <header className="auth-header">
-          <img src={logo} alt="" className="auth-logo" />
+          <LogoMark size={46} className="auth-logo" />
           <h2 id="auth-titulo">{titulo}</h2>
           <p>{vista === "codigo" ? subtituloCodigo : subtitulo}</p>
         </header>
@@ -230,7 +243,7 @@ function Modal({ modal, cerrar, abrir, login, completarIngreso }) {
             <form onSubmit={registrarse} noValidate>
               <div className="auth-fila">
                 <Campo label="Nombres" value={nombres} onChange={setNombres} autoComplete="given-name" autoFocus disabled={enviando} />
-                <Campo label="Apellidos" value={apellidos} onChange={setApellidos} autoComplete="family-name" disabled={enviando} />
+                <Campo label="Apellidos (opcional)" value={apellidos} onChange={setApellidos} autoComplete="family-name" disabled={enviando} />
               </div>
               <Campo label="Correo" type="email" value={correo} onChange={setCorreo} autoComplete="email" disabled={enviando} />
               <SelectPais value={pais} onChange={setPais} paises={paises} disabled={enviando} />
@@ -238,13 +251,13 @@ function Modal({ modal, cerrar, abrir, login, completarIngreso }) {
                 <Campo label="Contraseña" type="password" value={contrasenia} onChange={setContrasenia} autoComplete="new-password" disabled={enviando} hint="Mínimo 8 caracteres" />
                 <Campo label="Repite la contraseña" type="password" value={confirmacion} onChange={setConfirmacion} autoComplete="new-password" disabled={enviando} />
               </div>
+              {terminos}
               {error && <p className="auth-msg auth-msg--error" role="alert">{error}</p>}
               <button type="submit" className="auth-primario" disabled={enviando || registroIncompleto}>
                 {enviando ? "Enviando código..." : "Crear cuenta"}
               </button>
               {GOOGLE_CLIENT_ID && <div className="auth-separador"><span>o</span></div>}
               <GoogleButton texto="signup_with" onCredencial={(c) => conGoogle(c)} />
-              <p className="auth-legal">Al registrarte aceptas los <a href="/terminos" target="_blank" rel="noreferrer">Términos</a> y la <a href="/privacidad" target="_blank" rel="noreferrer">Política de privacidad</a>.</p>
               <p className="auth-pie">¿Ya tienes cuenta? <button type="button" className="auth-link" onClick={() => irA("login")}>Inicia sesión</button></p>
             </form>
           )}
@@ -285,14 +298,14 @@ function Modal({ modal, cerrar, abrir, login, completarIngreso }) {
 
           {vista === "google" && (
             <form onSubmit={completarGoogle} noValidate>
-              <Campo label="Correo" type="email" value={correo} onChange={() => {}} disabled />
-              <div className="auth-fila">
-                <Campo label="Nombres" value={nombres} onChange={setNombres} autoComplete="given-name" disabled={enviando} />
-                <Campo label="Apellidos" value={apellidos} onChange={setApellidos} autoComplete="family-name" autoFocus={!apellidos} disabled={enviando} />
+              <div className="auth-cuenta-google">
+                <span className="auth-cuenta-google__avatar" aria-hidden="true">{(nombres?.[0] ?? correo?.[0] ?? "?").toUpperCase()}</span>
+                <div><strong>{nombres}</strong><small>{correo}</small></div>
               </div>
               <SelectPais value={pais} onChange={setPais} paises={paises} disabled={enviando} />
+              {terminos}
               {error && <p className="auth-msg auth-msg--error" role="alert">{error}</p>}
-              <button type="submit" className="auth-primario" disabled={enviando || !nombres.trim() || !apellidos.trim() || !pais}>
+              <button type="submit" className="auth-primario" disabled={enviando || !pais || !aceptaTerminos}>
                 {enviando ? "Creando cuenta..." : "Crear mi cuenta"}
               </button>
               <p className="auth-pie"><button type="button" className="auth-link auth-link--tenue" onClick={() => abrir("login")}>Cancelar</button></p>

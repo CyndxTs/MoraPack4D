@@ -100,10 +100,11 @@ public class AuthService {
     // ---------- Registro (solo CLIENTE) ----------
     public AuthenticationResponse registrar(SignUpRequest request) {
         String nombres = UsuarioService.validarNombre(request.getNombres(), "nombres");
-        String apellidos = UsuarioService.validarNombre(request.getApellidos(), "apellidos");
+        String apellidos = UsuarioService.validarNombreOpcional(request.getApellidos(), "apellidos");
         String correo = UsuarioService.validarCorreo(request.getCorreo());
         UsuarioService.validarContrasenia(request.getContrasenia(), request.getConfirmacion());
         if (G4DUtility.Convertor.toAdmissible(request.getPais()) == null) throw new G4DException("Selecciona tu país.");
+        if (!Boolean.TRUE.equals(request.getAceptaTerminos())) throw new G4DException("Debes aceptar los términos y la política de privacidad.");
         PaisEntity pais = paisService.obtenerParaUsuario(request.getPais());
         if (usuarioService.existsByCorreo(correo)) throw new G4DException("Ese correo ya tiene una cuenta. Inicia sesión o recupera tu contraseña.");
         String hash = G4DSecurity.hashear(request.getContrasenia());
@@ -184,21 +185,23 @@ public class AuthService {
         String correo = UsuarioService.normalizarCorreo(cuenta.correo());
         UsuarioEntity existente = usuarioService.findByCorreo(correo).orElse(null);
         if (existente != null) return this.abrirSesion(existente, dispositivo, "Sesión iniciada con Google!");
-        String nombres = G4DUtility.Convertor.toAdmissible(request.getNombres(), cuenta.nombres());
-        String apellidos = G4DUtility.Convertor.toAdmissible(request.getApellidos(), cuenta.apellidos());
+        // Cuenta nueva: Google da nombres (y quizá apellidos). Solo se pide país + aceptar términos; la cuenta se crea al confirmar.
+        String nombres = G4DUtility.Convertor.toAdmissible(cuenta.nombres(), correo.substring(0, correo.indexOf('@')));
+        String apellidos = cuenta.apellidos();
         String pais = G4DUtility.Convertor.toAdmissible(request.getPais());
-        if (G4DUtility.Convertor.toAdmissible(nombres) == null || G4DUtility.Convertor.toAdmissible(apellidos) == null || pais == null) {
+        if (pais == null || !Boolean.TRUE.equals(request.getAceptaTerminos())) {
             UsuarioDTO parcial = new UsuarioDTO();
             parcial.setCorreo(correo);
             parcial.setNombres(nombres);
             parcial.setApellidos(apellidos);
-            AuthenticationResponse response = new AuthenticationResponse(true, "Completa tus datos para crear tu cuenta.", parcial);
+            AuthenticationResponse response = new AuthenticationResponse(true, "Elige tu país para crear tu cuenta.", parcial);
             response.setRequiereDatos(true);
             response.setCorreo(correo);
             return response;
         }
-        UsuarioEntity usuario = usuarioService.crear(UsuarioService.validarNombre(nombres, "nombres"), UsuarioService.validarNombre(apellidos, "apellidos"),
-                correo, null, paisService.obtenerParaUsuario(pais), TipoUsuario.CLIENTE);
+        String n = (nombres.length() > 60) ? nombres.substring(0, 60) : nombres;
+        String a = (apellidos != null && apellidos.length() > 60) ? apellidos.substring(0, 60) : apellidos;
+        UsuarioEntity usuario = usuarioService.crear(n, a, correo, null, paisService.obtenerParaUsuario(pais), TipoUsuario.CLIENTE);
         return this.abrirSesion(usuario, dispositivo, "¡Cuenta creada con Google! Bienvenido a MoraPack4D.");
     }
 
@@ -216,7 +219,7 @@ public class AuthService {
     public AuthenticationResponse actualizarPerfil(ProfileUpdateRequest request) {
         UsuarioEntity usuario = this.usuarioActual();
         usuario.setNombres(UsuarioService.validarNombre(request.getNombres(), "nombres"));
-        usuario.setApellidos(UsuarioService.validarNombre(request.getApellidos(), "apellidos"));
+        usuario.setApellidos(UsuarioService.validarNombreOpcional(request.getApellidos(), "apellidos"));
         if (G4DUtility.Convertor.toAdmissible(request.getPais()) == null) throw new G4DException("Selecciona tu país.");
         usuario.setPais(paisService.obtenerParaUsuario(request.getPais()));
         usuarioService.save(usuario);

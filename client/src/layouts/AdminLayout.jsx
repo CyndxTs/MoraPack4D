@@ -8,15 +8,6 @@ const ITEMS = [
   { to: "/admin", label: "Parámetros", end: true },
   { to: "/admin/ubicaciones", label: "Países y continentes" },
   { to: "/admin/aeropuertos", label: "Aeropuertos y sedes" },
-  {
-    label: "Trabajador",
-    children: [
-      { to: "/trabajador", label: "Operación", end: true },
-      { to: "/trabajador/simulacion", label: "Simulación" },
-      { to: "/trabajador/pedidos", label: "Pedidos" },
-      { to: "/trabajador/planes", label: "Planes y eventos" },
-    ],
-  },
 ];
 
 export default function AdminLayout() {

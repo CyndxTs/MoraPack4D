@@ -35,7 +35,7 @@ public class UsuarioEntity {
     @Column(nullable = false, length = 60)
     private String nombres;
 
-    @Column(nullable = false, length = 60)
+    @Column(length = 60)
     private String apellidos;
 
     @Column(nullable = false, unique = true, length = 80)
@@ -61,7 +61,7 @@ public class UsuarioEntity {
     }
 
     public String getNombreCompleto() {
-        return String.format("%s %s", nombres, apellidos).trim();
+        return (apellidos != null && !apellidos.isBlank()) ? String.format("%s %s", nombres, apellidos).trim() : nombres;
     }
 
     @Override

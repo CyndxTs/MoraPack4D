@@ -1,0 +1,36 @@
+// Red de MoraPack: las 3 sedes y los aeropuertos del archivo del curso (solo para la portada y el globo).
+// Las pantallas de operación usan el catálogo real del server.
+export const AEROPUERTOS = [
+  { codigo: "SKBO", ciudad: "Bogota", pais: "Colombia", lat: 4.701, lon: -74.147, continente: "america" },
+  { codigo: "SEQM", ciudad: "Quito", pais: "Ecuador", lat: 0.113, lon: -78.359, continente: "america" },
+  { codigo: "SVMI", ciudad: "Caracas", pais: "Venezuela", lat: 10.603, lon: -66.991, continente: "america" },
+  { codigo: "SBBR", ciudad: "Brasilia", pais: "Brasil", lat: -15.865, lon: -47.918, continente: "america" },
+  { codigo: "SPIM", ciudad: "Lima", pais: "Perú", lat: -12.022, lon: -77.114, continente: "america", sede: true },
+  { codigo: "SLLP", ciudad: "La Paz", pais: "Bolivia", lat: -16.513, lon: -68.192, continente: "america" },
+  { codigo: "SCEL", ciudad: "Santiago de Chile", pais: "Chile", lat: -33.396, lon: -70.795, continente: "america" },
+  { codigo: "SABE", ciudad: "Buenos Aires", pais: "Argentina", lat: -34.559, lon: -58.416, continente: "america" },
+  { codigo: "SGAS", ciudad: "Asunción", pais: "Paraguay", lat: -25.240, lon: -57.520, continente: "america" },
+  { codigo: "SUAA", ciudad: "Motenvideo", pais: "Uruguay", lat: -34.789, lon: -56.265, continente: "america" },
+  { codigo: "LATI", ciudad: "Tirana", pais: "Albania", lat: 41.415, lon: 19.721, continente: "europa" },
+  { codigo: "EDDI", ciudad: "Berlin", pais: "Alemania", lat: 52.474, lon: 13.402, continente: "europa" },
+  { codigo: "LOWW", ciudad: "Viena", pais: "Austria", lat: 48.111, lon: 16.571, continente: "europa" },
+  { codigo: "EBCI", ciudad: "Bruselas", pais: "Belgica", lat: 50.459, lon: 4.454, continente: "europa", sede: true },
+  { codigo: "UMMS", ciudad: "Minsk", pais: "Bielorrusia", lat: 53.883, lon: 28.032, continente: "europa" },
+  { codigo: "LBSF", ciudad: "Sofia", pais: "Bulgaria", lat: 42.690, lon: 23.405, continente: "europa" },
+  { codigo: "LKPR", ciudad: "Praga", pais: "Checa", lat: 50.101, lon: 14.266, continente: "europa" },
+  { codigo: "LDZA", ciudad: "Zagreb", pais: "Croacia", lat: 45.743, lon: 16.069, continente: "europa" },
+  { codigo: "EKCH", ciudad: "Copenhague", pais: "Dinamarca", lat: 55.618, lon: 12.656, continente: "europa" },
+  { codigo: "EHAM", ciudad: "Amsterdam", pais: "Holanda", lat: 52.300, lon: 4.765, continente: "europa" },
+  { codigo: "VIDP", ciudad: "Delhi", pais: "India", lat: 28.566, lon: 77.103, continente: "asia" },
+  { codigo: "OSDI", ciudad: "Damasco", pais: "Siria", lat: 33.411, lon: 36.516, continente: "asia" },
+  { codigo: "OERK", ciudad: "Riad", pais: "Arabia Saudita", lat: 24.958, lon: 46.699, continente: "asia" },
+  { codigo: "OMDB", ciudad: "Dubai", pais: "Emiratos A.U", lat: 25.253, lon: 55.364, continente: "asia" },
+  { codigo: "OAKB", ciudad: "Kabul", pais: "Afganistan", lat: 34.566, lon: 69.211, continente: "asia" },
+  { codigo: "OOMS", ciudad: "Mascate", pais: "Oman", lat: 23.589, lon: 58.284, continente: "asia" },
+  { codigo: "OYSN", ciudad: "Sana", pais: "Yemen", lat: 15.476, lon: 44.220, continente: "asia" },
+  { codigo: "OPKC", ciudad: "Karachi", pais: "Pakistan", lat: 24.900, lon: 67.150, continente: "asia" },
+  { codigo: "UBBB", ciudad: "Baku", pais: "Azerbaiyan", lat: 40.467, lon: 50.047, continente: "asia", sede: true },
+  { codigo: "OJAI", ciudad: "Aman", pais: "Jordania", lat: 31.722, lon: 35.993, continente: "asia" },
+];
+
+export const SEDES = AEROPUERTOS.filter((a) => a.sede);

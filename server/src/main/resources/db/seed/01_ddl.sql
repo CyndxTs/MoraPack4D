@@ -55,13 +55,14 @@ CREATE TABLE `PAIS` (
 --  - codigo     : CLIENTE '0000001' (7 dígitos) | TRABAJADOR 'TRA0001' | ADMINISTRADOR 'ADM0001'.
 --                 Al cambiar de rol se reasigna con el siguiente código libre del rol destino.
 --  - contrasenia: NULL si la cuenta se creó con Google y aún no definió una contraseña.
+--  - apellidos  : opcional (se completa en "Mi cuenta").
 -- -----------------------------------------------------
 CREATE TABLE `USUARIO` (
   `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
   `codigo` VARCHAR(20) NOT NULL,
   `rol` ENUM('CLIENTE', 'TRABAJADOR', 'ADMINISTRADOR') NOT NULL DEFAULT 'CLIENTE',
   `nombres` VARCHAR(60) NOT NULL,
-  `apellidos` VARCHAR(60) NOT NULL,
+  `apellidos` VARCHAR(60) NULL DEFAULT NULL,
   `correo` VARCHAR(80) NOT NULL,
   `contrasenia` VARCHAR(255) NULL DEFAULT NULL,
   `estado` ENUM('ONLINE', 'OFFLINE', 'DISABLED') NOT NULL DEFAULT 'OFFLINE',

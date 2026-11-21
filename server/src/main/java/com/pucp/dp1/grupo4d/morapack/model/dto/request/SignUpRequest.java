@@ -16,4 +16,5 @@ public class SignUpRequest {
     private String contrasenia;
     private String confirmacion;
     private String pais;
+    private Boolean aceptaTerminos;
 }

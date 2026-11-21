@@ -5,7 +5,7 @@ import planeIconImg from "../assets/icons/planeMora.svg";
 
 // Los íconos se cachean: crear un L.divIcon por avión en cada tick era muy costoso
 
-export const HUB_COLORS = ["#3b82f6", "#10b981", "#8b5cf6", "#f59e0b", "#06b6d4", "#d946ef", "#6366f1", "#84cc16", "#ec4899", "#14b8a6"];
+export const HUB_COLORS = ["#78C6FF", "#39D98A", "#FFB547", "#FF8FA3", "#5EEAD4", "#F9E27D", "#9FB4FF", "#B7F171", "#FF9F6B", "#7DE3FF"];
 
 const FILTRO = {
   verde: "invert(54%) sepia(81%) saturate(356%) hue-rotate(85deg) brightness(78%) contrast(115%)",
@@ -22,10 +22,11 @@ function nivelDeAvion(capacity, maxCapacity) {
   return "rojo";
 }
 
+// En el mapa oscuro los aeropuertos usan los mismos tonos vivos que los aviones, con un halo para separarlos del fondo
 const FILTRO_AEROPUERTO = {
-  verde: "invert(38%) sepia(77%) saturate(510%) hue-rotate(85deg) brightness(55%) contrast(120%)",
-  amarillo: "invert(74%) sepia(94%) saturate(750%) hue-rotate(2deg) brightness(60%) contrast(125%)",
-  rojo: "invert(26%) sepia(88%) saturate(900%) hue-rotate(350deg) brightness(55%) contrast(130%)",
+  verde: `${"invert(54%) sepia(81%) saturate(356%) hue-rotate(85deg) brightness(95%) contrast(115%)"} drop-shadow(0 0 3px rgba(6,11,26,0.9))`,
+  amarillo: `${"invert(80%) sepia(72%) saturate(657%) hue-rotate(3deg) brightness(100%) contrast(118%)"} drop-shadow(0 0 3px rgba(6,11,26,0.9))`,
+  rojo: `${"invert(37%) sepia(79%) saturate(844%) hue-rotate(338deg) brightness(100%) contrast(120%)"} drop-shadow(0 0 3px rgba(6,11,26,0.9))`,
 };
 
 function nivelDeAeropuerto(ocupacion) {

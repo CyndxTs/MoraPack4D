@@ -1,152 +1,175 @@
-// Estilos específicos de la página Home
+.portada { background: var(--abismo); overflow-x: clip; }
 
-.home-page {
-  // Banner principal
-  #main-banner {
-    margin-bottom: 0;
-
-    img {
-      width: 100%;
-      display: block;
-    }
-  }
-
-  // Sección Nosotros
-  #nosotros {
-    background-color: var(--color-blanco);
-    text-align: justify;
-
-    h2 {
-      color: var(--color-negro);
-      margin-bottom: 20px;
-    }
-
-    p {
-      color: var(--color-negro);
-    }
-  }
-
-  // Sección Impacto (aside)
-  #impacto {
-    background-image: url('../../../assets/images/planeMora.png');
-    background-size: cover;
-    background-position: left 25%;
-    background-attachment: fixed;
-    text-align: right;
-    color: var(--color-background);
-
-    .display-1 {
-      text-shadow: 3px 3px #000000;
-      line-height: 1em;
-    }
-
-    .texto-importante {
-      color: var(--color-gold);
-    }
-  }
-
-  // Sección Sedes
-  #sedes {
-    background-color: var(--color-blanco);
-    text-align: left;
-
-    h2 {
-      color: var(--color-dark-negro);
-      margin-bottom: 40px;
-    }
-
-    img {
-      width: 100%;
-      height: 250px;
-      object-fit: cover;
-    }
-
-    h3 {
-      text-transform: uppercase;
-      margin-top: 10px;
-      color: var(--color-negro);
-    }
-  }
-
-  // Sección Empresa
-  #empresa {
-    background-color: var(--color-background);
-
-    .col {
-      p {
-        color: var(--color-negro);
-      }
-
-      img {
-        width: 100%;
-        height: 102%;
-        object-fit: cover;
-      }
-    }
-  }
-
-  // Sección Historia
-  #historia {
-    background-color: var(--color-blanco);
-  }
-
-  // Sección Equipo
-  #equipo {
-    background-color: var(--color-background);
-    text-align: center;
-
-    h2 {
-      color: var(--color-negro);
-      margin-bottom: 40px;
-    }
-
-    h3 {
-      color: var(--color-negro);
-      font-size: 18px;
-      font-weight: 700;
-    }
-  }
-    h2 {
-       text-transform: none !important;
-    }
-}
-
-
-/* Llamado a la acción sobre el banner */
-#main-banner { position: relative; }
-.banner-cta {
-  position: absolute;
-  left: 50%;
-  bottom: 32px;
-  transform: translateX(-50%);
+// ---------- Hero: el globo es el protagonista ----------
+.hero {
+  position: relative;
+  min-height: max(640px, 100svh);
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  justify-content: center;
+  padding: calc(var(--nav-height) + 32px) 0 0;
+  isolation: isolate;
+  background:
+    radial-gradient(900px 600px at 72% 45%, rgba(40, 90, 200, 0.22), transparent 70%),
+    var(--abismo);
+
+  &__globo {
+    position: absolute;
+    z-index: -1;
+    top: 52%;
+    left: 72%;
+    width: min(860px, 66vw);
+    aspect-ratio: 1;
+    transform: translate(-50%, -50%);
+    animation: globo-entrada 1400ms var(--ease-out) both;
+  }
+
+  &__contenido { width: 100%; }
+  &__titulo {
+    max-width: 13ch;
+    font-size: clamp(2.6rem, 6vw, 5.4rem);
+    text-shadow: 0 2px 30px rgba(6, 11, 26, 0.8);
+    animation: hero-entrada 700ms var(--ease-out) both;
+  }
+  &__texto {
+    max-width: 46ch;
+    margin: 22px 0 30px;
+    font-size: clamp(1rem, 1.3vw, 1.15rem);
+    color: var(--tinta-2);
+    text-shadow: 0 1px 16px rgba(6, 11, 26, 0.9);
+    animation: hero-entrada 700ms 90ms var(--ease-out) both;
+  }
+  &__acciones { display: flex; gap: 12px; flex-wrap: wrap; animation: hero-entrada 700ms 160ms var(--ease-out) both; }
+
+  &__plazos {
+    dt, dd { text-shadow: 0 1px 12px rgba(6, 11, 26, 0.9); }
+    display: flex; gap: 36px; flex-wrap: wrap; margin: 40px 0 0;
+    animation: hero-entrada 700ms 230ms var(--ease-out) both;
+    div { display: flex; flex-direction: column-reverse; gap: 2px; }
+    dt { font-size: 0.82rem; color: var(--tinta-3); }
+    dd { margin: 0; font-size: 1.25rem; font-weight: 700; font-variation-settings: "wdth" 115; color: var(--ambar); }
+  }
+}
+
+// Tablero de salidas con las sedes
+.tablero {
+  align-self: flex-end;
+  margin: 56px 24px 32px auto;
+  width: min(420px, calc(100% - 48px));
+  border: 1px solid var(--trazo);
+  border-radius: var(--radio);
+  background: rgba(8, 15, 36, 0.78);
+  backdrop-filter: blur(8px);
+  overflow: hidden;
+  animation: hero-entrada 700ms 320ms var(--ease-out) both;
+
+  &__fila {
+    display: grid;
+    grid-template-columns: 78px 1fr auto;
+    align-items: center;
+    gap: 12px;
+    padding: 11px 16px;
+    font-variant-numeric: tabular-nums;
+    & + & { border-top: 1px solid var(--trazo-suave); }
+  }
+  &__codigo { font-weight: 800; font-variation-settings: "wdth" 125; letter-spacing: 0.04em; color: var(--ambar); }
+  &__ciudad { font-weight: 600; }
+  &__estado { font-size: 0.8rem; color: var(--cielo); }
+}
+
+@keyframes hero-entrada { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+@keyframes globo-entrada { from { opacity: 0; transform: translate(-50%, -48%) scale(0.94); } to { opacity: 1; transform: translate(-50%, -50%); } }
+
+// ---------- Secciones ----------
+.seccion {
+  padding: 112px 0;
+  &__cabecera {
+    max-width: 640px;
+    margin-bottom: 48px;
+    p { margin: 14px 0 0; color: var(--tinta-2); font-size: 1.05rem; }
+  }
+}
+
+.sedes__grilla {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  grid-template-rows: repeat(2, minmax(220px, 1fr));
   gap: 16px;
-  background: rgba(20, 33, 61, 0.85);
-  padding: 12px 20px;
-  border-radius: 999px;
-  color: var(--color-blanco);
-  font-weight: 600;
-  font-size: 0.95rem;
-  white-space: nowrap;
 }
-.cta-btn {
-  background: var(--color-gold);
-  color: var(--color-dark-blue);
-  font-weight: 800;
-  padding: 8px 18px;
-  border-radius: 999px;
-  text-transform: uppercase;
-  font-size: 0.85rem;
-  &:hover { color: var(--color-dark-blue); text-decoration: none; filter: brightness(1.1); }
+.sede {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radio-l);
+  border: 1px solid var(--trazo-suave);
+  background: var(--marino);
+  &--principal { grid-row: span 2; }
+  img { width: 100%; height: 100%; object-fit: cover; transition: transform 500ms var(--ease-out); }
+  &:hover img { transform: scale(1.03); }
+  figcaption {
+    position: absolute; inset: auto 0 0 0;
+    display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
+    padding: 48px 20px 18px;
+    background: linear-gradient(transparent, rgba(6, 11, 26, 0.92));
+    strong { font-size: 1.35rem; font-variation-settings: "wdth" 115; }
+    span { color: var(--tinta-2); }
+  }
+  &__codigo { margin-left: auto; font-weight: 800; color: var(--ambar) !important; letter-spacing: 0.04em; }
 }
-@media (max-width: 700px) {
-  .banner-cta { flex-direction: column; border-radius: 14px; white-space: normal; text-align: center; bottom: 12px; }
+
+.proceso {
+  border-top: 1px solid var(--trazo-suave);
+  &__ruta {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 40px;
+    margin: 0; padding: 0; list-style: none;
+    // La ruta que une los pasos
+    &::before {
+      content: "";
+      position: absolute; top: 21px; left: 22px; right: 22px;
+      border-top: 2px dashed rgba(255, 181, 71, 0.45);
+    }
+  }
+  &__paso {
+    position: relative;
+    h3 { margin: 22px 0 8px; font-size: 1.25rem; }
+    p { margin: 0; color: var(--tinta-2); max-width: 34ch; }
+  }
+  &__nodo {
+    position: relative;
+    display: grid; place-items: center;
+    width: 44px; height: 44px; border-radius: 50%;
+    font-weight: 800; color: #061026; background: var(--ambar);
+    box-shadow: 0 0 0 6px var(--abismo);
+  }
+  &__cta { margin-top: 56px; }
 }
-button.cta-btn { border: 0; cursor: pointer; font-family: inherit; }
-.cta-btn--sec {
-  background: transparent;
-  color: var(--color-blanco);
-  box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, 0.7);
-  &:hover { color: var(--color-blanco); }
+
+.empresa {
+  &__fila { display: grid; grid-template-columns: 1fr 1fr; gap: 64px; align-items: center; }
+  &__texto { h2 { margin-bottom: 20px; } p { color: var(--tinta-2); max-width: 60ch; } }
+  &__foto img { width: 100%; border-radius: var(--radio-l); border: 1px solid var(--trazo-suave); }
+}
+
+.equipo {
+  padding-top: 72px;
+  &__lista {
+    display: flex; flex-wrap: wrap; gap: 12px 40px;
+    margin: 24px 0 0; padding: 0; list-style: none;
+    li { font-size: 1.1rem; font-weight: 600; }
+  }
+}
+
+@media (max-width: 960px) {
+  .hero {
+    justify-content: flex-start;
+    &__globo { top: auto; bottom: 120px; left: 50%; width: 130vw; transform: translate(-50%, 0); opacity: 0.55; animation: none; }
+  }
+  .tablero { margin: 48px auto 24px; }
+  .sedes__grilla { grid-template-columns: 1fr; grid-template-rows: none; .sede { height: 260px; } .sede--principal { grid-row: auto; } }
+  .proceso__ruta { grid-template-columns: 1fr; gap: 32px; &::before { top: 22px; bottom: 22px; left: 21px; right: auto; border-top: 0; border-left: 2px dashed rgba(255, 181, 71, 0.45); } }
+  .proceso__paso { padding-left: 64px; .proceso__nodo { position: absolute; left: 0; top: 0; } h3 { margin-top: 8px; } }
+  .empresa__fila { grid-template-columns: 1fr; gap: 32px; }
+  .seccion { padding: 80px 0; }
 }

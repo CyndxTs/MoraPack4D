@@ -20,7 +20,6 @@ Variables (en `.env.local`, que no se sube; en Render, en el static site):
 |---|---|
 | `VITE_API_URL` | URL del server (vacía en desarrollo: Vite redirige `/api` y `/ws`) |
 | `VITE_GOOGLE_CLIENT_ID` | Client ID de Google (sin valor no aparece el botón de Google) |
-| `VITE_MAP_TILES_URL` | Opcional: mosaicos del mapa |
 
 ## Rutas
 

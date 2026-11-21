@@ -64,7 +64,7 @@ public class GestionUsuarioService {
 
     public AuthenticationResponse crear(UserCreateRequest request) {
         String nombres = UsuarioService.validarNombre(request.getNombres(), "nombres");
-        String apellidos = UsuarioService.validarNombre(request.getApellidos(), "apellidos");
+        String apellidos = UsuarioService.validarNombreOpcional(request.getApellidos(), "apellidos");
         String correo = UsuarioService.validarCorreo(request.getCorreo());
         UsuarioService.validarContrasenia(request.getContrasenia(), request.getConfirmacion());
         if (G4DUtility.Convertor.toAdmissible(request.getPais()) == null) throw new G4DException("Selecciona el país.");

@@ -14,4 +14,5 @@ public class GoogleSignInRequest {
     private String nombres;
     private String apellidos;
     private String pais;
+    private Boolean aceptaTerminos;
 }

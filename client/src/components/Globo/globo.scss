@@ -1,0 +1,13 @@
+.globo {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  touch-action: pan-y;
+  cursor: grab;
+  &:active { cursor: grabbing; }
+  canvas { display: block; width: 100% !important; height: 100% !important; }
+  // Sin WebGL: un halo estático en su lugar
+  &--sin-webgl {
+    background: radial-gradient(circle at 50% 50%, #12204A 0 34%, rgba(88, 150, 255, 0.18) 35%, transparent 52%);
+  }
+}

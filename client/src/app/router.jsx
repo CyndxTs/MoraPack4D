@@ -40,7 +40,7 @@ const router = createBrowserRouter([
           { path: "terminos", element: diferida(() => <Legal tipo="terminos" />) },
         ],
       },
-      // Trabajador (el administrador también entra)
+      // Trabajador
       {
         path: "/trabajador",
         element: <RequireRole roles={[ROLES.TRABAJADOR]}><TrabajadorLayout /></RequireRole>,

@@ -1,25 +1,26 @@
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap');
+// Archivo con eje de ancho: los titulares van expandidos (letrero de aeropuerto), el texto a ancho normal
+h1, h2, h3, h4 { color: var(--tinta); text-wrap: balance; }
 
 h1 {
-  font-size: 64px;
-  font-weight: 200;
-  letter-spacing: -3px;
+  font-size: clamp(2.4rem, 5.2vw, 4.6rem);
+  font-weight: 800;
+  font-variation-settings: "wdth" 118;
+  line-height: 1.02;
+  letter-spacing: -0.03em;
 }
 
 h2 {
-  font-size: 36px;
-  font-weight: 900;
-  letter-spacing: -2px;
-  text-transform: lowercase;
+  font-size: clamp(1.7rem, 3vw, 2.5rem);
+  font-weight: 750;
+  font-variation-settings: "wdth" 112;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
 }
 
 h3 {
-  font-size: 20px;
-  font-weight: 700;
-  text-transform: uppercase;
+  font-size: 1.15rem;
+  font-weight: 650;
+  line-height: 1.3;
 }
 
-h4 {
-  font-size: 32px;
-  font-weight: 900;
-}
+h4 { font-size: 1rem; font-weight: 650; }

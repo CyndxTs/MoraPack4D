@@ -1,0 +1,21 @@
+.logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--tinta);
+  &__texto {
+    font-family: var(--fuente);
+    font-variation-settings: "wdth" 125;
+    font-weight: 800;
+    font-size: 1.12rem;
+    letter-spacing: -0.01em;
+  }
+}
+
+.logo-mark {
+  flex: none;
+  overflow: visible;
+  &__orbita { stroke: var(--cielo); stroke-width: 3.2; }
+  &__orbita--atras { opacity: 0.42; }
+  &__flecha { stroke: var(--cielo); stroke-width: 3.2; fill: none; }
+}

@@ -6,7 +6,7 @@ import { formatUTC } from "../../../utils/fechas";
 import { formatPercent } from "../../../utils/format";
 import "./dashboard.scss";
 
-const COLOR_NIVEL = (ratio) => (ratio >= 0.8 ? "#ef4444" : ratio >= 0.5 ? "#eab308" : "#22c55e");
+const COLOR_NIVEL = (ratio) => (ratio >= 0.8 ? "#FF6B7A" : ratio >= 0.5 ? "#eab308" : "#22c55e");
 
 function Kpi({ label, value, hint, tono }) {
   return (
@@ -34,9 +34,9 @@ export default function DashboardModal({ escenario, nowMs, onClose }) {
   );
 
   const pedidos = [
-    { nombre: "En proceso", valor: vista.orders.enProceso.length, color: "#3b82f6" },
-    { nombre: "Entregados", valor: vista.orders.entregados.length, color: "#10b981" },
-    { nombre: "No atendidos", valor: escenario.noAtendidos.length, color: "#ef4444" },
+    { nombre: "En proceso", valor: vista.orders.enProceso.length, color: "#78C6FF" },
+    { nombre: "Entregados", valor: vista.orders.entregados.length, color: "#39D98A" },
+    { nombre: "No atendidos", valor: escenario.noAtendidos.length, color: "#FF6B7A" },
   ];
   const hayPedidos = pedidos.some((p) => p.valor > 0);
 

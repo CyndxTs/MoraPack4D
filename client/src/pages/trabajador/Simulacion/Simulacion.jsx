@@ -215,11 +215,11 @@ export default function Simulacion() {
         </div>
       </div>
       <ControlDivider />
-      <ControlRow label="Simulación (reloj UTC):" value={meta ? formatUTC(nowMs, true) : "—"} color="#1a73e8" />
+      <ControlRow label="Simulación (reloj UTC):" value={meta ? formatUTC(nowMs, true) : "—"} color="var(--cielo)" />
       <ControlRow label="Transcurrido (simulado):" value={meta ? formatDuration((nowMs - meta.inicioMs) / 1000) : "00h : 00m : 00s"} />
       <ControlRow label="Estado:" value={!meta ? "Sin simulación" : meta.terminada ? ESTADO_TEXTO[meta.terminada] ?? meta.terminada : meta.realInicioMs ? "En curso" : "Iniciando..."} />
       <ControlDivider />
-      <ControlRow label="Tiempo real (UTC):" value={formatUTC(Date.now(), true)} color="#666" />
+      <ControlRow label="Tiempo real (UTC):" value={formatUTC(Date.now(), true)} color="var(--tinta-3)" />
       <ControlRow label="Cronómetro (real):" value={meta?.realInicioMs ? formatDuration((nowMs - meta.inicioMs) / meta.multiplicador / 1000) : "00h : 00m : 00s"} />
     </ControlsDropdown>
   );
@@ -273,7 +273,7 @@ export default function Simulacion() {
               <h3 className="report-modal-title"><span>🚨</span> ¡COLAPSO LOGÍSTICO DETECTADO!</h3>
             </div>
             <div className="report-modal-body">
-              <div className="report-info-text" style={{ fontSize: "16px", color: "#333" }}>
+              <div className="report-info-text" style={{ fontSize: "16px", color: "var(--tinta)" }}>
                 <p>La simulación llegó a un estado en el que no puede cumplir con todos los pedidos ({escenario.noAtendidos.length} sin atender).</p>
                 <p><strong>¿Qué desea hacer?</strong></p>
                 {meta?.reporte

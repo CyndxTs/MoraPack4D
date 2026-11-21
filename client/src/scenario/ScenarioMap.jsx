@@ -1,10 +1,10 @@
 import React, { useEffect } from "react";
 import L from "leaflet";
-import { MapContainer, TileLayer, Marker, Polyline, Tooltip, useMapEvent } from "react-leaflet";
+import { MapContainer, Marker, Polyline, Tooltip, useMapEvent } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import { AirportTooltipContent, PlaneTooltipContent } from "./MapTooltips";
 import { airportIcon, planeIcon } from "./mapIcons";
-import { MAPA_TILES_ATRIBUCION, MAPA_TILES_URL } from "../config";
+import Basemap from "./Basemap";
 
 function ClickHandler({ onMapClick }) {
   useMapEvent("click", () => onMapClick());
@@ -47,8 +47,10 @@ export default function ScenarioMap({
       minZoom={2}
       maxBounds={[[-90, -180], [90, 180]]}
       worldCopyJump={false}
+      maxBoundsViscosity={0.8}
+      attributionControl={false}
     >
-      <TileLayer url={MAPA_TILES_URL} attribution={MAPA_TILES_ATRIBUCION} />
+      <Basemap />
 
       {airports.map((ap) => {
         const atenuado = (highlightedAirportCode && highlightedAirportCode !== ap.code) || hayResaltados;
@@ -83,7 +85,7 @@ export default function ScenarioMap({
       {mostrarVuelos && activeFlights.map((flight) => {
         if (!flight.position) return null;
         const resaltado = highlightedFlights.includes(flight.code);
-        const colorNormal = (flight.origin?.esSede && hubColorMap[flight.origin.code]) || "#eb6774";
+        const colorNormal = (flight.origin?.esSede && hubColorMap[flight.origin.code]) || "#FF8FA3";
         const abierto = openTooltip?.type === "flight" && openTooltip.code === flight.code;
         return (
           <React.Fragment key={flight.code}>
@@ -91,7 +93,7 @@ export default function ScenarioMap({
               positions={flight.remaining}
               interactive={false}
               pathOptions={{
-                color: !hayResaltados ? colorNormal : resaltado ? "#ff0019" : "#e5e7eb",
+                color: !hayResaltados ? colorNormal : resaltado ? "#FF6B7A" : "#3A4A70",
                 weight: resaltado ? 4 : 2,
                 opacity: !hayResaltados ? 0.8 : resaltado ? 1 : 0.03,
                 dashArray: "6, 10",

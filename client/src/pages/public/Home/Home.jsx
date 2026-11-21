@@ -1,127 +1,145 @@
-import React from 'react'
-import { Link } from 'react-router-dom'
-import { useAuth } from '../../../auth/AuthContext'
-import { RUTA_INICIO_POR_ROL } from '../../../auth/session'
-import './home.scss'
+import React, { lazy, Suspense } from "react";
+import { Link } from "react-router-dom";
+import { useAuth } from "../../../auth/AuthContext";
+import { RUTA_INICIO_POR_ROL } from "../../../auth/session";
+import { SEDES } from "../../../data/redMoraPack";
+import "./home.scss";
 
-import moraBanner from '../../../assets/images/moraBanner2.jpeg'
-import limaMora from '../../../assets/images/limaMora.png'
-import bruselasMora from '../../../assets/images/bruselasMora.webp'
-import arzeMora from '../../../assets/images/arzeMora.webp'
-import empresa from '../../../assets/images/empresa.png'
+import limaMora from "../../../assets/images/limaMora.png";
+import bruselasMora from "../../../assets/images/bruselasMora.webp";
+import arzeMora from "../../../assets/images/arzeMora.webp";
+import empresa from "../../../assets/images/empresa.png";
+
+const Globo = lazy(() => import("../../../components/Globo/Globo"));
+
+const FOTO_SEDE = { SPIM: limaMora, EBCI: bruselasMora, UBBB: arzeMora };
+const PAIS_SEDE = { SPIM: "Perú", EBCI: "Bélgica", UBBB: "Azerbaiyán" };
+const CIUDAD_SEDE = { SPIM: "Lima", EBCI: "Bruselas", UBBB: "Bakú" };
+const CONTINENTE_SEDE = { SPIM: "América", EBCI: "Europa", UBBB: "Asia" };
+
+const PASOS = [
+  ["Registras tu pedido", "Indicas el destino y la cantidad de paquetes. El pedido queda registrado al instante."],
+  ["Planificamos la ruta", "El planificador elige vuelos y escalas desde la sede más conveniente, dentro del plazo de entrega."],
+  ["Lo sigues en el mapa", "Ves cada vuelo en tiempo real y sabes cuándo tu carga llega a destino."],
+];
 
 export default function Home() {
-  const { usuario, abrirAuth } = useAuth()
+  const { usuario, abrirAuth } = useAuth();
+
   return (
-    <div className="home-page">
-      <figure id="main-banner">
-        <img src={moraBanner} alt="Banner MoraPack" className="img-fluid" />
-        <figcaption className="banner-cta">
-          {usuario ? (
-            <Link to={RUTA_INICIO_POR_ROL[usuario.tipoUsuario]} className="cta-btn">Ir a mi espacio</Link>
-          ) : (
-            <>
-              <span>Envía y sigue tus pedidos en tiempo real</span>
-              <button type="button" className="cta-btn" onClick={() => abrirAuth('login')}>Iniciar sesión</button>
-              <button type="button" className="cta-btn cta-btn--sec" onClick={() => abrirAuth('registro')}>Crear cuenta</button>
-            </>
-          )}
-        </figcaption>
-      </figure>
-
-      <section id="nosotros" className="padded">
-        <div className="container">
-          <h2>Nosotros</h2>
-          <p>
-            En MoraPack nos dedicamos a brindar soluciones logísticas innovadoras y confiables a través de nuestro producto estrella, el MPE.
-            Creemos que la puntualidad, la transparencia y la confianza son la base de cada entrega. Por eso, trabajamos día a día para ofrecer
-            a nuestros clientes un servicio eficiente, seguro y adaptable a sus necesidades.
-          </p>
+    <div className="portada">
+      <section className="hero" aria-labelledby="hero-titulo">
+        <div className="hero__globo">
+          <Suspense fallback={null}><Globo /></Suspense>
         </div>
-      </section>
-
-      <aside id="impacto" className="padded">
-        <div className="container">
-          <p className="display-1">
-            La innovación logística,<br />
-            <span className="texto-importante">MoraPack</span>, conecta continentes<br />
-            con su red global.<br />
-            Garantizamos <br />
-            <span className="texto-importante">entregas seguras y a tiempo</span><br />
-            con tecnología y confianza.
+        <div className="hero__contenido container">
+          <h1 id="hero-titulo" className="hero__titulo">Tu carga cruza continentes. Tú la ves volar.</h1>
+          <p className="hero__texto">
+            MoraPack lleva tus paquetes por vía aérea desde Lima, Bruselas y Bakú hacia 30 ciudades de América,
+            Europa y Asia, y te muestra cada vuelo en tiempo real.
           </p>
-        </div>
-      </aside>
-
-      <section id="sedes" className="padded">
-        <div className="container">
-          <h2>Sedes</h2>
-          <div className="row">
-            <article className="col">
-              <figure>
-                <img src={limaMora} alt="Lima" className="img-fluid" />
-              </figure>
-              <h3>Lima (Perú)</h3>
-            </article>
-            <article className="col">
-              <figure>
-                <img src={bruselasMora} alt="Bruselas" className="img-fluid" />
-              </figure>
-              <h3>Bruselas (Bélgica)</h3>
-            </article>
-            <article className="col">
-              <figure>
-                <img src={arzeMora} alt="Bakú" className="img-fluid" />
-              </figure>
-              <h3>Bakú (Azerbaiyán)</h3>
-            </article>
+          <div className="hero__acciones">
+            {usuario ? (
+              <Link to={RUTA_INICIO_POR_ROL[usuario.tipoUsuario]} className="boton boton--primario boton--grande">Ir a mi espacio</Link>
+            ) : (
+              <>
+                <button type="button" className="boton boton--primario boton--grande" onClick={() => abrirAuth("registro")}>Crear cuenta</button>
+                <button type="button" className="boton boton--fantasma boton--grande" onClick={() => abrirAuth("login")}>Iniciar sesión</button>
+              </>
+            )}
           </div>
+          <dl className="hero__plazos">
+            <div><dt>Dentro del mismo continente</dt><dd>hasta 2 días</dd></div>
+            <div><dt>Entre continentes</dt><dd>hasta 3 días</dd></div>
+          </dl>
         </div>
-      </section>
 
-      <section id="empresa">
-        <div className="container">
-          <div className="row">
-            <div className="col centrado-vertical">
-              <h2>Nuestra Empresa</h2>
-              <p>
-                MoraPack es una empresa con presencia internacional, con sedes en Lima (Perú), Bruselas (Bélgica) y Bakú (Azerbaiyán). 
-                Nuestra red global nos permite gestionar envíos hacia las principales ciudades de América, Asia y Europa. 
-                Contamos con un sistema de monitoreo en tiempo real y un planificador inteligente que optimiza rutas y garantiza 
-                el cumplimiento de los plazos de entrega. Nuestra alianza con Aerolínea PACK refuerza nuestra capacidad de transporte 
-                y asegura la continuidad de las operaciones con vuelos regulares entre ciudades de distintos continentes.
-              </p>
+        <div className="tablero" aria-label="Sedes de MoraPack">
+          {SEDES.map((s) => (
+            <div className="tablero__fila" key={s.codigo}>
+              <span className="tablero__codigo">{s.codigo}</span>
+              <span className="tablero__ciudad">{CIUDAD_SEDE[s.codigo]}</span>
+              <span className="tablero__estado">Sede {CONTINENTE_SEDE[s.codigo]}</span>
             </div>
-            <figure className="col">
-              <img src={empresa} alt="Nuestra empresa" className="img-fluid" />
-            </figure>
+          ))}
+        </div>
+      </section>
+
+      <section className="seccion sedes" id="sedes" aria-labelledby="sedes-titulo">
+        <div className="container">
+          <div className="seccion__cabecera">
+            <h2 id="sedes-titulo">Tres sedes, una sola red</h2>
+            <p>Cada sede despacha hacia su continente y conecta con las otras dos para llegar al resto del mundo.</p>
+          </div>
+          <div className="sedes__grilla">
+            {SEDES.map((s, i) => (
+              <figure key={s.codigo} className={`sede${i === 0 ? " sede--principal" : ""}`}>
+                <img src={FOTO_SEDE[s.codigo]} alt={`Sede de MoraPack en ${CIUDAD_SEDE[s.codigo]}`} loading="lazy" />
+                <figcaption>
+                  <strong>{CIUDAD_SEDE[s.codigo]}</strong>
+                  <span>{PAIS_SEDE[s.codigo]}</span>
+                  <span className="sede__codigo">{s.codigo}</span>
+                </figcaption>
+              </figure>
+            ))}
           </div>
         </div>
       </section>
 
-      <section id="historia" className="padded">
+      <section className="seccion proceso" aria-labelledby="proceso-titulo">
         <div className="container">
-          <h2>Historia</h2>
-          <p>
-            MoraPack nació con el objetivo de revolucionar la forma en que los productos son enviados y monitoreados en mercados internacionales. 
-            Empezamos con operaciones locales, priorizando siempre la eficiencia en los plazos de entrega. Gracias al éxito alcanzado, 
-            expandimos nuestras operaciones a otros continentes, consolidándonos como un socio estratégico para nuestros clientes. 
-            Hoy, MoraPack se distingue por su crecimiento constante, la innovación en sus procesos y la implementación de soluciones digitales 
-            que hacen más sencilla y confiable la experiencia logística.
-          </p>
+          <div className="seccion__cabecera">
+            <h2 id="proceso-titulo">De tu pedido al aterrizaje</h2>
+          </div>
+          <ol className="proceso__ruta">
+            {PASOS.map(([titulo, texto], i) => (
+              <li key={titulo} className="proceso__paso">
+                <span className="proceso__nodo" aria-hidden="true">{i + 1}</span>
+                <h3>{titulo}</h3>
+                <p>{texto}</p>
+              </li>
+            ))}
+          </ol>
+          {!usuario && (
+            <button type="button" className="boton boton--primario boton--grande proceso__cta" onClick={() => abrirAuth("registro")}>Registrar mi primer pedido</button>
+          )}
         </div>
       </section>
 
-      <section id="equipo" className="padded">
-        <div className="container">
-          <h2>Nuestro equipo</h2>
-          <div className="row">
-            <div className="col"><h3>César Augusto Napurí de la Cruz</h3></div>
-            <div className="col"><h3>Josué Manuel Sivincha Bailón</h3></div>
-            <div className="col"><h3>José Armando Moncada Silva</h3></div>
+      <section className="seccion empresa" id="nosotros" aria-labelledby="empresa-titulo">
+        <div className="container empresa__fila">
+          <div className="empresa__texto">
+            <h2 id="empresa-titulo">Nuestra empresa</h2>
+            <p>
+              En MoraPack brindamos soluciones logísticas confiables a través de nuestro producto estrella, el MPE. La puntualidad,
+              la transparencia y la confianza son la base de cada entrega.
+            </p>
+            <p>
+              Con sedes en Lima, Bruselas y Bakú gestionamos envíos hacia las principales ciudades de América, Asia y Europa.
+              Un sistema de monitoreo en tiempo real y un planificador inteligente optimizan las rutas y cuidan los plazos, y nuestra
+              alianza con Aerolínea PACK asegura vuelos regulares entre ciudades de distintos continentes.
+            </p>
+            <p>
+              Empezamos con operaciones locales, priorizando la eficiencia en los plazos de entrega, y crecimos hasta convertirnos en
+              un socio estratégico en tres continentes.
+            </p>
           </div>
+          <figure className="empresa__foto">
+            <img src={empresa} alt="Equipo de MoraPack preparando envíos" loading="lazy" />
+          </figure>
+        </div>
+      </section>
+
+      <section className="seccion equipo" aria-labelledby="equipo-titulo">
+        <div className="container">
+          <h2 id="equipo-titulo">Equipo</h2>
+          <ul className="equipo__lista">
+            <li>César Augusto Napurí de la Cruz</li>
+            <li>Josué Manuel Sivincha Bailón</li>
+            <li>José Armando Moncada Silva</li>
+          </ul>
         </div>
       </section>
     </div>
-  )
+  );
 }

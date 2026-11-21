@@ -248,7 +248,7 @@ function RegistrarPedidoModal({ onCerrar, onRegistrado }) {
             placeholder="Buscar cliente..."
             value={codCliente}
             onSelect={setCodCliente}
-            options={clientes.map((c) => ({ label: `${c.codigo} - ${c.nombres} ${c.apellidos}`, value: c.codigo }))}
+            options={clientes.map((c) => ({ label: `${c.codigo} - ${c.nombres} ${c.apellidos ?? ""}`.trim(), value: c.codigo }))}
           />
           <label>Destino</label>
           <Dropdown3

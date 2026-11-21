@@ -15,9 +15,8 @@ export const RUTA_INICIO_POR_ROL = {
 
 export const ETIQUETA_ROL = { CLIENTE: "Cliente", TRABAJADOR: "Trabajador", ADMINISTRADOR: "Administrador" };
 
-// El administrador también entra a las pantallas del trabajador
-export const puedeEntrar = (usuario, roles) =>
-  !!usuario && (roles.includes(usuario.tipoUsuario) || (roles.includes(ROLES.TRABAJADOR) && usuario.tipoUsuario === ROLES.ADMINISTRADOR));
+// Cada rol entra solo a su área (el administrador es sysadmin: no usa las pantallas del trabajador)
+export const puedeEntrar = (usuario, roles) => !!usuario && roles.includes(usuario.tipoUsuario);
 
 export function leerSesion() {
   try {

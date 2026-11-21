@@ -2,7 +2,7 @@
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  background: var(--color-blanco);
+  background: var(--abismo);
 }
 
 .layout-main { flex: 1; display: flex; flex-direction: column; min-height: 0; }
@@ -13,4 +13,4 @@
 .layout--app .layout-main > .page:not(.scenario-root) { height: calc(100vh - var(--nav-height)); overflow: hidden; }
 .layout--app .layout-main > .page > .contenido { overflow: auto; }
 
-.vista-cargando { padding: 40px; color: #64748b; font-style: italic; }
+.vista-cargando { padding: 40px; color: var(--tinta-3); }

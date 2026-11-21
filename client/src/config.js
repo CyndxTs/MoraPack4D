@@ -26,7 +26,4 @@ export const RELOJ_TICK_MS = 250;
 // Sesión por dispositivo (todas las pestañas del navegador comparten la misma cuenta y sus tokens)
 export const SESION_STORAGE_KEY = "morapack.sesion";
 
-// Mosaicos del mapa (Leaflet). Por defecto Carto "light", que NO requiere API key.
-// Se puede cambiar sin tocar código con VITE_MAP_TILES_URL en .env.local. Las variables de Vite deben empezar con VITE_.
-export const MAPA_TILES_URL = import.meta.env.VITE_MAP_TILES_URL || "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png";
-export const MAPA_TILES_ATRIBUCION = import.meta.env.VITE_MAP_TILES_ATTRIBUTION || '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">Carto</a>';
+// Mapa base: países de Natural Earth en /public/geo/paises.json (sin mosaicos ni API key).

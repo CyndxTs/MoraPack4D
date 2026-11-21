@@ -11,14 +11,14 @@
 .en-construccion-card {
   max-width: 560px;
   width: 100%;
-  background: #fff;
+  background: var(--marino);
   border-radius: 14px;
   padding: 32px;
   box-shadow: 0 10px 30px rgba(20, 33, 61, 0.12);
   border-top: 6px solid var(--color-gold);
 
-  h2 { color: var(--color-dark-blue); margin: 12px 0; }
-  p, li { font-size: 15px; color: #475569; }
+  h2 { color: var(--tinta); margin: 12px 0; }
+  p, li { font-size: 15px; color: var(--tinta-2); }
   ul { padding-left: 20px; margin: 0; }
 }
 
@@ -34,4 +34,4 @@
   border-radius: 999px;
 }
 
-.link-oscuro { color: var(--color-dark-blue); font-weight: 700; text-decoration: underline; }
+.link-oscuro { color: var(--cielo); font-weight: 700; text-decoration: underline; }

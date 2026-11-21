@@ -1,27 +1,42 @@
 * { box-sizing: border-box; }
 
-html { scroll-behavior: smooth; }
+html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
 
 body {
-  font-family: "Montserrat", sans-serif;
   margin: 0;
-  line-height: 1.5;
-  font-size: 18px;
+  font-family: var(--fuente);
+  font-size: 16px;
+  line-height: 1.55;
+  color: var(--tinta);
+  background: var(--abismo);
+  -webkit-font-smoothing: antialiased;
+  font-feature-settings: "ss01";
 }
 
-p { margin-top: 0; margin-bottom: 20px; }
-
+p { margin-top: 0; margin-bottom: 1em; }
 h1, h2, h3, h4, h5, h6 { margin: 0; }
-
 img { display: block; }
-figure { margin: 0 0 8px 0; }
+figure { margin: 0; }
 
-a {
-  color: var(--color-blanco);
-  text-decoration: none;
-}
+a { color: var(--cielo); text-decoration: none; }
+a:hover { text-decoration: underline; text-underline-offset: 3px; }
 
-a:hover {
-  color: var(--color-primary);
-  text-decoration: underline;
+button, input, select, textarea { font-family: inherit; }
+
+::selection { background: rgba(120, 198, 255, 0.32); color: #fff; }
+input, textarea { caret-color: var(--cielo); }
+
+:focus-visible { outline: 2px solid var(--cielo); outline-offset: 2px; border-radius: 4px; }
+
+// Barras de desplazamiento del sistema
+* { scrollbar-width: thin; scrollbar-color: var(--trazo) transparent; }
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--trazo); border-radius: 10px; border: 2px solid var(--abismo); }
+
+table, .num { font-variant-numeric: tabular-nums; }
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { animation-duration: 1ms !important; animation-iteration-count: 1 !important; transition-duration: 1ms !important; }
 }

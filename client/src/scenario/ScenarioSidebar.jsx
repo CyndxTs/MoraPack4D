@@ -3,7 +3,7 @@ import hideIcon from "../assets/icons/hide-sidebar.png";
 import { AirportInfoPanel, FlightInfoPanel, OrderInfoPanel, RouteInfoPanel } from "./InfoPanels";
 import { getAirportOccupancyClass } from "./vista";
 
-const vacio = (texto) => <div style={{ padding: "20px", textAlign: "center", color: "#999" }}>{texto}</div>;
+const vacio = (texto) => <div style={{ padding: "20px", textAlign: "center", color: "var(--tinta-3)" }}>{texto}</div>;
 
 // Panel lateral común a Operación y Simulación (antes había dos copias casi idénticas)
 export default function ScenarioSidebar({

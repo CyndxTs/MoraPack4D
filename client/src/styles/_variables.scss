@@ -1,23 +1,58 @@
+// MoraPack — sistema visual "torre de control nocturna": cielo nocturno azul profundo, rutas en luz celeste,
+// carga y aviones en ámbar (herencia del dorado de la marca). Una sola familia: Archivo (ancho variable).
 :root {
-  --color-primary: #D2C1B6;
-  --color-secondary: #1B3C53;
-  --color-background: #F9F3EF;
-  --color-surface: #456882;
-  --color-blanco: #FFFFFF;
-  --color-negro: #000000;
-  --color-gris-claro: #CCCCCC;
-  --color-gris-oscuro: #333333;
-  
-  --color-gold: #FCA311;
-  --color-dark-blue: #14213D;
-  --color-celeste: #8fb8d4;
-  --color-grey: #495057;
-  --color-light-grey: #E5E5E5;
-  --color-blue: #0D6EFD;
-  --color-red: #DC3545;
-  --color-normal-grey: #ADB5BD;
-  --color-green: #198754;
+  // Fondo y superficies
+  --abismo: #060B1A;      // fondo de página
+  --marino: #0C1631;      // superficie
+  --marino-2: #12204A;    // superficie elevada / hover
+  --marino-3: #182A5C;    // seleccionado
+  --trazo: #22356A;       // bordes y divisores
+  --trazo-suave: rgba(120, 150, 220, 0.14);
+
+  // Texto
+  --tinta: #EAF0FF;
+  --tinta-2: #A7B6DA;
+  --tinta-3: #7487B3;
+
+  // Acentos
+  --cielo: #78C6FF;       // acción principal, rutas, foco
+  --cielo-fuerte: #4F8DFF;
+  --ambar: #FFB547;       // carga, aviones, señal
+  --ok: #39D98A;
+  --aviso: #FFC24D;
+  --alerta: #FF6B7A;
+
+  // Tipografía y forma
+  --fuente: "Archivo", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --radio-s: 8px;
+  --radio: 12px;
+  --radio-l: 20px;
+  --sombra: 0 18px 40px -18px rgba(0, 0, 0, 0.7);
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
 
   // Alto de la barra superior (las vistas de mapa ocupan el resto de la ventana)
   --nav-height: 64px;
+
+  // Compatibilidad con los nombres anteriores (componentes existentes)
+  --color-primary: var(--cielo);
+  --color-secondary: var(--marino-2);
+  --color-background: var(--abismo);
+  --color-surface: var(--marino-2);
+  --color-blanco: #FFFFFF;
+  --color-negro: var(--tinta);
+  --color-gris-claro: var(--trazo);
+  --color-gris-oscuro: var(--tinta-2);
+  --color-gold: var(--ambar);
+  --color-dark-blue: var(--marino-3);
+  --color-celeste: var(--cielo);
+  --color-grey: var(--tinta-2);
+  --color-light-grey: var(--marino);
+  --color-blue: var(--cielo-fuerte);
+  --color-red: var(--alerta);
+  --color-normal-grey: var(--tinta-3);
+  --color-green: var(--ok);
+  --color-azul: var(--cielo-fuerte);
+  --color-azul-oscuro: var(--marino-3);
+
+  color-scheme: dark;
 }

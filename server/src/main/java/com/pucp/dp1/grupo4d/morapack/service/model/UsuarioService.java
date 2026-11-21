@@ -72,6 +72,12 @@ public class UsuarioService {
         return v;
     }
 
+    // Campo opcional (apellidos): null si viene vacío
+    public static String validarNombreOpcional(String valor, String campo) {
+        String v = G4DUtility.Convertor.toAdmissible(valor);
+        return (v == null) ? null : validarNombre(v, campo);
+    }
+
     public static void validarContrasenia(String contrasenia, String confirmacion) {
         if (contrasenia == null || contrasenia.length() < 8) throw new G4DException("La contraseña debe tener al menos 8 caracteres.");
         if (contrasenia.length() > 72) throw new G4DException("La contraseña no puede superar 72 caracteres.");

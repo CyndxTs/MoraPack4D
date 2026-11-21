@@ -14,6 +14,7 @@ export default function MiCuenta() {
   const [cuenta, setCuenta] = useState(usuario);
   const [paises, setPaises] = useState([]);
   const [perfil, setPerfil] = useState({ nombres: usuario?.nombres ?? "", apellidos: usuario?.apellidos ?? "", pais: usuario?.pais ?? "" });
+  const ap = (u) => u?.apellidos ?? "";
   const [clave, setClave] = useState({ contraseniaActual: "", contrasenia: "", confirmacion: "" });
   const [guardando, setGuardando] = useState(null);
   const [errorPerfil, setErrorPerfil] = useState(null);
@@ -22,14 +23,14 @@ export default function MiCuenta() {
   useEffect(() => {
     api.obtenerMiCuenta().then((r) => {
       setCuenta(r.usuario);
-      setPerfil({ nombres: r.usuario.nombres, apellidos: r.usuario.apellidos, pais: r.usuario.pais ?? "" });
+      setPerfil({ nombres: r.usuario.nombres, apellidos: ap(r.usuario), pais: r.usuario.pais ?? "" });
       actualizarUsuario(r.usuario);
     }).catch(() => {});
     api.listarPaisesPublico().then((l) => setPaises([...l].sort((a, b) => a.nombre.localeCompare(b.nombre, "es")))).catch(() => {});
   }, [actualizarUsuario]);
 
   const tieneContrasenia = cuenta?.tieneContrasenia !== false;
-  const cambiosPerfil = cuenta && (perfil.nombres !== cuenta.nombres || perfil.apellidos !== cuenta.apellidos || perfil.pais !== (cuenta.pais ?? ""));
+  const cambiosPerfil = cuenta && (perfil.nombres !== cuenta.nombres || perfil.apellidos !== ap(cuenta) || perfil.pais !== (cuenta.pais ?? ""));
 
   const guardarPerfil = async (e) => {
     e.preventDefault();
@@ -72,7 +73,7 @@ export default function MiCuenta() {
       <header className="mi-cuenta__cabecera">
         <div className="mi-cuenta__avatar" aria-hidden="true">{(cuenta.nombres?.[0] ?? "") + (cuenta.apellidos?.[0] ?? "")}</div>
         <div>
-          <h1>{cuenta.nombres} {cuenta.apellidos}</h1>
+          <h1>{cuenta.nombres} {ap(cuenta)}</h1>
           <p>{cuenta.correo} · <span className="mi-cuenta__rol">{ETIQUETA_ROL[cuenta.tipoUsuario]}</span> · Código <strong>{cuenta.codigo}</strong></p>
         </div>
       </header>
@@ -82,12 +83,12 @@ export default function MiCuenta() {
           <h2>Datos personales</h2>
           <div className="auth-fila">
             <Campo label="Nombres" value={perfil.nombres} onChange={(v) => setPerfil((p) => ({ ...p, nombres: v }))} autoComplete="given-name" disabled={guardando === "perfil"} />
-            <Campo label="Apellidos" value={perfil.apellidos} onChange={(v) => setPerfil((p) => ({ ...p, apellidos: v }))} autoComplete="family-name" disabled={guardando === "perfil"} />
+            <Campo label="Apellidos (opcional)" value={perfil.apellidos} onChange={(v) => setPerfil((p) => ({ ...p, apellidos: v }))} autoComplete="family-name" disabled={guardando === "perfil"} />
           </div>
           <Campo label="Correo" type="email" value={cuenta.correo} onChange={() => {}} disabled hint="El correo no se puede cambiar." />
           <SelectPais value={perfil.pais} onChange={(v) => setPerfil((p) => ({ ...p, pais: v }))} paises={paises} disabled={guardando === "perfil"} />
           {errorPerfil && <p className="auth-msg auth-msg--error" role="alert">{errorPerfil}</p>}
-          <button type="submit" className="auth-primario" disabled={!cambiosPerfil || guardando === "perfil" || !perfil.nombres.trim() || !perfil.apellidos.trim() || !perfil.pais}>
+          <button type="submit" className="auth-primario" disabled={!cambiosPerfil || guardando === "perfil" || !perfil.nombres.trim() || !perfil.pais}>
             {guardando === "perfil" ? "Guardando..." : "Guardar cambios"}
           </button>
         </form>

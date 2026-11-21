@@ -118,7 +118,7 @@ export default function Operacion() {
         </div>
       </div>
       <ControlDivider />
-      <ControlRow label="Tiempo real (UTC):" value={formatUTC(nowMs, true)} color="#666" />
+      <ControlRow label="Tiempo real (UTC):" value={formatUTC(nowMs, true)} color="var(--tinta-3)" />
       <ControlRow label="Última planificación:" value={escenario.recibidoEn ? formatUTC(escenario.recibidoEn, true) : "—"} />
       <ControlRow label="Próxima replanificación:" value={programada ? `en ${formatCountdown(programada - nowMs)}` : "no programada"} />
     </ControlsDropdown>

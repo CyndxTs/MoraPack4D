@@ -130,12 +130,12 @@ export function FlightInfoPanel({ flight, getOrdersForFlight }) {
                   key={idx}
                   style={{
                     fontSize: "12px",
-                    background: "#f1f5f9",
+                    background: "var(--marino-2)",
                     padding: "4px 10px",
                     borderRadius: "6px",
-                    color: "#334155",
+                    color: "var(--tinta-2)",
                     fontWeight: "600",
-                    border: "1px solid #e2e8f0",
+                    border: "1px solid var(--trazo)",
                   }}
                 >
                   📍 {r}
@@ -241,10 +241,10 @@ export function OrderInfoPanel({ order, flights = [], simNowMs }) {
                             key={i}
                             style={{ fontSize: "11px", marginBottom: "4px" }}
                           >
-                            <div style={{ fontWeight: 600, color: "#475569" }}>
+                            <div style={{ fontWeight: 600, color: "var(--tinta-2)" }}>
                               ✈ {v.label}
                             </div>
-                            <div style={{ color: "#94a3b8", fontSize: "10px" }}>
+                            <div style={{ color: "var(--tinta-3)", fontSize: "10px" }}>
                               {v.times}
                             </div>
                           </div>
@@ -254,7 +254,7 @@ export function OrderInfoPanel({ order, flights = [], simNowMs }) {
                       <div
                         style={{
                           fontSize: "11px",
-                          color: "#94a3b8",
+                          color: "var(--tinta-3)",
                           fontStyle: "italic",
                           marginTop: "4px",
                         }}

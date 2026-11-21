@@ -12,7 +12,7 @@
   max-width: 100vw;
   height: calc(100vh - var(--nav-height));
   overflow: hidden; 
-  background-color: #f8fafc;
+  background-color: var(--marino);
 }
 
 .contenido {
@@ -84,14 +84,14 @@
 }
 
 .control-bar {
-  background: #fff;
+  background: var(--marino);
   padding: 16px; 
   display: flex;
   flex-direction: column;
   gap: 10px; 
   border-radius: 12px;
   box-shadow: 0 4px 20px rgba(15, 23, 42, 0.15);
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--trazo);
   width: 380px;      
   min-width: 380px;
 }
@@ -110,10 +110,10 @@
 
 .control-label,
 .info-label {
-  font-family: 'Inter', sans-serif; 
+  font-family: var(--fuente); 
   font-weight: 600;
   font-size: 13px;
-  color: #64748b;
+  color: var(--tinta-2);
   white-space: nowrap; 
 }
 
@@ -124,10 +124,10 @@
 }
 
 .value {
-  font-family: 'Inter', sans-serif; 
+  font-family: var(--fuente); 
   font-size: 15px;                  
   font-weight: 600;                 
-  color: #1e293b;                   
+  color: var(--tinta);                   
   text-align: right;
   white-space: nowrap;              
   letter-spacing: -0.02em;          
@@ -173,7 +173,7 @@
 }
 
 .legend-card {
-  background: #ffffff;
+  background: var(--marino);
   border-radius: 12px;
   box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);
   padding: 8px 12px;
@@ -190,7 +190,7 @@
   border: none;
   cursor: pointer;
   padding: 0;
-  color: #334155;
+  color: var(--tinta-2);
 }
 
 .legend-card-info-icon {
@@ -202,8 +202,8 @@
   justify-content: center;
   font-size: 10px;
   font-weight: 700;
-  background: #e5f0ff;
-  color: #1d4ed8;
+  background: rgba(120,198,255,0.12);
+  color: var(--cielo);
 }
 .legend-card-title { font-weight: 600; }
 .legend-card-toggle { margin-left: auto; font-size: 10px; opacity: 0.6; }
@@ -214,7 +214,7 @@
 .legend-dot--green { background: #16a34a; }
 .legend-dot--yellow { background: #facc15; }
 .legend-dot--red { background: #dc2626; }
-.legend-footnote { margin-top: 6px; font-size: 10px; color: #6b7280; font-style: italic; }
+.legend-footnote { margin-top: 6px; font-size: 10px; color: var(--tinta-2); font-style: italic; }
 
 /* --- Estado de Flota (Arriba Derecha) --- */
 .map-wrapper .fleet-overlay {
@@ -241,8 +241,8 @@
   width: 500px !important;
   max-width: 500px !important;
 
-  background: #fff;
-  border-right: 1px solid #e5e7eb;
+  background: var(--marino);
+  border-right: 1px solid var(--trazo);
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -287,11 +287,11 @@
 /* --- Header del Sidebar --- */
 .sidebar-header {
   padding: 16px 20px;
-  border-bottom: 1px solid #f1f5f9;
+  border-bottom: 1px solid var(--trazo);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: #ffffff;
+  background: var(--marino);
   flex-shrink: 0;
   height: 64px;
 }
@@ -299,7 +299,7 @@
 .sidebar-title {
   font-size: 18px;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--tinta);
 }
 
 .hide-icon {
@@ -317,7 +317,7 @@
   overflow-y: auto;
   overflow-x: hidden;
   padding-bottom: 20px;
-  background: #fff;
+  background: var(--marino);
 }
 
 /* ==========================================================================
@@ -331,8 +331,8 @@
   flex-wrap: nowrap;
   gap: 8px;
   padding: 12px 16px;
-  background: #fff;
-  border-bottom: 1px solid #f1f5f9;
+  background: var(--marino);
+  border-bottom: 1px solid var(--trazo);
   overflow-x: auto;
   flex-shrink: 0;
 }
@@ -348,18 +348,18 @@
   font-size: 12px;
   font-weight: 600;
   border-radius: 8px;
-  border: 1px solid #e2e8f0;
-  background: #f8fafc;
+  border: 1px solid var(--trazo);
+  background: var(--marino);
   cursor: pointer;
-  color: #64748b;
+  color: var(--tinta-2);
   transition: all 0.2s;
 }
 
-.sidebar-tab:hover { background: #f1f5f9; color: #334155; }
+.sidebar-tab:hover { background: var(--marino-2); color: var(--tinta-2); }
 .sidebar-tab.active {
-  background: #eff6ff;
-  color: #1d4ed8;
-  border-color: #bfdbfe;
+  background: rgba(120,198,255,0.1);
+  color: var(--cielo);
+  border-color: rgba(120,198,255,0.5);
 }
 
 .sidebar-tab-badge {
@@ -370,7 +370,7 @@
   border-radius: 10px;
 }
 .sidebar-tab.active .sidebar-tab-badge {
-  background: #dbeafe;
+  background: rgba(120,198,255,0.16);
   color: #1e40af;
 }
 
@@ -387,10 +387,10 @@
   flex: 1;
   width: 100%;
   border-radius: 99px;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--trazo);
   padding: 6px 12px;
   font-size: 12px;
-  background-color: #f9fafb;
+  background-color: var(--marino);
   outline: none;
   transition: border-color 0.2s;
 }
@@ -398,7 +398,7 @@
 .filter-select:focus,
 .orders-search-input:focus {
   border-color: #1a73e8;
-  background: #fff;
+  background: var(--marino);
 }
 
 /* Flecha custom para selects */
@@ -415,7 +415,7 @@ select.filter-select {
   align-items: center;
   gap: 6px;
   font-size: 12px;
-  color: #475569;
+  color: var(--tinta-2);
   margin-left: 4px;
 }
 
@@ -438,10 +438,10 @@ select.filter-select {
 .order-card,
 .route-card,
 .airport-card {
-  background: #ffffff;
+  background: var(--marino);
   border-radius: 12px;
   padding: 12px 14px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--trazo);
   box-shadow: 0 2px 4px rgba(15, 23, 42, 0.04);
   cursor: pointer;
   transition: all 0.2s ease;
@@ -454,13 +454,13 @@ select.filter-select {
 .airport-card:hover {
   transform: translateY(-2px);
   box-shadow: 0 8px 16px rgba(15, 23, 42, 0.08);
-  border-color: #cbd5e1;
+  border-color: var(--trazo);
 }
 
 /* Colores de Hover específicos */
 .flight-card:hover { border-color: #3b82f6; } /* Azul */
 .order-card:hover { border-color: #10b981; }  /* Verde */
-.route-card:hover { border-color: #8b5cf6; }  /* Morado */
+.route-card:hover { border-color: var(--ambar); }
 
 /* --- Headers de Card --- */
 .flight-card-header,
@@ -483,15 +483,15 @@ select.filter-select {
   white-space: nowrap;
 }
 
-.flight-code { background: #f1f5f9; color: #475569; }
-.order-code { background: #0f172a; color: #fff; }
-.route-code { background: #312e81; color: #fff; }
+.flight-code { background: var(--marino-2); color: var(--tinta-2); }
+.order-code { background: var(--marino-3); color: #fff; }
+.route-code { background: rgba(255,181,71,0.18); color: var(--ambar); }
 
 .flight-route,
 .order-destination {
   font-size: 13px;
   font-weight: 600;
-  color: #1e293b;
+  color: var(--tinta);
 }
 
 /* --- Body de Card --- */
@@ -511,8 +511,8 @@ select.filter-select {
   font-size: 11px;
 }
 
-.flight-label, .order-label, .route-label { color: #64748b; }
-.flight-value, .order-value, .route-value { color: #0f172a; font-weight: 500; }
+.flight-label, .order-label, .route-label { color: var(--tinta-2); }
+.flight-value, .order-value, .route-value { color: var(--tinta); font-weight: 500; }
 
 /* Semáforos de Aeropuerto */
 .airport-card--low { border-left: 4px solid #22c55e; }
@@ -544,9 +544,9 @@ select.filter-select {
   gap: 6px;
   margin: 16px 0 16px 4px; 
   padding: 8px 16px;
-  background-color: #f1f5f9;
-  color: #475569;
-  border: 1px solid #e2e8f0;
+  background-color: var(--marino-2);
+  color: var(--tinta-2);
+  border: 1px solid var(--trazo);
   border-radius: 99px;
   font-size: 12px;
   font-weight: 600;
@@ -554,19 +554,19 @@ select.filter-select {
   transition: all 0.2s;
 }
 .detail-back-btn:hover {
-  background-color: #e2e8f0;
-  color: #0f172a;
+  background-color: var(--marino-2);
+  color: var(--tinta);
 }
 
 /* --- Info Shell (Contenedor Principal) --- */
 .info-shell {
   padding: 0;
-  font-family: 'Inter', sans-serif;
+  font-family: var(--fuente);
   
-  background: #fff;
+  background: var(--marino);
   border-radius: 16px; 
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  border: 1px solid #e2e8f0; 
+  border: 1px solid var(--trazo); 
   overflow: hidden; 
 }
 
@@ -574,12 +574,12 @@ select.filter-select {
 .info-shell-header {
   padding: 24px;
   color: white;
-  background: #334155;
+  background: var(--marino-3);
 }
 .header-airport { background: linear-gradient(135deg, #f16c06, #f16c06); }
-.flight-theme   { background: linear-gradient(135deg, #3b82f6, #2563eb); }
+.flight-theme   { background: linear-gradient(135deg, var(--cielo-fuerte), var(--cielo-fuerte)); }
 .order-theme    { background: linear-gradient(135deg, #10b981, #059669); }
-.route-theme    { background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
+.route-theme    { background: linear-gradient(135deg, #FFB547, #F29A2E); }
 
 .header-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
 .header-type-badge { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; opacity: 0.9; }
@@ -594,7 +594,7 @@ select.filter-select {
   padding: 4px 8px; 
   border-radius: 6px; 
   font-size: 13px; 
-  font-family: monospace; 
+  font-family: var(--fuente); font-variant-numeric: tabular-nums; 
   font-weight: 700;
 }
 .header-subtitle { font-size: 14px; opacity: 0.95; margin: 4px 0 20px; font-weight: 500;}
@@ -624,7 +624,7 @@ select.filter-select {
 .stat-box span {
   font-size: 12px;
   font-weight: 700;
-  color: #0f172a; 
+  color: var(--tinta); 
   
   white-space: nowrap;
   overflow: visible;  
@@ -641,7 +641,7 @@ select.filter-select {
 /* --- Pestañas Internas (Salidas/Llegadas) --- */
 .detail-tabs {
   display: flex;
-  background: #f1f5f9;
+  background: var(--marino-2);
   padding: 4px;
   margin: 16px 20px 8px;
   border-radius: 8px;
@@ -651,38 +651,38 @@ select.filter-select {
   padding: 8px;
   border: none;
   background: transparent;
-  color: #64748b;
+  color: var(--tinta-2);
   font-size: 12px;
   font-weight: 600;
   border-radius: 6px;
   cursor: pointer;
 }
-.detail-tab.active { background: #fff; color: #0f172a; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+.detail-tab.active { background: var(--marino); color: var(--tinta); box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
 
 /* --- Cuerpo de Listas Modernas --- */
 .info-shell-body { padding: 0 20px 20px; }
-.info-section-title { font-size: 13px; font-weight: 700; color: #334155; margin: 16px 0 8px; }
+.info-section-title { font-size: 13px; font-weight: 700; color: var(--tinta-2); margin: 16px 0 8px; }
 
 .info-list-modern {
   list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px;
 }
 
 .info-list-item {
-  background: #fff;
-  border: 1px solid #e2e8f0;
+  background: var(--marino);
+  border: 1px solid var(--trazo);
   border-radius: 8px;
   padding: 10px 12px;
   transition: transform 0.1s;
 }
-.info-list-item:hover { border-color: #cbd5e1; }
+.info-list-item:hover { border-color: var(--trazo); }
 
 .info-item-row { display: flex; justify-content: space-between; align-items: center; }
 .info-item-row.main { margin-bottom: 4px; }
-.flight-route-text { font-weight: 600; font-size: 12px; color: #1e293b; }
-.flight-code-badge { font-size: 10px; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; color: #64748b; }
-.info-item-row.sub { font-size: 11px; color: #64748b; }
+.flight-route-text { font-weight: 600; font-size: 12px; color: var(--tinta); }
+.flight-code-badge { font-size: 10px; background: var(--marino-2); padding: 2px 6px; border-radius: 4px; color: var(--tinta-2); }
+.info-item-row.sub { font-size: 11px; color: var(--tinta-2); }
 
-.info-empty-state { text-align: center; color: #94a3b8; font-size: 12px; font-style: italic; padding: 20px 0; }
+.info-empty-state { text-align: center; color: var(--tinta-3); font-size: 12px; font-style: italic; padding: 20px 0; }
 
 /* ==========================================================================
    7. TOOLTIPS DE LEAFLET
@@ -704,42 +704,42 @@ select.filter-select {
 /* Tooltip Aeropuerto */
 .airport-popup {
   min-width: 260px;
-  background: #fff;
+  background: var(--marino);
   border-radius: 12px;
   padding: 12px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--trazo);
   box-shadow: 0 10px 25px rgba(0,0,0,0.15);
   font-size: 12px;
-  font-family: 'Inter', sans-serif;
+  font-family: var(--fuente);
 }
 .airport-popup__header { display: flex; justify-content: space-between; margin-bottom: 8px; font-weight: 600; }
-.airport-popup__code { background: #f3f4f6; padding: 2px 6px; border-radius: 4px; font-size: 10px; }
-.airport-popup__progress { height: 4px; background: #e5e7eb; border-radius: 2px; margin: 6px 0; overflow: hidden; }
+.airport-popup__code { background: var(--marino-2); padding: 2px 6px; border-radius: 4px; font-size: 10px; }
+.airport-popup__progress { height: 4px; background: var(--marino-2); border-radius: 2px; margin: 6px 0; overflow: hidden; }
 .airport-popup__progress-fill { height: 100%; background: linear-gradient(90deg, #22c55e, #eab308, #ef4444); }
 
 .airport-popup-tabs { display: flex; gap: 4px; margin: 8px 0; }
-.airport-popup-tab { flex: 1; border: 1px solid #e5e7eb; background: #f9fafb; padding: 4px; font-size: 11px; cursor: pointer; border-radius: 4px; }
-.airport-popup-tab.active { background: #1a73e8; color: #fff; border-color: #1a73e8; }
+.airport-popup-tab { flex: 1; border: 1px solid var(--trazo); background: var(--marino); padding: 4px; font-size: 11px; cursor: pointer; border-radius: 4px; }
+.airport-popup-tab.active { background: var(--cielo-fuerte); color: #fff; border-color: #1a73e8; }
 
 .airport-popup__list { list-style: none; padding: 0; margin: 0; }
-.airport-popup__list li { padding: 4px 0; border-bottom: 1px dashed #f1f5f9; }
+.airport-popup__list li { padding: 4px 0; border-bottom: 1px dashed var(--trazo); }
 .airport-popup__flight-main { display: flex; justify-content: space-between; font-weight: 600; font-size: 11px; }
 
 /* Tooltip Avión */
 .plane-tooltip {
   min-width: 220px;
-  background: #fff;
+  background: var(--marino);
   border-radius: 12px;
   padding: 12px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--trazo);
   box-shadow: 0 10px 25px rgba(0,0,0,0.15);
   font-size: 12px;
 }
-.plane-tooltip__route { font-weight: 700; color: #1e293b; margin-bottom: 4px; }
-.plane-tooltip__code { display: inline-block; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-size: 10px; margin-bottom: 8px; }
-.plane-tooltip__row { display: flex; justify-content: space-between; margin-bottom: 2px; color: #4b5563; }
-.plane-tooltip__progress { height: 4px; background: #e5e7eb; border-radius: 2px; margin-top: 6px; overflow: hidden; }
-.plane-tooltip__progress-fill { height: 100%; background: #3b82f6; }
+.plane-tooltip__route { font-weight: 700; color: var(--tinta); margin-bottom: 4px; }
+.plane-tooltip__code { display: inline-block; background: var(--marino-2); padding: 2px 6px; border-radius: 4px; font-size: 10px; margin-bottom: 8px; }
+.plane-tooltip__row { display: flex; justify-content: space-between; margin-bottom: 2px; color: var(--tinta-2); }
+.plane-tooltip__progress { height: 4px; background: var(--marino-2); border-radius: 2px; margin-top: 6px; overflow: hidden; }
+.plane-tooltip__progress-fill { height: 100%; background: var(--cielo-fuerte); }
 
 /////////////////////
 // OPERACION ///////////
@@ -756,19 +756,19 @@ select.filter-select {
   padding: 6px;
   font-size: 12px;
   border-radius: 6px;
-  border: 1px solid #cbd5f5;
-  background: #f8fafc;
+  border: 1px solid var(--trazo);
+  background: var(--marino);
   cursor: pointer;
 }
 
 .flight-toggle-btn.active {
-  background: #2563eb;
+  background: var(--cielo-fuerte);
   color: white;
   border-color: #2563eb;
 }
 
 .flight-toggle-btn:hover {
-  background: #2563eb;
+  background: var(--cielo-fuerte);
   color: white;
   border-color: #2563eb;
 }
@@ -795,7 +795,7 @@ select.filter-select {
 
 /* Contenedor del Modal */
 .report-modal-content {
-  background: #ffffff;
+  background: var(--marino);
   width: 90%;
   max-width: 650px;
   border-radius: 16px;
@@ -804,12 +804,12 @@ select.filter-select {
   display: flex;
   flex-direction: column;
   animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--trazo);
 }
 
 /* Header */
 .report-modal-header {
-  background: #0f172a;
+  background: var(--marino-3);
   padding: 20px 24px;
   display: flex;
   align-items: center;
@@ -832,37 +832,37 @@ select.filter-select {
 /* Cuerpo */
 .report-modal-body {
   padding: 24px;
-  background: #fff;
+  background: var(--marino);
 }
 
 .report-info-text {
   font-size: 14px;
-  color: #475569; 
+  color: var(--tinta-2); 
   margin-bottom: 16px;
   line-height: 1.5;
 }
 
 .report-filename {
   font-weight: 600;
-  color: #0f172a;
-  background: #f1f5f9;
+  color: var(--tinta);
+  background: var(--marino-2);
   padding: 2px 6px;
   border-radius: 4px;
-  font-family: monospace;
+  font-family: var(--fuente); font-variant-numeric: tabular-nums;
 }
 
 /* Área de Previsualización (Consola/Papel) */
 .report-preview-box {
-  background-color: #f8fafc; 
-  border: 1px solid #cbd5e1; 
+  background-color: var(--marino); 
+  border: 1px solid var(--trazo); 
   border-radius: 8px;
   padding: 16px;
   height: 320px;
   overflow-y: auto;
-  font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
+  font-family: var(--fuente); font-variant-numeric: tabular-nums;
   font-size: 12px;
   line-height: 1.6;
-  color: #334155;
+  color: var(--tinta-2);
   white-space: pre-wrap; 
   box-shadow: inset 0 2px 4px rgba(0,0,0,0.03);
 }
@@ -872,18 +872,18 @@ select.filter-select {
   width: 8px;
 }
 .report-preview-box::-webkit-scrollbar-track {
-  background: #f1f5f9;
+  background: var(--marino-2);
 }
 .report-preview-box::-webkit-scrollbar-thumb {
-  background-color: #cbd5e1;
+  background-color: var(--marino-3);
   border-radius: 4px;
 }
 
 /* Footer de botones */
 .report-modal-footer {
   padding: 16px 24px;
-  background: #f8fafc;
-  border-top: 1px solid #e2e8f0;
+  background: var(--marino);
+  border-top: 1px solid var(--trazo);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -916,21 +916,21 @@ select.filter-select {
 
 /* Variantes de botones */
 .btn-report-close {
-  background-color: #fff;
-  color: #ef4444; /* Rojo */
-  border: 1px solid #fecaca;
+  background-color: var(--marino);
+  color: var(--alerta); /* Rojo */
+  border: 1px solid rgba(255,107,122,0.35);
 }
 .btn-report-close:hover {
-  background-color: #fef2f2;
+  background-color: rgba(255,107,122,0.12);
   border-color: #ef4444;
 }
 
 .btn-report-download {
-  background-color: #0f172a; /* Azul oscuro */
+  background-color: var(--marino-3); /* Azul oscuro */
   color: white;
 }
 .btn-report-download:hover {
-  background-color: #1e293b;
+  background-color: var(--marino-3);
 }
 
 /* Animaciones */
@@ -959,7 +959,7 @@ select.filter-select {
   font-weight: 700;
   font-size: 14px;
   box-shadow: 0 4px 15px rgba(220, 38, 38, 0.5);
-  border: 1px solid #fca5a5; 
+  border: 1px solid rgba(255,107,122,0.45); 
   
   display: flex;
   align-items: center;
@@ -991,7 +991,7 @@ select.filter-select {
 }
 
 .chip {
-  background: #e5e7eb;
+  background: var(--marino-2);
   padding: 6px 10px;
   border-radius: 16px;
   display: flex;
@@ -1005,7 +1005,7 @@ select.filter-select {
   margin-left: 6px;
   font-size: 16px;
   cursor: pointer;
-  color: #444;
+  color: var(--tinta);
   padding: 0;
   line-height: 1;
 }
@@ -1030,19 +1030,19 @@ select.filter-select {
   padding: 6px;
   font-size: 12px;
   border-radius: 6px;
-  border: 1px solid #cbd5f5;
-  background: #f8fafc;
+  border: 1px solid var(--trazo);
+  background: var(--marino);
   cursor: pointer;
 }
 
 .flight-toggle-btn.active {
-  background: #2563eb;
+  background: var(--cielo-fuerte);
   color: white;
   border-color: #2563eb;
 }
 
 .flight-toggle-btn:hover {
-  background: #2563eb;
+  background: var(--cielo-fuerte);
   color: white;
   border-color: #2563eb;
 }
@@ -1064,26 +1064,26 @@ select.filter-select {
   font-size: 14px;
   padding: 6px;
   border-radius: 6px;
-  color: #64748b;
+  color: var(--tinta-2);
   display: flex;
   align-items: center;
   justify-content: center;
   transition: all 0.2s;
 }
-.pin-button--on { background: #e0f2fe; color: #0284c7; }
+.pin-button--on { background: rgba(120,198,255,0.16); color: var(--cielo); }
 
-.control-divider { width: 100%; border: none; border-top: 1px solid #eee; margin: 4px 0; }
+.control-divider { width: 100%; border: none; border-top: 1px solid var(--trazo); margin: 4px 0; }
 
 .order-card--fallido { border-left: 4px solid #ef4444; cursor: default; }
 
 .fleet-body { display: flex; flex-direction: column; gap: 8px; }
 .fleet-status { display: flex; align-items: center; gap: 8px; font-size: 13px; margin-bottom: 4px; }
 .fleet-dot { width: 12px; height: 12px; border-radius: 50%; }
-.fleet-status-label { font-weight: 600; color: #374151; }
-.fleet-row { display: flex; justify-content: space-between; font-size: 12px; color: #6b7280; strong { color: #111827; } }
-.fleet-row--divider { border-bottom: 1px solid #f3f4f6; padding-bottom: 4px; }
-.fleet-bar { width: 100%; height: 6px; background: #e5e7eb; border-radius: 4px; overflow: hidden; div { height: 100%; transition: width 0.5s ease; } }
-.fleet-total { font-size: 11px; color: #9ca3af; text-align: right; }
+.fleet-status-label { font-weight: 600; color: var(--tinta-2); }
+.fleet-row { display: flex; justify-content: space-between; font-size: 12px; color: var(--tinta-2); strong { color: var(--tinta); } }
+.fleet-row--divider { border-bottom: 1px solid var(--trazo); padding-bottom: 4px; }
+.fleet-bar { width: 100%; height: 6px; background: var(--marino-2); border-radius: 4px; overflow: hidden; div { height: 100%; transition: width 0.5s ease; } }
+.fleet-total { font-size: 11px; color: var(--tinta-3); text-align: right; }
 
 /* Botón flotante para abrir el dashboard sobre la operación */
 .dashboard-fab {
@@ -1126,6 +1126,29 @@ select.filter-select {
 .report-modal-content--danger { border: 2px solid #ef4444; }
 .report-modal-header--danger { background: #7f1d1d; }
 .btn-report-danger { background-color: #dc2626; color: #fff; border: none; &:disabled { opacity: 0.6; cursor: not-allowed; } }
-.collapse-report-ready { margin-top: 12px; padding: 8px; background: #fef2f2; border: 1px solid #fca5a5; border-radius: 6px; color: #b91c1c; }
-.collapse-report-wait { margin-top: 12px; font-style: italic; color: #666; }
+.collapse-report-ready { margin-top: 12px; padding: 8px; background: rgba(255,107,122,0.12); border: 1px solid rgba(255,107,122,0.45); border-radius: 6px; color: var(--alerta); }
+.collapse-report-wait { margin-top: 12px; font-style: italic; color: var(--tinta-2); }
 }
+
+/* ==========================================================================
+   MAPA BASE (Natural Earth): océano azul noche, países grises con nombre
+   ========================================================================== */
+.leaflet-container { background: #0A1228; font-family: var(--fuente); }
+.etiqueta-pais {
+  span {
+    display: block;
+    transform: translate(-50%, -50%);
+    white-space: nowrap;
+    font-size: 11px;
+    font-weight: 550;
+    letter-spacing: 0.01em;
+    color: rgba(190, 204, 235, 0.62);
+    text-shadow: 0 0 3px #0A1228, 0 0 6px #0A1228;
+    pointer-events: none;
+  }
+}
+.leaflet-bar a, .leaflet-bar a:hover {
+  background: var(--marino); color: var(--tinta); border-bottom-color: var(--trazo);
+}
+.leaflet-bar a:hover { background: var(--marino-2); }
+.leaflet-bar { border: 1px solid var(--trazo) !important; box-shadow: var(--sombra) !important; }

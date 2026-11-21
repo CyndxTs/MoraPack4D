@@ -56,7 +56,8 @@ public class GoogleService {
             if (!verificado) throw new G4DException("Tu correo de Google no está verificado.");
             String correo = info.path("email").asText(null);
             if (correo == null || correo.isBlank()) throw new G4DException("Google no devolvió un correo.");
-            return new CuentaGoogle(correo, texto(info, "given_name"), texto(info, "family_name"));
+            String nombres = (texto(info, "given_name") != null) ? texto(info, "given_name") : texto(info, "name");
+            return new CuentaGoogle(correo, nombres, texto(info, "family_name"));
         } catch (G4DException e) {
             throw e;
         } catch (InterruptedException e) {
