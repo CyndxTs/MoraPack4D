@@ -9,7 +9,8 @@ import { listarTodosLosAeropuertos, obtenerParametros } from "../../../api/catal
 import { descargarReporte, detenerSimulacion, eliminarReporte, iniciarSimulacion, previsualizarReporte } from "../../../api/escenarios";
 import { normalizarEstado, suscribir } from "../../../realtime/stompClient";
 import { useNotify } from "../../../notifications/NotificationContext";
-import { formatDuration, formatUTC, toServerDateTime } from "../../../utils/fechas";
+import { formatDuration, formatFecha, toServerDateTime } from "../../../utils/fechas";
+import { zonaCorta } from "../../../utils/zona";
 import ConfigurarSimulacionModal from "./ConfigurarSimulacionModal";
 import { borrarSimulacion, guardarMeta, guardarSolucion, leerMeta, leerSolucion, limpiarSimulacionesViejas } from "./simulacionStorage";
 import runIcon from "../../../assets/icons/run.svg";
@@ -215,11 +216,11 @@ export default function Simulacion() {
         </div>
       </div>
       <ControlDivider />
-      <ControlRow label="Simulación (reloj UTC):" value={meta ? formatUTC(nowMs, true) : "—"} color="var(--cielo)" />
+      <ControlRow label={`Simulación (${zonaCorta()}):`} value={meta ? formatFecha(nowMs, true) : "—"} color="var(--cielo)" />
       <ControlRow label="Transcurrido (simulado):" value={meta ? formatDuration((nowMs - meta.inicioMs) / 1000) : "00h : 00m : 00s"} />
       <ControlRow label="Estado:" value={!meta ? "Sin simulación" : meta.terminada ? ESTADO_TEXTO[meta.terminada] ?? meta.terminada : meta.realInicioMs ? "En curso" : "Iniciando..."} />
       <ControlDivider />
-      <ControlRow label="Tiempo real (UTC):" value={formatUTC(Date.now(), true)} color="var(--tinta-3)" />
+      <ControlRow label={`Hora actual (${zonaCorta()}):`} value={formatFecha(Date.now(), true)} color="var(--tinta-3)" />
       <ControlRow label="Cronómetro (real):" value={meta?.realInicioMs ? formatDuration((nowMs - meta.inicioMs) / meta.multiplicador / 1000) : "00h : 00m : 00s"} />
     </ControlsDropdown>
   );

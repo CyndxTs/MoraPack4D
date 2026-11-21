@@ -159,6 +159,15 @@
     margin: 24px 0 0; padding: 0; list-style: none;
     li { font-size: 1.1rem; font-weight: 600; }
   }
+  &__inversor {
+    display: inline-flex; flex-direction: column; gap: 4px;
+    margin-top: 36px; padding: 18px 22px;
+    border-radius: var(--radio-l); border: 1px solid rgba(255, 181, 71, 0.35);
+    background: radial-gradient(260px 120px at 0% 0%, rgba(255, 181, 71, 0.12), transparent 70%), var(--marino);
+    span { font-size: 0.82rem; color: var(--ambar); font-weight: 650; }
+    strong { font-size: 1.35rem; font-variation-settings: "wdth" 115; }
+    p { margin: 0; color: var(--tinta-2); font-size: 0.9rem; }
+  }
 }
 
 @media (max-width: 960px) {

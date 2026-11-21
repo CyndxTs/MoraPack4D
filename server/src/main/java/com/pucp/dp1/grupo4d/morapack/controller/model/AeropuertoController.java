@@ -36,6 +36,12 @@ public class AeropuertoController {
         return ResponseEntity.ok(response);
     }
 
+    // Solo ADMINISTRADOR (ver SecurityConfig)
+    @PostMapping("/sedes")
+    public ResponseEntity<com.pucp.dp1.grupo4d.morapack.model.dto.response.GenericResponse> actualizarSedes(@RequestBody com.pucp.dp1.grupo4d.morapack.model.dto.request.SedesRequest request) {
+        return ResponseEntity.ok(aeropuertoService.actualizarSedes(request.getCodigos()));
+    }
+
     @PostMapping("/filtrar")
     public ResponseEntity<ListResponse> filtrar(@RequestBody FilterRequest<AeropuertoDTO> request) {
         ListResponse response = aeropuertoService.filtrar(request);

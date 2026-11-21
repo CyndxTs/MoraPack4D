@@ -4,6 +4,7 @@ import { SESION_STORAGE_KEY } from "../config";
 import { useNotify } from "../notifications/NotificationContext";
 import { actualizarUsuarioEnSesion, borrarSesion, guardarSesion, leerSesion } from "./session";
 import { emitir, escuchar } from "./eventos";
+import { setZona } from "../utils/zona";
 
 const AuthContext = createContext(null);
 
@@ -18,6 +19,9 @@ export function AuthProvider({ children }) {
   // Cierre de sesión voluntario: las rutas protegidas no deben abrir el modal mientras se sale
   const saliendoHasta = useRef(0);
   const estaSaliendo = useCallback(() => Date.now() < saliendoHasta.current, []);
+
+  // Las horas se muestran en el huso del país de la cuenta (sin sesión: el del navegador)
+  setZona(sesion?.usuario?.husoHorario, sesion?.usuario?.pais);
 
   // Cambios de sesión de esta pestaña (bus) y de otras pestañas (storage)
   useEffect(() => {

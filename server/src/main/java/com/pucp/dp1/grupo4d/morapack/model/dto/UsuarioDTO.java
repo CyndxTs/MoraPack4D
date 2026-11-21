@@ -21,4 +21,6 @@ public class UsuarioDTO implements DTO {
     private String estado;
     private String pais;
     private Boolean tieneContrasenia;
+    // Huso horario del país (horas respecto de UTC): el front muestra las horas en la zona de la sesión
+    private Integer husoHorario;
 }

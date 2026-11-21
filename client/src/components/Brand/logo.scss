@@ -12,10 +12,9 @@
   }
 }
 
+// El logo tiene contornos azul oscuro: un halo tenue lo separa del fondo nocturno
 .logo-mark {
   flex: none;
-  overflow: visible;
-  &__orbita { stroke: var(--cielo); stroke-width: 3.2; }
-  &__orbita--atras { opacity: 0.42; }
-  &__flecha { stroke: var(--cielo); stroke-width: 3.2; fill: none; }
+  object-fit: contain;
+  filter: drop-shadow(0 0 1px rgba(234, 240, 255, 0.55)) drop-shadow(0 4px 10px rgba(0, 0, 0, 0.45));
 }

@@ -25,6 +25,7 @@ public class UsuarioMapper {
         dto.setTipoUsuario(entity.getRol().toString());
         dto.setPais((entity.getPais() != null) ? entity.getPais().getNombre() : null);
         dto.setTieneContrasenia(entity.tieneContrasenia());
+        dto.setHusoHorario((entity.getPais() != null) ? entity.getPais().getHusoHorario() : null);
         return dto;
     }
 }

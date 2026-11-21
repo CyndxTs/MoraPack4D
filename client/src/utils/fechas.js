@@ -1,9 +1,12 @@
-// Utilidades de fecha/hora. TODO se maneja en UTC (milisegundos epoch).
+import { offsetMs } from "./zona";
+
+// Utilidades de fecha/hora. Internamente TODO es epoch ms (UTC) y el server habla en UTC.
+// Lo que se muestra y lo que se escribe en formularios está en la zona de la sesión (utils/zona.js).
 // El server envía "dd/MM/yyyy HH:mm" y acepta "dd/MM/yyyy HH:mm" o "yyyy-MM-dd HH:mm:ss".
 
 const pad = (n) => String(n).padStart(2, "0");
 
-// "dd/MM/yyyy HH:mm" | "yyyy-MM-dd HH:mm[:ss]" -> ms (UTC). Devuelve null si no se puede leer.
+// "dd/MM/yyyy HH:mm" | "yyyy-MM-dd HH:mm[:ss]" (UTC) -> ms. Devuelve null si no se puede leer.
 export function parseServerDateTime(str) {
   if (!str || typeof str !== "string") return null;
   const s = str.trim();
@@ -14,30 +17,53 @@ export function parseServerDateTime(str) {
   return null;
 }
 
-// ms -> "yyyy-MM-dd HH:mm:ss" (formato que el server acepta)
+// ms -> "yyyy-MM-dd HH:mm:ss" en UTC (formato que el server acepta)
 export function toServerDateTime(ms) {
   if (ms == null || Number.isNaN(ms)) return null;
   const d = new Date(ms);
   return `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())} ${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}:${pad(d.getUTCSeconds())}`;
 }
 
-// ms -> "dd/MM/yyyy HH:mm" (para mostrar)
-export function formatUTC(ms, conSegundos = false) {
+// ms -> "dd/MM/yyyy HH:mm[:ss]" en la zona de la sesión
+export function formatFecha(ms, conSegundos = false) {
   if (ms == null || Number.isNaN(ms)) return "-";
-  const d = new Date(ms);
+  const d = new Date(ms + offsetMs());
   const base = `${pad(d.getUTCDate())}/${pad(d.getUTCMonth() + 1)}/${d.getUTCFullYear()} ${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}`;
   return conSegundos ? `${base}:${pad(d.getUTCSeconds())}` : base;
 }
 
-// Inputs <input type="date"> + <input type="time"> interpretados como UTC -> ms
-export function fromInputsUTC(fecha, hora) {
-  if (!fecha || !hora) return null;
-  const ms = Date.parse(`${fecha}T${hora.length === 5 ? `${hora}:00` : hora}Z`);
-  return Number.isNaN(ms) ? null : ms;
+// ms -> "HH:mm" en la zona de la sesión
+export function formatHora(ms) {
+  if (ms == null || Number.isNaN(ms)) return "-";
+  const d = new Date(ms + offsetMs());
+  return `${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}`;
 }
 
-export const toInputDateUTC = (ms) => new Date(ms).toISOString().slice(0, 10);
-export const toInputTimeUTC = (ms) => new Date(ms).toISOString().slice(11, 16);
+// Texto de fecha del server (UTC) -> texto en la zona de la sesión
+export function fechaServerALocal(str) {
+  const ms = parseServerDateTime(str);
+  return ms == null ? (str || "-") : formatFecha(ms);
+}
+
+// "HH:mm" (UTC, hora diaria de un plan) -> "HH:mm" en la zona de la sesión, con "+1"/"−1" si cambia de día
+export function horaUTCALocal(hhmm) {
+  const m = /^(\d{1,2}):(\d{2})/.exec(hhmm || "");
+  if (!m) return hhmm || "-";
+  let min = (+m[1]) * 60 + (+m[2]) + Math.round(offsetMs() / 60000);
+  const dia = Math.floor(min / 1440);
+  min = ((min % 1440) + 1440) % 1440;
+  return `${pad(Math.floor(min / 60))}:${pad(min % 60)}${dia > 0 ? " (+1)" : dia < 0 ? " (−1)" : ""}`;
+}
+
+// Inputs <input type="date"> + <input type="time"> en la zona de la sesión -> ms
+export function fromInputs(fecha, hora) {
+  if (!fecha || !hora) return null;
+  const ms = Date.parse(`${fecha}T${hora.length === 5 ? `${hora}:00` : hora}Z`);
+  return Number.isNaN(ms) ? null : ms - offsetMs();
+}
+
+export const toInputDate = (ms) => new Date(ms + offsetMs()).toISOString().slice(0, 10);
+export const toInputTime = (ms) => new Date(ms + offsetMs()).toISOString().slice(11, 16);
 
 // Segundos -> "1d : 02h : 03m : 04s"
 export function formatDuration(totalSeconds) {

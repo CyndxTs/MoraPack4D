@@ -242,6 +242,9 @@ public class PedidoService {
             pedido.setCantidadSolicitada(dto.getCantidadSolicitada());
             pedido.setFechaHoraGeneracion(G4DUtility.Convertor.toDateTime(dto.getFechaHoraGeneracion()));
             pedido.setFechaHoraProcesamiento(G4DUtility.Convertor.toAdmissible(dto.getFechaHoraProcesamiento(), (LocalDateTime) null));
+            if (tipoEscenario == TipoEscenario.SIMULACION && pedido.getFechaHoraProcesamiento() == null) {
+                pedido.setFechaHoraProcesamiento(pedido.getFechaHoraGeneracion()); // igual que en la carga por archivo
+            }
             pedido.setFechaHoraExpiracion(G4DUtility.Convertor.toAdmissible(dto.getFechaHoraExpiracion(), (LocalDateTime) null));
             pedido.setFueAtendido(dto.getFueAtendido() != null ? dto.getFueAtendido() : false);
             pedido.setCodigo(String.format("%s%09d", destino.getCodigo(), 1 + this.findMaxCodeOfDestinationByScenario(codDestino, tipoEscenario.toString())));

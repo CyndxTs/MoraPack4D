@@ -1,45 +1,49 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { ButtonAdd, Dropdown, Input, LoadingOverlay, Pagination, Radio, RemoveFileButton, SidebarActions, Table } from "../../../components/UI/ui";
-import StatusBadge from "../../../components/Status/status";
-import { listarEventos, listarTodosLosPlanes } from "../../../api/catalogos";
-import { importarArchivo, TIPO_ARCHIVO } from "../../../api/importacion";
+import { LoadingOverlay } from "../../../components/UI/ui";
+import {
+  BarraFiltros, Campo, Etiqueta, IconoMas, Modal, PaginaGestion, Paginador, Segmentado, Selector, Tabla, ZonaArchivo,
+} from "../../../components/Gestion/Gestion";
+import { listarEventos, listarTodosLosAeropuertos, listarTodosLosPlanes } from "../../../api/catalogos";
+import { importarArchivo, registrarEvento, registrarPlan, TIPO_ARCHIVO } from "../../../api/importacion";
 import { useNotify } from "../../../notifications/NotificationContext";
+import { fechaServerALocal, fromInputs, horaUTCALocal, toInputDate, toServerDateTime } from "../../../utils/fechas";
+import { zonaCorta, zonaLarga } from "../../../utils/zona";
 import { TAMANIO_PAGINA } from "../../../config";
-import plus from "../../../assets/icons/plus.svg";
-import hideIcon from "../../../assets/icons/hide-sidebar.png";
-import "../Pedidos/pedidos.scss";
-import "./planes.scss";
 
-const COLORES = {
-  CANCELACION: "#b91c1c", REPROGRAMACION: "#B5651D", REAJUSTE_CAPACIDAD: "#1d4ed8",
-  SIMULACION: "#0B6623", OPERACION: "#B5651D",
-};
+const TIPOS_EVENTO = { CANCELACION: ["alerta", "Cancelación"], REPROGRAMACION: ["aviso", "Reprogramación"], REAJUSTE_CAPACIDAD: ["info", "Reajuste de capacidad"] };
+const ESCENARIOS = [{ value: "OPERACION", label: "Operación" }, { value: "SIMULACION", label: "Simulación" }];
+const pad = (n) => String(n).padStart(2, "0");
+const DIA = 86400000;
 
-const FILTROS_VACIOS = { texto: "", origen: "", destino: "", orden: "asc" };
+// "HH:mm" local del aeropuerto (huso en horas) -> "HH:mm" UTC
+function localAUtc(hhmm, huso) {
+  const [h, m] = hhmm.split(":").map(Number);
+  let min = h * 60 + m - Math.round(huso * 60);
+  min = ((min % 1440) + 1440) % 1440;
+  return `${pad(Math.floor(min / 60))}:${pad(min % 60)}`;
+}
 
 // Planes de vuelo (catálogo completo, filtrado en el navegador) y eventos sobre sus vuelos
 export default function Planes() {
   const [tab, setTab] = useState("planes");
   const pestanas = (
-    <div className="planes-tabs">
-      <button className={tab === "planes" ? "active" : ""} onClick={() => setTab("planes")}>Planes de vuelo</button>
-      <button className={tab === "eventos" ? "active" : ""} onClick={() => setTab("eventos")}>Eventos</button>
+    <div className="pestanas" role="tablist">
+      <button type="button" role="tab" aria-selected={tab === "planes"} className={tab === "planes" ? "is-activo" : ""} onClick={() => setTab("planes")}>Planes de vuelo</button>
+      <button type="button" role="tab" aria-selected={tab === "eventos"} className={tab === "eventos" ? "is-activo" : ""} onClick={() => setTab("eventos")}>Eventos</button>
     </div>
   );
-  return (
-    <div className="page planes-page">
-      {tab === "planes" ? <PlanesTab pestanas={pestanas} /> : <EventosTab pestanas={pestanas} />}
-    </div>
-  );
+  return tab === "planes" ? <PlanesTab pestanas={pestanas} /> : <EventosTab pestanas={pestanas} />;
 }
+
+const VACIOS = { texto: "", origen: "", destino: "", orden: "asc" };
 
 function PlanesTab({ pestanas }) {
   const notify = useNotify();
-  const [collapsed, setCollapsed] = useState(false);
   const [planes, setPlanes] = useState([]);
   const [cargando, setCargando] = useState(true);
-  const [filtros, setFiltros] = useState(FILTROS_VACIOS);
-  const [aplicados, setAplicados] = useState(FILTROS_VACIOS);
+  const [filtros, setFiltros] = useState(VACIOS);
+  const [aplicados, setAplicados] = useState(VACIOS);
+  const [panel, setPanel] = useState(false);
   const [pagina, setPagina] = useState(1);
   const [modal, setModal] = useState(false);
   const [progreso, setProgreso] = useState(null);
@@ -56,77 +60,78 @@ function PlanesTab({ pestanas }) {
   }), [planes]);
 
   const filtrados = useMemo(() => {
-    const t = aplicados.texto.trim().toUpperCase();
+    const t = filtros.texto.trim().toUpperCase();
     const lista = planes.filter((p) =>
-      (!t || p.codigo.toUpperCase().includes(t))
+      (!t || p.codigo.toUpperCase().includes(t) || `${p.codOrigen}-${p.codDestino}`.includes(t))
       && (!aplicados.origen || p.codOrigen === aplicados.origen)
       && (!aplicados.destino || p.codDestino === aplicados.destino));
     const clave = (p) => p.horaSalida ?? "";
     lista.sort((a, b) => (aplicados.orden === "asc" ? clave(a).localeCompare(clave(b)) : clave(b).localeCompare(clave(a))));
-    return lista.map((p) => ({ ...p, cantEventos: p.eventos?.length ?? 0 }));
-  }, [planes, aplicados]);
+    return lista;
+  }, [planes, aplicados, filtros.texto]);
 
+  useEffect(() => setPagina(1), [filtros.texto]);
   const visibles = filtrados.slice((pagina - 1) * TAMANIO_PAGINA, pagina * TAMANIO_PAGINA);
-  const aplicar = () => { setAplicados(filtros); setPagina(1); };
-  const limpiar = () => { setFiltros(FILTROS_VACIOS); setAplicados(FILTROS_VACIOS); setPagina(1); };
+  const totalPaginas = Math.max(1, Math.ceil(filtrados.length / TAMANIO_PAGINA));
+  const aplicar = (f = filtros) => { setAplicados(f); setFiltros(f); setPagina(1); setPanel(false); };
 
-  const headers = [
-    { label: "Código", key: "codigo" },
-    { label: "Origen", key: "codOrigen" },
-    { label: "Salida (UTC)", key: "horaSalida" },
-    { label: "Destino", key: "codDestino" },
-    { label: "Llegada (UTC)", key: "horaLlegada" },
-    { label: "Capacidad", key: "capacidad" },
-    { label: "Duración (h)", key: "duracion", render: (p) => (typeof p.duracion === "number" ? p.duracion.toFixed(2) : "-") },
-    { label: "Eventos", key: "cantEventos" },
+  const activos = [];
+  if (aplicados.origen) activos.push({ clave: "origen", texto: `Origen ${aplicados.origen}` });
+  if (aplicados.destino) activos.push({ clave: "destino", texto: `Destino ${aplicados.destino}` });
+  if (aplicados.orden === "desc") activos.push({ clave: "orden", texto: "Salida descendente" });
+
+  const columnas = [
+    { label: "Código", key: "codigo", render: (p) => <span className="codigo">{p.codigo}</span> },
+    { label: "Ruta", key: "ruta", render: (p) => `${p.codOrigen} → ${p.codDestino}` },
+    { label: `Salida (${zonaCorta()})`, key: "horaSalida", render: (p) => horaUTCALocal(p.horaSalida) },
+    { label: `Llegada (${zonaCorta()})`, key: "horaLlegada", render: (p) => horaUTCALocal(p.horaLlegada) },
+    { label: "Duración", key: "duracion", alinear: "derecha", render: (p) => (typeof p.duracion === "number" ? `${p.duracion.toFixed(2)} h` : "—") },
+    { label: "Capacidad", key: "capacidad", alinear: "derecha" },
+    { label: "Eventos", key: "eventos", alinear: "derecha", render: (p) => (p.eventos?.length ? <Etiqueta tono="aviso">{p.eventos.length}</Etiqueta> : <span className="tenue">0</span>) },
   ];
 
   return (
-    <>
+    <PaginaGestion
+      pestanas={pestanas}
+      titulo="Planes de vuelo"
+      descripcion="Vuelos diarios de Aerolínea PACK entre aeropuertos de la red."
+      acciones={<button type="button" className="boton boton--primario" onClick={() => setModal(true)}><IconoMas /> Registrar planes</button>}
+    >
       {progreso && <LoadingOverlay text="Importando planes..." progreso={progreso.proceso ? progreso : null} />}
-      <aside className={`sidebar ${collapsed ? "collapsed" : ""}`}>
-        <div className="sidebar-header">
-          <span className="sidebar-title">Filtros</span>
-          <img src={hideIcon} alt="Ocultar" className="hide-icon" onClick={() => setCollapsed(!collapsed)} />
-        </div>
-        {!collapsed && (
-          <div className="sidebar-content">
-            <div className="filter-group">
-              <span className="sidebar-subtitle-strong">Código</span>
-              <Input placeholder="Contiene..." value={filtros.texto} onChange={(e) => setFiltros({ ...filtros, texto: e.target.value })} />
-            </div>
-            <div className="filter-group">
-              <span className="sidebar-subtitle-strong">Origen</span>
-              <Dropdown placeholder="Todos" value={filtros.origen} onSelect={(v) => setFiltros({ ...filtros, origen: v })} options={codigos.origenes.map((c) => ({ label: c, value: c }))} />
-            </div>
-            <div className="filter-group">
-              <span className="sidebar-subtitle-strong">Destino</span>
-              <Dropdown placeholder="Todos" value={filtros.destino} onSelect={(v) => setFiltros({ ...filtros, destino: v })} options={codigos.destinos.map((c) => ({ label: c, value: c }))} />
-            </div>
-            <div className="filter-group">
-              <span className="sidebar-subtitle-strong">Ordenar por salida</span>
-              <Radio name="orden" value="asc" checked={filtros.orden === "asc"} onChange={() => setFiltros({ ...filtros, orden: "asc" })} label="Ascendente" />
-              <Radio name="orden" value="desc" checked={filtros.orden === "desc"} onChange={() => setFiltros({ ...filtros, orden: "desc" })} label="Descendente" />
-            </div>
-            <SidebarActions onFilter={aplicar} onClean={limpiar} />
-          </div>
-        )}
-      </aside>
+      <BarraFiltros
+        busqueda={filtros.texto}
+        onBusqueda={(v) => setFiltros((f) => ({ ...f, texto: v }))}
+        placeholder="Buscar código o ruta (SPIM-SKBO)"
+        abierto={panel}
+        onAlternar={() => setPanel((v) => !v)}
+        activos={activos}
+        onQuitar={(k) => aplicar({ ...aplicados, texto: filtros.texto, [k]: VACIOS[k] })}
+        onLimpiar={() => aplicar({ ...VACIOS, texto: filtros.texto })}
+        onAplicar={() => aplicar()}
+        resumen={!cargando && `${filtrados.length} planes`}
+      >
+        <Campo label="Origen">
+          <select value={filtros.origen} onChange={(e) => setFiltros({ ...filtros, origen: e.target.value })}>
+            <option value="">Todos</option>{codigos.origenes.map((c) => <option key={c}>{c}</option>)}
+          </select>
+        </Campo>
+        <Campo label="Destino">
+          <select value={filtros.destino} onChange={(e) => setFiltros({ ...filtros, destino: e.target.value })}>
+            <option value="">Todos</option>{codigos.destinos.map((c) => <option key={c}>{c}</option>)}
+          </select>
+        </Campo>
+        <Campo label="Orden por salida">
+          <Segmentado nombre="Orden" opciones={[{ value: "asc", label: "Ascendente" }, { value: "desc", label: "Descendente" }]} value={filtros.orden} onChange={(v) => setFiltros({ ...filtros, orden: v })} />
+        </Campo>
+      </BarraFiltros>
 
-      <section className="contenido">
-        <div className="content-header">
-          <div className="content-header-title">{pestanas}<h4>Planes de vuelo <span className="content-count">({filtrados.length})</span></h4></div>
-          <ButtonAdd icon={plus} label="Importar planes" onClick={() => setModal(true)} />
-        </div>
-        {cargando ? <p className="table-loading">Cargando planes...</p> : <Table headers={headers} data={visibles} />}
-        <Pagination currentPage={pagina} hasMorePages={pagina * TAMANIO_PAGINA < filtrados.length} onPageChange={setPagina} />
-      </section>
+      <Tabla columnas={columnas} filas={visibles} cargando={cargando} vacio="No hay planes con estos filtros." />
+      <Paginador pagina={pagina} total={totalPaginas} hayMas={pagina < totalPaginas} onCambiar={setPagina} />
 
       {modal && (
-        <ImportarModal
-          titulo="Importar planes de vuelo"
-          ayuda="Formato: ORIG-DEST-HH:MM-HH:MM-CAPACIDAD (horas locales). Los planes repetidos se omiten."
+        <RegistrarPlanesModal
           onCerrar={() => setModal(false)}
+          onListo={() => { setModal(false); cargar(); }}
           onImportar={async (archivo) => {
             setModal(false);
             setProgreso({});
@@ -142,7 +147,69 @@ function PlanesTab({ pestanas }) {
           }}
         />
       )}
-    </>
+    </PaginaGestion>
+  );
+}
+
+function RegistrarPlanesModal({ onCerrar, onListo, onImportar }) {
+  const notify = useNotify();
+  const [modo, setModo] = useState("uno");
+  const [aeropuertos, setAeropuertos] = useState([]);
+  const [origen, setOrigen] = useState(null);
+  const [destino, setDestino] = useState(null);
+  const [salida, setSalida] = useState("");
+  const [llegada, setLlegada] = useState("");
+  const [capacidad, setCapacidad] = useState("");
+  const [archivo, setArchivo] = useState(null);
+  const [enviando, setEnviando] = useState(false);
+  const [error, setError] = useState(null);
+
+  useEffect(() => { listarTodosLosAeropuertos().then(setAeropuertos).catch((e) => notify("danger", e.message)); }, [notify]);
+  const opciones = useMemo(() => aeropuertos.map((a) => ({ value: a.codigo, label: `${a.codigo} · ${a.ciudad}`, detalle: a.pais })), [aeropuertos]);
+  const ao = aeropuertos.find((a) => a.codigo === origen);
+  const ad = aeropuertos.find((a) => a.codigo === destino);
+  const huso = (a) => (a?.husoHorario != null ? ` (UTC${a.husoHorario >= 0 ? "+" : "−"}${Math.abs(a.husoHorario)})` : "");
+
+  const registrar = async () => {
+    const cap = Number(capacidad);
+    if (!origen || !destino) return setError("Elige el origen y el destino.");
+    if (origen === destino) return setError("El origen y el destino deben ser distintos.");
+    if (!salida || !llegada) return setError("Indica la hora de salida y la de llegada.");
+    if (!Number.isInteger(cap) || cap < 1) return setError("La capacidad debe ser un entero mayor que 0.");
+    setEnviando(true);
+    setError(null);
+    try {
+      await registrarPlan({ codOrigen: origen, codDestino: destino, horaSalida: localAUtc(salida, ao.husoHorario), horaLlegada: localAUtc(llegada, ad.husoHorario), capacidad: cap });
+      notify("success", "Plan de vuelo registrado.");
+      onListo();
+    } catch (e) {
+      setError(e.message);
+      setEnviando(false);
+    }
+  };
+
+  return (
+    <Modal titulo="Registrar planes de vuelo" descripcion="Un plan a la vez o un archivo completo." onCerrar={onCerrar} bloqueado={enviando} ancho="ancho"
+      pie={<>
+        <button type="button" className="boton boton--fantasma" onClick={onCerrar} disabled={enviando}>Cancelar</button>
+        <button type="button" className="boton boton--primario" disabled={enviando} onClick={() => (modo === "uno" ? registrar() : (archivo ? onImportar(archivo) : setError("Elige un archivo.")))}>
+          {modo === "uno" ? (enviando ? "Registrando..." : "Registrar plan") : "Importar archivo"}
+        </button>
+      </>}>
+      <Segmentado nombre="Modo" opciones={[{ value: "uno", label: "Un plan" }, { value: "archivo", label: "Archivo" }]} value={modo} onChange={(v) => { setModo(v); setError(null); }} />
+      {modo === "uno" ? (
+        <div className="campos">
+          <Campo label="Origen"><Selector opciones={opciones} value={origen} onChange={setOrigen} placeholder="Busca el aeropuerto de salida" /></Campo>
+          <Campo label="Destino"><Selector opciones={opciones} value={destino} onChange={setDestino} placeholder="Busca el aeropuerto de llegada" /></Campo>
+          <Campo label={`Salida, hora local del origen${huso(ao)}`}><input type="time" value={salida} onChange={(e) => setSalida(e.target.value)} /></Campo>
+          <Campo label={`Llegada, hora local del destino${huso(ad)}`}><input type="time" value={llegada} onChange={(e) => setLlegada(e.target.value)} /></Campo>
+          <Campo label="Capacidad (paquetes)"><input inputMode="numeric" value={capacidad} onChange={(e) => /^\d*$/.test(e.target.value) && setCapacidad(e.target.value)} /></Campo>
+        </div>
+      ) : (
+        <ZonaArchivo archivo={archivo} onArchivo={setArchivo} ayuda="Una línea por plan: ORIG-DEST-HH:MM-HH:MM-CAPACIDAD (horas locales de cada aeropuerto). Los planes repetidos se omiten." />
+      )}
+      {error && <p className="modal2__error" role="alert">{error}</p>}
+    </Modal>
   );
 }
 
@@ -170,36 +237,33 @@ function EventosTab({ pestanas }) {
   }, [notify]);
   useEffect(() => { cargar(1); }, [cargar]);
 
-  const headers = [
-    { label: "Código", key: "codigo" },
+  const columnas = [
+    { label: "Código", key: "codigo", render: (e) => <span className="codigo">{e.codigo}</span> },
     { label: "Plan", key: "codPlan" },
-    { label: "Tipo", key: "tipo", render: (e) => <StatusBadge value={e.tipo} colorMap={COLORES} /> },
-    { label: "Escenario", key: "tipoEscenario", useStatusColors: true },
-    { label: "Salida original (UTC)", key: "fechaHoraInicio" },
-    { label: "Llegada original (UTC)", key: "fechaHoraFin" },
-    { label: "Nueva salida", key: "fechaHoraNuevaSalida" },
-    { label: "Nueva llegada", key: "fechaHoraNuevaLlegada" },
-    { label: "Nueva capacidad", key: "nuevaCapacidad" },
+    { label: "Tipo", key: "tipo", render: (e) => { const [t, l] = TIPOS_EVENTO[e.tipo] ?? ["neutro", e.tipo]; return <Etiqueta tono={t}>{l}</Etiqueta>; } },
+    { label: "Escenario", key: "tipoEscenario", render: (e) => <Etiqueta tono={e.tipoEscenario === "OPERACION" ? "ambar" : "neutro"}>{e.tipoEscenario === "OPERACION" ? "Operación" : "Simulación"}</Etiqueta> },
+    { label: `Salida del vuelo (${zonaCorta()})`, key: "fechaHoraInicio", render: (e) => fechaServerALocal(e.fechaHoraInicio) },
+    { label: "Llegada del vuelo", key: "fechaHoraFin", render: (e) => fechaServerALocal(e.fechaHoraFin) },
+    { label: "Nueva salida", key: "fechaHoraNuevaSalida", render: (e) => (e.fechaHoraNuevaSalida ? fechaServerALocal(e.fechaHoraNuevaSalida) : <span className="tenue">—</span>) },
+    { label: "Nueva llegada", key: "fechaHoraNuevaLlegada", render: (e) => (e.fechaHoraNuevaLlegada ? fechaServerALocal(e.fechaHoraNuevaLlegada) : <span className="tenue">—</span>) },
+    { label: "Nueva capacidad", key: "nuevaCapacidad", alinear: "derecha", render: (e) => e.nuevaCapacidad ?? <span className="tenue">—</span> },
   ];
 
   return (
-    <>
+    <PaginaGestion
+      pestanas={pestanas}
+      titulo="Eventos sobre vuelos"
+      descripcion="Cancelaciones, reprogramaciones y reajustes de capacidad de vuelos concretos."
+      acciones={<button type="button" className="boton boton--primario" onClick={() => setModal(true)}><IconoMas /> Registrar eventos</button>}
+    >
       {progreso && <LoadingOverlay text="Importando eventos..." progreso={progreso.proceso ? progreso : null} />}
-      <section className="contenido">
-        <div className="content-header">
-          <div className="content-header-title">{pestanas}<h4>Eventos sobre vuelos</h4></div>
-          <ButtonAdd icon={plus} label="Importar eventos" onClick={() => setModal(true)} />
-        </div>
-        {cargando ? <p className="table-loading">Cargando eventos...</p> : <Table headers={headers} data={eventos} statusColors={COLORES} />}
-        <Pagination currentPage={pagina} hasMorePages={hayMas} onPageChange={cargar} />
-      </section>
+      <Tabla columnas={columnas} filas={eventos} cargando={cargando} vacio="Aún no hay eventos registrados." />
+      <Paginador pagina={pagina} hayMas={hayMas} onCambiar={cargar} />
 
       {modal && (
-        <ImportarModal
-          titulo="Importar eventos"
-          ayuda="Formato: DD-ORIG-DEST-HH:MM-HH:MM-TIPO[-HH:MM-HH:MM | -CAPACIDAD] (horas locales). TIPO: CANCELACION, REPROGRAMACION o REAJUSTE_CAPACIDAD. Si una línea es inválida se cancela toda la importación."
-          conMesYEscenario
+        <RegistrarEventosModal
           onCerrar={() => setModal(false)}
+          onListo={() => { setModal(false); cargar(1); }}
           onImportar={async (archivo, extra) => {
             setModal(false);
             setProgreso({});
@@ -215,57 +279,131 @@ function EventosTab({ pestanas }) {
           }}
         />
       )}
-    </>
+    </PaginaGestion>
   );
 }
 
-function ImportarModal({ titulo, ayuda, conMesYEscenario = false, onCerrar, onImportar }) {
+// Primera salida del plan (hora UTC diaria) dentro del día elegido en la zona de la sesión
+function salidaEnElDia(fechaLocal, horaSalidaUTC) {
+  const inicioDia = fromInputs(fechaLocal, "00:00");
+  if (inicioDia == null) return null;
+  const [h, m] = horaSalidaUTC.split(":").map(Number);
+  const medianocheUTC = Math.floor(inicioDia / DIA) * DIA;
+  for (let k = 0; k < 3; k++) {
+    const t = medianocheUTC + k * DIA + (h * 60 + m) * 60000;
+    if (t >= inicioDia && t < inicioDia + DIA) return t;
+  }
+  return null;
+}
+
+function RegistrarEventosModal({ onCerrar, onListo, onImportar }) {
+  const notify = useNotify();
   const hoy = new Date();
+  const [modo, setModo] = useState("uno");
+  const [escenario, setEscenario] = useState("OPERACION");
+  const [planes, setPlanes] = useState([]);
+  const [codPlan, setCodPlan] = useState(null);
+  const [tipo, setTipo] = useState("CANCELACION");
+  const [fecha, setFecha] = useState(toInputDate(Date.now()));
+  const [nueva, setNueva] = useState({ fs: "", hs: "", fl: "", hl: "" });
+  const [capacidad, setCapacidad] = useState("");
   const [archivo, setArchivo] = useState(null);
-  const [mes, setMes] = useState(hoy.getUTCMonth() + 1);
-  const [anio, setAnio] = useState(hoy.getUTCFullYear());
-  const [tipoEscenario, setTipoEscenario] = useState("SIMULACION");
+  const [mes, setMes] = useState(hoy.getMonth() + 1);
+  const [anio, setAnio] = useState(hoy.getFullYear());
+  const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState(null);
 
+  useEffect(() => { listarTodosLosPlanes().then(setPlanes).catch((e) => notify("danger", e.message)); }, [notify]);
+  const opciones = useMemo(() => planes.map((p) => ({ value: p.codigo, label: `${p.codOrigen} → ${p.codDestino} · ${horaUTCALocal(p.horaSalida)}`, detalle: p.codigo })), [planes]);
+  const plan = planes.find((p) => p.codigo === codPlan);
+  const salida = plan && fecha ? salidaEnElDia(fecha, plan.horaSalida) : null;
+  const llegada = salida != null && plan ? salida + Math.round((plan.duracion ?? 0) * 3600000) : null;
+
+  const registrar = async () => {
+    if (!plan) return setError("Elige el plan de vuelo.");
+    if (salida == null) return setError("Elige el día del vuelo.");
+    const dto = { codPlan, tipo, tipoEscenario: escenario, fechaHoraInicio: toServerDateTime(salida), fechaHoraFin: toServerDateTime(llegada) };
+    if (tipo === "REPROGRAMACION") {
+      const ns = fromInputs(nueva.fs, nueva.hs), nl = fromInputs(nueva.fl, nueva.hl);
+      if (ns == null || nl == null) return setError("Indica la nueva salida y la nueva llegada.");
+      if (nl <= ns) return setError("La nueva llegada debe ser posterior a la nueva salida.");
+      dto.fechaHoraNuevaSalida = toServerDateTime(ns);
+      dto.fechaHoraNuevaLlegada = toServerDateTime(nl);
+    }
+    if (tipo === "REAJUSTE_CAPACIDAD") {
+      const c = Number(capacidad);
+      if (!Number.isInteger(c) || c < 0) return setError("La nueva capacidad debe ser un entero mayor o igual a 0.");
+      dto.nuevaCapacidad = c;
+    }
+    setEnviando(true);
+    setError(null);
+    try {
+      await registrarEvento(dto);
+      notify("success", "Evento registrado.");
+      onListo();
+    } catch (e) {
+      setError(e.message);
+      setEnviando(false);
+    }
+  };
+
   const importar = () => {
-    if (!archivo) return setError("Selecciona un archivo.");
-    if (conMesYEscenario && (!(mes >= 1 && mes <= 12) || !(anio >= 2000 && anio <= 2100))) return setError("Mes o año inválido.");
-    onImportar(archivo, conMesYEscenario ? { mes: Number(mes), anio: Number(anio), tipoEscenario } : {});
+    if (!archivo) return setError("Elige un archivo.");
+    if (!(mes >= 1 && mes <= 12) || !(anio >= 2000 && anio <= 2100)) return setError("Mes o año inválido.");
+    onImportar(archivo, { mes: Number(mes), anio: Number(anio), tipoEscenario: escenario });
   };
 
   return (
-    <div className="modal" onClick={onCerrar}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
-          <h3 className="modal-title">{titulo}</h3>
-          <label htmlFor="archivoImportar" className="file-label">Elegir archivo</label>
-          <input type="file" id="archivoImportar" className="file-input" accept=".txt" onChange={(e) => setArchivo(e.target.files[0] ?? null)} />
-        </div>
-        <div className="file-name">
-          {archivo ? archivo.name : "Ningún archivo seleccionado"}
-          {archivo && <RemoveFileButton onClick={() => setArchivo(null)} />}
-        </div>
-        <div className="modal-body">
-          <p className="modal-hint">{ayuda}</p>
-          {conMesYEscenario && (
+    <Modal titulo="Registrar eventos" descripcion="Afectan a un vuelo concreto de un plan." onCerrar={onCerrar} bloqueado={enviando} ancho="ancho"
+      pie={<>
+        <button type="button" className="boton boton--fantasma" onClick={onCerrar} disabled={enviando}>Cancelar</button>
+        <button type="button" className="boton boton--primario" disabled={enviando} onClick={() => (modo === "uno" ? registrar() : importar())}>
+          {modo === "uno" ? (enviando ? "Registrando..." : "Registrar evento") : "Importar archivo"}
+        </button>
+      </>}>
+      <div className="modal2__fila">
+        <Segmentado nombre="Escenario" opciones={ESCENARIOS} value={escenario} onChange={setEscenario} />
+        <Segmentado nombre="Modo" opciones={[{ value: "uno", label: "Un evento" }, { value: "archivo", label: "Archivo" }]} value={modo} onChange={(v) => { setModo(v); setError(null); }} />
+      </div>
+      {modo === "uno" ? (
+        <div className="campos">
+          <Campo label="Plan de vuelo" ancho="completo"><Selector opciones={opciones} value={codPlan} onChange={setCodPlan} placeholder="Busca por ruta (SPIM) o código" /></Campo>
+          <Campo label={`Día del vuelo (${zonaCorta()})`} hint={salida != null ? `Sale ${fechaServerALocal(toServerDateTime(salida))} y llega ${fechaServerALocal(toServerDateTime(llegada))}` : undefined}>
+            <input type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} />
+          </Campo>
+          <Campo label="Tipo de evento">
+            <select value={tipo} onChange={(e) => setTipo(e.target.value)}>
+              <option value="CANCELACION">Cancelación</option>
+              <option value="REPROGRAMACION">Reprogramación</option>
+              <option value="REAJUSTE_CAPACIDAD">Reajuste de capacidad</option>
+            </select>
+          </Campo>
+          {tipo === "REPROGRAMACION" && (
             <>
-              <span className="sidebar-subtitle">Mes y año de los días del archivo</span>
-              <div className="inline-fields">
-                <Input type="number" min={1} max={12} value={mes} onChange={(e) => setMes(e.target.value)} placeholder="Mes" />
-                <Input type="number" min={2000} max={2100} value={anio} onChange={(e) => setAnio(e.target.value)} placeholder="Año" />
-              </div>
-              <span className="sidebar-subtitle">Escenario</span>
-              <Radio name="escEv" label="Simulación" value="SIMULACION" checked={tipoEscenario === "SIMULACION"} onChange={() => setTipoEscenario("SIMULACION")} />
-              <Radio name="escEv" label="Operación" value="OPERACION" checked={tipoEscenario === "OPERACION"} onChange={() => setTipoEscenario("OPERACION")} />
+              <Campo label={`Nueva salida (${zonaCorta()})`}><input type="date" value={nueva.fs} onChange={(e) => setNueva({ ...nueva, fs: e.target.value })} /></Campo>
+              <Campo label="Hora"><input type="time" value={nueva.hs} onChange={(e) => setNueva({ ...nueva, hs: e.target.value })} /></Campo>
+              <Campo label={`Nueva llegada (${zonaCorta()})`}><input type="date" value={nueva.fl} onChange={(e) => setNueva({ ...nueva, fl: e.target.value })} /></Campo>
+              <Campo label="Hora"><input type="time" value={nueva.hl} onChange={(e) => setNueva({ ...nueva, hl: e.target.value })} /></Campo>
             </>
           )}
-          {error && <p className="form-error">{error}</p>}
+          {tipo === "REAJUSTE_CAPACIDAD" && (
+            <Campo label="Nueva capacidad" hint={plan ? `Capacidad actual: ${plan.capacidad}` : undefined}>
+              <input inputMode="numeric" value={capacidad} onChange={(e) => /^\d*$/.test(e.target.value) && setCapacidad(e.target.value)} />
+            </Campo>
+          )}
         </div>
-        <div className="modal-footer">
-          <button className="btn red" onClick={onCerrar}>Cancelar</button>
-          <button className="btn green" onClick={importar}>Importar</button>
-        </div>
-      </div>
-    </div>
+      ) : (
+        <>
+          <ZonaArchivo archivo={archivo} onArchivo={setArchivo}
+            ayuda="Una línea por evento: DD-ORIG-DEST-HH:MM-HH:MM-TIPO[-HH:MM-HH:MM | -CAPACIDAD] (horas locales). Si una línea es inválida se cancela toda la importación." />
+          <div className="campos">
+            <Campo label="Mes de los días del archivo"><input type="number" min={1} max={12} value={mes} onChange={(e) => setMes(e.target.value)} /></Campo>
+            <Campo label="Año"><input type="number" min={2000} max={2100} value={anio} onChange={(e) => setAnio(e.target.value)} /></Campo>
+          </div>
+          <p className="modal2__nota">Las horas del archivo son locales de cada aeropuerto; en la tabla se muestran en {zonaLarga()}.</p>
+        </>
+      )}
+      {error && <p className="modal2__error" role="alert">{error}</p>}
+    </Modal>
   );
 }

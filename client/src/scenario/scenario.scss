@@ -1152,3 +1152,8 @@ select.filter-select {
 }
 .leaflet-bar a:hover { background: var(--marino-2); }
 .leaflet-bar { border: 1px solid var(--trazo) !important; box-shadow: var(--sombra) !important; }
+
+.icono-aeropuerto { background: none; border: 0;
+  svg { display: block; filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.7)); transition: transform 160ms var(--ease-out); }
+  &:hover svg { transform: scale(1.18); }
+}

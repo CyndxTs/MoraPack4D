@@ -1,4 +1,4 @@
-// Configuración global del cliente (todo el sistema trabaja en UTC; el server convierte horas locales al importar)
+// Configuración global del cliente. El server trabaja en UTC; el front muestra y pide las horas en la zona de la sesión.
 
 // URL del server. En desarrollo va vacía: Vite redirige /api y /ws a http://localhost:8080 (vite.config.js).
 // En producción (Render) se define VITE_API_URL al compilar, p. ej. https://morapack-server.onrender.com

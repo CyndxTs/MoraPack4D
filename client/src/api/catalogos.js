@@ -20,6 +20,9 @@ export const filtrarPaises = (modelo, pagina, tamanio) => filtrar("paises", mode
 // ---------- Usuarios ----------
 export const listarClientes = (pagina, tamanio) => listar("clientes", pagina, tamanio);
 export const filtrarClientes = (modelo, pagina, tamanio) => filtrar("clientes", modelo, pagina, tamanio);
+// Sedes (solo administrador): reemplaza el conjunto de aeropuertos sede
+export const actualizarSedes = (codigos) => post("/aeropuertos/sedes", { codigos });
+
 // Usuarios (solo administrador): modelo.tipoUsuario filtra por rol
 export const listarUsuarios = (pagina, tamanio) => listar("usuarios", pagina, tamanio);
 export const filtrarUsuarios = (modelo, pagina, tamanio) => filtrar("usuarios", modelo, pagina, tamanio);

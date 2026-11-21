@@ -17,7 +17,10 @@ const Pedidos = lazy(() => import("../pages/trabajador/Pedidos/Pedidos"));
 const Planes = lazy(() => import("../pages/trabajador/Planes/Planes"));
 import ClienteInicio from "../pages/cliente/ClienteInicio";
 import NuevoPedido from "../pages/cliente/NuevoPedido";
-import { AdminAeropuertos, AdminParametros, AdminUbicaciones } from "../pages/admin/AdminPaginas";
+const AdminParametros = lazy(() => import("../pages/admin/Parametros"));
+const AdminUbicaciones = lazy(() => import("../pages/admin/Ubicaciones"));
+const AdminAeropuertos = lazy(() => import("../pages/admin/Aeropuertos"));
+const AdminUsuarios = lazy(() => import("../pages/admin/Usuarios"));
 import NotFound from "../pages/comun/NotFound";
 
 const cargando = <div className="vista-cargando">Cargando...</div>;
@@ -68,9 +71,10 @@ const router = createBrowserRouter([
         path: "/admin",
         element: <RequireRole roles={[ROLES.ADMINISTRADOR]}><AdminLayout /></RequireRole>,
         children: [
-          { index: true, element: <AdminParametros /> },
-          { path: "ubicaciones", element: <AdminUbicaciones /> },
-          { path: "aeropuertos", element: <AdminAeropuertos /> },
+          { index: true, element: diferida(AdminParametros) },
+          { path: "ubicaciones", element: diferida(AdminUbicaciones) },
+          { path: "aeropuertos", element: diferida(AdminAeropuertos) },
+          { path: "usuarios", element: diferida(AdminUsuarios) },
           cuenta,
         ],
       },

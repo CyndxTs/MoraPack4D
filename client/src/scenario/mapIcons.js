@@ -1,6 +1,4 @@
 import L from "leaflet";
-import airportIconImg from "../assets/icons/airport.svg";
-import sedeIconImg from "../assets/icons/sede.svg";
 import planeIconImg from "../assets/icons/planeMora.svg";
 
 // Los íconos se cachean: crear un L.divIcon por avión en cada tick era muy costoso
@@ -21,13 +19,6 @@ function nivelDeAvion(capacity, maxCapacity) {
   if (ratio < 0.9) return "amarillo";
   return "rojo";
 }
-
-// En el mapa oscuro los aeropuertos usan los mismos tonos vivos que los aviones, con un halo para separarlos del fondo
-const FILTRO_AEROPUERTO = {
-  verde: `${"invert(54%) sepia(81%) saturate(356%) hue-rotate(85deg) brightness(95%) contrast(115%)"} drop-shadow(0 0 3px rgba(6,11,26,0.9))`,
-  amarillo: `${"invert(80%) sepia(72%) saturate(657%) hue-rotate(3deg) brightness(100%) contrast(118%)"} drop-shadow(0 0 3px rgba(6,11,26,0.9))`,
-  rojo: `${"invert(37%) sepia(79%) saturate(844%) hue-rotate(338deg) brightness(100%) contrast(120%)"} drop-shadow(0 0 3px rgba(6,11,26,0.9))`,
-};
 
 function nivelDeAeropuerto(ocupacion) {
   if (ocupacion == null || ocupacion < 0.5) return "verde";
@@ -52,14 +43,28 @@ export function planeIcon(capacity, maxCapacity, rotation) {
 }
 
 const cacheAeropuertos = new Map();
+const COLOR_NIVEL = { verde: "#39D98A", amarillo: "#FFC24D", rojo: "#FF6B7A" };
+
+// Aeropuerto: anillo con el color de ocupación del almacén. Sede: marca celeste con la caja de MoraPack.
 export function airportIcon(esSede, ocupacion) {
   const nivel = nivelDeAeropuerto(ocupacion);
   const key = `${esSede ? 1 : 0}|${nivel}`;
   if (!cacheAeropuertos.has(key)) {
-    const size = esSede ? 30 : 24;
+    const c = COLOR_NIVEL[nivel];
+    const size = esSede ? 30 : 18;
+    const html = esSede
+      ? `<svg class="airport-icon airport-icon--hub" width="30" height="30" viewBox="0 0 30 30" aria-hidden="true">
+           <circle cx="15" cy="15" r="13.5" fill="rgba(120,198,255,0.16)" stroke="#78C6FF" stroke-width="1.5"/>
+           <circle cx="15" cy="15" r="9.5" fill="#0A1228" stroke="#78C6FF" stroke-width="1.2"/>
+           <path d="M15 9.6l5 2.5-5 2.5-5-2.5z" fill="#FFC266"/><path d="M10 12.1l5 2.5v5.6l-5-2.5z" fill="#F29A2E"/><path d="M20 12.1l-5 2.5v5.6l5-2.5z" fill="#C8741A"/>
+         </svg>`
+      : `<svg class="airport-icon" width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
+           <circle cx="9" cy="9" r="7.5" fill="#0A1228" stroke="${c}" stroke-width="2.2"/>
+           <circle cx="9" cy="9" r="2.6" fill="${c}"/>
+         </svg>`;
     cacheAeropuertos.set(key, L.divIcon({
-      html: `<img src="${esSede ? sedeIconImg : airportIconImg}" class="airport-icon ${esSede ? "airport-icon--hub" : ""}" style="width:${size}px;height:${size}px;filter:${FILTRO_AEROPUERTO[nivel]};">`,
-      className: "",
+      html,
+      className: "icono-aeropuerto",
       iconSize: [size, size],
       iconAnchor: [size / 2, size / 2],
       popupAnchor: [0, -(size / 2)],

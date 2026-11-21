@@ -24,6 +24,7 @@ import com.pucp.dp1.grupo4d.morapack.service.CommunicationService;
 import com.pucp.dp1.grupo4d.morapack.service.ImportationService;
 import com.pucp.dp1.grupo4d.morapack.util.G4DUtility;
 import org.springframework.data.domain.Sort;
+import com.pucp.dp1.grupo4d.morapack.model.dto.response.GenericResponse;
 import org.springframework.stereotype.Service;
 import org.springframework.data.domain.Pageable;
 import org.springframework.transaction.annotation.Transactional;
@@ -60,6 +61,19 @@ public class AeropuertoService {
 
     public int setOriginFlagsByList(List<String> codOrigenes) {
         return aeropuertoRepository.setOriginFlagsByList(codOrigenes);
+    }
+
+    // Reemplaza el conjunto de sedes (origen de los envíos). Debe quedar al menos una.
+    @Transactional
+    public GenericResponse actualizarSedes(List<String> codigos) {
+        List<String> limpios = (codigos == null) ? List.of() : codigos.stream().filter(c -> c != null && !c.isBlank()).map(c -> c.trim().toUpperCase()).distinct().toList();
+        if (limpios.isEmpty()) throw new G4DException("Debe haber al menos una sede.");
+        for (String codigo : limpios) {
+            if (!this.existsByCodigo(codigo)) throw new G4DException(String.format("El aeropuerto ('%s') no existe.", codigo));
+        }
+        this.unsetAllOriginFlags();
+        this.setOriginFlagsByList(limpios);
+        return new GenericResponse(true, String.format("Sedes actualizadas: %s.", String.join(", ", limpios)));
     }
 
     public List<AeropuertoEntity> findAll() {

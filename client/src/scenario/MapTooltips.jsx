@@ -1,3 +1,4 @@
+import { formatFecha } from "../utils/fechas";
 import React, { useState } from "react";
 
 // Helper para obtener color según porcentaje
@@ -128,7 +129,7 @@ export function AirportTooltipContent({
                   </div>
                   <div className="airport-popup__flight-time">
                     {isSalidas ? "Sale: " : "Llega: "}
-                    {isSalidas ? v.startTime : v.endTime}
+                    {formatFecha(isSalidas ? v.startMs : v.endMs)}
                   </div>
                   <div className="airport-popup__flight-orders">
                     {pedidosVuelo.length === 0 ? (
@@ -179,11 +180,11 @@ export function PlaneTooltipContent({
 
       <div className="plane-tooltip__row">
         <span>Salida</span>
-        <span>{flight.startTime}</span>
+        <span>{formatFecha(flight.startMs)}</span>
       </div>
       <div className="plane-tooltip__row">
         <span>Llegada</span>
-        <span>{flight.endTime}</span>
+        <span>{formatFecha(flight.endMs)}</span>
       </div>
       <div className="plane-tooltip__row">
         <span>Capacidad</span>

@@ -2,7 +2,8 @@ import React, { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Bar, BarChart, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { calcularVista } from "../../../scenario/vista";
-import { formatUTC } from "../../../utils/fechas";
+import { formatFecha } from "../../../utils/fechas";
+import { zonaCorta } from "../../../utils/zona";
 import { formatPercent } from "../../../utils/format";
 import "./dashboard.scss";
 
@@ -50,7 +51,7 @@ export default function DashboardModal({ escenario, nowMs, onClose }) {
             <h3>Dashboard de la operación</h3>
             <span className="dash-subtitle">
               {escenario.recibidoEn
-                ? `Última planificación recibida: ${formatUTC(escenario.recibidoEn, true)} UTC`
+                ? `Última planificación recibida: ${formatFecha(escenario.recibidoEn, true)} (${zonaCorta()})`
                 : "Aún no hay una planificación de la operación desde que el server arrancó."}
             </span>
           </div>

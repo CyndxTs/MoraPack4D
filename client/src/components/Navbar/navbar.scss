@@ -24,7 +24,7 @@
 .nav {
   position: sticky;
   top: 0;
-  z-index: 1000;
+  z-index: 1500; // por encima de los controles del mapa, por debajo de los modales
   height: var(--nav-height);
   background: rgba(6, 11, 26, 0.92);
   border-bottom: 1px solid var(--trazo-suave);

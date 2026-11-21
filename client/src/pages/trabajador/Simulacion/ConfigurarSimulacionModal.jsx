@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { DateTimeInline, RangeSelector } from "../../../components/UI/ui";
 import ParametrosForm from "../../../scenario/ParametrosForm";
-import { fromInputsUTC, toInputDateUTC, toInputTimeUTC } from "../../../utils/fechas";
+import { fromInputs, toInputDate, toInputTime } from "../../../utils/fechas";
+import { zonaLarga } from "../../../utils/zona";
 import { parseNumber } from "../../../utils/format";
 
 const SEMANA_MS = 7 * 24 * 3600 * 1000;
@@ -20,7 +21,7 @@ export default function ConfigurarSimulacionModal({ parametrosBase, aeropuertos,
 
   useEffect(() => setParametros(parametrosBase), [parametrosBase]);
 
-  const inicioMs = fromInputsUTC(fechaI, horaI);
+  const inicioMs = fromInputs(fechaI, horaI);
   const finMs = inicioMs != null ? inicioMs + SEMANA_MS : null;
 
   const iniciar = () => {
@@ -39,12 +40,12 @@ export default function ConfigurarSimulacionModal({ parametrosBase, aeropuertos,
         </div>
         <div className="modal-body">
           <span className="sidebar-subtitle">Rango de simulación (una semana)</span>
-          <label>Fecha y hora de inicio (UTC)</label>
+          <label>Fecha y hora de inicio ({zonaLarga()})</label>
           <DateTimeInline dateValue={fechaI} timeValue={horaI} onDateChange={(e) => setFechaI(e.target.value)} onTimeChange={(e) => setHoraI(e.target.value)} />
-          <label>Fecha y hora de fin (UTC)</label>
+          <label>Fecha y hora de fin ({zonaLarga()})</label>
           <DateTimeInline
-            dateValue={finMs != null ? toInputDateUTC(finMs) : ""}
-            timeValue={finMs != null ? toInputTimeUTC(finMs) : ""}
+            dateValue={finMs != null ? toInputDate(finMs) : ""}
+            timeValue={finMs != null ? toInputTime(finMs) : ""}
             onDateChange={() => {}} onTimeChange={() => {}}
             disabled
           />

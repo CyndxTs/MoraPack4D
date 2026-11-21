@@ -32,7 +32,10 @@ Variables (en `.env.local`, que no se sube; en Render, en el static site):
 | `/trabajador/pedidos` | TRABAJADOR | Pedidos: filtrar, registrar (operación), importar archivo, cancelar |
 | `/trabajador/planes` | TRABAJADOR | Planes de vuelo y eventos (listar e importar) |
 | `/cliente`, `/cliente/pedidos/nuevo` | CLIENTE | Pendiente (pantallas provisionales) |
-| `/admin`, `/admin/ubicaciones`, `/admin/aeropuertos` | ADMINISTRADOR | Pendiente (pantallas provisionales) |
+| `/admin` | ADMINISTRADOR | Parámetros (operación automática, plazos, algoritmo) |
+| `/admin/ubicaciones` | ADMINISTRADOR | Países y continentes |
+| `/admin/aeropuertos` | ADMINISTRADOR | Aeropuertos y sedes (alta uno a uno o por archivo, cambiar sedes) |
+| `/admin/usuarios` | ADMINISTRADOR | Usuarios y roles (crear, cambiar rol, habilitar/deshabilitar, eliminar) |
 
 ## Sesión
 
@@ -72,3 +75,12 @@ registrar un evento). La cuenta regresiva se ve en "Mostrar controles" de la Ope
 - Variables: `VITE_API_URL` y `VITE_GOOGLE_CLIENT_ID` (se leen al compilar; si cambian, vuelve a desplegar).
 - Rewrite: `/*` → `/index.html` (para que las rutas como `/trabajador/pedidos` funcionen al recargar).
 - `Dockerfile` y `nginx.conf` no se usan en Render (quedan por si se despliega en otro lado).
+
+## Horas
+El server trabaja en UTC. El front muestra y pide todas las horas en la zona de la sesión: el huso horario del país de la
+cuenta (sin sesión, el del navegador). `utils/zona.js` guarda la zona y `utils/fechas.js` convierte.
+
+## Logo
+`src/assets/brand/MP_Logo.png`: PNG cuadrado con fondo transparente, 160×160 px (se muestra a 30–46 px). Para cambiarlo,
+reemplaza ese archivo con el mismo nombre. Los íconos del navegador están en `public/`: `favicon-32.png`, `favicon-64.png`
+y `apple-touch-icon.png` (180×180).

@@ -13,7 +13,8 @@ import { suscribir, normalizarEstado } from "../../../realtime/stompClient";
 import { esperarExportacion, prepararSeguimientoDeExportaciones } from "../../../realtime/exportaciones";
 import { useProgramacion } from "../../../operacion/useProgramacion";
 import { useNotify } from "../../../notifications/NotificationContext";
-import { formatCountdown, formatUTC } from "../../../utils/fechas";
+import { formatCountdown, formatFecha } from "../../../utils/fechas";
+import { zonaCorta } from "../../../utils/zona";
 import DashboardModal from "./DashboardModal";
 import runIcon from "../../../assets/icons/run.svg";
 import downloadIcon from "../../../assets/icons/download.svg";
@@ -21,7 +22,7 @@ import configIcon from "../../../assets/icons/config.svg";
 
 const KEY_DASHBOARD_VISTO = "morapack.dashboardVisto";
 
-// Vista principal del trabajador: la operación en tiempo real (reloj real, UTC)
+// Vista principal del trabajador: la operación en tiempo real (reloj real, mostrado en la zona de la sesión)
 export default function Operacion() {
   const notify = useNotify();
   const [escenario, setEscenario] = useState(() => crearEscenarioVacio());
@@ -118,8 +119,8 @@ export default function Operacion() {
         </div>
       </div>
       <ControlDivider />
-      <ControlRow label="Tiempo real (UTC):" value={formatUTC(nowMs, true)} color="var(--tinta-3)" />
-      <ControlRow label="Última planificación:" value={escenario.recibidoEn ? formatUTC(escenario.recibidoEn, true) : "—"} />
+      <ControlRow label={`Hora actual (${zonaCorta()}):`} value={formatFecha(nowMs, true)} color="var(--tinta-3)" />
+      <ControlRow label="Última planificación:" value={escenario.recibidoEn ? formatFecha(escenario.recibidoEn, true) : "—"} />
       <ControlRow label="Próxima replanificación:" value={programada ? `en ${formatCountdown(programada - nowMs)}` : "no programada"} />
     </ControlsDropdown>
   );

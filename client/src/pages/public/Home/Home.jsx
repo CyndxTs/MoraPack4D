@@ -138,6 +138,11 @@ export default function Home() {
             <li>Josué Manuel Sivincha Bailón</li>
             <li>José Armando Moncada Silva</li>
           </ul>
+          <div className="equipo__inversor">
+            <span>Inversionista principal</span>
+            <strong>Eduardo Valladares</strong>
+            <p>Hizo posible MoraPack.</p>
+          </div>
         </div>
       </section>
     </div>

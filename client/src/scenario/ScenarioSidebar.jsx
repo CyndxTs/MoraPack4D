@@ -1,3 +1,4 @@
+import { formatFecha } from "../utils/fechas";
 import React, { useState } from "react";
 import hideIcon from "../assets/icons/hide-sidebar.png";
 import { AirportInfoPanel, FlightInfoPanel, OrderInfoPanel, RouteInfoPanel } from "./InfoPanels";
@@ -46,13 +47,13 @@ export default function ScenarioSidebar({
     if (!seleccionDetalle) return null;
     switch (selected.type) {
       case "airport":
-        return <AirportInfoPanel airport={seleccionDetalle.airport} vuelosSaliendo={seleccionDetalle.salen} vuelosLlegando={seleccionDetalle.llegan} getOrdersForFlight={getOrdersForFlight} />;
+        return <AirportInfoPanel airport={seleccionDetalle.airport} vuelosSaliendo={seleccionDetalle.salen} vuelosLlegando={seleccionDetalle.llegan} getOrdersForFlight={getOrdersForFlight} nowMs={nowMs} />;
       case "flight":
-        return <FlightInfoPanel flight={seleccionDetalle} getOrdersForFlight={getOrdersForFlight} />;
+        return <FlightInfoPanel flight={seleccionDetalle} getOrdersForFlight={getOrdersForFlight} nowMs={nowMs} />;
       case "order":
         return <OrderInfoPanel order={seleccionDetalle} flights={escenario.flights} simNowMs={nowMs} />;
       case "route":
-        return <RouteInfoPanel route={seleccionDetalle} />;
+        return <RouteInfoPanel route={seleccionDetalle} flights={escenario.flights} />;
       default:
         return null;
     }
@@ -130,7 +131,7 @@ export default function ScenarioSidebar({
                           <div className="flight-card-body">
                             <div className="flight-card-row">
                               <span className="flight-label">{flightViewMode === "ACTIVE" ? "Progreso" : "Salida"}</span>
-                              <span className="flight-value">{flightViewMode === "ACTIVE" ? `${Math.round((flight.progress || 0) * 100)}%` : flight.startTime}</span>
+                              <span className="flight-value">{flightViewMode === "ACTIVE" ? `${Math.round((flight.progress || 0) * 100)}%` : formatFecha(flight.startMs)}</span>
                             </div>
                             <div className="flight-card-row">
                               <span className="flight-label">Carga</span>
