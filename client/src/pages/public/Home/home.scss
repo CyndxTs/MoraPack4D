@@ -143,3 +143,10 @@
 @media (max-width: 700px) {
   .banner-cta { flex-direction: column; border-radius: 14px; white-space: normal; text-align: center; bottom: 12px; }
 }
+button.cta-btn { border: 0; cursor: pointer; font-family: inherit; }
+.cta-btn--sec {
+  background: transparent;
+  color: var(--color-blanco);
+  box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, 0.7);
+  &:hover { color: var(--color-blanco); }
+}

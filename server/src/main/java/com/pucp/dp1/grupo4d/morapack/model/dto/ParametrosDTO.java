@@ -47,4 +47,11 @@ public class ParametrosDTO implements DTO {
     private Double factorDeDesviacionEspacial;
     private Double factorDeDisposicionOperacional;
     private Double factorDeLejania;
+
+    // Operación (solo los usa el server; la simulación los ignora)
+    private Boolean replanificacionAutomatica;
+    private Integer minutosEsperaReplanificacion;
+    private Boolean replanificarAlRegistrarEvento;
+    private Integer segundosUmbralReplanificacion;
+    private Boolean purgaAutomatica;
 }

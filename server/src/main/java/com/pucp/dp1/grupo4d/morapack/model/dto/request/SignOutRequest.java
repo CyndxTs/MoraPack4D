@@ -10,6 +10,5 @@ import lombok.Data;
 
 @Data
 public class SignOutRequest {
-    private String correo;
-    private String tipoUsuario;
+    private String tokenRefresco;
 }

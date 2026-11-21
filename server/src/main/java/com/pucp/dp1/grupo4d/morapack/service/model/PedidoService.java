@@ -15,7 +15,7 @@ import com.pucp.dp1.grupo4d.morapack.model.dto.request.*;
 import com.pucp.dp1.grupo4d.morapack.model.dto.response.ListResponse;
 import com.pucp.dp1.grupo4d.morapack.model.entity.AeropuertoEntity;
 import com.pucp.dp1.grupo4d.morapack.model.entity.PedidoEntity;
-import com.pucp.dp1.grupo4d.morapack.model.entity.ClienteEntity;
+import com.pucp.dp1.grupo4d.morapack.model.entity.UsuarioEntity;
 import com.pucp.dp1.grupo4d.morapack.model.entity.SegmentacionEntity;
 import com.pucp.dp1.grupo4d.morapack.model.entity.LoteEntity;
 import com.pucp.dp1.grupo4d.morapack.model.entity.RegistroEntity;
@@ -51,7 +51,7 @@ public class PedidoService {
     private final PedidoRepository pedidoRepository;
     private final PedidoMapper pedidoMapper;
     private final AeropuertoService aeropuertoService;
-    private final ClienteService clienteService;
+    private final UsuarioService usuarioService;
     private final CommunicationService communicationService;
     private final ImportationService importationService;
     private final SegmentacionService segmentacionService;
@@ -59,12 +59,12 @@ public class PedidoService {
     private final RegistroService registroService;
     private final VueloService vueloService;
 
-    public PedidoService(PedidoRepository pedidoRepository, PedidoMapper pedidoMapper, AeropuertoService aeropuertoService, ClienteService clienteService, CommunicationService communicationService, ImportationService importationService,
+    public PedidoService(PedidoRepository pedidoRepository, PedidoMapper pedidoMapper, AeropuertoService aeropuertoService, UsuarioService usuarioService, CommunicationService communicationService, ImportationService importationService,
                          SegmentacionService segmentacionService, LoteService loteService, RegistroService registroService, VueloService vueloService) {
         this.pedidoRepository = pedidoRepository;
         this.pedidoMapper = pedidoMapper;
         this.aeropuertoService = aeropuertoService;
-        this.clienteService = clienteService;
+        this.usuarioService = usuarioService;
         this.communicationService = communicationService;
         this.importationService = importationService;
         this.segmentacionService = segmentacionService;
@@ -214,7 +214,7 @@ public class PedidoService {
 
     // Carga unitaria (fecha de generación en UTC)
     @Transactional
-    public void importar(String idTransaccion, PedidoDTO dto) {
+    public PedidoEntity importar(String idTransaccion, PedidoDTO dto) {
         String progressDestination = String.format("/topic/importation-%s", idTransaccion), statusDestination = String.format("/topic/importation-status-%s", idTransaccion);
         try {
             System.out.println("Importando pedido..");
@@ -229,7 +229,7 @@ public class PedidoService {
             String codCliente = dto.getCodCliente();
             PedidoEntity pedido = new PedidoEntity();
             if (tipoEscenario == TipoEscenario.OPERACION) {
-                ClienteEntity cliente = clienteService.findByCodigo(codCliente).orElseThrow(() -> new G4DException(String.format("El cliente ('%s') del pedido no existe.", codCliente)));
+                UsuarioEntity cliente = usuarioService.findClienteByCodigo(codCliente).orElseThrow(() -> new G4DException(String.format("El cliente ('%s') del pedido no existe.", codCliente)));
                 pedido.setCliente(cliente);
             } else {
                 if (G4DUtility.Convertor.toAdmissible(codCliente) == null) {
@@ -256,6 +256,7 @@ public class PedidoService {
             System.out.println("[<] PEDIDO IMPORTADO!");
             communicationService.enviar(progressDestination, new ProgressPayload("Cargando pedido", 1, 1));
             communicationService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.EXITOSO));
+            return pedido;
         } catch (Exception e) {
             communicationService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.ERRONEO));
             throw (e instanceof G4DException g4dEx) ? g4dEx : new RuntimeException(e);
@@ -287,7 +288,8 @@ public class PedidoService {
     // Carga por archivo (fecha/hora local del destino -> UTC)
     //  - SIMULACION: NNNNNNNNN-AAAAMMDD-HH-MM-DEST-CANT-CLIENTE  (el cliente no se busca en BD; se genera en RAM al simular)
     //  - OPERACION :           AAAAMMDD-HH-MM-DEST-CANT-CLIENTE  (si el cliente no existe en BD, el pedido se omite)
-    public void importar(String idTransaccion, Path archivo, ImportFileRequest request) {
+    // Devuelve la cantidad de pedidos guardados
+    public int importar(String idTransaccion, Path archivo, ImportFileRequest request) {
         String progressDestination = String.format("/topic/importation-%s", idTransaccion), statusDestination = String.format("/topic/importation-status-%s", idTransaccion);
         try {
             System.out.printf(">> Importando pedidos desde '%s'.. (batch 500)%n", archivo.getFileName());
@@ -299,14 +301,14 @@ public class PedidoService {
             boolean esSimulacion = tipoEscenario.equals(TipoEscenario.SIMULACION);
             BufferedReader br = Files.newBufferedReader(archivo, G4DUtility.Reader.getFileCharset(archivo));
             communicationService.enviar(progressDestination, new ProgressPayload("Cargando recursos de importación", 1, 4));
-            Map<String, ClienteEntity> poolClientes = importationService.getNewLimitedPool(500);
+            Map<String, UsuarioEntity> poolClientes = importationService.getNewLimitedPool(500);
             Set<String> clientesInexistentes = new HashSet<>();
             Map<String, AeropuertoEntity> poolAeropuertos = aeropuertoService.findAll().stream().collect(Collectors.toMap(AeropuertoEntity::getCodigo, a -> a));
             communicationService.enviar(progressDestination, new ProgressPayload("Cargando recursos de importación", 2, 4));
             Map<String, Integer> poolMaxCodigos = this.findAllMaxCodesByScenario(tipoEscenario.toString());
             communicationService.enviar(progressDestination, new ProgressPayload("Cargando recursos de importación", 3, 4));
             int lTotales = (int) G4DUtility.Reader.getLineCount(archivo);
-            int lProcesadas = 0, omitidos = 0, atendidosEnSede = 0;
+            int lProcesadas = 0, omitidos = 0, atendidosEnSede = 0, importados = 0;
             communicationService.enviar(progressDestination, new ProgressPayload("Cargando recursos de importación", 4, 4));
             List<PedidoEntity> pedidos = new ArrayList<>();
             List<PedidoEntity> entregasDirectas = new ArrayList<>();
@@ -339,9 +341,9 @@ public class PedidoService {
                         if (esSimulacion) {
                             pedido.setCodClienteSimulado(codCliente);
                         } else {
-                            ClienteEntity cliente = poolClientes.get(codCliente);
+                            UsuarioEntity cliente = poolClientes.get(codCliente);
                             if (cliente == null && !clientesInexistentes.contains(codCliente)) {
-                                cliente = clienteService.findByCodigo(codCliente).orElse(null);
+                                cliente = usuarioService.findClienteByCodigo(codCliente).orElse(null);
                                 if (cliente != null) poolClientes.put(codCliente, cliente);
                                 else clientesInexistentes.add(codCliente);
                             }
@@ -365,6 +367,7 @@ public class PedidoService {
                                 }
                             }
                             pedidos.add(pedido);
+                            importados++;
                         } else omitidos++;
                     }
                 }
@@ -383,7 +386,9 @@ public class PedidoService {
             poolAeropuertos.clear();
             poolClientes.clear();
             br.close();
-            communicationService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.EXITOSO));
+            String detalle = (omitidos > 0) ? String.format("Se importaron %d pedidos. Se omitieron %d porque su cliente no existe.", importados, omitidos) : String.format("Se importaron %d pedidos.", importados);
+            communicationService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.EXITOSO, detalle));
+            return importados;
         } catch (ArrayIndexOutOfBoundsException | NoSuchElementException | NumberFormatException e) {
             communicationService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.ERRONEO));
             throw new G4DException(String.format("El archivo '%s' no sigue el formato esperado.", archivo.getFileName()));

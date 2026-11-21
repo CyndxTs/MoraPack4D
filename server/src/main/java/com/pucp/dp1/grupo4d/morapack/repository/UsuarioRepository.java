@@ -1,12 +1,12 @@
 /**]
  >> Project:    MoraPack
  >> Author:     Grupo 4D
- >> File:       ClienteRepository.java
+ >> File:       UsuarioRepository.java
  [**/
 
 package com.pucp.dp1.grupo4d.morapack.repository;
 
-import com.pucp.dp1.grupo4d.morapack.model.entity.ClienteEntity;
+import com.pucp.dp1.grupo4d.morapack.model.entity.UsuarioEntity;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -18,22 +18,23 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface ClienteRepository extends JpaRepository<ClienteEntity, Integer> {
-    Optional<ClienteEntity> findByCodigo(String codigo);
+public interface UsuarioRepository extends JpaRepository<UsuarioEntity, Integer> {
+    Optional<UsuarioEntity> findByCodigo(String codigo);
 
-    Optional<ClienteEntity> findByCorreo(String correo);
+    Optional<UsuarioEntity> findByCorreo(String correo);
 
     boolean existsByCodigo(String codigo);
 
     boolean existsByCorreo(String correo);
 
-    // Listar pagina de clientes por sus atributos (propios + nombre del país)
+    // Listar página de usuarios por sus atributos (rol opcional; nombre del país parcial)
     @Query(
         value = """
         SELECT u.*
-        FROM CLIENTE u
+        FROM USUARIO u
         INNER JOIN PAIS p ON p.id = u.id_pais
-        WHERE (:codigo IS NULL OR u.codigo LIKE CONCAT(:codigo, '%'))
+        WHERE (:rol IS NULL OR u.rol = :rol)
+          AND (:codigo IS NULL OR u.codigo LIKE CONCAT(:codigo, '%'))
           AND (:nombres IS NULL OR LOWER(u.nombres) LIKE LOWER(CONCAT('%', :nombres, '%')))
           AND (:apellidos IS NULL OR LOWER(u.apellidos) LIKE LOWER(CONCAT('%', :apellidos, '%')))
           AND (:correo IS NULL OR LOWER(u.correo) LIKE LOWER(CONCAT('%', :correo, '%')))
@@ -42,9 +43,10 @@ public interface ClienteRepository extends JpaRepository<ClienteEntity, Integer>
         """,
         countQuery = """
         SELECT COUNT(*)
-        FROM CLIENTE u
+        FROM USUARIO u
         INNER JOIN PAIS p ON p.id = u.id_pais
-        WHERE (:codigo IS NULL OR u.codigo LIKE CONCAT(:codigo, '%'))
+        WHERE (:rol IS NULL OR u.rol = :rol)
+          AND (:codigo IS NULL OR u.codigo LIKE CONCAT(:codigo, '%'))
           AND (:nombres IS NULL OR LOWER(u.nombres) LIKE LOWER(CONCAT('%', :nombres, '%')))
           AND (:apellidos IS NULL OR LOWER(u.apellidos) LIKE LOWER(CONCAT('%', :apellidos, '%')))
           AND (:correo IS NULL OR LOWER(u.correo) LIKE LOWER(CONCAT('%', :correo, '%')))
@@ -53,7 +55,8 @@ public interface ClienteRepository extends JpaRepository<ClienteEntity, Integer>
         """,
         nativeQuery = true
     )
-    Page<ClienteEntity> findAllByAttributes(
+    Page<UsuarioEntity> findAllByAttributes(
+        @Param("rol") String rol,
         @Param("codigo") String codigo,
         @Param("nombres") String nombres,
         @Param("apellidos") String apellidos,
@@ -63,11 +66,14 @@ public interface ClienteRepository extends JpaRepository<ClienteEntity, Integer>
         Pageable pageable
     );
 
-    // Listar todos los clientes con pedidos de operación dentro de cierto rango temporal (los de simulación viven en RAM)
+    @Query(value = "SELECT COUNT(*) FROM USUARIO u WHERE (:rol IS NULL OR u.rol = :rol)", nativeQuery = true)
+    long countByRol(@Param("rol") String rol);
+
+    // Clientes con pedidos activos del escenario dentro del rango (los de simulación viven en RAM)
     @Query(
         value = """
         SELECT DISTINCT c.*
-        FROM CLIENTE c
+        FROM USUARIO c
         JOIN PEDIDO p ON p.id_cliente = c.id
         JOIN AEROPUERTO a ON a.id = p.id_aeropuerto_destino
         WHERE p.fh_generacion BETWEEN :fechaHoraInicio AND :fechaHoraFin
@@ -77,20 +83,17 @@ public interface ClienteRepository extends JpaRepository<ClienteEntity, Integer>
         """,
         nativeQuery = true
     )
-    List<ClienteEntity> findAllInRangeByScenario(
+    List<UsuarioEntity> findAllClientesInRangeByScenario(
         @Param("fechaHoraInicio") LocalDateTime fechaHoraInicio,
         @Param("fechaHoraFin") LocalDateTime fechaHoraFin,
         @Param("tipoEscenario") String tipoEscenario,
         @Param("codOrigenes") List<String> codOrigenes
     );
 
-    // Obtener el máximo código numérico asignado actualmente
-    @Query(
-        value = """
-        SELECT MAX(CAST(u.codigo AS UNSIGNED))
-        FROM CLIENTE u
-        """,
-        nativeQuery = true
-    )
-    Integer findMaxCode();
+    // Códigos actuales del rol que empiezan con el prefijo (el máximo se calcula en Java ignorando los mal formados)
+    @Query(value = "SELECT u.codigo FROM USUARIO u WHERE u.rol = :rol AND u.codigo LIKE CONCAT(:prefijo, '%')", nativeQuery = true)
+    List<String> findCodigosByRol(@Param("rol") String rol, @Param("prefijo") String prefijo);
+
+    @Query(value = "SELECT COUNT(*) FROM PEDIDO p WHERE p.id_cliente = :idUsuario", nativeQuery = true)
+    long countPedidos(@Param("idUsuario") Integer idUsuario);
 }

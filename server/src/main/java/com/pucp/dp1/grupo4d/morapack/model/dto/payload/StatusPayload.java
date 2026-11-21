@@ -18,8 +18,15 @@ import lombok.NoArgsConstructor;
 public class StatusPayload {
     private EstadoEjecucion estadoEjecucion;
     private EstadoFinalizacion estadoFinalizacion;
+    // Detalle opcional para el usuario (p. ej. líneas omitidas)
+    private String mensaje;
 
     public StatusPayload(EstadoEjecucion estadoEjecucion) {
         this.estadoEjecucion = estadoEjecucion;
+    }
+
+    public StatusPayload(EstadoEjecucion estadoEjecucion, EstadoFinalizacion estadoFinalizacion) {
+        this.estadoEjecucion = estadoEjecucion;
+        this.estadoFinalizacion = estadoFinalizacion;
     }
 }

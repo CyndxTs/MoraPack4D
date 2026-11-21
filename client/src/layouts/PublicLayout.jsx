@@ -13,7 +13,7 @@ export default function PublicLayout() {
   if (usuario) items.push({ to: RUTA_INICIO_POR_ROL[usuario.tipoUsuario], label: "Mi espacio" });
   return (
     <div className="layout">
-      <Navbar items={items} usuario={usuario} onLogout={logout} mostrarLogin />
+      <Navbar items={items} usuario={usuario} onLogout={logout} mostrarLogin cuenta={usuario ? `${RUTA_INICIO_POR_ROL[usuario.tipoUsuario]}/cuenta` : null} />
       <main className="layout-main"><Outlet /></main>
       <Footer />
     </div>

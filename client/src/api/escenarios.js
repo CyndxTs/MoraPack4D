@@ -23,6 +23,12 @@ export async function obtenerOperacionActual() {
 
 export const purgarOperacion = () => post("/operation-purge");
 
+// Replanificación automática (la programa el server según PARAMETROS): { programadaPara, enProceso }
+export const obtenerProgramacion = () => post("/operation-schedule");
+export const cancelarProgramacion = () => post("/operation-schedule-cancel");
+
+export const esReplanificacionEnCurso = (error) => /ya hay una replanificaci/i.test(error?.message ?? "");
+
 // ---------- Exportación ----------
 export const CARPETA_EXPORTACION = "exports";
 // El server nombra el archivo "<prefijo>__<idTransaccion>.txt"

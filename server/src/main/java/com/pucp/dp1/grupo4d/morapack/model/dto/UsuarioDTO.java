@@ -20,4 +20,5 @@ public class UsuarioDTO implements DTO {
     private String tipoUsuario;
     private String estado;
     private String pais;
+    private Boolean tieneContrasenia;
 }

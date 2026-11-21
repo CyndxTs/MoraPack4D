@@ -13,7 +13,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class UsuarioMapper {
 
-    // Sirve para CLIENTE, TRABAJADOR y ADMINISTRADOR
+    // Nunca expone la contraseña; solo si la cuenta tiene una
     public UsuarioDTO toDTO(UsuarioEntity entity) {
         if (entity == null) return null;
         UsuarioDTO dto = new UsuarioDTO();
@@ -22,8 +22,9 @@ public class UsuarioMapper {
         dto.setApellidos(entity.getApellidos());
         dto.setCorreo(entity.getCorreo());
         dto.setEstado(entity.getEstado().toString());
-        dto.setTipoUsuario(entity.getTipoUsuario().toString());
+        dto.setTipoUsuario(entity.getRol().toString());
         dto.setPais((entity.getPais() != null) ? entity.getPais().getNombre() : null);
+        dto.setTieneContrasenia(entity.tieneContrasenia());
         return dto;
     }
 }

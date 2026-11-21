@@ -12,8 +12,8 @@ import lombok.Data;
 public class SignUpRequest {
     private String nombres;
     private String apellidos;
-    private String pais;
     private String correo;
     private String contrasenia;
-    private String tipoUsuario;
+    private String confirmacion;
+    private String pais;
 }

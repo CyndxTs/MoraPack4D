@@ -7,9 +7,7 @@
 package com.pucp.dp1.grupo4d.morapack.service;
 
 import com.pucp.dp1.grupo4d.morapack.model.dto.PaisDTO;
-import com.pucp.dp1.grupo4d.morapack.model.dto.UsuarioDTO;
-import com.pucp.dp1.grupo4d.morapack.model.enumeration.TipoUsuario;
-import com.pucp.dp1.grupo4d.morapack.service.model.TrabajadorService;
+import com.pucp.dp1.grupo4d.morapack.security.SesionActual;
 import com.pucp.dp1.grupo4d.morapack.service.model.PaisService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -88,9 +86,6 @@ public class G4DService {
     private final RutaAdapter rutaAdapter;
     private final RutaMapper rutaMapper;
     private final SegmentacionAdapter segmentacionAdapter;
-    private final AdministradorService administradorService;
-    private final ClienteService clienteService;
-    private final TrabajadorService trabajadorService;
     private final PaisService paisService;
     private final EventoService eventoService;
     private final UsuarioAdapter usuarioAdapter;
@@ -103,6 +98,9 @@ public class G4DService {
     private final G4DExceptionHandlerAsync asyncExceptionHandler;
     private final PurgaService purgaService;
     private volatile boolean purgando = false;
+    // Replanificación automática de la operación (programada por el server; null = ninguna)
+    private volatile LocalDateTime replanificacionProgramadaPara = null;
+    private final Object lockProgramacion = new Object();
     private final G4DContext operationContext = new G4DContext("OPERATION");
     private final Map<String, G4DContext> simulationContexts = new ConcurrentHashMap<>();
     private final Map<String, G4DContext> importationContexts = new ConcurrentHashMap<>();
@@ -112,7 +110,7 @@ public class G4DService {
                       LoteAdapter loteAdapter, ParametrosService parametrosService, ParametrosMapper parametrosMapper,
                       PedidoService pedidoService, PedidoAdapter pedidoAdapter, PedidoMapper pedidoMapper, PlanService planService, PlanAdapter planAdapter,
                       RegistroAdapter registroAdapter, RutaAdapter rutaAdapter, RutaMapper rutaMapper,
-                      SegmentacionAdapter segmentacionAdapter, AdministradorService administradorService, ClienteService clienteService, TrabajadorService trabajadorService, PaisService paisService, EventoService eventoService, UsuarioAdapter usuarioAdapter,
+                      SegmentacionAdapter segmentacionAdapter, PaisService paisService, EventoService eventoService, UsuarioAdapter usuarioAdapter,
                       VueloAdapter vueloAdapter, VueloMapper vueloMapper, ObjectProvider<G4DService> self,
                       CommunicationService communicationService, ContextService contextService, ObjectMapper objectMapper, G4DExceptionHandlerAsync asyncExceptionHandler, PurgaService purgaService) {
         this.aeropuertoService = aeropuertoService;
@@ -130,9 +128,6 @@ public class G4DService {
         this.rutaAdapter = rutaAdapter;
         this.rutaMapper = rutaMapper;
         this.segmentacionAdapter = segmentacionAdapter;
-        this.administradorService = administradorService;
-        this.clienteService = clienteService;
-        this.trabajadorService = trabajadorService;
         this.paisService = paisService;
         this.eventoService = eventoService;
         this.usuarioAdapter = usuarioAdapter;
@@ -146,7 +141,20 @@ public class G4DService {
         this.purgaService = purgaService;
     }
 
+    // Datos maestros que solo el administrador puede modificar
+    private static void validarPermisoDeImportacion(String tipo) {
+        String t = (tipo != null) ? tipo.toUpperCase() : "";
+        boolean soloAdmin = switch (t) {
+            case "PARAMETROS", "PAIS", "AEROPUERTO", "AEROPUERTOS" -> true;
+            default -> false;
+        };
+        if (soloAdmin && !SesionActual.esAdministrador()) {
+            throw new G4DException("Solo un administrador puede modificar estos datos.");
+        }
+    }
+
     public GenericResponse iniciarImportacion(ImportRequest request) throws JsonProcessingException {
+        validarPermisoDeImportacion(request.getTipoDto());
         GenericResponse response = new GenericResponse(true, "Importación iniciada!");
         String idTransaccion = response.getToken().substring(4);
         G4DContext context = new G4DContext(idTransaccion);
@@ -171,19 +179,16 @@ public class G4DService {
         switch (request.getTipoDto().toUpperCase()) {
             case "AEROPUERTO" -> aeropuertoService.importar(idTransaccion, objectMapper.treeToValue(dto, AeropuertoDTO.class));
             case "PLAN" -> planService.importar(idTransaccion, objectMapper.treeToValue(dto, PlanDTO.class));
-            case "PEDIDO" -> pedidoService.importar(idTransaccion, objectMapper.treeToValue(dto, PedidoDTO.class));
+            case "PEDIDO" -> {
+                var pedido = pedidoService.importar(idTransaccion, objectMapper.treeToValue(dto, PedidoDTO.class));
+                if (pedido != null && pedido.getTipoEscenario() == TipoEscenario.OPERACION) this.programarReplanificacion(false);
+            }
             case "PARAMETROS" -> parametrosService.importar(idTransaccion, objectMapper.treeToValue(dto, ParametrosDTO.class));
             case "PAIS" -> paisService.importar(idTransaccion, objectMapper.treeToValue(dto, PaisDTO.class));
-            case "EVENTO" -> eventoService.importar(idTransaccion, objectMapper.treeToValue(dto, EventoDTO.class));
-            case "USUARIO" -> {
-                UsuarioDTO usuarioDTO = objectMapper.treeToValue(dto, UsuarioDTO.class);
-                TipoUsuario tipoUsuario = G4DUtility.Convertor.toAdmissible(usuarioDTO.getTipoUsuario(), TipoUsuario.class);
-                if (tipoUsuario == null) throw new G4DException(String.format("Tipo de usuario ('%s') inválido!", usuarioDTO.getTipoUsuario()));
-                switch (tipoUsuario) {
-                    case CLIENTE -> clienteService.importar(idTransaccion, usuarioDTO);
-                    case TRABAJADOR -> trabajadorService.importar(idTransaccion, usuarioDTO);
-                    case ADMINISTRADOR -> administradorService.importar(idTransaccion, usuarioDTO);
-                }
+            case "EVENTO" -> {
+                EventoDTO eventoDTO = objectMapper.treeToValue(dto, EventoDTO.class);
+                eventoService.importar(idTransaccion, eventoDTO);
+                if (G4DUtility.Convertor.toAdmissible(eventoDTO.getTipoEscenario(), TipoEscenario.class) == TipoEscenario.OPERACION) this.programarReplanificacion(true);
             }
             default -> throw new G4DException("Tipo de dato inválido!");
         }
@@ -191,6 +196,7 @@ public class G4DService {
     }
 
     public GenericResponse iniciarImportacion(MultipartFile file, ImportFileRequest request) throws IOException {
+        validarPermisoDeImportacion(request.getTipoArchivo());
         GenericResponse response = new GenericResponse(true, "Importación iniciada!");
         String idTransaccion = response.getToken().substring(4);
         Path archivo = Files.createTempFile("import-" + idTransaccion + "-", "-" + file.getOriginalFilename());
@@ -213,14 +219,19 @@ public class G4DService {
 
     @Async("importationExecutor")
     public CompletableFuture<Void> importar(String idTransaccion, Path archivo, ImportFileRequest request) {
+        // Los usuarios ya no se importan por archivo: se crean uno a uno (registro o administrador)
+        boolean esOperacion = G4DUtility.Convertor.toAdmissible(request.getTipoEscenario(), TipoEscenario.class) == TipoEscenario.OPERACION;
         switch (request.getTipoArchivo().toUpperCase()) {
-            case "ADMINISTRADORES" -> administradorService.importar(idTransaccion, archivo);
-            case "CLIENTES" -> clienteService.importar(idTransaccion, archivo);
-            case "TRABAJADORES" -> trabajadorService.importar(idTransaccion, archivo);
             case "AEROPUERTOS" -> aeropuertoService.importar(idTransaccion, archivo);
             case "PLANES" -> planService.importar(idTransaccion, archivo);
-            case "PEDIDOS" -> pedidoService.importar(idTransaccion, archivo, request);
-            case "EVENTOS" -> eventoService.importar(idTransaccion, archivo, request);
+            case "PEDIDOS" -> {
+                int importados = pedidoService.importar(idTransaccion, archivo, request);
+                if (esOperacion && importados > 0) this.programarReplanificacion(false);
+            }
+            case "EVENTOS" -> {
+                eventoService.importar(idTransaccion, archivo, request);
+                if (esOperacion) this.programarReplanificacion(true);
+            }
             default -> throw new G4DException("Tipo de archivo inválido!");
         }
         return CompletableFuture.completedFuture(null);
@@ -374,11 +385,13 @@ public class G4DService {
                 throw new G4DException("Hay una purga de datos en proceso, intente en unos segundos.");
             }
             operationContext.running = true;
+            synchronized (lockProgramacion) { replanificacionProgramadaPara = null; }
             operationContext.task = self.getObject().replanificar(request)
                                                       .whenComplete((r, ex) -> {
                                                           operationContext.running = false;
                                                           operationContext.problematic = null;
                                                           operationContext.task = null;
+                                                          this.publicarProgramacion();
                                                       })
                                                       .exceptionally(ex -> {
                                                           asyncExceptionHandler.handleException("Operation", ex);
@@ -386,13 +399,16 @@ public class G4DService {
                                                       });
         }
         communicationService.enviar("/topic/operation-status", EstadoEjecucion.INICIADO);
+        this.publicarProgramacion();
         return new GenericResponse(true, "Replanificación Iniciada!");
     }
 
-    // Purga periódica de datos de operación que ya no se usan (por defecto cada hora; 'morapack.purga.cron=-' la desactiva)
+    // Purga periódica de datos de operación que ya no se usan (cada hora por defecto). Se activa/desactiva en PARAMETROS.
     @Scheduled(cron = "${morapack.purga.cron:0 17 * * * *}", zone = "UTC")
     public void purgarOperacionProgramada() {
         try {
+            ParametrosEntity parametros = parametrosService.findById(1);
+            if (parametros == null || !Boolean.TRUE.equals(parametros.getPurgaAutomatica())) return;
             this.purgarOperacion();
         } catch (Exception e) {
             System.out.printf("[*] PURGA OMITIDA: %s%n", e.getMessage());
@@ -422,6 +438,71 @@ public class G4DService {
         }
     }
 
+    private long segundosDeUmbral() {
+        ParametrosEntity parametros = parametrosService.findById(1);
+        int segundos = (parametros != null && parametros.getSegundosUmbralReplanificacion() != null) ? parametros.getSegundosUmbralReplanificacion() : 180;
+        return Math.max(ParametrosService.MIN_SEGUNDOS_UMBRAL, Math.min(ParametrosService.MAX_SEGUNDOS_UMBRAL, segundos));
+    }
+
+    // ---------- Replanificación automática (server) ----------
+    // Pedidos de OPERACION nuevos: se programa para dentro de 'minutos_espera_replanificacion' (se respeta la primera programada).
+    // Eventos de OPERACION: inmediata si 'replanificar_al_registrar_evento' está activo.
+    public void programarReplanificacion(boolean porEvento) {
+        ParametrosEntity parametros = parametrosService.findById(1);
+        if (parametros == null) return;
+        LocalDateTime ahora = LocalDateTime.now();
+        synchronized (lockProgramacion) {
+            if (porEvento) {
+                if (!Boolean.TRUE.equals(parametros.getReplanificarAlRegistrarEvento())) return;
+                replanificacionProgramadaPara = ahora;
+            } else {
+                if (!Boolean.TRUE.equals(parametros.getReplanificacionAutomatica())) return;
+                LocalDateTime propuesta = ahora.plusMinutes(Math.max(0, parametros.getMinutosEsperaReplanificacion()));
+                if (replanificacionProgramadaPara == null) replanificacionProgramadaPara = propuesta;
+            }
+        }
+        System.out.printf("[*] REPLANIFICACIÓN PROGRAMADA! ('%s')%n", G4DUtility.Convertor.toDisplayString(replanificacionProgramadaPara));
+        this.publicarProgramacion();
+    }
+
+    public void cancelarProgramacion() {
+        synchronized (lockProgramacion) {
+            if (replanificacionProgramadaPara == null) return;
+            replanificacionProgramadaPara = null;
+        }
+        this.publicarProgramacion();
+    }
+
+    // { programadaPara: "yyyy-MM-dd HH:mm:ss" (UTC) | null }
+    public Map<String, Object> obtenerProgramacion() {
+        LocalDateTime programada = replanificacionProgramadaPara;
+        Map<String, Object> payload = new java.util.HashMap<>();
+        payload.put("programadaPara", (programada != null) ? G4DUtility.Convertor.toSqlString(programada) : null);
+        payload.put("enProceso", operationContext.task != null && operationContext.running);
+        return payload;
+    }
+
+    private void publicarProgramacion() {
+        communicationService.enviar("/topic/operation-schedule", this.obtenerProgramacion());
+    }
+
+    // Vigilante: lanza la replanificación programada cuando vence. Si hay una en curso, reintenta en el siguiente ciclo.
+    @Scheduled(fixedDelayString = "${morapack.replanificacion.vigilancia-ms:5000}", initialDelay = 15000)
+    public void vigilarReplanificacion() {
+        LocalDateTime programada = replanificacionProgramadaPara;
+        if (programada == null || LocalDateTime.now().isBefore(programada)) return;
+        if ((operationContext.task != null && operationContext.running) || purgando) return;
+        try {
+            ReplanificationRequest request = new ReplanificationRequest();
+            request.setFechaHoraActual(G4DUtility.Convertor.toSqlString(LocalDateTime.now()));
+            request.setAlmacenarParametrizacion(false);
+            this.replanificarOperacion(request);
+            System.out.println("[>] REPLANIFICACIÓN AUTOMÁTICA LANZADA!");
+        } catch (G4DException e) {
+            System.out.printf("[*] REPLANIFICACIÓN AUTOMÁTICA POSTERGADA: %s%n", e.getMessage());
+        }
+    }
+
     @Async("operationExecutor")
     public CompletableFuture<Void> replanificar(ReplanificationRequest request) {
         CompletableFuture<Void> future = new CompletableFuture<>();
@@ -439,8 +520,10 @@ public class G4DService {
             long desfaseTemporal = 1440L*(Math.max(parametros.getMaxDiasEntregaIntracontinental(), parametros.getMaxDiasEntregaIntercontinental()));
             LocalDateTime fechaHoraActual = G4DUtility.Convertor.toAdmissible(request.getFechaHoraActual(), (LocalDateTime) null);
             LocalDateTime inicioPlanificacion = fechaHoraActual.minusMinutes(desfaseTemporal);
-            LocalDateTime umbralDeReplanificacion = fechaHoraActual.plusSeconds(180L); // Predicción por tiempo maximo de replanificacion
-            LocalDateTime instanteDeProcesamiento = fechaHoraActual.plusSeconds(90L); // Predicción por tiempo maximo de carga
+            if(fechaHoraActual == null) fechaHoraActual = LocalDateTime.now();
+            long segundosDeUmbral = this.segundosDeUmbral();
+            LocalDateTime umbralDeReplanificacion = fechaHoraActual.plusSeconds(segundosDeUmbral); // Predicción por tiempo maximo de replanificacion
+            LocalDateTime instanteDeProcesamiento = fechaHoraActual.plusSeconds(segundosDeUmbral / 2); // Predicción por tiempo maximo de carga
             SolucionDTO solucion = planificar(operationContext, parametros, escenario, inicioPlanificacion, fechaHoraActual, umbralDeReplanificacion, instanteDeProcesamiento);
             operationContext.solutionDTO = solucion;
             communicationService.enviar(solutionDestination, new SolutionPayload(solucion));

@@ -1,9 +1,8 @@
-import React, { useEffect } from "react";
+import React from "react";
 import { Outlet, useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar/navbar";
 import { useAuth } from "../auth/AuthContext";
-import { useNotify } from "../notifications/NotificationContext";
-import { iniciarReplanificador } from "../operacion/replanificador";
+import { ROLES } from "../auth/session";
 import "./layouts.scss";
 
 const ITEMS = [
@@ -13,22 +12,16 @@ const ITEMS = [
   { to: "/trabajador/planes", label: "Planes y eventos" },
 ];
 
+// La replanificación automática de la operación ahora la programa el server (PARAMETROS)
 export default function TrabajadorLayout() {
   const { usuario, logout } = useAuth();
-  const notify = useNotify();
   const navigate = useNavigate();
-
-  // La replanificación automática solo corre mientras hay un trabajador con sesión
-  useEffect(() => iniciarReplanificador({
-    onLanzada: () => notify("info", "Replanificación automática de la operación iniciada."),
-    onError: (e) => notify("danger", `Replanificación automática: ${e.message}`),
-  }), [notify]);
-
-  const salir = async () => { await logout(); navigate("/login"); };
+  const items = usuario?.tipoUsuario === ROLES.ADMINISTRADOR ? [...ITEMS, { to: "/admin", label: "Administración" }] : ITEMS;
+  const salir = async () => { await logout(); navigate("/"); };
 
   return (
     <div className="layout layout--app">
-      <Navbar items={ITEMS} inicio="/trabajador" usuario={usuario} onLogout={salir} />
+      <Navbar items={items} inicio="/trabajador" usuario={usuario} onLogout={salir} cuenta="/trabajador/cuenta" />
       <main className="layout-main"><Outlet /></main>
     </div>
   );

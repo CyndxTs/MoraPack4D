@@ -44,13 +44,13 @@ public class ContextService {
     private final PlanService planService;
     private final PlanAdapter planAdapter;
     private final UsuarioAdapter usuarioAdapter;
-    private final ClienteService clienteService;
+    private final UsuarioService usuarioService;
     private final ParametrosMapper parametrosMapper;
 
     public ContextService(VueloAdapter vueloAdapter, VueloService vueloService, RutaAdapter rutaAdapter, RutaService rutaService,
                           PedidoAdapter pedidoAdapter, PedidoService pedidoService, SegmentacionAdapter segmentacionAdapter, SegmentacionService segmentacionService,
                           LoteService loteService, LoteAdapter loteAdapter, AeropuertoAdapter aeropuertoAdapter, AeropuertoService aeropuertoService,
-                          RegistroAdapter registroAdapter, RegistroService registroService, PlanService planService, PlanAdapter planAdapter, UsuarioAdapter usuarioAdapter, ClienteService clienteService, ParametrosMapper parametrosMapper) {
+                          RegistroAdapter registroAdapter, RegistroService registroService, PlanService planService, PlanAdapter planAdapter, UsuarioAdapter usuarioAdapter, UsuarioService usuarioService, ParametrosMapper parametrosMapper) {
         this.vueloAdapter = vueloAdapter;
         this.vueloService = vueloService;
         this.rutaAdapter = rutaAdapter;
@@ -68,7 +68,7 @@ public class ContextService {
         this.planService = planService;
         this.planAdapter = planAdapter;
         this.usuarioAdapter = usuarioAdapter;
-        this.clienteService = clienteService;
+        this.usuarioService = usuarioService;
         this.parametrosMapper = parametrosMapper;
     }
 
@@ -94,7 +94,7 @@ public class ContextService {
             problematica.cargarAeropuertos(aeropuertoService, aeropuertoAdapter);
             problematica.cargarPlanes(planService, planAdapter);
         }
-        problematica.cargarClientes(clienteService, usuarioAdapter);
+        problematica.cargarClientes(usuarioService, usuarioAdapter);
         problematica.cargarPedidos(pedidoService, pedidoAdapter);
         if(esSimulacion) {
             // Lo planificado en simulación nunca se guarda en BD: no hay vuelos ni rutas que cargar.

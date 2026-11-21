@@ -6,10 +6,9 @@ import {
 import StatusBadge from "../../../components/Status/status";
 import { cancelarPedido, filtrarPedidos, listarClientes, listarTodosLosAeropuertos } from "../../../api/catalogos";
 import { importarArchivo, registrarPedido, TIPO_ARCHIVO } from "../../../api/importacion";
-import { programarReplanificacion } from "../../../operacion/replanificador";
 import { useNotify } from "../../../notifications/NotificationContext";
 import { formatUTC, fromInputsUTC, toServerDateTime } from "../../../utils/fechas";
-import { REPLANIFICACION_DIFERIDA_MIN, TAMANIO_CATALOGO, TAMANIO_PAGINA } from "../../../config";
+import { TAMANIO_CATALOGO, TAMANIO_PAGINA } from "../../../config";
 import plus from "../../../assets/icons/plus.svg";
 import hideIcon from "../../../assets/icons/hide-sidebar.png";
 import "./pedidos.scss";
@@ -65,9 +64,9 @@ export default function Pedidos() {
   const aplicar = () => { setFiltrosAplicados(filtros); cargar(1, filtros); };
   const limpiar = () => { setFiltros(FILTROS_VACIOS); setFiltrosAplicados(FILTROS_VACIOS); cargar(1, FILTROS_VACIOS); };
 
+  // El server programa la replanificación automática (si está activa en los parámetros)
   const avisarReplanificacion = () => {
-    programarReplanificacion();
-    notify("info", `La operación se replanificará en ${REPLANIFICACION_DIFERIDA_MIN} min (o antes desde "Replanificar").`);
+    notify("info", "La operación se replanificará automáticamente (o antes desde \"Replanificar\").");
   };
 
   const headers = [
@@ -164,7 +163,7 @@ export default function Pedidos() {
             try {
               const fin = await importarArchivo(archivo, request, (p) => setProgreso(p));
               if (fin.estadoFinalizacion === "DESCONOCIDO") notify("warning", "No se pudo confirmar el final de la importación; revisa la tabla.");
-              else notify("success", "Pedidos importados.");
+              else notify("success", fin.mensaje || "Pedidos importados.");
               if (request.tipoEscenario === "OPERACION") avisarReplanificacion();
             } catch (e) {
               notify("danger", e.message);

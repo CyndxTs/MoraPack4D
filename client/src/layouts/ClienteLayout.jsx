@@ -15,7 +15,7 @@ export default function ClienteLayout() {
   const navigate = useNavigate();
   return (
     <div className="layout layout--app">
-      <Navbar items={ITEMS} inicio="/" usuario={usuario} onLogout={async () => { await logout(); navigate("/"); }} />
+      <Navbar items={ITEMS} inicio="/" usuario={usuario} onLogout={async () => { await logout(); navigate("/"); }} cuenta="/cliente/cuenta" />
       <main className="layout-main"><Outlet /></main>
     </div>
   );

@@ -77,6 +77,22 @@ public class ParametrosEntity {
     @Column(name = "f_lj", nullable = false)
     private Double factorDeLejania = 0.0085;
 
+    // Operación: replanificación automática y purga (las gobierna el server con @Scheduled)
+    @Column(name = "replanificacion_automatica", nullable = false)
+    private Boolean replanificacionAutomatica = true;
+
+    @Column(name = "minutos_espera_replanificacion", nullable = false)
+    private Integer minutosEsperaReplanificacion = 15;
+
+    @Column(name = "replanificar_al_registrar_evento", nullable = false)
+    private Boolean replanificarAlRegistrarEvento = true;
+
+    @Column(name = "segundos_umbral_replanificacion", nullable = false)
+    private Integer segundosUmbralReplanificacion = 180;
+
+    @Column(name = "purga_automatica", nullable = false)
+    private Boolean purgaAutomatica = true;
+
     @Transient
     private List<String> codOrigenes = new ArrayList<>();
 
@@ -135,6 +151,16 @@ public class ParametrosEntity {
     public void setFactorDeDisposicionOperacional(Double factorDeDisposicionOperacional) { this.factorDeDisposicionOperacional = factorDeDisposicionOperacional; }
     public Double getFactorDeLejania() { return factorDeLejania; }
     public void setFactorDeLejania(Double factorDeLejania) { this.factorDeLejania = factorDeLejania; }
+    public Boolean getReplanificacionAutomatica() { return replanificacionAutomatica; }
+    public void setReplanificacionAutomatica(Boolean replanificacionAutomatica) { this.replanificacionAutomatica = replanificacionAutomatica; }
+    public Integer getMinutosEsperaReplanificacion() { return minutosEsperaReplanificacion; }
+    public void setMinutosEsperaReplanificacion(Integer minutosEsperaReplanificacion) { this.minutosEsperaReplanificacion = minutosEsperaReplanificacion; }
+    public Boolean getReplanificarAlRegistrarEvento() { return replanificarAlRegistrarEvento; }
+    public void setReplanificarAlRegistrarEvento(Boolean replanificarAlRegistrarEvento) { this.replanificarAlRegistrarEvento = replanificarAlRegistrarEvento; }
+    public Integer getSegundosUmbralReplanificacion() { return segundosUmbralReplanificacion; }
+    public void setSegundosUmbralReplanificacion(Integer segundosUmbralReplanificacion) { this.segundosUmbralReplanificacion = segundosUmbralReplanificacion; }
+    public Boolean getPurgaAutomatica() { return purgaAutomatica; }
+    public void setPurgaAutomatica(Boolean purgaAutomatica) { this.purgaAutomatica = purgaAutomatica; }
     public List<String> getCodOrigenes() { return codOrigenes; }
     public void setCodOrigenes(List<String> codOrigenes) { this.codOrigenes = codOrigenes; }
 }

@@ -6,11 +6,11 @@ import { useClock } from "../../../scenario/useClock";
 import { ButtonAdd, LoadingOverlay } from "../../../components/UI/ui";
 import { listarTodosLosAeropuertos } from "../../../api/catalogos";
 import {
-  CARPETA_EXPORTACION, descargarReporte, eliminarReporte, iniciarExportacion, nombreDeReporte, obtenerOperacionActual,
+  CARPETA_EXPORTACION, descargarReporte, eliminarReporte, esReplanificacionEnCurso, iniciarExportacion, nombreDeReporte,
+  obtenerOperacionActual, replanificarOperacion,
 } from "../../../api/escenarios";
 import { suscribir, normalizarEstado } from "../../../realtime/stompClient";
 import { esperarExportacion, prepararSeguimientoDeExportaciones } from "../../../realtime/exportaciones";
-import { esReplanificacionEnCurso, replanificarAhora } from "../../../operacion/replanificador";
 import { useProgramacion } from "../../../operacion/useProgramacion";
 import { useNotify } from "../../../notifications/NotificationContext";
 import { formatCountdown, formatUTC } from "../../../utils/fechas";
@@ -75,7 +75,7 @@ export default function Operacion() {
   const onReplanificar = async () => {
     setEnviando(true);
     try {
-      await replanificarAhora();
+      await replanificarOperacion();
       setEstado({ estadoEjecucion: "INICIADO", estadoFinalizacion: null });
     } catch (e) {
       notify(esReplanificacionEnCurso(e) ? "info" : "danger", e.message);

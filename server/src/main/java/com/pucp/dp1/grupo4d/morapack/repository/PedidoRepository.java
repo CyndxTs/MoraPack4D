@@ -31,7 +31,7 @@ public interface PedidoRepository extends JpaRepository<PedidoEntity, Long> {
         value = """
         SELECT p.*
         FROM PEDIDO p
-        LEFT JOIN CLIENTE c ON p.id_cliente = c.id
+        LEFT JOIN USUARIO c ON p.id_cliente = c.id
         INNER JOIN AEROPUERTO a ON p.id_aeropuerto_destino = a.id
         WHERE (:tipoEscenario IS NULL OR p.tipo_escenario = :tipoEscenario)
           AND (:codCliente IS NULL OR COALESCE(c.codigo, p.cod_cliente_simulado) = :codCliente)
@@ -44,7 +44,7 @@ public interface PedidoRepository extends JpaRepository<PedidoEntity, Long> {
         countQuery = """
         SELECT COUNT(*)
         FROM PEDIDO p
-        LEFT JOIN CLIENTE c ON p.id_cliente = c.id
+        LEFT JOIN USUARIO c ON p.id_cliente = c.id
         INNER JOIN AEROPUERTO a ON p.id_aeropuerto_destino = a.id
         WHERE (:tipoEscenario IS NULL OR p.tipo_escenario = :tipoEscenario)
           AND (:codCliente IS NULL OR COALESCE(c.codigo, p.cod_cliente_simulado) = :codCliente)

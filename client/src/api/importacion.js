@@ -2,14 +2,11 @@ import { post, http, idDeToken, ApiError } from "./http";
 import { esperarImportacion, prepararSeguimientoDeImportaciones } from "../realtime/importaciones";
 
 // Tipos aceptados por /importation-init (un DTO) y /importation-init-file (un archivo)
+// Los usuarios ya no se importan: se registran (cliente) o los crea el administrador uno a uno (/api/usuarios)
 export const TIPO_DTO = {
-  AEROPUERTO: "AEROPUERTO", PLAN: "PLAN", PEDIDO: "PEDIDO", PARAMETROS: "PARAMETROS",
-  PAIS: "PAIS", EVENTO: "EVENTO", USUARIO: "USUARIO",
+  AEROPUERTO: "AEROPUERTO", PLAN: "PLAN", PEDIDO: "PEDIDO", PARAMETROS: "PARAMETROS", PAIS: "PAIS", EVENTO: "EVENTO",
 };
-export const TIPO_ARCHIVO = {
-  AEROPUERTOS: "AEROPUERTOS", PLANES: "PLANES", PEDIDOS: "PEDIDOS", EVENTOS: "EVENTOS",
-  CLIENTES: "CLIENTES", TRABAJADORES: "TRABAJADORES", ADMINISTRADORES: "ADMINISTRADORES",
-};
+export const TIPO_ARCHIVO = { AEROPUERTOS: "AEROPUERTOS", PLANES: "PLANES", PEDIDOS: "PEDIDOS", EVENTOS: "EVENTOS" };
 
 // La importación corre en segundo plano en el server; el resultado llega por WebSocket.
 // Devuelve { id, resultado } donde 'resultado' es una promesa con el StatusPayload final.
@@ -25,7 +22,7 @@ async function lanzarYEsperar(enviar, onProgress) {
   const { resultado } = await lanzar(enviar, onProgress);
   const estado = await resultado;
   if (estado.estadoFinalizacion === "ERRONEO") {
-    throw new ApiError("El servidor rechazó la importación. Revisa el formato o los datos (detalle en la consola del server).");
+    throw new ApiError(estado.mensaje || "El servidor rechazó la importación. Revisa el formato o los datos.");
   }
   return estado;
 }
@@ -51,4 +48,3 @@ export const registrarEvento = (dto) => importarDto(TIPO_DTO.EVENTO, dto);
 export const registrarPais = (dto) => importarDto(TIPO_DTO.PAIS, dto);
 export const registrarAeropuerto = (dto) => importarDto(TIPO_DTO.AEROPUERTO, dto);
 export const registrarPlan = (dto) => importarDto(TIPO_DTO.PLAN, dto);
-export const registrarUsuario = (dto) => importarDto(TIPO_DTO.USUARIO, dto);

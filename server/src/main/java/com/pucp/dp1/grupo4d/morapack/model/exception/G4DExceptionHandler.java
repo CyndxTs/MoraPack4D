@@ -6,6 +6,7 @@
 
 package com.pucp.dp1.grupo4d.morapack.model.exception;
 
+import com.pucp.dp1.grupo4d.morapack.model.dto.response.ErrorResponse;
 import com.pucp.dp1.grupo4d.morapack.model.dto.response.GenericResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -16,6 +17,16 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @Slf4j
 @RestControllerAdvice
 public class G4DExceptionHandler {
+
+    @ExceptionHandler(G4DAuthException.class)
+    public ResponseEntity<GenericResponse> handleException(G4DAuthException e) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ErrorResponse(e.getMessage(), e.getCodigo()));
+    }
+
+    @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
+    public ResponseEntity<GenericResponse> handleException(org.springframework.security.access.AccessDeniedException e) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new ErrorResponse("No tienes permisos para esta acción.", "SIN_PERMISO"));
+    }
 
     @ExceptionHandler(G4DException.class)
     public ResponseEntity<GenericResponse> handleException(G4DException e) {

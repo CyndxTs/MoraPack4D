@@ -6,24 +6,31 @@
 
 package com.pucp.dp1.grupo4d.morapack.model.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.pucp.dp1.grupo4d.morapack.model.enumeration.EstadoUsuario;
 import com.pucp.dp1.grupo4d.morapack.model.enumeration.TipoUsuario;
 import jakarta.persistence.*;
 import java.util.Objects;
 
 /**
- * Atributos comunes de CLIENTE, TRABAJADOR y ADMINISTRADOR.
- * Cada subclase sigue teniendo su propia tabla (no hay herencia en BD), pero se
- * pueden tratar de forma polimórfica (mapper, login, pools) a través de este tipo.
+ * Tabla única USUARIO para clientes, trabajadores y administradores (el rol decide los permisos).
+ * Códigos: CLIENTE '0000001' | TRABAJADOR 'TRA0001' | ADMINISTRADOR 'ADM0001' (ver CodigoUsuario).
+ * 'contrasenia' es null cuando la cuenta se creó con Google y aún no definió una contraseña.
  */
-@MappedSuperclass
-public abstract class UsuarioEntity {
+@Entity
+@Table(name = "USUARIO")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+public class UsuarioEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
     @Column(nullable = false, unique = true, length = 20)
     private String codigo;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private TipoUsuario rol = TipoUsuario.CLIENTE;
 
     @Column(nullable = false, length = 60)
     private String nombres;
@@ -34,7 +41,7 @@ public abstract class UsuarioEntity {
     @Column(nullable = false, unique = true, length = 80)
     private String correo;
 
-    @Column(nullable = false, length = 255)
+    @Column(length = 255)
     private String contrasenia;
 
     @Enumerated(EnumType.STRING)
@@ -45,9 +52,13 @@ public abstract class UsuarioEntity {
     @JoinColumn(name = "id_pais", nullable = false)
     private PaisEntity pais;
 
-    protected UsuarioEntity() {}
+    public UsuarioEntity() {}
 
-    public abstract TipoUsuario getTipoUsuario();
+    public TipoUsuario getTipoUsuario() { return rol; }
+
+    public boolean tieneContrasenia() {
+        return contrasenia != null && !contrasenia.isBlank();
+    }
 
     public String getNombreCompleto() {
         return String.format("%s %s", nombres, apellidos).trim();
@@ -63,13 +74,15 @@ public abstract class UsuarioEntity {
 
     @Override
     public int hashCode() {
-        return Objects.hash(getClass(), id);
+        return Objects.hash(id);
     }
 
     public Integer getId() { return id; }
     public void setId(Integer id) { this.id = id; }
     public String getCodigo() { return codigo; }
     public void setCodigo(String codigo) { this.codigo = codigo; }
+    public TipoUsuario getRol() { return rol; }
+    public void setRol(TipoUsuario rol) { this.rol = rol; }
     public String getNombres() { return nombres; }
     public void setNombres(String nombres) { this.nombres = nombres; }
     public String getApellidos() { return apellidos; }

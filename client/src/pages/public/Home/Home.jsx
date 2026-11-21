@@ -11,7 +11,7 @@ import arzeMora from '../../../assets/images/arzeMora.webp'
 import empresa from '../../../assets/images/empresa.png'
 
 export default function Home() {
-  const { usuario } = useAuth()
+  const { usuario, abrirAuth } = useAuth()
   return (
     <div className="home-page">
       <figure id="main-banner">
@@ -22,7 +22,8 @@ export default function Home() {
           ) : (
             <>
               <span>Envía y sigue tus pedidos en tiempo real</span>
-              <Link to="/login" className="cta-btn">Iniciar sesión</Link>
+              <button type="button" className="cta-btn" onClick={() => abrirAuth('login')}>Iniciar sesión</button>
+              <button type="button" className="cta-btn cta-btn--sec" onClick={() => abrirAuth('registro')}>Crear cuenta</button>
             </>
           )}
         </figcaption>

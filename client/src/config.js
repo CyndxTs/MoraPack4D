@@ -17,16 +17,16 @@ export const TAMANIO_CATALOGO = 5000;
 // Tamaño de página de las tablas
 export const TAMANIO_PAGINA = 10;
 
-// Operación: minutos que se espera, desde el primer pedido nuevo, antes de replanificar automáticamente
-export const REPLANIFICACION_DIFERIDA_MIN = 15;
+// Google Identity Services (mismo Client ID que GOOGLE_CLIENT_ID del server). Sin valor no se muestra el botón.
+export const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
 
 // Cada cuánto se recalcula la posición de los aviones (ms reales). No usar requestAnimationFrame: re-renderiza 60 veces/s
 export const RELOJ_TICK_MS = 250;
 
-// Sesión única por navegador (todas las pestañas comparten la misma cuenta)
+// Sesión por dispositivo (todas las pestañas del navegador comparten la misma cuenta y sus tokens)
 export const SESION_STORAGE_KEY = "morapack.sesion";
 
 // Mosaicos del mapa (Leaflet). Por defecto Carto "light", que NO requiere API key.
-// Se puede cambiar sin tocar código con un .env.local (ver .env.example). Las variables de Vite deben empezar con VITE_.
+// Se puede cambiar sin tocar código con VITE_MAP_TILES_URL en .env.local. Las variables de Vite deben empezar con VITE_.
 export const MAPA_TILES_URL = import.meta.env.VITE_MAP_TILES_URL || "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png";
 export const MAPA_TILES_ATRIBUCION = import.meta.env.VITE_MAP_TILES_ATTRIBUTION || '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">Carto</a>';

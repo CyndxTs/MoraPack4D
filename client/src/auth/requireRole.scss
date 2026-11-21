@@ -1,0 +1,36 @@
+.acceso-requerido {
+  min-height: calc(100vh - var(--nav-height));
+  display: grid;
+  place-items: center;
+  padding: 24px 16px;
+  background: radial-gradient(1200px 600px at 50% -10%, #1d2f5c 0%, #0b1530 60%, #070e22 100%);
+
+  &__card {
+    max-width: 420px;
+    width: 100%;
+    text-align: center;
+    padding: 36px 28px;
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(143, 184, 212, 0.18);
+    color: #e8eefc;
+
+    h2 { margin: 12px 0 8px; font-size: 1.25rem; font-weight: 600; color: #fff; text-transform: none; letter-spacing: -0.01em; }
+    p { margin: 0 0 22px; color: #9fb2d9; }
+
+    button {
+      border: 0;
+      border-radius: 999px;
+      padding: 11px 26px;
+      font-weight: 600;
+      color: #0b1530;
+      background: linear-gradient(135deg, #7cc4ff, #4f8dff);
+      cursor: pointer;
+      transition: transform 160ms cubic-bezier(0.23, 1, 0.32, 1), filter 160ms ease;
+      &:hover { filter: brightness(1.08); }
+      &:active { transform: scale(0.97); }
+    }
+  }
+
+  &__icono { font-size: 2rem; }
+}

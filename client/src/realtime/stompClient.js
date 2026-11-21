@@ -1,11 +1,18 @@
 import { Client } from "@stomp/stompjs";
 import { WS_URL } from "../config";
+import { leerSesion } from "../auth/session";
+import { obtenerTokenAcceso } from "../auth/tokens";
+import { escuchar } from "../auth/eventos";
 
 // UN solo cliente STOMP para toda la pestaña. Las suscripciones se registran aquí y se
 // re-suscriben solas cuando la conexión se recupera (antes cada servicio abría su propio socket).
+// Autenticación: el token de acceso va en el CONNECT (el server lo valida solo ahí). Una vez conectado,
+// la conexión sigue aunque el token venza o la sesión expire: las simulaciones en curso no se cortan.
+// Se desconecta al cerrar sesión o al entrar con otra cuenta (el server autoriza las suscripciones por rol).
 
 let client = null;
 let conectado = false;
+let cuentaConectada = null; // código del usuario con el que se abrió la conexión
 let secuencia = 0;
 const suscripciones = new Map(); // id -> { destino, handler, stomp }
 const oyentesDeConexion = new Set();
@@ -22,6 +29,12 @@ function asegurarCliente() {
     heartbeatIncoming: 10000,
     heartbeatOutgoing: 10000,
     debug: () => {},
+    beforeConnect: async () => {
+      const token = await obtenerTokenAcceso();
+      cuentaConectada = leerSesion()?.usuario?.codigo ?? null;
+      client.connectHeaders = token ? { Authorization: `Bearer ${token}` } : {};
+      if (!token) await client.deactivate(); // sin sesión no se conecta (se reactiva al iniciar sesión)
+    },
     onConnect: () => {
       conectado = true;
       suscripciones.forEach((s) => {
@@ -40,7 +53,24 @@ function asegurarCliente() {
       console.error("[STOMP]", frame.headers?.message, frame.body);
     },
   });
-  client.activate();
+  if (leerSesion()) client.activate();
+
+  // Login / logout / cambio de cuenta (también desde otra pestaña)
+  escuchar("sesion", reconciliar);
+  escuchar("sesion-externa", reconciliar);
+  escuchar("logout", () => { cuentaConectada = null; client?.deactivate(); });
+}
+
+function reconciliar() {
+  if (!client) return;
+  const codigo = leerSesion()?.usuario?.codigo ?? null;
+  if (!codigo) return; // sesión expirada: la conexión abierta se mantiene
+  if (!client.active) {
+    client.activate();
+  } else if (cuentaConectada && cuentaConectada !== codigo) {
+    // Otra cuenta (o código nuevo tras cambio de rol): reconectar con su token
+    client.deactivate().then(() => client.activate());
+  }
 }
 
 /**
@@ -89,4 +119,4 @@ export function esperarConexion(timeoutMs = 4000) {
 export const normalizarEstado = (status) =>
   typeof status === "string"
     ? { estadoEjecucion: status, estadoFinalizacion: null }
-    : { estadoEjecucion: status?.estadoEjecucion ?? null, estadoFinalizacion: status?.estadoFinalizacion ?? null };
+    : { estadoEjecucion: status?.estadoEjecucion ?? null, estadoFinalizacion: status?.estadoFinalizacion ?? null, mensaje: status?.mensaje ?? null };

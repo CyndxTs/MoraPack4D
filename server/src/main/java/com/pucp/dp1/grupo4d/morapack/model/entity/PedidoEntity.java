@@ -56,7 +56,7 @@ public class PedidoEntity {
     // Solo OPERACION
     @ManyToOne
     @JoinColumn(name = "id_cliente")
-    private ClienteEntity cliente;
+    private UsuarioEntity cliente;
 
     @ManyToOne
     @JoinColumn(name = "id_aeropuerto_destino", nullable = false)
@@ -106,8 +106,8 @@ public class PedidoEntity {
     public void setTipoEscenario(TipoEscenario tipoEscenario) { this.tipoEscenario = tipoEscenario; }
     public String getCodClienteSimulado() { return codClienteSimulado; }
     public void setCodClienteSimulado(String codClienteSimulado) { this.codClienteSimulado = codClienteSimulado; }
-    public ClienteEntity getCliente() { return cliente; }
-    public void setCliente(ClienteEntity cliente) { this.cliente = cliente; }
+    public UsuarioEntity getCliente() { return cliente; }
+    public void setCliente(UsuarioEntity cliente) { this.cliente = cliente; }
     public AeropuertoEntity getDestino() { return destino; }
     public void setDestino(AeropuertoEntity destino) { this.destino = destino; }
     public List<SegmentacionEntity> getSegmentaciones() { return segmentaciones; }

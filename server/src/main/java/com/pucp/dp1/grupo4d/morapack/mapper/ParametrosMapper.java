@@ -65,6 +65,11 @@ public class ParametrosMapper {
         dto.setFactorDeDesviacionEspacial(entity.getFactorDeDesviacionEspacial());
         dto.setFactorDeDisposicionOperacional(entity.getFactorDeDisposicionOperacional());
         dto.setFactorDeLejania(entity.getFactorDeLejania());
+        dto.setReplanificacionAutomatica(entity.getReplanificacionAutomatica());
+        dto.setMinutosEsperaReplanificacion(entity.getMinutosEsperaReplanificacion());
+        dto.setReplanificarAlRegistrarEvento(entity.getReplanificarAlRegistrarEvento());
+        dto.setSegundosUmbralReplanificacion(entity.getSegundosUmbralReplanificacion());
+        dto.setPurgaAutomatica(entity.getPurgaAutomatica());
         return dto;
     }
 }

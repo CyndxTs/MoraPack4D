@@ -20,10 +20,13 @@ export const filtrarPaises = (modelo, pagina, tamanio) => filtrar("paises", mode
 // ---------- Usuarios ----------
 export const listarClientes = (pagina, tamanio) => listar("clientes", pagina, tamanio);
 export const filtrarClientes = (modelo, pagina, tamanio) => filtrar("clientes", modelo, pagina, tamanio);
-export const listarTrabajadores = (pagina, tamanio) => listar("trabajadores", pagina, tamanio);
-export const filtrarTrabajadores = (modelo, pagina, tamanio) => filtrar("trabajadores", modelo, pagina, tamanio);
-export const listarAdministradores = (pagina, tamanio) => listar("administradores", pagina, tamanio);
-export const filtrarAdministradores = (modelo, pagina, tamanio) => filtrar("administradores", modelo, pagina, tamanio);
+// Usuarios (solo administrador): modelo.tipoUsuario filtra por rol
+export const listarUsuarios = (pagina, tamanio) => listar("usuarios", pagina, tamanio);
+export const filtrarUsuarios = (modelo, pagina, tamanio) => filtrar("usuarios", modelo, pagina, tamanio);
+export const crearUsuario = (datos) => post("/usuarios/crear", datos);
+export const cambiarRolUsuario = (codigo, rol) => post("/usuarios/cambiar-rol", { codigo, rol });
+export const cambiarEstadoUsuario = (codigo, estado) => post("/usuarios/cambiar-estado", { codigo, estado });
+export const eliminarUsuario = (codigo) => post("/usuarios/eliminar", { codigo });
 
 // ---------- Datos de la operación guardados en BD ----------
 export const listarRutas = (pagina, tamanio) => listar("rutas", pagina, tamanio);

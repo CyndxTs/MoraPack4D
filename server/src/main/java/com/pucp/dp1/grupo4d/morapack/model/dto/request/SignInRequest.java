@@ -12,5 +12,4 @@ import lombok.Data;
 public class SignInRequest {
     private String correo;
     private String contrasenia;
-    private String tipoUsuario;
 }

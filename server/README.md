@@ -5,7 +5,7 @@ Spring Boot 3.5.6 · Java 21 · MySQL (local) / TiDB Cloud (despliegue). Todo se
 ## Primer uso (localhost)
 
 1. Instala **JDK 21** y **MySQL 8** (el server crea la base `morapack4d` si no existe).
-2. Copia `.env.example` como `.env` (en esta carpeta) y pon tu contraseña en `DB_PASSWORD`.
+2. Crea tu `.env` en esta carpeta (ver "Variables de entorno").
    Si el proyecto vino de un `.zip`, desbloquea los archivos (si no, PowerShell no deja ejecutar `seed.ps1`):
 
    ```powershell
@@ -43,12 +43,50 @@ Las credenciales nunca van en los `.properties`: van en `.env` (ignorado por git
 |---|---|
 | `db/seed/01_ddl.sql` | Esquema completo (sin procedimientos/funciones: TiDB Cloud no los soporta). |
 | `db/seed/02_paises.sql` | Los 3 continentes y 30 países del archivo de aeropuertos (con su huso horario). |
-| `db/seed/03_usuarios.sql` | Una cuenta por tipo: `administrador@g4d.com`, `trabajador@g4d.com`, `cliente@g4d.com` (contraseña `12345678`, guardada con BCrypt). |
+| `db/seed/03_usuarios.sql` | Una cuenta por rol en `USUARIO`: `administrador@g4d.com` (ADM0001), `trabajador@g4d.com` (TRA0001), `cliente@g4d.com` (0000001). Contraseña `12345678` (BCrypt). |
 | `db/seed/04_parametros.sql` | Parámetros iniciales (fila `id = 1`). |
+
+## Usuarios y seguridad
+
+- Tabla única `USUARIO` con `rol` (CLIENTE | TRABAJADOR | ADMINISTRADOR). Códigos: cliente `0000001`, trabajador `TRA0001`,
+  administrador `ADM0001`. El siguiente código es el máximo válido del rol + 1 (los mal formados se ignoran; error si se agota).
+  Al cambiar de rol se reasigna el código del rol destino en la misma transacción.
+- Ya no hay importación de usuarios por archivo: los clientes se registran (código de 6 dígitos por correo) y el
+  administrador crea/gestiona usuarios uno a uno en `/api/usuarios/**`.
+- Spring Security sin estado: token de acceso JWT (HS256, 10 min) + sesión por dispositivo de 12 h (tabla `SESION`,
+  solo el hash del token de refresco). La sesión no se extiende. STOMP valida el token en el CONNECT y autoriza las
+  suscripciones por rol; una conexión abierta no se corta al vencer el token.
+- Reglas: `/api/auth/**` público (salvo `mi-cuenta`), `/api/usuarios/**` administrador, `/api/cliente/**` cliente,
+  resto de `/api/**` trabajador (el administrador también). PARAMETROS, PAIS y AEROPUERTO(S) solo los importa el administrador.
+
+| Endpoint | Uso |
+|---|---|
+| `POST /api/auth/iniciar-sesion` | `{ correo, contrasenia }` → usuario + `tokenAcceso`, `tokenRefresco`, `expiraAcceso`, `expiraSesion` |
+| `POST /api/auth/google` | `{ credencial, nombres?, apellidos?, pais? }` (si es nuevo y faltan datos: `requiereDatos: true`) |
+| `POST /api/auth/refrescar` · `cerrar-sesion` | `{ tokenRefresco }` |
+| `POST /api/auth/registrar` → `registrar/verificar` | Registro de CLIENTE con código de 6 dígitos (el usuario se crea con el código correcto) |
+| `POST /api/auth/codigo/reenviar` | `{ correo, proposito: REGISTRO \| RECUPERACION }` (cada 120 s) |
+| `POST /api/auth/contrasenia/olvido` → `contrasenia/restablecer` | Recuperación con código |
+| `POST /api/auth/mi-cuenta[/perfil \| /contrasenia]` | Datos propios y contraseña (cuentas de Google la crean sin la actual) |
+| `POST /api/usuarios/{listar,filtrar,crear,cambiar-rol,cambiar-estado,eliminar}` | Administrador |
+
+## Replanificación automática y purga
+
+Las gobierna el server con los parámetros de `PARAMETROS` (los edita el administrador):
+
+| Columna | Qué hace |
+|---|---|
+| `replanificacion_automatica` | Al registrar/importar pedidos de OPERACIÓN se programa una replanificación |
+| `minutos_espera_replanificacion` | Espera desde el primer pedido nuevo (15 por defecto) |
+| `replanificar_al_registrar_evento` | Un evento de OPERACIÓN replanifica de inmediato |
+| `segundos_umbral_replanificacion` | Umbral de replanificación (120–240 s, 180 por defecto) |
+| `purga_automatica` | Activa la purga horaria |
+
+La programación se consulta con `POST /api/operation-schedule` y se publica en `/topic/operation-schedule`.
 
 ## Purga de operación
 
-Cada hora (`morapack.purga.cron`, en UTC) el server borra lo que la operación ya no usa: registros dados de baja,
+Cada hora (`morapack.purga.cron`, en UTC, si `purga_automatica` está activa) el server borra lo que la operación ya no usa: registros dados de baja,
 la planificación de pedidos cancelados (el pedido se conserva), lotes y segmentaciones reemplazados, rutas y vuelos
 sin uso, y eventos de operación vencidos. No corre mientras hay una replanificación. Manual: `POST /api/operation-purge`.
 
@@ -56,21 +94,28 @@ sin uso, y eventos de operación vencidos. No corre mientras hay una replanifica
 
 1. Aeropuertos (el país de cada aeropuerto debe existir; si no, se cancela toda la importación. Marca SPIM, EBCI y UBBB como sedes si aún no hay ninguna).
 2. Planes de vuelo.
-3. Usuarios (clientes / trabajadores / administradores). El país debe existir.
-4. Eventos (necesitan los planes).
-5. Pedidos:
-   - SIMULACION: el cliente no se busca en BD; se genera en RAM al simular.
-   - OPERACION: se omiten los pedidos de clientes inexistentes; si el destino es una sede, se guardan como atendidos al instante.
+3. Eventos (necesitan los planes).
+4. Pedidos:
+   - SIMULACION: el cliente no se busca en BD; se crea en RAM la primera vez y se mantiene toda la simulación.
+   - OPERACION: se omiten las líneas cuyo cliente no existe en BD (el estado final informa cuántas); si el destino es una sede, se guardan como atendidos al instante.
 
-## Endpoints agregados para el cliente
+## Variables de entorno
 
-- `POST /api/auth/iniciar-sesion` `{ correo, contrasenia, tipoUsuario? }` → `{ exito, mensaje, usuario }` (BCrypt; marca ONLINE).
-- `POST /api/auth/cerrar-sesion` `{ correo, tipoUsuario? }` → marca OFFLINE.
-- `POST /api/operation-current` → última solución de la operación (`{ solucion }`) o 204 si el server aún no replanificó.
+`.env` local (nunca se sube) y variables del servicio en Render:
+
+| Variable | Para qué |
+|---|---|
+| `SPRING_PROFILES_ACTIVE` | `dev` (MySQL local) o `tidb` |
+| `LOCAL_DB_HOST`, `LOCAL_DB_PORT`, `LOCAL_DB_NAME`, `LOCAL_DB_USER`, `LOCAL_DB_PASSWORD` | MySQL local |
+| `TIDB_DB_HOST`, `TIDB_DB_PORT`, `TIDB_DB_NAME`, `TIDB_DB_USER`, `TIDB_DB_PASSWORD` | TiDB Cloud |
+| `CORS_ORIGINS` | URL(s) del front, separadas por comas |
+| `JWT_SECRET` | Clave larga y aleatoria para firmar los tokens de acceso (si falta se genera una al arrancar) |
+| `GOOGLE_CLIENT_ID` | Client ID de Google (el mismo que `VITE_GOOGLE_CLIENT_ID` del front) |
+| `BREVO_API_KEY`, `MAIL_REMITENTE`, `MAIL_REMITENTE_NOMBRE` | Correos con el código (sin API key, el código sale en la consola) |
 
 ## Producción (Render + TiDB Cloud)
 
 - Render despliega con el `Dockerfile` de esta carpeta (perfil `tidb` por defecto).
-- Variables en Render: `DB_HOST`, `DB_PORT` (4000), `DB_NAME`, `DB_USER` (con prefijo `xxxx.root`), `DB_PASSWORD`,
-  `CORS_ORIGINS` (URL del front). `PORT` lo pone Render.
-- El seed contra TiDB se corre desde tu PC: en `.env` pon `SPRING_PROFILES_ACTIVE=tidb` y los datos de TiDB, y ejecuta `.\seed.ps1`.
+- Variables en Render: las de TiDB, `CORS_ORIGINS`, `JWT_SECRET`, `GOOGLE_CLIENT_ID` y las de Brevo. `PORT` lo pone Render.
+- El `.env` local tiene las dos configuraciones (`LOCAL_*` y `TIDB_*`); solo se cambia `SPRING_PROFILES_ACTIVE` (dev | tidb).
+  Para el seed contra TiDB: `SPRING_PROFILES_ACTIVE=tidb` y `.\seed.ps1`.

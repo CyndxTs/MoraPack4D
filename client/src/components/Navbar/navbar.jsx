@@ -1,15 +1,16 @@
 import React from "react";
 import { Link, NavLink } from "react-router-dom";
+import { useAuth } from "../../auth/AuthContext";
+import { ETIQUETA_ROL } from "../../auth/session";
 import "./navbar.scss";
 import logo from "../../assets/images/mora.png";
-
-const ETIQUETA_ROL = { CLIENTE: "Cliente", TRABAJADOR: "Trabajador", ADMINISTRADOR: "Administrador" };
 
 /**
  * Barra superior genérica. 'items': [{ to, label, end? }] o grupos [{ label, children: [...] }].
  * El contenido depende del rol (lo arma cada layout); antes estaba fija con todas las páginas.
  */
-export default function Navbar({ items = [], inicio = "/", usuario = null, onLogout, mostrarLogin = false }) {
+export default function Navbar({ items = [], inicio = "/", usuario = null, onLogout, mostrarLogin = false, cuenta = null }) {
+  const { abrirAuth } = useAuth();
   const renderLink = (it) => (
     <li key={it.to}>
       <NavLink to={it.to} end={it.end} className={({ isActive }) => (isActive ? "active" : "")}>{it.label}</NavLink>
@@ -39,15 +40,15 @@ export default function Navbar({ items = [], inicio = "/", usuario = null, onLog
         {usuario ? (
           <div className="nav-user">
             <div className="nav-user-info">
-              <span className="nav-user-name">{usuario.nombres} {usuario.apellidos}</span>
+              {cuenta
+                ? <Link to={cuenta} className="nav-user-name" title="Mi cuenta">{usuario.nombres} {usuario.apellidos}</Link>
+                : <span className="nav-user-name">{usuario.nombres} {usuario.apellidos}</span>}
               <span className="nav-user-role">{ETIQUETA_ROL[usuario.tipoUsuario] ?? usuario.tipoUsuario}</span>
             </div>
             <button type="button" className="nav-logout" onClick={onLogout}>Cerrar sesión</button>
           </div>
         ) : mostrarLogin ? (
-          <ul className="menu menu-top">
-            <li><NavLink to="/login">Iniciar sesión</NavLink></li>
-          </ul>
+          <button type="button" className="nav-login" onClick={() => abrirAuth("login")}>Iniciar sesión</button>
         ) : null}
       </div>
     </nav>

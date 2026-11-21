@@ -16,6 +16,7 @@ import com.pucp.dp1.grupo4d.morapack.model.entity.AeropuertoEntity;
 import com.pucp.dp1.grupo4d.morapack.model.entity.ParametrosEntity;
 import com.pucp.dp1.grupo4d.morapack.model.enumeration.EstadoEjecucion;
 import com.pucp.dp1.grupo4d.morapack.model.enumeration.EstadoFinalizacion;
+import com.pucp.dp1.grupo4d.morapack.model.exception.G4DException;
 import com.pucp.dp1.grupo4d.morapack.repository.ParametrosRepository;
 import com.pucp.dp1.grupo4d.morapack.service.CommunicationService;
 import com.pucp.dp1.grupo4d.morapack.util.G4DUtility;
@@ -28,6 +29,8 @@ import java.util.*;
 public class ParametrosService {
     // Sedes por defecto: se marcan al importar los aeropuertos si aún no hay ninguna sede registrada
     public static final List<String> COD_SEDES_POR_DEFECTO = List.of("SPIM", "EBCI", "UBBB");
+    public static final int MIN_SEGUNDOS_UMBRAL = 120;
+    public static final int MAX_SEGUNDOS_UMBRAL = 240;
 
     private final ParametrosRepository parametrosRepository;
     private final ParametrosMapper parametrosMapper;
@@ -91,6 +94,7 @@ public class ParametrosService {
         try {
             System.out.println("Importando parametros..");
             ParametrosEntity parametros = new ParametrosEntity();
+            ParametrosEntity actuales = parametrosRepository.findById(1).orElseGet(ParametrosEntity::new);
             communicationService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.INICIADO));
             communicationService.enviar(progressDestination, new ProgressPayload("Cargando parametros", 0, 1));
             parametros.setMaxDiasEntregaIntracontinental(G4DUtility.Convertor.toAdmissible(dto.getMaxDiasEntregaIntracontinental(), 2));
@@ -113,13 +117,23 @@ public class ParametrosService {
             parametros.setFactorDeDesviacionEspacial(G4DUtility.Convertor.toAdmissible(dto.getFactorDeDesviacionEspacial(), 2000.0));
             parametros.setFactorDeDisposicionOperacional(G4DUtility.Convertor.toAdmissible(dto.getFactorDeDisposicionOperacional(), 3000.0));
             parametros.setFactorDeLejania(G4DUtility.Convertor.toAdmissible(dto.getFactorDeLejania(), 0.0085));
+            // Opciones de operación: si no vienen se conservan las actuales
+            parametros.setReplanificacionAutomatica(dto.getReplanificacionAutomatica() != null ? dto.getReplanificacionAutomatica() : actuales.getReplanificacionAutomatica());
+            parametros.setReplanificarAlRegistrarEvento(dto.getReplanificarAlRegistrarEvento() != null ? dto.getReplanificarAlRegistrarEvento() : actuales.getReplanificarAlRegistrarEvento());
+            parametros.setPurgaAutomatica(dto.getPurgaAutomatica() != null ? dto.getPurgaAutomatica() : actuales.getPurgaAutomatica());
+            int espera = (dto.getMinutosEsperaReplanificacion() != null) ? dto.getMinutosEsperaReplanificacion() : actuales.getMinutosEsperaReplanificacion();
+            if (espera < 0 || espera > 1440) throw new G4DException("Los minutos de espera para replanificar deben estar entre 0 y 1440.");
+            parametros.setMinutosEsperaReplanificacion(espera);
+            int umbral = (dto.getSegundosUmbralReplanificacion() != null) ? dto.getSegundosUmbralReplanificacion() : actuales.getSegundosUmbralReplanificacion();
+            if (umbral < MIN_SEGUNDOS_UMBRAL || umbral > MAX_SEGUNDOS_UMBRAL) throw new G4DException(String.format("El umbral de replanificación debe estar entre %d y %d segundos.", MIN_SEGUNDOS_UMBRAL, MAX_SEGUNDOS_UMBRAL));
+            parametros.setSegundosUmbralReplanificacion(umbral);
             this.save(parametros);
             System.out.println("[<] PARAMETROS IMPORTADOS!");
             communicationService.enviar(progressDestination, new ProgressPayload("Cargando parametros", 1, 1));
             communicationService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.EXITOSO));
         } catch (Exception e) {
-            communicationService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.ERRONEO));
-            throw new RuntimeException(e);
+            communicationService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.ERRONEO, e.getMessage()));
+            throw (e instanceof G4DException g4dEx) ? g4dEx : new RuntimeException(e);
         }
     }
 }

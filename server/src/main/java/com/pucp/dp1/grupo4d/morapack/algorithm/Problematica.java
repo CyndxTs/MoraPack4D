@@ -146,9 +146,9 @@ public class Problematica {
         G4DUtility.Logger.logf("[:] PLANES DE VUELO CARGADOS! | '%d' planes! & '%d' eventos!%n", planes.size(), cantEventos);
     }
 
-    public void cargarClientes(ClienteService clienteService, UsuarioAdapter usuarioAdapter) {
+    public void cargarClientes(UsuarioService usuarioService, UsuarioAdapter usuarioAdapter) {
         G4DUtility.Logger.logln(">> Cargando clientes..");
-        List<ClienteEntity> clientesEntity = clienteService.findAllInRangeByScenario(this.inicioDePlanificacion, this.finDePlanificacion, this.tipoEscenario, new ArrayList<>(this.origenes.keySet()));
+        List<UsuarioEntity> clientesEntity = usuarioService.findAllClientesInRangeByScenario(this.inicioDePlanificacion, this.finDePlanificacion, this.tipoEscenario, new ArrayList<>(this.origenes.keySet()));
         clientesEntity.forEach(entity -> {
             if(clientes.stream().noneMatch(c -> c.getCodigo().equals(entity.getCodigo()))) {
                 Cliente cliente = usuarioAdapter.toAlgorithm(idTransaccion, entity);
@@ -224,9 +224,7 @@ public class Problematica {
         this.vuelos.removeIf(v -> !vuelosEnUso.contains(v) && !v.getFechaHoraLlegada().isAfter(instanteDeCorte));
         for (Aeropuerto aeropuerto : this.origenes.values()) registros += aeropuerto.desalojarRegistros(lotesDesalojados, instanteDeCorte);
         for (Aeropuerto aeropuerto : this.destinos) registros += aeropuerto.desalojarRegistros(lotesDesalojados, instanteDeCorte);
-        Set<Cliente> clientesEnUso = new HashSet<>();
-        this.pedidos.forEach(p -> clientesEnUso.add(p.getCliente()));
-        this.clientes.removeIf(c -> !clientesEnUso.contains(c));
+        // Los clientes NO se desalojan: en simulación viven en RAM toda la simulación (un pedido posterior puede ser suyo)
         G4DUtility.Logger.logf("[~] RAM LIBERADA! | '%d' pedidos, '%d' rutas, '%d' vuelos y '%d' registros desalojados%n", desalojados.size(), rutasAntes - this.rutas.size(), vuelosAntes - this.vuelos.size(), registros);
         return desalojados;
     }

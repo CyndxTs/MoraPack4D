@@ -16,6 +16,9 @@ DROP TABLE IF EXISTS `VUELO`;
 DROP TABLE IF EXISTS `EVENTO`;
 DROP TABLE IF EXISTS `PLAN`;
 DROP TABLE IF EXISTS `AEROPUERTO`;
+DROP TABLE IF EXISTS `VERIFICACION_CORREO`;
+DROP TABLE IF EXISTS `SESION`;
+DROP TABLE IF EXISTS `USUARIO`;
 DROP TABLE IF EXISTS `CLIENTE`;
 DROP TABLE IF EXISTS `TRABAJADOR`;
 DROP TABLE IF EXISTS `ADMINISTRADOR`;
@@ -48,60 +51,69 @@ CREATE TABLE `PAIS` (
 );
 
 -- -----------------------------------------------------
--- CLIENTE (solo operación; los clientes de simulación viven en RAM)
+-- USUARIO (clientes, trabajadores y administradores; los clientes de simulación viven en RAM)
+--  - codigo     : CLIENTE '0000001' (7 dígitos) | TRABAJADOR 'TRA0001' | ADMINISTRADOR 'ADM0001'.
+--                 Al cambiar de rol se reasigna con el siguiente código libre del rol destino.
+--  - contrasenia: NULL si la cuenta se creó con Google y aún no definió una contraseña.
 -- -----------------------------------------------------
-CREATE TABLE `CLIENTE` (
+CREATE TABLE `USUARIO` (
   `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
   `codigo` VARCHAR(20) NOT NULL,
+  `rol` ENUM('CLIENTE', 'TRABAJADOR', 'ADMINISTRADOR') NOT NULL DEFAULT 'CLIENTE',
   `nombres` VARCHAR(60) NOT NULL,
   `apellidos` VARCHAR(60) NOT NULL,
   `correo` VARCHAR(80) NOT NULL,
-  `contrasenia` VARCHAR(255) NOT NULL,
+  `contrasenia` VARCHAR(255) NULL DEFAULT NULL,
   `estado` ENUM('ONLINE', 'OFFLINE', 'DISABLED') NOT NULL DEFAULT 'OFFLINE',
   `id_pais` INT UNSIGNED NOT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE INDEX `UK_CLIENTE_CODIGO` (`codigo`),
-  UNIQUE INDEX `UK_CLIENTE_CORREO` (`correo`),
-  INDEX `IDX_CLIENTE_PAIS` (`id_pais`),
-  CONSTRAINT `FK_CLIENTE_PAIS` FOREIGN KEY (`id_pais`) REFERENCES `PAIS` (`id`)
+  UNIQUE INDEX `UK_USUARIO_CODIGO` (`codigo`),
+  UNIQUE INDEX `UK_USUARIO_CORREO` (`correo`),
+  INDEX `IDX_USUARIO_ROL` (`rol`),
+  INDEX `IDX_USUARIO_PAIS` (`id_pais`),
+  CONSTRAINT `FK_USUARIO_PAIS` FOREIGN KEY (`id_pais`) REFERENCES `PAIS` (`id`)
 );
 
 -- -----------------------------------------------------
--- TRABAJADOR (inicia simulaciones, ve la operación, gestiona pedidos)
+-- SESION (una por dispositivo; dura 12 h desde el inicio de sesión, no se extiende)
+--  - Solo se guarda el hash SHA-256 del token de refresco.
 -- -----------------------------------------------------
-CREATE TABLE `TRABAJADOR` (
-  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
-  `codigo` VARCHAR(20) NOT NULL,
-  `nombres` VARCHAR(60) NOT NULL,
-  `apellidos` VARCHAR(60) NOT NULL,
-  `correo` VARCHAR(80) NOT NULL,
-  `contrasenia` VARCHAR(255) NOT NULL,
-  `estado` ENUM('ONLINE', 'OFFLINE', 'DISABLED') NOT NULL DEFAULT 'OFFLINE',
-  `id_pais` INT UNSIGNED NOT NULL,
+CREATE TABLE `SESION` (
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `id_usuario` INT UNSIGNED NOT NULL,
+  `hash_token` CHAR(64) NOT NULL,
+  `dispositivo` VARCHAR(255) NULL DEFAULT NULL,
+  `fh_inicio` DATETIME NOT NULL,
+  `fh_expiracion` DATETIME NOT NULL,
+  `fh_revocacion` DATETIME NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE INDEX `UK_TRABAJADOR_CODIGO` (`codigo`),
-  UNIQUE INDEX `UK_TRABAJADOR_CORREO` (`correo`),
-  INDEX `IDX_TRABAJADOR_PAIS` (`id_pais`),
-  CONSTRAINT `FK_TRABAJADOR_PAIS` FOREIGN KEY (`id_pais`) REFERENCES `PAIS` (`id`)
+  UNIQUE INDEX `UK_SESION_HASH` (`hash_token`),
+  INDEX `IDX_SESION_USUARIO` (`id_usuario`),
+  INDEX `IDX_SESION_EXPIRACION` (`fh_expiracion`),
+  CONSTRAINT `FK_SESION_USUARIO` FOREIGN KEY (`id_usuario`) REFERENCES `USUARIO` (`id`) ON DELETE CASCADE
 );
 
 -- -----------------------------------------------------
--- ADMINISTRADOR (sysadmin: sedes, aeropuertos, usuarios, países, parámetros, dashboard)
+-- VERIFICACION_CORREO (códigos de 6 dígitos enviados por correo)
+--  - REGISTRO  : guarda los datos del registro pendiente (el USUARIO se crea solo con el código correcto).
+--  - RECUPERACION: restablecer contraseña.
+--  - Solo se guarda el hash del código. Una fila vigente por (correo, proposito).
 -- -----------------------------------------------------
-CREATE TABLE `ADMINISTRADOR` (
-  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
-  `codigo` VARCHAR(20) NOT NULL,
-  `nombres` VARCHAR(60) NOT NULL,
-  `apellidos` VARCHAR(60) NOT NULL,
+CREATE TABLE `VERIFICACION_CORREO` (
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   `correo` VARCHAR(80) NOT NULL,
-  `contrasenia` VARCHAR(255) NOT NULL,
-  `estado` ENUM('ONLINE', 'OFFLINE', 'DISABLED') NOT NULL DEFAULT 'OFFLINE',
-  `id_pais` INT UNSIGNED NOT NULL,
+  `proposito` ENUM('REGISTRO', 'RECUPERACION') NOT NULL,
+  `hash_codigo` VARCHAR(255) NOT NULL,
+  `nombres` VARCHAR(60) NULL DEFAULT NULL,
+  `apellidos` VARCHAR(60) NULL DEFAULT NULL,
+  `contrasenia` VARCHAR(255) NULL DEFAULT NULL,
+  `id_pais` INT UNSIGNED NULL DEFAULT NULL,
+  `intentos` INT NOT NULL DEFAULT 0,
+  `fh_envio` DATETIME NOT NULL,
+  `fh_expiracion` DATETIME NOT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE INDEX `UK_ADMINISTRADOR_CODIGO` (`codigo`),
-  UNIQUE INDEX `UK_ADMINISTRADOR_CORREO` (`correo`),
-  INDEX `IDX_ADMINISTRADOR_PAIS` (`id_pais`),
-  CONSTRAINT `FK_ADMINISTRADOR_PAIS` FOREIGN KEY (`id_pais`) REFERENCES `PAIS` (`id`)
+  UNIQUE INDEX `UK_VERIFICACION_CORREO_PROPOSITO` (`correo`, `proposito`),
+  CONSTRAINT `FK_VERIFICACION_PAIS` FOREIGN KEY (`id_pais`) REFERENCES `PAIS` (`id`)
 );
 
 -- -----------------------------------------------------
@@ -151,7 +163,7 @@ CREATE TABLE `PEDIDO` (
   INDEX `IDX_PEDIDO_ESCENARIO_GENERACION` (`tipo_escenario`, `estado`, `fh_generacion`),
   INDEX `IDX_PEDIDO_CLIENTE` (`id_cliente`),
   INDEX `IDX_PEDIDO_DESTINO` (`id_aeropuerto_destino`),
-  CONSTRAINT `FK_PEDIDO_CLIENTE` FOREIGN KEY (`id_cliente`) REFERENCES `CLIENTE` (`id`),
+  CONSTRAINT `FK_PEDIDO_CLIENTE` FOREIGN KEY (`id_cliente`) REFERENCES `USUARIO` (`id`),
   CONSTRAINT `FK_PEDIDO_AEROPUERTO` FOREIGN KEY (`id_aeropuerto_destino`) REFERENCES `AEROPUERTO` (`id`),
   CONSTRAINT `CK_PEDIDO_CLIENTE_ESCENARIO` CHECK (
     (`tipo_escenario` = 'OPERACION' AND `id_cliente` IS NOT NULL) OR
@@ -339,8 +351,15 @@ CREATE TABLE `PARAMETROS` (
   `f_de` DOUBLE NOT NULL DEFAULT 2000.0,
   `f_do` DOUBLE NOT NULL DEFAULT 3000.0,
   `f_lj` DOUBLE NOT NULL DEFAULT 0.0085,
+  `replanificacion_automatica` BOOLEAN NOT NULL DEFAULT TRUE,
+  `minutos_espera_replanificacion` INT NOT NULL DEFAULT 15,
+  `replanificar_al_registrar_evento` BOOLEAN NOT NULL DEFAULT TRUE,
+  `segundos_umbral_replanificacion` INT NOT NULL DEFAULT 180,
+  `purga_automatica` BOOLEAN NOT NULL DEFAULT TRUE,
   PRIMARY KEY (`id`),
-  CONSTRAINT `CK_PARAMETROS_FILA_UNICA` CHECK (`id` = 1)
+  CONSTRAINT `CK_PARAMETROS_FILA_UNICA` CHECK (`id` = 1),
+  CONSTRAINT `CK_PARAMETROS_ESPERA` CHECK (`minutos_espera_replanificacion` BETWEEN 0 AND 1440),
+  CONSTRAINT `CK_PARAMETROS_UMBRAL` CHECK (`segundos_umbral_replanificacion` BETWEEN 120 AND 240)
 );
 
 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS;
