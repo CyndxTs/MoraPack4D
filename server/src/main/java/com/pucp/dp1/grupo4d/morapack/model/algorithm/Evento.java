@@ -10,13 +10,21 @@ import com.pucp.dp1.grupo4d.morapack.model.enumeration.TipoEvento;
 import com.pucp.dp1.grupo4d.morapack.util.G4DUtility;
 import java.time.LocalDateTime;
 
+/**
+ * Evento sobre UN vuelo de un plan: el que sale (originalmente) en 'fechaHoraInicio' y llega en 'fechaHoraFin'.
+ *  - CANCELACION        : ese vuelo no existe.
+ *  - REPROGRAMACION     : ese vuelo sale en 'fechaHoraSalida' y llega en 'fechaHoraLlegada'.
+ *  - REAJUSTE_CAPACIDAD : ese vuelo tiene 'nuevaCapacidad'.
+ */
 public class Evento {
     private String codigo;
     private TipoEvento tipo;
+    private String tipoEscenario;
     private LocalDateTime fechaHoraInicio;
     private LocalDateTime fechaHoraFin;
     private LocalDateTime fechaHoraSalida;
     private LocalDateTime fechaHoraLlegada;
+    private Integer nuevaCapacidad;
 
     public Evento() {
         this.codigo = G4DUtility.Generator.getUniqueString("EVE");
@@ -27,11 +35,18 @@ public class Evento {
         Evento evento = new Evento();
         evento.codigo = this.codigo;
         evento.tipo = this.tipo;
+        evento.tipoEscenario = this.tipoEscenario;
         evento.fechaHoraInicio = this.fechaHoraInicio;
         evento.fechaHoraFin = this.fechaHoraFin;
         evento.fechaHoraSalida = this.fechaHoraSalida;
         evento.fechaHoraLlegada = this.fechaHoraLlegada;
+        evento.nuevaCapacidad = this.nuevaCapacidad;
         return evento;
+    }
+
+    // ¿Este evento afecta al vuelo que originalmente sale en 'salidaOriginal'?
+    public Boolean afectaA(LocalDateTime salidaOriginal) {
+        return this.fechaHoraInicio != null && this.fechaHoraInicio.equals(salidaOriginal);
     }
 
     @Override
@@ -68,6 +83,14 @@ public class Evento {
         this.tipo = tipo;
     }
 
+    public String getTipoEscenario() {
+        return tipoEscenario;
+    }
+
+    public void setTipoEscenario(String tipoEscenario) {
+        this.tipoEscenario = tipoEscenario;
+    }
+
     public LocalDateTime getFechaHoraInicio() {
         return fechaHoraInicio;
     }
@@ -99,5 +122,12 @@ public class Evento {
     public void setFechaHoraLlegada(LocalDateTime fechaHoraLlegada) {
         this.fechaHoraLlegada = fechaHoraLlegada;
     }
-}
 
+    public Integer getNuevaCapacidad() {
+        return nuevaCapacidad;
+    }
+
+    public void setNuevaCapacidad(Integer nuevaCapacidad) {
+        this.nuevaCapacidad = nuevaCapacidad;
+    }
+}

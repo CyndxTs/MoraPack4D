@@ -70,23 +70,20 @@ public class Ruta {
         return ruta;
     }
 
+    // Una ruta destino es válida para los lotes de 'rutasOrig' si conserva sus vuelos fijos (ya volados) y su
+    // siguiente vuelo sale desde el aeropuerto de conexión después del umbral de conexión.
     public boolean respetaPuntosDeReplanificacion(List<Ruta> rutasOrig, Map<Ruta, PuntoDeReplanificacion> puntosDeReplanificacion) {
         return rutasOrig.stream().allMatch(rOrig -> {
             PuntoDeReplanificacion pdr = puntosDeReplanificacion.getOrDefault(rOrig, null);
-            if (pdr != null) {
-                List<Vuelo> vuelosFijos = pdr.getVuelosFijos();
-                if(vuelosFijos.size() > this.vuelos.size()) return false;
-                if(!vuelosFijos.isEmpty()){
-                    for (int i = 0; i < vuelosFijos.size(); i++) {
-                        Vuelo vFijo = vuelosFijos.get(i);
-                        Vuelo v = this.vuelos.get(i);
-                        if(!vFijo.equals(v)) {
-                            return false;
-                        }
-                    }
-                }
+            if (pdr == null) return true;
+            List<Vuelo> vuelosFijos = pdr.getVuelosFijos();
+            if (vuelosFijos.size() >= this.vuelos.size()) return false;
+            for (int i = 0; i < vuelosFijos.size(); i++) {
+                if (!vuelosFijos.get(i).equals(this.vuelos.get(i))) return false;
             }
-            return true;
+            Vuelo siguiente = this.vuelos.get(vuelosFijos.size());
+            if (pdr.getAeropuertoDeConexion() != null && !siguiente.getPlan().getOrigen().equals(pdr.getAeropuertoDeConexion())) return false;
+            return pdr.getUmbralDeConexion() == null || siguiente.getFechaHoraSalida().isAfter(pdr.getUmbralDeConexion());
         });
     }
 
@@ -106,8 +103,8 @@ public class Ruta {
         this.agregarRegistroDeLoteDeProductos(problematica, lote, vuelosEnTransito, rutasEnOperacion, false);
     }
 
+    // Registra el lote en todos los aeropuertos que toca la ruta (desde su origen) y descuenta capacidad de sus vuelos
     public void agregarRegistroDeLoteDeProductos(Problematica problematica, Lote lote, Set<Vuelo> vuelosEnTransito, Set<Ruta> rutasEnOperacion, boolean softInsert) {
-        System.out.printf("%-20sLote '%s(%d)' en la secuencia: {}", "AGREGACIÓN-" + ((softInsert)? "SOFT:":"HARD:"), lote.getCodigo(), lote.getTamanio());
         rutasEnOperacion.add(this);
         vuelosEnTransito.addAll(this.vuelos);
         for(int i = 0; i < this.vuelos.size(); i++) {
@@ -115,21 +112,19 @@ public class Ruta {
             vuelo.setCapacidadDisponible(vuelo.getCapacidadDisponible() - lote.getTamanio());
             LocalDateTime destFechaHoraIngreso = vuelo.getFechaHoraLlegada(), destFechaHoraEgreso = (i + 1 < vuelos.size()) ? this.vuelos.get(i + 1).getFechaHoraSalida() : destFechaHoraIngreso.plusMinutes((long)(60*problematica.maxHorasDeRecojo));
             vuelo.getPlan().getDestino().agregarRegistroDeLoteDeProductos(lote, destFechaHoraIngreso, destFechaHoraEgreso, softInsert);
-            System.out.printf(" -> V -> '%s'", vuelo.getPlan().getDestino().getCodigo());
         }
-        System.out.println();
     }
 
     public void agregarRegistroDeLoteDeProductosDesdeAeropuerto(Problematica problematica, Lote lote, Aeropuerto aeropuerto, Set<Vuelo> vuelosEnTransito, Set<Ruta> rutasEnOperacion) {
         this.agregarRegistroDeLoteDeProductosDesdeAeropuerto(problematica, lote, aeropuerto, vuelosEnTransito, rutasEnOperacion, false);
     }
 
+    // Registra el lote desde 'aeropuerto' (donde está físicamente) hasta el destino de la ruta
     public void agregarRegistroDeLoteDeProductosDesdeAeropuerto(Problematica problematica, Lote lote, Aeropuerto aeropuerto, Set<Vuelo> vuelosEnTransito, Set<Ruta> rutasEnOperacion, boolean softInsert) {
         if(aeropuerto == null || aeropuerto.getEsSede()) {
-            this.agregarRegistroDeLoteDeProductos(problematica, lote, vuelosEnTransito, rutasEnOperacion);
+            this.agregarRegistroDeLoteDeProductos(problematica, lote, vuelosEnTransito, rutasEnOperacion, softInsert);
             return;
         }
-        System.out.printf("%-20sLote '%s(%d)' en la secuencia:", "AGREGACIÓN-" + ((softInsert)? "SOFT:":"HARD:"), lote.getCodigo(), lote.getTamanio());
         rutasEnOperacion.add(this);
         vuelosEnTransito.addAll(this.vuelos);
         boolean agregar = false;
@@ -137,57 +132,65 @@ public class Ruta {
             Vuelo vuelo = this.vuelos.get(i);
             if(!agregar && vuelo.getPlan().getOrigen().equals(aeropuerto)) {
                 agregar = true;
-                aeropuerto.agregarRegistroDeLoteDeProductos(lote, this.vuelos.get(i-1).getFechaHoraLlegada(), vuelo.getFechaHoraSalida(), softInsert);
-                System.out.printf(" '%s'", vuelo.getPlan().getOrigen().getCodigo());
+                if(i > 0) aeropuerto.agregarRegistroDeLoteDeProductos(lote, this.vuelos.get(i-1).getFechaHoraLlegada(), vuelo.getFechaHoraSalida(), softInsert);
             }
             if(agregar) {
                 vuelo.setCapacidadDisponible(vuelo.getCapacidadDisponible() - lote.getTamanio());
                 LocalDateTime destFechaHoraIngreso = vuelo.getFechaHoraLlegada(), destFechaHoraEgreso = (i + 1 < vuelos.size()) ? this.vuelos.get(i + 1).getFechaHoraSalida() : destFechaHoraIngreso.plusMinutes((long)(60*problematica.maxHorasDeRecojo));
                 vuelo.getPlan().getDestino().agregarRegistroDeLoteDeProductos(lote, destFechaHoraIngreso, destFechaHoraEgreso, softInsert);
-                System.out.printf(" -> V -> '%s'", vuelo.getPlan().getDestino().getCodigo());
             }
         }
-        System.out.println();
     }
 
     public void eliminarRegistroDeLoteDeProductos(Lote lote) {
         this.eliminarRegistroDeLoteDeProductos(lote, false);
     }
 
+    // Quita el lote de toda la ruta. La capacidad de un vuelo solo se libera si el lote realmente iba en él
+    // (si su registro en el destino del vuelo seguía vigente); así no se libera dos veces.
     public void eliminarRegistroDeLoteDeProductos(Lote lote, boolean softDelete) {
-        System.out.printf("%-20sLote '%s(%d)' en la secuencia: {}", "ELIMINACIÓN-" + ((softDelete)? "SOFT:":"HARD:"), lote.getCodigo(), lote.getTamanio());
         for(Vuelo vuelo : this.vuelos) {
-            vuelo.getPlan().getDestino().eliminarRegistroDeLoteDeProductos(lote, softDelete);
-            System.out.printf(" -> V -> '%s'", vuelo.getPlan().getDestino().getCodigo());
-            vuelo.setCapacidadDisponible(vuelo.getCapacidadDisponible() + lote.getTamanio());
+            if(vuelo.getPlan().getDestino().eliminarRegistroDeLoteDeProductos(lote, softDelete)) {
+                vuelo.setCapacidadDisponible(vuelo.getCapacidadDisponible() + lote.getTamanio());
+            }
         }
-        System.out.println();
     }
 
     public void eliminarRegistroDeLoteDeProductosDesdeAeropuerto(Lote lote, Aeropuerto aeropuerto) {
         this.eliminarRegistroDeLoteDeProductosDesdeAeropuerto(lote, aeropuerto, false);
     }
 
+    // Quita el lote desde 'aeropuerto' (inclusive su registro ahí) hasta el destino de la ruta
     public void eliminarRegistroDeLoteDeProductosDesdeAeropuerto(Lote lote, Aeropuerto aeropuerto, boolean softDelete) {
         if(aeropuerto == null || aeropuerto.getEsSede()) {
             this.eliminarRegistroDeLoteDeProductos(lote, softDelete);
             return;
         }
-        System.out.printf("%-20sLote '%s(%d)' en la secuencia:", "ELIMINACIÓN-" + ((softDelete)? "SOFT:":"HARD:"), lote.getCodigo(), lote.getTamanio());
         boolean eliminar = false;
         for (Vuelo vuelo : this.vuelos) {
             if (!eliminar && vuelo.getPlan().getOrigen().equals(aeropuerto)) {
                 eliminar = true;
-                System.out.printf(" '%s'", vuelo.getPlan().getOrigen().getCodigo());
                 aeropuerto.eliminarRegistroDeLoteDeProductos(lote, softDelete);
             }
-            if (eliminar) {
-                vuelo.getPlan().getDestino().eliminarRegistroDeLoteDeProductos(lote, softDelete);
-                System.out.printf(" -> V -> '%s'", vuelo.getPlan().getDestino().getCodigo());
+            if (eliminar && vuelo.getPlan().getDestino().eliminarRegistroDeLoteDeProductos(lote, softDelete)) {
                 vuelo.setCapacidadDisponible(vuelo.getCapacidadDisponible() + lote.getTamanio());
             }
         }
-        System.out.println();
+    }
+
+    // Quita el lote solo DESPUÉS de 'aeropuerto' (conserva su registro en 'aeropuerto', donde se queda físicamente)
+    public void eliminarRegistroDeLoteDeProductosPosterioresA(Lote lote, Aeropuerto aeropuerto, boolean softDelete) {
+        if(aeropuerto == null || aeropuerto.getEsSede()) {
+            this.eliminarRegistroDeLoteDeProductos(lote, softDelete);
+            return;
+        }
+        boolean eliminar = false;
+        for (Vuelo vuelo : this.vuelos) {
+            if (!eliminar && vuelo.getPlan().getOrigen().equals(aeropuerto)) eliminar = true;
+            if (eliminar && vuelo.getPlan().getDestino().eliminarRegistroDeLoteDeProductos(lote, softDelete)) {
+                vuelo.setCapacidadDisponible(vuelo.getCapacidadDisponible() + lote.getTamanio());
+            }
+        }
     }
 
     public Integer obtenerCapacidadDisponible(Problematica problematica) {
@@ -212,7 +215,7 @@ public class Ruta {
             Vuelo vActual = this.vuelos.get(i);
             if(!contar && vActual.getPlan().getOrigen().equals(aeropuerto)) {
                 contar = true;
-                minCapDisp = Math.min(minCapDisp, aeropuerto.obtenerCapacidadDisponible(this.vuelos.get(i-1).getFechaHoraLlegada(), vActual.getFechaHoraSalida()));
+                if(i > 0) minCapDisp = Math.min(minCapDisp, aeropuerto.obtenerCapacidadDisponible(this.vuelos.get(i-1).getFechaHoraLlegada(), vActual.getFechaHoraSalida()));
             }
             if(contar) {
                 LocalDateTime destInstanteDeIngreso = vActual.getFechaHoraLlegada(), destInstanteDeEgreso =  (i + 1 < this.vuelos.size()) ? this.vuelos.get(i+1).getFechaHoraSalida() : destInstanteDeIngreso.plusMinutes((long)(60*problematica.maxHorasDeRecojo));
@@ -222,6 +225,15 @@ public class Ruta {
             }
         }
         return minCapDisp;
+    }
+
+    // Capacidad real de la ruta: el cuello de botella entre sus vuelos y los aeropuertos que toca
+    public Integer obtenerCapacidadReal() {
+        int capReal = Integer.MAX_VALUE;
+        for (Vuelo vuelo : this.vuelos) {
+            capReal = Math.min(capReal, Math.min(vuelo.getCapacidad(), vuelo.getPlan().getDestino().getCapacidad()));
+        }
+        return (capReal == Integer.MAX_VALUE) ? 0 : capReal;
     }
 
     public Integer obtenerCapacidadMaxima() {

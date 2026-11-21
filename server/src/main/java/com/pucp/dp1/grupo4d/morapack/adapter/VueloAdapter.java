@@ -32,6 +32,7 @@ public class VueloAdapter {
         }
         Vuelo algorithm = new Vuelo();
         algorithm.setCodigo(entity.getCodigo());
+        algorithm.setCapacidad(entity.getCapacidad());
         algorithm.setCapacidadDisponible(entity.getCapacidadDisponible());
         algorithm.setFechaHoraSalida(entity.getFechaHoraSalida());
         algorithm.setFechaHoraLlegada(entity.getFechaHoraLlegada());
@@ -51,6 +52,7 @@ public class VueloAdapter {
         entity.setCodigo(algorithm.getCodigo());
         entity.setFechaHoraSalida(algorithm.getFechaHoraSalida());
         entity.setFechaHoraLlegada(algorithm.getFechaHoraLlegada());
+        entity.setCapacidad(algorithm.getCapacidad());
         entity.setCapacidadDisponible(algorithm.getCapacidadDisponible());
         entity.setPlan(planAdapter.toEntity(idTransaccion, algorithm.getPlan()));
         if(!poolEntity.containsKey(idTransaccion)) {

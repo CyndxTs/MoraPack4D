@@ -43,7 +43,7 @@ public class SegmentacionAdapter {
         algorithm.setFechaHoraSustitucion(entity.getFechaHoraSustitucion());
         Map<Ruta, Lote> lotesPorRuta = new HashMap<>();
         List<LoteEntity> lotesEntity = entity.getLotes();
-        lotesEntity.forEach(l -> lotesPorRuta.put(rutaAdapter.toAlgorithm(idTransaccion, l.getRuta()), loteAdapter.toAlgorithm(idTransaccion, l)));
+        lotesEntity.stream().filter(l -> l.getRuta() != null).forEach(l -> lotesPorRuta.put(rutaAdapter.toAlgorithm(idTransaccion, l.getRuta()), loteAdapter.toAlgorithm(idTransaccion, l)));
         algorithm.setLotesPorRuta(lotesPorRuta);
         if(!poolAlgorithm.containsKey(idTransaccion)) {
             poolAlgorithm.put(idTransaccion, new HashMap<>());

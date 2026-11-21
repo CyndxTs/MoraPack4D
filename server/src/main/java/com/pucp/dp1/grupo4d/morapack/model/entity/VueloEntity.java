@@ -24,6 +24,9 @@ public class VueloEntity {
     @Column(nullable = false, unique = true, length = 20)
     private String codigo;
 
+    @Column(nullable = false)
+    private Integer capacidad;
+
     @Column(name = "capacidad_disponible", nullable = false)
     private Integer capacidadDisponible;
 
@@ -59,6 +62,8 @@ public class VueloEntity {
     public void setId(Long id) { this.id = id; }
     public String getCodigo() { return codigo; }
     public void setCodigo(String codigo) { this.codigo = codigo; }
+    public Integer getCapacidad() { return capacidad; }
+    public void setCapacidad(Integer capacidad) { this.capacidad = capacidad; }
     public Integer getCapacidadDisponible() { return capacidadDisponible; }
     public void setCapacidadDisponible(Integer capacidadDisponible) { this.capacidadDisponible = capacidadDisponible; }
     public LocalDateTime getFechaHoraSalida() { return fechaHoraSalida; }

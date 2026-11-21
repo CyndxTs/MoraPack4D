@@ -46,4 +46,5 @@ public class ParametrosDTO implements DTO {
     private Double factorDeUtilizacionTemporal;
     private Double factorDeDesviacionEspacial;
     private Double factorDeDisposicionOperacional;
+    private Double factorDeLejania;
 }

@@ -8,11 +8,13 @@ package com.pucp.dp1.grupo4d.morapack.algorithm;
 
 import com.pucp.dp1.grupo4d.morapack.model.algorithm.*;
 import com.pucp.dp1.grupo4d.morapack.model.enumeration.EstadoRuta;
+import com.pucp.dp1.grupo4d.morapack.util.G4DUtility;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -30,6 +32,8 @@ public class Solucion {
     private Set<Vuelo> vuelosEnTransito;
     private Set<Ruta> rutasEnOperacion;
     private Set<Aeropuerto> aeropuertosTransitados;
+    // Pedidos que no se pudieron atender/reatender en esta solución -> motivo ("SIN_RUTA" | "EVENTO")
+    private Map<Pedido, String> pedidosNoAtendidos;
 
     public Solucion() {
         this.fitness = 9999.999;
@@ -40,13 +44,23 @@ public class Solucion {
         this.vuelosEnTransito = new HashSet<>();
         this.rutasEnOperacion = new HashSet<>();
         this.aeropuertosTransitados = new HashSet<>();
+        this.pedidosNoAtendidos = new LinkedHashMap<>();
     }
 
     public Solucion(Solucion solucion) {
         this.reasignar(solucion);
     }
 
+    // Copia los factores del fitness (vienen de los parámetros)
+    public void copiarFactores(Solucion solucion) {
+        this.f_UA = solucion.f_UA;
+        this.f_UT = solucion.f_UT;
+        this.f_DE = solucion.f_DE;
+        this.f_DO = solucion.f_DO;
+    }
+
     public void reasignar(Solucion solucion) {
+        this.copiarFactores(solucion);
         this.fitness = solucion.fitness;
         this.ratioPromedioDeUtilizacionTemporal = solucion.ratioPromedioDeUtilizacionTemporal;
         this.ratioPromedioDeDesviacionEspacial = solucion.ratioPromedioDeDesviacionEspacial;
@@ -55,6 +69,7 @@ public class Solucion {
         this.vuelosEnTransito = new HashSet<>(solucion.vuelosEnTransito);
         this.rutasEnOperacion = new HashSet<>(solucion.rutasEnOperacion);
         this.aeropuertosTransitados = new HashSet<>(solucion.aeropuertosTransitados);
+        this.pedidosNoAtendidos = new LinkedHashMap<>(solucion.pedidosNoAtendidos);
     }
 
     public Solucion replicar() {
@@ -64,19 +79,26 @@ public class Solucion {
         Map<String, Lote> poolLotes = new HashMap<>();
         Map<String, Vuelo> poolVuelos = new HashMap<>();
         Map<String, Plan> poolPlanes = new HashMap<>();
-        return this.replicar(poolClientes, poolAeropuertos, poolRutas, poolLotes, poolVuelos, poolPlanes);
+        return this.replicar(poolClientes, poolAeropuertos, poolRutas, poolLotes, poolVuelos, poolPlanes, new HashMap<>());
     }
 
     public Solucion replicar(Map<String, Cliente> poolClientes, Map<String, Aeropuerto> poolAeropuertos, Map<String, Ruta> poolRutas, Map<String, Lote> poolLotes, Map<String, Vuelo> poolVuelos, Map<String, Plan> poolPlanes) {
+        return this.replicar(poolClientes, poolAeropuertos, poolRutas, poolLotes, poolVuelos, poolPlanes, new HashMap<>());
+    }
+
+    // 'poolPedidos' compartido con Problematica.replicar (mismo contexto)
+    public Solucion replicar(Map<String, Cliente> poolClientes, Map<String, Aeropuerto> poolAeropuertos, Map<String, Ruta> poolRutas, Map<String, Lote> poolLotes, Map<String, Vuelo> poolVuelos, Map<String, Plan> poolPlanes, Map<String, Pedido> poolPedidos) {
         Solucion solucion = new Solucion();
+        solucion.copiarFactores(this);
         solucion.fitness = this.fitness;
         solucion.ratioPromedioDeUtilizacionTemporal = this.ratioPromedioDeUtilizacionTemporal;
         solucion.ratioPromedioDeDesviacionEspacial = this.ratioPromedioDeDesviacionEspacial;
         solucion.ratioPromedioDeDisposicionOperacional = this.ratioPromedioDeDisposicionOperacional;
-        for (Pedido pedido : this.pedidosAtendidos) solucion.pedidosAtendidos.add(pedido.replicar(poolClientes, poolAeropuertos, poolLotes, poolRutas, poolVuelos, poolPlanes));
+        for (Pedido pedido : this.pedidosAtendidos) solucion.pedidosAtendidos.add(poolPedidos.computeIfAbsent(pedido.getCodigo(), codigo -> pedido.replicar(poolClientes, poolAeropuertos, poolLotes, poolRutas, poolVuelos, poolPlanes)));
         for (Vuelo vuelo : this.vuelosEnTransito) solucion.vuelosEnTransito.add(poolVuelos.computeIfAbsent(vuelo.getCodigo(), codigo -> vuelo.replicar(poolAeropuertos, poolLotes, poolPlanes)));
         for (Ruta ruta : this.rutasEnOperacion) solucion.rutasEnOperacion.add(poolRutas.computeIfAbsent(ruta.getCodigo(), codigo -> ruta.replicar(poolAeropuertos, poolLotes, poolVuelos, poolPlanes)));
         for(Aeropuerto aeropuerto : this.aeropuertosTransitados) solucion.aeropuertosTransitados.add(poolAeropuertos.computeIfAbsent(aeropuerto.getCodigo(), codigo -> aeropuerto.replicar(poolLotes)));
+        this.pedidosNoAtendidos.forEach((pedido, motivo) -> solucion.pedidosNoAtendidos.put(poolPedidos.computeIfAbsent(pedido.getCodigo(), codigo -> pedido.replicar(poolClientes, poolAeropuertos, poolLotes, poolRutas, poolVuelos, poolPlanes)), motivo));
         return solucion;
     }
 
@@ -95,6 +117,9 @@ public class Solucion {
         this.fitness = f_UT * this.ratioPromedioDeUtilizacionTemporal +
                 f_DE * this.ratioPromedioDeDesviacionEspacial +
                 f_DO * this.ratioPromedioDeDisposicionOperacional;
+        if (this.ratioPromedioDeUtilizacionTemporal < 0 || this.ratioPromedioDeDesviacionEspacial < 0 || this.ratioPromedioDeDisposicionOperacional < 0) {
+            G4DUtility.Logger.logf_warn("[WARNING] Métrica negativa! UT: %.4f | DE: %.4f | DO: %.4f%n", this.ratioPromedioDeUtilizacionTemporal, this.ratioPromedioDeDesviacionEspacial, this.ratioPromedioDeDisposicionOperacional);
+        }
     }
 
     public void setFitness(Double fitness) {
@@ -120,7 +145,7 @@ public class Solucion {
                 totalProd += cantProd;
             }
         }
-        if(this.pedidosAtendidos.isEmpty()) {
+        if (totalProd == 0) {
             this.ratioPromedioDeUtilizacionTemporal = 1.0;
         } else this.ratioPromedioDeUtilizacionTemporal = sumaRatios / totalProd;
     }
@@ -149,7 +174,7 @@ public class Solucion {
                 totalProd += cantProd;
             }
         }
-        if (this.pedidosAtendidos.isEmpty()) {
+        if (totalProd == 0) {
             this.ratioPromedioDeDesviacionEspacial = 1.0;
         } else this.ratioPromedioDeDesviacionEspacial = sumaRatios / totalProd;
     }
@@ -170,13 +195,14 @@ public class Solucion {
             List<Ruta> rutas = new ArrayList<>(lotesPorRuta.keySet());
             for(Ruta ruta : rutas) {
                 int rCapDisp = ruta.obtenerCapacidadDisponible(problematica);
-                double rCap = ((double)(ruta.obtenerCapacidadMaxima()));
+                double rCap = ((double)(ruta.obtenerCapacidadReal()));
+                if (rCap <= 0) continue;
                 int cantProd = lotesPorRuta.get(ruta).getTamanio();
                 totalProd += cantProd;
                 sumaRatios +=  cantProd*(rCapDisp/rCap);
             }
         }
-        if (this.pedidosAtendidos.isEmpty()) {
+        if (totalProd == 0) {
             this.ratioPromedioDeDisposicionOperacional = 1.0;
         } else this.ratioPromedioDeDisposicionOperacional = sumaRatios / totalProd;
     }
@@ -207,6 +233,18 @@ public class Solucion {
 
     public void setRutasEnOperacion(Set<Ruta> rutasEnOperacion) {
         this.rutasEnOperacion = rutasEnOperacion;
+    }
+
+    public Map<Pedido, String> getPedidosNoAtendidos() {
+        return pedidosNoAtendidos;
+    }
+
+    public void setPedidosNoAtendidos(Map<Pedido, String> pedidosNoAtendidos) {
+        this.pedidosNoAtendidos = pedidosNoAtendidos;
+    }
+
+    public Boolean tieneNoAtendidos() {
+        return !this.pedidosNoAtendidos.isEmpty();
     }
 
     public Set<Aeropuerto> getAeropuertosTransitados() {

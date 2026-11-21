@@ -93,13 +93,23 @@ public class Aeropuerto {
         } else this.registros.add(registro);
     }
 
-    public void eliminarRegistroDeLoteDeProductos(Lote lote, boolean softDelete) {
+    // Devuelve true solo si había un registro vigente del lote (evita liberar capacidad dos veces)
+    public boolean eliminarRegistroDeLoteDeProductos(Lote lote, boolean softDelete) {
         Registro rLoteVigente = this.registros.stream().filter(r -> r.getSigueVigente() && r.getLote().equals(lote)).findFirst().orElse(null);
         if(rLoteVigente != null) {
             if(softDelete) {
                 rLoteVigente.setSigueVigente(false);
             } else this.registros.remove(rLoteVigente);
+            return true;
         }
+        return false;
+    }
+
+    // Libera de RAM los registros de lotes ya desalojados y los no vigentes que terminaron antes del corte
+    public int desalojarRegistros(Set<Lote> lotesDesalojados, LocalDateTime instanteDeCorte) {
+        int antes = this.registros.size();
+        this.registros.removeIf(r -> lotesDesalojados.contains(r.getLote()) || (!r.getSigueVigente() && !r.getFechaHoraEgreso().isAfter(instanteDeCorte)));
+        return antes - this.registros.size();
     }
 
     @Override

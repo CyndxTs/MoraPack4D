@@ -7,6 +7,7 @@
 package com.pucp.dp1.grupo4d.morapack.model.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.pucp.dp1.grupo4d.morapack.model.enumeration.TipoEscenario;
 import com.pucp.dp1.grupo4d.morapack.model.enumeration.TipoEvento;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
@@ -45,6 +46,10 @@ public class EventoEntity {
     @Column(name = "nueva_capacidad")
     private Integer nuevaCapacidad;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "tipo_escenario", nullable = false)
+    private TipoEscenario tipoEscenario = TipoEscenario.SIMULACION;
+
     @ManyToOne
     @JoinColumn(name = "id_plan", nullable = false)
     private PlanEntity plan;
@@ -80,6 +85,8 @@ public class EventoEntity {
     public void setFechaHoraNuevaLlegada(LocalDateTime fechaHoraNuevaLlegada) { this.fechaHoraNuevaLlegada = fechaHoraNuevaLlegada; }
     public Integer getNuevaCapacidad() { return nuevaCapacidad; }
     public void setNuevaCapacidad(Integer nuevaCapacidad) { this.nuevaCapacidad = nuevaCapacidad; }
+    public TipoEscenario getTipoEscenario() { return tipoEscenario; }
+    public void setTipoEscenario(TipoEscenario tipoEscenario) { this.tipoEscenario = tipoEscenario; }
     public PlanEntity getPlan() { return plan; }
     public void setPlan(PlanEntity plan) { this.plan = plan; }
 }

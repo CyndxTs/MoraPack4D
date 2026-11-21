@@ -36,6 +36,7 @@ public class EventoMapper {
         dto.setFechaHoraNuevaLlegada(G4DUtility.Convertor.toDisplayString(entity.getFechaHoraNuevaLlegada()));
         dto.setNuevaCapacidad(entity.getNuevaCapacidad());
         dto.setCodPlan(entity.getPlan().getCodigo());
+        dto.setTipoEscenario(entity.getTipoEscenario().toString());
         return dto;
     }
 }

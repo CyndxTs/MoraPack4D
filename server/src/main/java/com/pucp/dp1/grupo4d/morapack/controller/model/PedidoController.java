@@ -13,6 +13,7 @@ import com.pucp.dp1.grupo4d.morapack.model.dto.request.ImportRequest;
 import com.pucp.dp1.grupo4d.morapack.model.dto.request.ListRequest;
 import com.pucp.dp1.grupo4d.morapack.model.dto.response.GenericResponse;
 import com.pucp.dp1.grupo4d.morapack.model.dto.response.ListResponse;
+import com.pucp.dp1.grupo4d.morapack.model.dto.request.CancelationRequest;
 import com.pucp.dp1.grupo4d.morapack.service.model.PedidoService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -43,6 +44,13 @@ public class PedidoController {
     @PostMapping("/filtrar")
     public ResponseEntity<ListResponse> filtrar(@RequestBody FilterRequest<PedidoDTO> request) {
         ListResponse response = pedidoService.filtrar(request);
+        return ResponseEntity.ok(response);
+    }
+
+    // Cancelación por el cliente (solo si ningún vuelo de su plan ha salido)
+    @PostMapping("/cancelar")
+    public ResponseEntity<GenericResponse> cancelar(@RequestBody CancelationRequest request) {
+        GenericResponse response = pedidoService.cancelar(request.getCodigo());
         return ResponseEntity.ok(response);
     }
 }

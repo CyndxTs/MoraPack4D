@@ -11,6 +11,7 @@ import com.pucp.dp1.grupo4d.morapack.model.algorithm.*;
 import com.pucp.dp1.grupo4d.morapack.model.entity.*;
 import com.pucp.dp1.grupo4d.morapack.model.enumeration.EstadoRuta;
 import com.pucp.dp1.grupo4d.morapack.service.model.*;
+import com.pucp.dp1.grupo4d.morapack.util.G4DUtility;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -22,6 +23,7 @@ public class Problematica {
     public Double minHorasDeEstancia;
     public Double maxHorasDeEstancia;
     public Double probabilidadDeReplanificacion;
+    public Double factorDeLejania;
     public String tipoEscenario;
     public LocalDateTime inicioDePlanificacion;
     public LocalDateTime finDePlanificacion;
@@ -58,10 +60,15 @@ public class Problematica {
         Map<String, Lote> poolLotes = new HashMap<>();
         Map<String, Vuelo> poolVuelos = new HashMap<>();
         Map<String, Plan> poolPlanes = new HashMap<>();
-        return this.replicar(poolClientes, poolAeropuertos, poolRutas, poolLotes, poolVuelos, poolPlanes);
+        return this.replicar(poolClientes, poolAeropuertos, poolRutas, poolLotes, poolVuelos, poolPlanes, new HashMap<>());
     }
 
-    public Problematica replicar(Map<String, Cliente> poolClientes, Map<String, Aeropuerto> poolAeropuertos, Map<String, Ruta> poolRutas, Map<String, Lote> poolLotes, Map<String, Vuelo> poolVuelos, Map<String, Plan> poolPlanes){
+    public Problematica replicar(Map<String, Cliente> poolClientes, Map<String, Aeropuerto> poolAeropuertos, Map<String, Ruta> poolRutas, Map<String, Lote> poolLotes, Map<String, Vuelo> poolVuelos, Map<String, Plan> poolPlanes) {
+        return this.replicar(poolClientes, poolAeropuertos, poolRutas, poolLotes, poolVuelos, poolPlanes, new HashMap<>());
+    }
+
+    // 'poolPedidos' compartido con Solucion.replicar: así la problemática y la solución replicadas apuntan a los mismos pedidos
+    public Problematica replicar(Map<String, Cliente> poolClientes, Map<String, Aeropuerto> poolAeropuertos, Map<String, Ruta> poolRutas, Map<String, Lote> poolLotes, Map<String, Vuelo> poolVuelos, Map<String, Plan> poolPlanes, Map<String, Pedido> poolPedidos){
         Problematica problematica = new Problematica();
         problematica.idTransaccion = this.idTransaccion;
         problematica.maxDiasDeEntregaIntracontinental = this.maxDiasDeEntregaIntracontinental;
@@ -70,6 +77,7 @@ public class Problematica {
         problematica.minHorasDeEstancia = this.minHorasDeEstancia;
         problematica.maxHorasDeEstancia = this.maxHorasDeEstancia;
         problematica.probabilidadDeReplanificacion = this.probabilidadDeReplanificacion;
+        problematica.factorDeLejania = this.factorDeLejania;
         problematica.tipoEscenario = this.tipoEscenario;
         problematica.inicioDePlanificacion = this.inicioDePlanificacion;
         problematica.finDePlanificacion = this.finDePlanificacion;
@@ -80,7 +88,7 @@ public class Problematica {
         this.destinos.forEach(a -> problematica.destinos.add(poolAeropuertos.computeIfAbsent(a.getCodigo(), codigo -> a.replicar(poolLotes))));
         this.planes.forEach(p -> problematica.planes.add(poolPlanes.computeIfAbsent(p.getCodigo(), codigo -> p.replicar(poolAeropuertos, poolLotes))));
         this.clientes.forEach(c -> problematica.clientes.add(poolClientes.computeIfAbsent(c.getCodigo(), codigo -> c.replicar())));
-        this.pedidos.forEach(p -> problematica.pedidos.add(p.replicar(poolClientes, poolAeropuertos, poolLotes, poolRutas, poolVuelos, poolPlanes)));
+        this.pedidos.forEach(p -> problematica.pedidos.add(poolPedidos.computeIfAbsent(p.getCodigo(), codigo -> p.replicar(poolClientes, poolAeropuertos, poolLotes, poolRutas, poolVuelos, poolPlanes))));
         this.vuelos.forEach(v -> problematica.vuelos.add(poolVuelos.computeIfAbsent(v.getCodigo(), codigo -> v.replicar(poolAeropuertos, poolLotes, poolPlanes))));
         this.rutas.forEach(r -> problematica.rutas.add(poolRutas.computeIfAbsent(r.getCodigo(), codigo -> r.replicar(poolAeropuertos, poolLotes, poolVuelos, poolPlanes))));
         return problematica;
@@ -93,6 +101,7 @@ public class Problematica {
         this.minHorasDeEstancia = problematica.minHorasDeEstancia;
         this.maxHorasDeEstancia = problematica.maxHorasDeEstancia;
         this.probabilidadDeReplanificacion = problematica.probabilidadDeReplanificacion;
+        this.factorDeLejania = problematica.factorDeLejania;
         this.tipoEscenario = problematica.tipoEscenario;
         this.inicioDePlanificacion = problematica.inicioDePlanificacion;
         this.finDePlanificacion = problematica.finDePlanificacion;
@@ -109,7 +118,7 @@ public class Problematica {
     }
 
     public void cargarAeropuertos(AeropuertoService aeropuertoService, AeropuertoAdapter aeropuertoAdapter) {
-        System.out.println(">> Cargando aeropuertos..");
+        G4DUtility.Logger.logln(">> Cargando aeropuertos..");
         List<AeropuertoEntity> aeropuertosEntity = aeropuertoService.findAll();
         aeropuertosEntity.forEach(entity -> {
             Aeropuerto aeropuerto = aeropuertoAdapter.toAlgorithm(idTransaccion, entity);
@@ -121,21 +130,24 @@ public class Problematica {
                 destinos.add(aeropuerto);
             }
         });
-        System.out.printf("[:] AEROPUERTOS CARGADOS! | '%d' origenes! & '%d' destinos!%n", origenes.size(), destinos.size());
+        G4DUtility.Logger.logf("[:] AEROPUERTOS CARGADOS! | '%d' origenes! & '%d' destinos!%n", origenes.size(), destinos.size());
     }
 
     public void cargarPlanes(PlanService planService, PlanAdapter planAdapter) {
-        System.out.println(">> Cargando planes..");
+        G4DUtility.Logger.logln(">> Cargando planes..");
         List<PlanEntity> planesEntity = planService.findAll();
-        planesEntity.forEach(entity -> {
+        int cantEventos = 0;
+        for (PlanEntity entity : planesEntity) {
             Plan plan = planAdapter.toAlgorithm(idTransaccion, entity);
+            plan.getEventos().removeIf(e -> !Objects.equals(e.getTipoEscenario(), this.tipoEscenario));
+            cantEventos += plan.getEventos().size();
             planes.add(plan);
-        });
-        System.out.printf("[:] PLANES DE VUELO CARGADOS! | '%d' planes!%n", planes.size());
+        }
+        G4DUtility.Logger.logf("[:] PLANES DE VUELO CARGADOS! | '%d' planes! & '%d' eventos!%n", planes.size(), cantEventos);
     }
 
     public void cargarClientes(ClienteService clienteService, UsuarioAdapter usuarioAdapter) {
-        System.out.println(">> Cargando clientes..");
+        G4DUtility.Logger.logln(">> Cargando clientes..");
         List<ClienteEntity> clientesEntity = clienteService.findAllInRangeByScenario(this.inicioDePlanificacion, this.finDePlanificacion, this.tipoEscenario, new ArrayList<>(this.origenes.keySet()));
         clientesEntity.forEach(entity -> {
             if(clientes.stream().noneMatch(c -> c.getCodigo().equals(entity.getCodigo()))) {
@@ -143,14 +155,16 @@ public class Problematica {
                 clientes.add(cliente);
             }
         });
-        System.out.printf("[:] CLIENTES CARGADOS! | '%d' clientes!%n", clientes.size());
+        G4DUtility.Logger.logf("[:] CLIENTES CARGADOS! | '%d' clientes!%n", clientes.size());
     }
 
     public void cargarPedidos(PedidoService pedidoService, PedidoAdapter pedidoAdapter) {
-        System.out.println(">> Cargando pedidos..");
+        G4DUtility.Logger.logln(">> Cargando pedidos..");
         List<PedidoEntity> pedidosEntity = pedidoService.findAllInRangeByScenario(this.inicioDePlanificacion, this.finDePlanificacion, this.tipoEscenario, new ArrayList<>(this.origenes.keySet()));
+        Set<String> codigosCargados = new HashSet<>();
+        pedidos.forEach(p -> codigosCargados.add(p.getCodigo()));
         pedidosEntity.forEach(entity -> {
-            if(pedidos.stream().noneMatch(p -> p.getCodigo().equals(entity.getCodigo()))) {
+            if(codigosCargados.add(entity.getCodigo())) {
                 Pedido pedido = pedidoAdapter.toAlgorithm(idTransaccion, entity);
                 if (pedido.getFechaHoraProcesamiento() == null) {
                     pedido.setFechaHoraProcesamiento(this.instanteDeProcesamiento);
@@ -159,27 +173,61 @@ public class Problematica {
             }
         });
         int cantAtendidos = pedidos.stream().filter(Pedido::getFueAtendido).toList().size();
-        System.out.printf("[:] PEDIDOS CARGADOS! | '%d' por atender! & '%d' ya atendidos!%n", pedidos.size() - cantAtendidos, cantAtendidos);
+        G4DUtility.Logger.logf("[:] PEDIDOS CARGADOS! | '%d' por atender! & '%d' ya atendidos!%n", pedidos.size() - cantAtendidos, cantAtendidos);
     }
 
     public void cargarVuelos(VueloService vueloService, VueloAdapter vueloAdapter) {
-        System.out.println(">> Cargando vuelos..");
+        G4DUtility.Logger.logln(">> Cargando vuelos..");
         List<VueloEntity> vuelosEntity = vueloService.findAllInRangeByScenario(this.inicioDePlanificacion, this.finDePlanificacion, this.tipoEscenario, new ArrayList<>(this.origenes.keySet()));
         vuelosEntity.forEach(entity -> {
             Vuelo vuelo = vueloAdapter.toAlgorithm(idTransaccion, entity);
             vuelos.add(vuelo);
         });
-        System.out.printf("[:] VUELOS CARGADOS! | '%d' vuelos!%n", vuelos.size());
+        G4DUtility.Logger.logf("[:] VUELOS CARGADOS! | '%d' vuelos!%n", vuelos.size());
     }
 
     public void cargarRutas(RutaService rutaService, RutaAdapter rutaAdapter) {
-        System.out.println(">> Cargando rutas..");
+        G4DUtility.Logger.logln(">> Cargando rutas..");
         List<RutaEntity> rutasEntity = rutaService.findAllInRangeByScenario(this.inicioDePlanificacion, this.finDePlanificacion, this.tipoEscenario, new ArrayList<>(this.origenes.keySet()));
         rutasEntity.forEach(entity -> {
             Ruta ruta = rutaAdapter.toAlgorithm(idTransaccion, entity);
             rutas.add(ruta);
         });
         rutas.stream().filter(r -> r.getEstado().equals(EstadoRuta.OPERATIVA)).forEach(r -> r.setEstado(EstadoRuta.REVISION_PENDIENTE));
-        System.out.printf("[:] RUTAS CARGADAS! | '%d' rutas!%n", rutas.size());
+        G4DUtility.Logger.logf("[:] RUTAS CARGADAS! | '%d' rutas!%n", rutas.size());
+    }
+
+    // Libera de la RAM lo que ya terminó antes de 'instanteDeCorte' (inicio de la siguiente ventana):
+    // pedidos entregados (llegada + recojo <= corte), sus lotes y registros, rutas y vuelos que ya no usa nadie.
+    // Devuelve los pedidos desalojados (para escribirlos en el reporte antes de perderlos).
+    public List<Pedido> desalojar(LocalDateTime instanteDeCorte) {
+        List<Pedido> desalojados = new ArrayList<>();
+        long minutosDeRecojo = (long)(60*this.maxHorasDeRecojo);
+        for (Pedido pedido : this.pedidos) {
+            if (!pedido.getFueAtendido()) continue;
+            Segmentacion sVigente = pedido.obtenerSegementacionVigente();
+            if (sVigente == null || sVigente.getLotesPorRuta().isEmpty()) continue;
+            boolean terminado = sVigente.getLotesPorRuta().keySet().stream().allMatch(r -> !r.getFechaHoraLlegada().plusMinutes(minutosDeRecojo).isAfter(instanteDeCorte));
+            if (terminado) desalojados.add(pedido);
+        }
+        if (desalojados.isEmpty()) return desalojados;
+        Set<Pedido> setDesalojados = new HashSet<>(desalojados);
+        Set<Lote> lotesDesalojados = new HashSet<>();
+        desalojados.forEach(p -> p.getSegmentaciones().forEach(sg -> lotesDesalojados.addAll(sg.getLotesPorRuta().values())));
+        this.pedidos.removeIf(setDesalojados::contains);
+        Set<Ruta> rutasEnUso = new HashSet<>();
+        this.pedidos.forEach(p -> p.getSegmentaciones().forEach(sg -> rutasEnUso.addAll(sg.getLotesPorRuta().keySet())));
+        int rutasAntes = this.rutas.size(), vuelosAntes = this.vuelos.size(), registros = 0;
+        this.rutas.removeIf(r -> !rutasEnUso.contains(r));
+        Set<Vuelo> vuelosEnUso = new HashSet<>();
+        this.rutas.forEach(r -> vuelosEnUso.addAll(r.getVuelos()));
+        this.vuelos.removeIf(v -> !vuelosEnUso.contains(v) && !v.getFechaHoraLlegada().isAfter(instanteDeCorte));
+        for (Aeropuerto aeropuerto : this.origenes.values()) registros += aeropuerto.desalojarRegistros(lotesDesalojados, instanteDeCorte);
+        for (Aeropuerto aeropuerto : this.destinos) registros += aeropuerto.desalojarRegistros(lotesDesalojados, instanteDeCorte);
+        Set<Cliente> clientesEnUso = new HashSet<>();
+        this.pedidos.forEach(p -> clientesEnUso.add(p.getCliente()));
+        this.clientes.removeIf(c -> !clientesEnUso.contains(c));
+        G4DUtility.Logger.logf("[~] RAM LIBERADA! | '%d' pedidos, '%d' rutas, '%d' vuelos y '%d' registros desalojados%n", desalojados.size(), rutasAntes - this.rutas.size(), vuelosAntes - this.vuelos.size(), registros);
+        return desalojados;
     }
 }

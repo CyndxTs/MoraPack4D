@@ -76,6 +76,12 @@ public class PedidoAdapter {
         return entity;
     }
 
+    // Suelta solo los pedidos cacheados de la transacción (simulación: permite liberar los desalojados de la RAM)
+    public void liberarPool(String idTransaccion) {
+        poolAlgorithm.remove(idTransaccion);
+        poolEntity.remove(idTransaccion);
+    }
+
     public void clearPools(String idTransaccion) {
         poolAlgorithm.remove(idTransaccion);
         poolEntity.remove(idTransaccion);

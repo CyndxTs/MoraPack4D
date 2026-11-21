@@ -32,6 +32,7 @@ public interface RutaRepository extends JpaRepository<RutaEntity, Long> {
         JOIN AEROPUERTO a ON a.id = p.id_aeropuerto_destino
         WHERE p.fh_generacion BETWEEN :fechaHoraInicio AND :fechaHoraFin
           AND p.tipo_escenario = :tipoEscenario
+          AND p.estado = 'ACTIVO'
           AND a.codigo NOT IN (:codOrigenes)
         """,
         nativeQuery = true

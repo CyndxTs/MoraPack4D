@@ -14,4 +14,7 @@ public class ImportFileRequest {
     private String tipoEscenario;
     private String fechaHoraInicio;
     private String fechaHoraFin;
+    // Solo para EVENTOS: el archivo trae el día; el mes y el año vienen aquí
+    private Integer mes;
+    private Integer anio;
 }

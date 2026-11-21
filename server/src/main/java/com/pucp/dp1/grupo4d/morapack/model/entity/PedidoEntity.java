@@ -7,6 +7,7 @@
 package com.pucp.dp1.grupo4d.morapack.model.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.pucp.dp1.grupo4d.morapack.model.enumeration.EstadoPedido;
 import com.pucp.dp1.grupo4d.morapack.model.enumeration.TipoEscenario;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
@@ -39,6 +40,10 @@ public class PedidoEntity {
 
     @Column(name = "fue_atendido", nullable = false)
     private Boolean fueAtendido = false;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "estado", nullable = false)
+    private EstadoPedido estado = EstadoPedido.ACTIVO;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "tipo_escenario", nullable = false)
@@ -95,6 +100,8 @@ public class PedidoEntity {
     public void setFechaHoraExpiracion(LocalDateTime fechaHoraExpiracion) { this.fechaHoraExpiracion = fechaHoraExpiracion; }
     public Boolean getFueAtendido() { return fueAtendido; }
     public void setFueAtendido(Boolean fueAtendido) { this.fueAtendido = fueAtendido; }
+    public EstadoPedido getEstado() { return estado; }
+    public void setEstado(EstadoPedido estado) { this.estado = estado; }
     public TipoEscenario getTipoEscenario() { return tipoEscenario; }
     public void setTipoEscenario(TipoEscenario tipoEscenario) { this.tipoEscenario = tipoEscenario; }
     public String getCodClienteSimulado() { return codClienteSimulado; }

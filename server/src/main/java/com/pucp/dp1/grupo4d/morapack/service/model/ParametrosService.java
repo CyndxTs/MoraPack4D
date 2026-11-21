@@ -109,6 +109,7 @@ public class ParametrosService {
             parametros.setFactorDeUtilizacionTemporal(G4DUtility.Convertor.toAdmissible(dto.getFactorDeUtilizacionTemporal(), 5000.0));
             parametros.setFactorDeDesviacionEspacial(G4DUtility.Convertor.toAdmissible(dto.getFactorDeDesviacionEspacial(), 2000.0));
             parametros.setFactorDeDisposicionOperacional(G4DUtility.Convertor.toAdmissible(dto.getFactorDeDisposicionOperacional(), 3000.0));
+            parametros.setFactorDeLejania(G4DUtility.Convertor.toAdmissible(dto.getFactorDeLejania(), 0.0085));
             this.save(parametros);
             System.out.println("[<] PARAMETROS IMPORTADOS!");
             communicationService.enviar(progressDestination, new ProgressPayload("Cargando parametros", 1, 1));

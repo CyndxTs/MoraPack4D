@@ -19,4 +19,5 @@ public class SolucionDTO implements DTO {
     private List<PedidoDTO> pedidosAtendidos = new ArrayList<>();
     private List<VueloDTO> vuelosEnTransito =  new ArrayList<>();
     private List<RutaDTO> rutasEnOperacion =  new ArrayList<>();
+    private List<PedidoNoAtendidoDTO> pedidosNoAtendidos = new ArrayList<>();
 }

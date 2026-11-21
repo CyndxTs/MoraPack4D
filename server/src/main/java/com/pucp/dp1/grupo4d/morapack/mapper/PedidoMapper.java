@@ -32,6 +32,7 @@ public class PedidoMapper {
         Cliente cliente = algorithm.getCliente();
         dto.setCodCliente(cliente.getCodigo());
         dto.setTipoEscenario(tipoEscenario);
+        dto.setEstado("ACTIVO");
         Aeropuerto destino = algorithm.getDestino();
         dto.setCodDestino(destino.getCodigo());
         Segmentacion sVigente = algorithm.obtenerSegementacionVigente();
@@ -49,6 +50,7 @@ public class PedidoMapper {
         dto.setFechaHoraProcesamiento(G4DUtility.Convertor.toDisplayString(entity.getFechaHoraProcesamiento()));
         dto.setFechaHoraExpiracion(G4DUtility.Convertor.toDisplayString(entity.getFechaHoraExpiracion()));
         dto.setCodCliente(entity.getCodCliente());
+        dto.setEstado(entity.getEstado().toString());
         AeropuertoEntity destinoEntity = entity.getDestino();
         dto.setCodDestino(destinoEntity.getCodigo());
         dto.setTipoEscenario(entity.getTipoEscenario().toString());

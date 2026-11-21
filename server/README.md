@@ -6,6 +6,12 @@ Spring Boot 3.5.6 · Java 21 · MySQL (local) / TiDB Cloud (despliegue). Todo se
 
 1. Instala **JDK 21** y **MySQL 8** (el server crea la base `morapack4d` si no existe).
 2. Copia `.env.example` como `.env` (en esta carpeta) y pon tu contraseña en `DB_PASSWORD`.
+   Si el proyecto vino de un `.zip`, desbloquea los archivos (si no, PowerShell no deja ejecutar `seed.ps1`):
+
+   ```powershell
+   Get-ChildItem -Recurse | Unblock-File
+   ```
+
 3. Reinicia la BD (borra todas las tablas y ejecuta `src/main/resources/db/seed/*.sql` en orden):
 
    ```powershell

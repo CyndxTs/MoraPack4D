@@ -575,6 +575,23 @@ public class G4DUtility {
             }
         }
 
+        // Igual que open(), pero agregando al final del archivo (reportes que se escriben por partes)
+        public static void openAppend(String archDIR) {
+            close();
+            try {
+                File f = new File(archDIR);
+                File pDir = f.getParentFile();
+                if (pDir != null && !pDir.exists()) {
+                    if (!pDir.mkdirs()) {
+                        throw new G4DException("[*] No se pudieron crear los directorios para: " + archDIR);
+                    }
+                }
+                pw = new PrintWriter(new FileWriter(archDIR, true));
+            } catch (IOException e) {
+                pw = null;
+            }
+        }
+
         public static void flush() {
             if(pw != null) {
                 pw.flush();
@@ -740,7 +757,6 @@ public class G4DUtility {
             logger.setUseParentHandlers(false);
             logger.addHandler(handler);
             logger.setLevel(Level.INFO);
-            toggle_log();
         }
 
         public static void toggle_log() {

@@ -16,6 +16,13 @@ import com.pucp.dp1.grupo4d.morapack.model.dto.response.ListResponse;
 import com.pucp.dp1.grupo4d.morapack.model.entity.AeropuertoEntity;
 import com.pucp.dp1.grupo4d.morapack.model.entity.PedidoEntity;
 import com.pucp.dp1.grupo4d.morapack.model.entity.ClienteEntity;
+import com.pucp.dp1.grupo4d.morapack.model.entity.SegmentacionEntity;
+import com.pucp.dp1.grupo4d.morapack.model.entity.LoteEntity;
+import com.pucp.dp1.grupo4d.morapack.model.entity.RegistroEntity;
+import com.pucp.dp1.grupo4d.morapack.model.entity.VueloEntity;
+import com.pucp.dp1.grupo4d.morapack.model.enumeration.EstadoLote;
+import com.pucp.dp1.grupo4d.morapack.model.enumeration.EstadoPedido;
+import com.pucp.dp1.grupo4d.morapack.model.dto.response.GenericResponse;
 import com.pucp.dp1.grupo4d.morapack.model.enumeration.EstadoEjecucion;
 import com.pucp.dp1.grupo4d.morapack.model.enumeration.EstadoFinalizacion;
 import com.pucp.dp1.grupo4d.morapack.model.enumeration.TipoEscenario;
@@ -47,14 +54,23 @@ public class PedidoService {
     private final ClienteService clienteService;
     private final CommunicationService communicationService;
     private final ImportationService importationService;
+    private final SegmentacionService segmentacionService;
+    private final LoteService loteService;
+    private final RegistroService registroService;
+    private final VueloService vueloService;
 
-    public PedidoService(PedidoRepository pedidoRepository, PedidoMapper pedidoMapper, AeropuertoService aeropuertoService, ClienteService clienteService, CommunicationService communicationService, ImportationService importationService) {
+    public PedidoService(PedidoRepository pedidoRepository, PedidoMapper pedidoMapper, AeropuertoService aeropuertoService, ClienteService clienteService, CommunicationService communicationService, ImportationService importationService,
+                         SegmentacionService segmentacionService, LoteService loteService, RegistroService registroService, VueloService vueloService) {
         this.pedidoRepository = pedidoRepository;
         this.pedidoMapper = pedidoMapper;
         this.aeropuertoService = aeropuertoService;
         this.clienteService = clienteService;
         this.communicationService = communicationService;
         this.importationService = importationService;
+        this.segmentacionService = segmentacionService;
+        this.loteService = loteService;
+        this.registroService = registroService;
+        this.vueloService = vueloService;
     }
 
     public PedidoEntity save(PedidoEntity pedido) {
@@ -125,13 +141,75 @@ public class PedidoService {
         return new ListResponse(true, String.format("Pedidos filtrados correctamente! ('%d')", dtos.size()), dtos);
     }
 
-    // Un pedido de OPERACION cuyo destino es una sede se atiende al instante (sin vuelos, rutas ni registros)
-    private void atenderInstantaneamenteSiEsSede(PedidoEntity pedido) {
+    // Un pedido de OPERACION cuyo destino es una sede se atiende al instante: no genera vuelos ni rutas.
+    // Devuelve true si el pedido quedó atendido de esta forma (luego hay que crear su entrega directa).
+    private boolean atenderInstantaneamenteSiEsSede(PedidoEntity pedido) {
         if (pedido.getTipoEscenario() == TipoEscenario.OPERACION && Boolean.TRUE.equals(pedido.getDestino().getEsSede())) {
             pedido.setFueAtendido(true);
             pedido.setFechaHoraProcesamiento(pedido.getFechaHoraGeneracion());
             pedido.setFechaHoraExpiracion(pedido.getFechaHoraGeneracion());
+            return true;
         }
+        return false;
+    }
+
+    // Entrega directa en sede: segmentación + lote (sin ruta, ENTREGADO) + registro con ingreso = egreso = generación.
+    // El pedido ya debe estar persistido (tener id). Devuelve [segmentacion, lote, registro].
+    private Object[] crearEntregaDirecta(PedidoEntity pedido) {
+        LocalDateTime instante = pedido.getFechaHoraGeneracion();
+        SegmentacionEntity segmentacion = new SegmentacionEntity();
+        segmentacion.setCodigo(G4DUtility.Generator.getUniqueString("SEG"));
+        segmentacion.setFechaHoraAplicacion(instante);
+        segmentacion.setPedido(pedido);
+        LoteEntity lote = new LoteEntity();
+        lote.setCodigo(G4DUtility.Generator.getUniqueString("LOT"));
+        lote.setTamanio(pedido.getCantidadSolicitada());
+        lote.setEstado(EstadoLote.ENTREGADO);
+        lote.setSegmentacion(segmentacion);
+        lote.setRuta(null);
+        RegistroEntity registro = new RegistroEntity();
+        registro.setCodigo(G4DUtility.Generator.getUniqueString("REG"));
+        registro.setFechaHoraIngreso(instante);
+        registro.setFechaHoraEgreso(instante);
+        registro.setSigueVigente(true);
+        registro.setAeropuerto(pedido.getDestino());
+        registro.setLote(lote);
+        return new Object[] { segmentacion, lote, registro };
+    }
+
+    // Cancelación por el cliente: solo pedidos de OPERACION activos cuyo plan aún no inició (ningún vuelo ha salido).
+    // Libera la capacidad de los vuelos y deja los registros como no vigentes (soft delete).
+    @Transactional
+    public GenericResponse cancelar(String codigo) {
+        PedidoEntity pedido = this.findByUniqueAttributes(codigo, TipoEscenario.OPERACION.toString()).orElseThrow(() -> new G4DException(String.format("El pedido ('%s') no existe.", codigo)));
+        if (pedido.getEstado() != EstadoPedido.ACTIVO) {
+            throw new G4DException(String.format("El pedido ('%s') ya fue cancelado.", codigo));
+        }
+        if (Boolean.TRUE.equals(pedido.getDestino().getEsSede())) {
+            throw new G4DException(String.format("El pedido ('%s') ya fue entregado en sede.", codigo));
+        }
+        LocalDateTime ahora = LocalDateTime.now();
+        SegmentacionEntity sVigente = pedido.getSegmentaciones().stream().filter(sg -> sg.getFechaHoraSustitucion() == null).findFirst().orElse(null);
+        List<LoteEntity> lotes = (sVigente != null) ? sVigente.getLotes() : new ArrayList<>();
+        boolean yaInicio = lotes.stream().anyMatch(l -> l.getRuta() != null && !l.getRuta().getFechaHoraSalida().isAfter(ahora));
+        if (yaInicio) {
+            throw new G4DException(String.format("El pedido ('%s') ya inició su traslado y no se puede cancelar.", codigo));
+        }
+        for (LoteEntity lote : lotes) {
+            if (lote.getRuta() != null) {
+                for (VueloEntity vuelo : lote.getRuta().getVuelos()) {
+                    vuelo.setCapacidadDisponible(vuelo.getCapacidadDisponible() + lote.getTamanio());
+                    vueloService.save(vuelo);
+                }
+            }
+            for (RegistroEntity registro : lote.getRegistros()) {
+                registro.setSigueVigente(false);
+                registroService.save(registro);
+            }
+        }
+        pedido.setEstado(EstadoPedido.CANCELADO);
+        this.save(pedido);
+        return new GenericResponse(true, String.format("Pedido '%s' cancelado correctamente!", codigo));
     }
 
     // Carga unitaria (fecha de generación en UTC)
@@ -167,8 +245,14 @@ public class PedidoService {
             pedido.setFechaHoraExpiracion(G4DUtility.Convertor.toAdmissible(dto.getFechaHoraExpiracion(), (LocalDateTime) null));
             pedido.setFueAtendido(dto.getFueAtendido() != null ? dto.getFueAtendido() : false);
             pedido.setCodigo(String.format("%s%09d", destino.getCodigo(), 1 + this.findMaxCodeOfDestinationByScenario(codDestino, tipoEscenario.toString())));
-            this.atenderInstantaneamenteSiEsSede(pedido);
+            boolean esEntregaDirecta = this.atenderInstantaneamenteSiEsSede(pedido);
             this.save(pedido);
+            if (esEntregaDirecta) {
+                Object[] entrega = this.crearEntregaDirecta(pedido);
+                segmentacionService.save((SegmentacionEntity) entrega[0]);
+                loteService.save((LoteEntity) entrega[1]);
+                registroService.save((RegistroEntity) entrega[2]);
+            }
             System.out.println("[<] PEDIDO IMPORTADO!");
             communicationService.enviar(progressDestination, new ProgressPayload("Cargando pedido", 1, 1));
             communicationService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.EXITOSO));
@@ -176,6 +260,28 @@ public class PedidoService {
             communicationService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.ERRONEO));
             throw (e instanceof G4DException g4dEx) ? g4dEx : new RuntimeException(e);
         }
+    }
+
+    // Guarda un bloque de pedidos y, después (ya con id), las entregas directas en sede de ese bloque
+    private void guardarLote(List<PedidoEntity> pedidos, List<PedidoEntity> entregasDirectas, String progressDestination) {
+        importationService.batchSave(pedidos, progressDestination, "pedidos");
+        System.out.printf("[<] PEDIDOS IMPORTADOS! ('%d')%n", pedidos.size());
+        if (!entregasDirectas.isEmpty()) {
+            List<SegmentacionEntity> segmentaciones = new ArrayList<>();
+            List<LoteEntity> lotes = new ArrayList<>();
+            List<RegistroEntity> registros = new ArrayList<>();
+            for (PedidoEntity pedido : entregasDirectas) {
+                Object[] entrega = this.crearEntregaDirecta(pedido);
+                segmentaciones.add((SegmentacionEntity) entrega[0]);
+                lotes.add((LoteEntity) entrega[1]);
+                registros.add((RegistroEntity) entrega[2]);
+            }
+            importationService.batchSave(segmentaciones, progressDestination, "segmentaciones");
+            importationService.batchSave(lotes, progressDestination, "lotes");
+            importationService.batchSave(registros, progressDestination, "registros");
+            entregasDirectas.clear();
+        }
+        pedidos.clear();
     }
 
     // Carga por archivo (fecha/hora local del destino -> UTC)
@@ -203,6 +309,7 @@ public class PedidoService {
             int lProcesadas = 0, omitidos = 0, atendidosEnSede = 0;
             communicationService.enviar(progressDestination, new ProgressPayload("Cargando recursos de importación", 4, 4));
             List<PedidoEntity> pedidos = new ArrayList<>();
+            List<PedidoEntity> entregasDirectas = new ArrayList<>();
             LocalDateTime fechaHoraInicio = G4DUtility.Convertor.toAdmissible(request.getFechaHoraInicio(), LocalDateTime.MIN);
             LocalDateTime fechaHoraFin = G4DUtility.Convertor.toAdmissible(request.getFechaHoraFin(), LocalDateTime.MAX);
             String linea;
@@ -252,8 +359,10 @@ public class PedidoService {
                             } else {
                                 poolMaxCodigos.merge(codDestino, 1, Integer::sum);
                                 pedido.setCodigo(String.format("%s%09d", destino.getCodigo(), poolMaxCodigos.get(codDestino)));
-                                this.atenderInstantaneamenteSiEsSede(pedido);
-                                if (pedido.getFueAtendido()) atendidosEnSede++;
+                                if (this.atenderInstantaneamenteSiEsSede(pedido)) {
+                                    entregasDirectas.add(pedido);
+                                    atendidosEnSede++;
+                                }
                             }
                             pedidos.add(pedido);
                         } else omitidos++;
@@ -262,14 +371,11 @@ public class PedidoService {
                 lProcesadas++;
                 communicationService.enviar(progressDestination, new ProgressPayload("Leyendo archivo", lProcesadas, lTotales));
                 if (pedidos.size() >= 500 || (lProcesadas == lTotales && !pedidos.isEmpty())) {
-                    importationService.batchSave(pedidos, progressDestination, "pedidos");
-                    System.out.printf("[<] PEDIDOS IMPORTADOS! ('%d')%n", pedidos.size());
-                    pedidos.clear();
+                    this.guardarLote(pedidos, entregasDirectas, progressDestination);
                 }
             }
             if (!pedidos.isEmpty()) {
-                importationService.batchSave(pedidos, progressDestination, "pedidos");
-                System.out.printf("[<] PEDIDOS IMPORTADOS! ('%d')%n", pedidos.size());
+                this.guardarLote(pedidos, entregasDirectas, progressDestination);
             }
             if (atendidosEnSede > 0) System.out.printf("[*] PEDIDOS ATENDIDOS AL INSTANTE (DESTINO SEDE): '%d'%n", atendidosEnSede);
             if (omitidos > 0) System.out.printf("[*] PEDIDOS OMITIDOS POR CLIENTE INEXISTENTE: '%d' (clientes: %s)%n", omitidos, clientesInexistentes);

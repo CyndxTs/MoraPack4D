@@ -35,8 +35,9 @@ public class LoteEntity {
     @JoinColumn(name = "id_segmentacion", nullable = false)
     private SegmentacionEntity segmentacion;
 
+    // NULL solo en entregas directas (pedido de OPERACION con destino sede)
     @ManyToOne
-    @JoinColumn(name = "id_ruta", nullable = false)
+    @JoinColumn(name = "id_ruta")
     private RutaEntity ruta;
 
     @OneToMany(mappedBy = "lote")

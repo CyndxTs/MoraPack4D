@@ -23,7 +23,8 @@ public class ParametrosMapper {
         problematica.maxHorasDeRecojo = G4DUtility.Convertor.toAdmissible(dto.getMaxHorasRecojo(), 2.0);
         problematica.maxHorasDeEstancia = G4DUtility.Convertor.toAdmissible(dto.getMaxHorasEstancia(), 12.0);
         problematica.minHorasDeEstancia = G4DUtility.Convertor.toAdmissible(dto.getMinHorasEstancia(), 1.0);
-        problematica.probabilidadDeReplanificacion = G4DUtility.Convertor.toAdmissible(dto.getProbabilidadReplanificacion(), 0.15);
+        problematica.probabilidadDeReplanificacion = G4DUtility.Convertor.toAdmissible(dto.getProbabilidadReplanificacion(), 0.35);
+        problematica.factorDeLejania = G4DUtility.Convertor.toAdmissible(dto.getFactorDeLejania(), 0.0085);
         G4DUtility.Convertor.toAdmissible(dto.getCodOrigenes(),() -> List.of("SPIM", "EBCI", "UBBB")).forEach(cod -> problematica.origenes.put(cod, null));
     }
 
@@ -63,6 +64,7 @@ public class ParametrosMapper {
         dto.setFactorDeUtilizacionTemporal(entity.getFactorDeUtilizacionTemporal());
         dto.setFactorDeDesviacionEspacial(entity.getFactorDeDesviacionEspacial());
         dto.setFactorDeDisposicionOperacional(entity.getFactorDeDisposicionOperacional());
+        dto.setFactorDeLejania(entity.getFactorDeLejania());
         return dto;
     }
 }

@@ -21,4 +21,5 @@ public class EventoDTO implements DTO {
     private String fechaHoraNuevaLlegada;
     private Integer nuevaCapacidad;
     private String codPlan;
+    private String tipoEscenario;
 }

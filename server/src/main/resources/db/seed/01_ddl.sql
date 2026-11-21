@@ -131,6 +131,8 @@ CREATE TABLE `AEROPUERTO` (
 -- PEDIDO
 --  - OPERACION : id_cliente obligatorio (el cliente existe en BD).
 --  - SIMULACION: id_cliente NULL; el cliente se identifica por cod_cliente_simulado y se genera en RAM.
+--  - estado    : ACTIVO | CANCELADO (por el cliente, antes de que salga su primer vuelo)
+--                | CANCELADO_POR_ERROR (no se pudo atender/reatender dentro de su plazo)
 -- -----------------------------------------------------
 CREATE TABLE `PEDIDO` (
   `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -140,13 +142,14 @@ CREATE TABLE `PEDIDO` (
   `fh_procesamiento` DATETIME NULL DEFAULT NULL,
   `fh_expiracion` DATETIME NULL DEFAULT NULL,
   `fue_atendido` TINYINT(1) NOT NULL DEFAULT 0,
+  `estado` ENUM('ACTIVO', 'CANCELADO', 'CANCELADO_POR_ERROR') NOT NULL DEFAULT 'ACTIVO',
   `tipo_escenario` ENUM('OPERACION', 'SIMULACION') NOT NULL DEFAULT 'SIMULACION',
   `cod_cliente_simulado` VARCHAR(20) NULL DEFAULT NULL,
   `id_cliente` INT UNSIGNED NULL DEFAULT NULL,
   `id_aeropuerto_destino` INT UNSIGNED NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE INDEX `UK_PEDIDO_CODIGO_TIPO_ESCENARIO` (`codigo`, `tipo_escenario`),
-  INDEX `IDX_PEDIDO_ESCENARIO_GENERACION` (`tipo_escenario`, `fh_generacion`),
+  INDEX `IDX_PEDIDO_ESCENARIO_GENERACION` (`tipo_escenario`, `estado`, `fh_generacion`),
   INDEX `IDX_PEDIDO_CLIENTE` (`id_cliente`),
   INDEX `IDX_PEDIDO_DESTINO` (`id_aeropuerto_destino`),
   CONSTRAINT `FK_PEDIDO_CLIENTE` FOREIGN KEY (`id_cliente`) REFERENCES `CLIENTE` (`id`),
@@ -196,6 +199,7 @@ CREATE TABLE `RUTA` (
 
 -- -----------------------------------------------------
 -- LOTE
+--  id_ruta NULL solo para entregas directas (pedido de OPERACION cuyo destino es una sede)
 -- -----------------------------------------------------
 CREATE TABLE `LOTE` (
   `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -203,7 +207,7 @@ CREATE TABLE `LOTE` (
   `tamanio` INT NOT NULL,
   `estado` ENUM('PLANIFICADO', 'POR_REPLANIFICAR', 'REPLANIFICADO', 'ENTREGADO') NOT NULL DEFAULT 'PLANIFICADO',
   `id_segmentacion` BIGINT UNSIGNED NOT NULL,
-  `id_ruta` BIGINT UNSIGNED NOT NULL,
+  `id_ruta` BIGINT UNSIGNED NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE INDEX `UK_LOTE_CODIGO` (`codigo`),
   INDEX `IDX_LOTE_SEGMENTACION` (`id_segmentacion`),
@@ -255,10 +259,12 @@ CREATE TABLE `PLAN` (
 
 -- -----------------------------------------------------
 -- VUELO (instancia de un plan; 1 vuelo activo por día por plan, validado por el algoritmo)
+--  capacidad = capacidad de esta instancia (la del plan, o la de un REAJUSTE_CAPACIDAD)
 -- -----------------------------------------------------
 CREATE TABLE `VUELO` (
   `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   `codigo` VARCHAR(20) NOT NULL,
+  `capacidad` INT NOT NULL,
   `capacidad_disponible` INT NOT NULL,
   `fh_salida` DATETIME NOT NULL,
   `fh_llegada` DATETIME NOT NULL,
@@ -282,7 +288,7 @@ CREATE TABLE `RUTA_POR_VUELO` (
 );
 
 -- -----------------------------------------------------
--- EVENTO (afecta a un plan dentro de la ventana [fh_inicio, fh_fin])
+-- EVENTO (afecta al vuelo de un plan cuya salida/llegada originales son [fh_inicio, fh_fin], en UTC)
 --  - REPROGRAMACION     : fh_nueva_salida y fh_nueva_llegada obligatorias.
 --  - CANCELACION        : sin datos adicionales.
 --  - REAJUSTE_CAPACIDAD : nueva_capacidad obligatoria.
@@ -296,10 +302,12 @@ CREATE TABLE `EVENTO` (
   `fh_nueva_salida` DATETIME NULL DEFAULT NULL,
   `fh_nueva_llegada` DATETIME NULL DEFAULT NULL,
   `nueva_capacidad` INT NULL DEFAULT NULL,
+  `tipo_escenario` ENUM('OPERACION', 'SIMULACION') NOT NULL DEFAULT 'SIMULACION',
   `id_plan` INT UNSIGNED NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE INDEX `UK_EVENTO_CODIGO` (`codigo`),
   INDEX `IDX_EVENTO_PLAN` (`id_plan`),
+  INDEX `IDX_EVENTO_ESCENARIO_INICIO` (`tipo_escenario`, `fh_inicio`),
   CONSTRAINT `FK_EVENTO_PLAN` FOREIGN KEY (`id_plan`) REFERENCES `PLAN` (`id`),
   CONSTRAINT `CK_EVENTO_TIPO` CHECK (
     (`tipo` = 'CANCELACION') OR
@@ -331,6 +339,7 @@ CREATE TABLE `PARAMETROS` (
   `f_ut` DOUBLE NOT NULL DEFAULT 5000.0,
   `f_de` DOUBLE NOT NULL DEFAULT 2000.0,
   `f_do` DOUBLE NOT NULL DEFAULT 3000.0,
+  `f_lj` DOUBLE NOT NULL DEFAULT 0.0085,
   PRIMARY KEY (`id`),
   CONSTRAINT `CK_PARAMETROS_FILA_UNICA` CHECK (`id` = 1)
 );

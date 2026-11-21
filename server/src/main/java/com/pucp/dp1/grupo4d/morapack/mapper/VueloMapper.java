@@ -29,8 +29,8 @@ public class VueloMapper {
         dto.setCodOrigen(origen.getCodigo());
         Aeropuerto destino = plan.getDestino();
         dto.setCodDestino(destino.getCodigo());
-        dto.setCapacidadOcupada(plan.getCapacidad() - algorithm.getCapacidadDisponible());
-        dto.setCapacidadMaxima(plan.getCapacidad());
+        dto.setCapacidadOcupada(algorithm.getCapacidad() - algorithm.getCapacidadDisponible());
+        dto.setCapacidadMaxima(algorithm.getCapacidad());
         dto.setDuracion(plan.getDuracion());
         dto.setDistancia(plan.getDistancia());
         return dto;
@@ -46,8 +46,8 @@ public class VueloMapper {
         dto.setCodOrigen(origenEntity.getCodigo());
         AeropuertoEntity destinoEntity = planEntity.getDestino();
         dto.setCodDestino(destinoEntity.getCodigo());
-        dto.setCapacidadOcupada(planEntity.getCapacidad() - entity.getCapacidadDisponible());
-        dto.setCapacidadMaxima(planEntity.getCapacidad());
+        dto.setCapacidadOcupada(entity.getCapacidad() - entity.getCapacidadDisponible());
+        dto.setCapacidadMaxima(entity.getCapacidad());
         dto.setDuracion(planEntity.getDuracion());
         dto.setDistancia(planEntity.getDistancia());
         return dto;

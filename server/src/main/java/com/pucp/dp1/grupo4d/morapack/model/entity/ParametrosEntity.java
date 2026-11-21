@@ -74,6 +74,9 @@ public class ParametrosEntity {
     @Column(name = "f_do", nullable = false)
     private Double factorDeDisposicionOperacional = 3000.0;
 
+    @Column(name = "f_lj", nullable = false)
+    private Double factorDeLejania = 0.0085;
+
     @Transient
     private List<String> codOrigenes = new ArrayList<>();
 
@@ -130,6 +133,8 @@ public class ParametrosEntity {
     public void setFactorDeDesviacionEspacial(Double factorDeDesviacionEspacial) { this.factorDeDesviacionEspacial = factorDeDesviacionEspacial; }
     public Double getFactorDeDisposicionOperacional() { return factorDeDisposicionOperacional; }
     public void setFactorDeDisposicionOperacional(Double factorDeDisposicionOperacional) { this.factorDeDisposicionOperacional = factorDeDisposicionOperacional; }
+    public Double getFactorDeLejania() { return factorDeLejania; }
+    public void setFactorDeLejania(Double factorDeLejania) { this.factorDeLejania = factorDeLejania; }
     public List<String> getCodOrigenes() { return codOrigenes; }
     public void setCodOrigenes(List<String> codOrigenes) { this.codOrigenes = codOrigenes; }
 }

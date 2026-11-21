@@ -62,9 +62,11 @@ public class SegmentacionMapper {
             LotePorRutaDTO lotePorRutaDTO = new LotePorRutaDTO();
             RutaEntity rutaEntity = loteEntity.getRuta();
             List<String> codVuelos = new ArrayList<>();
-            rutaEntity.getVuelos().forEach(v -> codVuelos.add(v.getCodigo()));
+            if (rutaEntity != null) {
+                rutaEntity.getVuelos().forEach(v -> codVuelos.add(v.getCodigo()));
+                lotePorRutaDTO.setCodRuta(rutaEntity.getCodigo());
+            }
             lotePorRutaDTO.setCodVuelos(codVuelos);
-            lotePorRutaDTO.setCodRuta(rutaEntity.getCodigo());
             lotePorRutaDTO.setLote(loteMapper.toDTO(loteEntity));
             lotesPorRutaDTO.add(lotePorRutaDTO);
         }

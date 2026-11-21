@@ -13,6 +13,7 @@ import com.pucp.dp1.grupo4d.morapack.mapper.ParametrosMapper;
 import com.pucp.dp1.grupo4d.morapack.model.algorithm.*;
 import com.pucp.dp1.grupo4d.morapack.model.dto.ParametrosDTO;
 import com.pucp.dp1.grupo4d.morapack.model.entity.*;
+import com.pucp.dp1.grupo4d.morapack.model.enumeration.EstadoPedido;
 import com.pucp.dp1.grupo4d.morapack.model.enumeration.TipoEscenario;
 import com.pucp.dp1.grupo4d.morapack.service.model.*;
 import com.pucp.dp1.grupo4d.morapack.util.G4DUtility;
@@ -72,36 +73,34 @@ public class ContextService {
     }
 
     @Transactional
-    public Problematica getUpdatedProblematic(Problematica problematica, boolean esSimulacion, ParametrosDTO parametros,
+    public Problematica getUpdatedProblematic(String idTransaccion, Problematica problematica, boolean esSimulacion, ParametrosDTO parametros,
                                               LocalDateTime inicioDePlanificacion, LocalDateTime finDePlanificacion, LocalDateTime umbralDeReplanificacion,
                                               LocalDateTime instanteDeProcesamiento, TipoEscenario tipoEscenario) {
-        if(esSimulacion) {
-            if(problematica == null) {
-                problematica = new Problematica();
-                parametrosMapper.toAlgorithm(problematica, parametros);
-                problematica.cargarAeropuertos(aeropuertoService, aeropuertoAdapter);
-                problematica.cargarPlanes(planService, planAdapter);
-            }
-            problematica.inicioDePlanificacion = inicioDePlanificacion;
-            problematica.finDePlanificacion = finDePlanificacion;
-            problematica.umbralDeReplanificacion = umbralDeReplanificacion;
-            problematica.instanteDeProcesamiento = instanteDeProcesamiento;
-            problematica.tipoEscenario = tipoEscenario.toString().toUpperCase();
-            problematica.cargarClientes(clienteService, usuarioAdapter);
-            problematica.cargarPedidos(pedidoService, pedidoAdapter);
-            problematica.cargarRutas(rutaService, rutaAdapter);
-        } else {
+        // En simulación la problemática vive en RAM entre bloques; en operación se reconstruye desde BD cada vez
+        boolean esNueva = !esSimulacion || problematica == null;
+        if(esNueva) {
             problematica = new Problematica();
             parametrosMapper.toAlgorithm(problematica, parametros);
+        }
+        // El id se fija antes de cargar: los pools de los adapters se indexan por transacción
+        problematica.idTransaccion = idTransaccion;
+        // El escenario y la ventana se fijan ANTES de cargar (los eventos de los planes se filtran por escenario)
+        problematica.inicioDePlanificacion = inicioDePlanificacion;
+        problematica.finDePlanificacion = finDePlanificacion;
+        problematica.umbralDeReplanificacion = umbralDeReplanificacion;
+        problematica.instanteDeProcesamiento = instanteDeProcesamiento;
+        problematica.tipoEscenario = tipoEscenario.toString().toUpperCase();
+        if(esNueva) {
             problematica.cargarAeropuertos(aeropuertoService, aeropuertoAdapter);
             problematica.cargarPlanes(planService, planAdapter);
-            problematica.inicioDePlanificacion = inicioDePlanificacion;
-            problematica.finDePlanificacion = finDePlanificacion;
-            problematica.umbralDeReplanificacion = umbralDeReplanificacion;
-            problematica.instanteDeProcesamiento = instanteDeProcesamiento;
-            problematica.tipoEscenario = tipoEscenario.toString().toUpperCase();
-            problematica.cargarClientes(clienteService, usuarioAdapter);
-            problematica.cargarPedidos(pedidoService, pedidoAdapter);
+        }
+        problematica.cargarClientes(clienteService, usuarioAdapter);
+        problematica.cargarPedidos(pedidoService, pedidoAdapter);
+        if(esSimulacion) {
+            // Lo planificado en simulación nunca se guarda en BD: no hay vuelos ni rutas que cargar.
+            // Se suelta el pool de pedidos del adapter para que los desalojados puedan liberarse de la RAM.
+            pedidoAdapter.liberarPool(problematica.idTransaccion);
+        } else {
             problematica.cargarVuelos(vueloService, vueloAdapter);
             problematica.cargarRutas(rutaService, rutaAdapter);
         }
@@ -110,6 +109,13 @@ public class ContextService {
 
     @Transactional
     public void importSolution(String idTransaccion, Solucion solucion) {
+        this.importSolution(idTransaccion, solucion, null);
+    }
+
+    // Guarda la solución de OPERACION (soft delete: registros no vigentes y segmentaciones sustituidas se conservan).
+    // Los pedidos no atendidos cuyo plazo máximo ya venció pasan a CANCELADO_POR_ERROR.
+    @Transactional
+    public void importSolution(String idTransaccion, Solucion solucion, Problematica problematica) {
         if (solucion == null || solucion.getPedidosAtendidos() == null) {
             return;
         }
@@ -180,14 +186,45 @@ public class ContextService {
                 }
             }
         }
+        // Al final, para que no lo pise el guardado de registros de los aeropuertos
+        this.cancelarPedidosVencidos(solucion, problematica);
         System.out.println("[~] SOLUCIÓN ALMACENADA!");
+    }
+
+    private void cancelarPedidosVencidos(Solucion solucion, Problematica problematica) {
+        if (problematica != null && problematica.umbralDeReplanificacion != null) {
+            long plazoMaximoEnMinutos = 1440L * Math.max(problematica.maxDiasDeEntregaIntracontinental, problematica.maxDiasDeEntregaIntercontinental);
+            for (Pedido pedido : solucion.getPedidosNoAtendidos().keySet()) {
+                if (!pedido.getFechaHoraGeneracion().plusMinutes(plazoMaximoEnMinutos).isBefore(problematica.umbralDeReplanificacion)) continue;
+                PedidoEntity pedidoEntity = pedidoService.findByUniqueAttributes(pedido.getCodigo(), TipoEscenario.OPERACION.toString()).orElse(null);
+                if (pedidoEntity == null || pedidoEntity.getEstado() != EstadoPedido.ACTIVO) continue;
+                pedidoEntity.setEstado(EstadoPedido.CANCELADO_POR_ERROR);
+                for (SegmentacionEntity segmentacionEntity : pedidoEntity.getSegmentaciones()) {
+                    for (LoteEntity loteEntity : segmentacionEntity.getLotes()) {
+                        loteEntity.getRegistros().forEach(r -> r.setSigueVigente(false));
+                    }
+                }
+                pedidoService.save(pedidoEntity);
+                System.out.printf("[*] PEDIDO CANCELADO POR ERROR (plazo vencido): %s%n", pedidoEntity.getCodigo());
+            }
+        }
     }
 
     public void exportSolutionAsPdf(Solucion solucion, String rutaArchivo) {
         // To do..
     }
 
+    // Lock para el Printer (estático): varias simulaciones pueden exportar a la vez
+    private static final Object PRINTER_LOCK = new Object();
+
     public void exportSolutionAsTxt(Solucion solucion, String rutaArchivo) {
+        this.exportSolutionAsTxt(solucion, rutaArchivo, null, 0);
+    }
+
+    // Exporta la solución final. Si hay un archivo parcial (pedidos ya desalojados de la RAM durante la simulación),
+    // se incluye primero y la numeración de los pedidos actuales continúa a partir de 'cantidadDesalojada'.
+    public void exportSolutionAsTxt(Solucion solucion, String rutaArchivo, String rutaParcial, int cantidadDesalojada) {
+      synchronized (PRINTER_LOCK) {
         if(solucion == null) {
             System.out.println("[*] NO EXISTE SOLUCION");
             return;
@@ -220,106 +257,139 @@ public class ContextService {
         List<Pedido> sol_pedidos = solucion.getPedidosAtendidos();
         sol_pedidos.sort(Comparator.comparing(Pedido::getFechaHoraGeneracion));
         int cantPedidos = sol_pedidos.size();
-        for (int posPedido = 0; posPedido < cantPedidos; posPedido++) {
-            Pedido pedido = sol_pedidos.get(posPedido);
-            double ped_duracionActivaTotal = 0.0;
-            double ped_duracionPasivaTotal = 0.0;
-            double ped_tiempoOptimizado = 0.0;
-            LocalDateTime ped_fechaHoraGeneracion = pedido.getFechaHoraGeneracion();
-            LocalDateTime ped_fechaHoraExpiracion = pedido.getFechaHoraExpiracion();
-            Cliente ped_cli = pedido.getCliente();
-            Aeropuerto ped_aDest = pedido.getDestino();
-            G4DUtility.Printer.print_centered(
-                    String.format(
-                            "PEDIDO #%d",
-                            posPedido + 1
-                    ), dimLinea);
-            G4DUtility.Printer.fill_line('-', dimLinea, 4);
-            G4DUtility.Printer.printf(
-                    "%4s%-50s%8s%-32s%27s%28s%30s%n",
-                    " ",
-                    "CLIENTE",
-                    " ",
-                    "DESTINO",
-                    "CANT. PRODUCTOS MPE",
-                    "INSTANTE DE REGISTRO",
-                    "INSTANTE DE EXPIRACION"
-            );
-            G4DUtility.Printer.printf(
-                    "%4s%-50s%8s%-32s%19s%34s%29s%n",
-                    " ",
-                    ped_cli,
-                    " ",
-                    ped_aDest,
-                    String.format("%03d", pedido.getCantidadSolicitada()),
-                    G4DUtility.Convertor.toDisplayString(ped_fechaHoraGeneracion),
-                    G4DUtility.Convertor.toDisplayString(ped_fechaHoraExpiracion)
-            );
-            G4DUtility.Printer.println();
-            G4DUtility.Printer.print_centered(">> RUTAS PLANIFICADAS PARA EL PEDIDO <<", dimLinea);
-            G4DUtility.Printer.println();
-            G4DUtility.Printer.fill_line('*', dimLinea, 8);
-            List<Ruta> ped_rutas = new ArrayList<>(pedido.obtenerSegementacionVigente().getLotesPorRuta().keySet());
-            ped_rutas.sort(Comparator.comparing(Ruta::getFechaHoraSalida));
-            int cantRutas = ped_rutas.size();
-            for (int posRuta = 0; posRuta < cantRutas; posRuta++) {
-                Ruta ruta = ped_rutas.get(posRuta);
-                int rut_numProdAsignados = pedido.obtenerCantidadDeProductosEnRuta(ruta);
-                double rut_duracionActivaTotalInd = ruta.obtenerDuracionActivaTotal();
-                double rut_duracionActivaTotalLot = rut_duracionActivaTotalInd*rut_numProdAsignados;
-                double rut_duracionPasivaTotalInd = ruta.obtenerDuracionPasivaTotal(ped_fechaHoraGeneracion);
-                double rut_duracionPasivaTotalLot = rut_duracionPasivaTotalInd*rut_numProdAsignados;
-                double rut_tiempoOptimizadoInd = G4DUtility.Calculator.getElapsedHours(ruta.getFechaHoraLlegada(), ped_fechaHoraExpiracion);
-                double rut_tiempoOptimizadoLot = rut_tiempoOptimizadoInd*rut_numProdAsignados;
-                Aeropuerto rut_aOrig = ruta.getOrigen();
-                G4DUtility.Printer.printf("%10s RUTA #%s | ORIGEN: %-30s | TIPO DE ENVIO: %s | INSTANTE DE ENTREGA: %s | CANTIDAD ASIGNADA DE PRODUCTOS: %3d%n",
-                        ">>",
-                        String.format("%03d", posRuta + 1),
-                        rut_aOrig,
-                        ruta.getTipo(),
-                        G4DUtility.Convertor.toDisplayString(ruta.getFechaHoraLlegada()),
-                        rut_numProdAsignados
-                );
-                G4DUtility.Printer.println();
-                G4DUtility.Printer.printf(
-                        "%39s%4s%-32s%54s%3s%s%n",
-                        "INSTANTE DE SALIDA",
-                        " ",
-                        "ORIGEN",
-                        "INSTANTE DE LLEGADA",
-                        " ",
-                        "DESTINO"
-                );
-                List<Vuelo> vuelos = ruta.getVuelos();
-                for (Vuelo vuelo : vuelos) {
-                    G4DUtility.Printer.print_centered(
-                            String.format("[%s]    %-32s            > > > > > >            [%s]    %-32s",
-                                    G4DUtility.Convertor.toDisplayString(vuelo.getFechaHoraSalida()),
-                                    vuelo.getPlan().getOrigen(),
-                                    G4DUtility.Convertor.toDisplayString(vuelo.getFechaHoraLlegada()),
-                                    vuelo.getPlan().getDestino()
-                            ), dimLinea);
+        if (rutaParcial != null) {
+            try {
+                java.nio.file.Path parcial = java.nio.file.Paths.get(rutaParcial);
+                if (java.nio.file.Files.exists(parcial)) {
+                    for (String linea : java.nio.file.Files.readAllLines(parcial, java.nio.charset.Charset.defaultCharset())) {
+                        G4DUtility.Printer.println(linea);
+                    }
                 }
-                G4DUtility.Printer.fill_line('.', dimLinea, 8);
-                G4DUtility.Printer.printf("%27s%22s%16s%n", "Resumen de la ruta:","INDIVIDUAL","LOTE");
-                G4DUtility.Printer.printf("%8s%-30s%11s%20s%n", " ", ">> Duración 'Activa':", G4DUtility.Convertor.toDisplayString(rut_duracionActivaTotalInd), G4DUtility.Convertor.toDisplayString(rut_duracionActivaTotalLot));
-                G4DUtility.Printer.printf("%8s%-30s%11s%20s%n", " ", ">> Duración 'Pasiva':", G4DUtility.Convertor.toDisplayString(rut_duracionPasivaTotalInd), G4DUtility.Convertor.toDisplayString(rut_duracionPasivaTotalLot));
-                G4DUtility.Printer.printf("%8s%-30s%11s%20s%n", " ", ">> Tiempo optimizado:", G4DUtility.Convertor.toDisplayString(rut_tiempoOptimizadoInd), G4DUtility.Convertor.toDisplayString(rut_tiempoOptimizadoLot));
-                if (posRuta != cantRutas - 1) {
-                    G4DUtility.Printer.fill_line('*', dimLinea, 8);
-                }
-                ped_duracionActivaTotal += rut_duracionActivaTotalLot;
-                ped_duracionPasivaTotal += rut_duracionPasivaTotalLot;
-                ped_tiempoOptimizado += rut_tiempoOptimizadoLot;
+            } catch (java.io.IOException e) {
+                G4DUtility.Logger.logf_warn("[WARNING] No se pudo leer el reporte parcial '%s'.%n", rutaParcial);
             }
-            G4DUtility.Printer.fill_line('-', dimLinea, 4);
-            G4DUtility.Printer.printf("%23s%23s%n", "Resumen del pedido:","TOTAL");
-            G4DUtility.Printer.printf("%4s%-30s%15s%n", " ", ">> Duración 'Activa':", G4DUtility.Convertor.toDisplayString(ped_duracionActivaTotal));
-            G4DUtility.Printer.printf("%4s%-30s%15s%n", " ", ">> Duración 'Pasiva':", G4DUtility.Convertor.toDisplayString(ped_duracionPasivaTotal));
-            G4DUtility.Printer.printf("%4s%-30s%15s%n", " ", ">> Tiempo optimizado:", G4DUtility.Convertor.toDisplayString(ped_tiempoOptimizado));
-            G4DUtility.Printer.fill_line('=', dimLinea);
+        }
+        for (int posPedido = 0; posPedido < cantPedidos; posPedido++) {
+            this.imprimirPedido(sol_pedidos.get(posPedido), cantidadDesalojada + posPedido, dimLinea);
         }
         G4DUtility.Printer.flush();
         G4DUtility.Printer.close();
+      }
+    }
+
+    // Agrega al reporte parcial los pedidos que se desalojan de la RAM (numerados desde 'numeroInicial')
+    public void exportarPedidosDesalojados(List<Pedido> pedidos, String rutaParcial, int numeroInicial) {
+        if (pedidos == null || pedidos.isEmpty()) return;
+        int dimLinea = 181;
+        synchronized (PRINTER_LOCK) {
+            G4DUtility.Printer.openAppend(rutaParcial);
+            List<Pedido> ordenados = new ArrayList<>(pedidos);
+            ordenados.sort(Comparator.comparing(Pedido::getFechaHoraGeneracion));
+            for (int i = 0; i < ordenados.size(); i++) {
+                this.imprimirPedido(ordenados.get(i), numeroInicial + i, dimLinea);
+            }
+            G4DUtility.Printer.flush();
+            G4DUtility.Printer.close();
+        }
+    }
+
+    // Bloque de un pedido en el reporte txt (mismo formato de siempre)
+    private void imprimirPedido(Pedido pedido, int posPedido, int dimLinea) {
+        double ped_duracionActivaTotal = 0.0;
+        double ped_duracionPasivaTotal = 0.0;
+        double ped_tiempoOptimizado = 0.0;
+        LocalDateTime ped_fechaHoraGeneracion = pedido.getFechaHoraGeneracion();
+        LocalDateTime ped_fechaHoraExpiracion = pedido.getFechaHoraExpiracion();
+        Cliente ped_cli = pedido.getCliente();
+        Aeropuerto ped_aDest = pedido.getDestino();
+        G4DUtility.Printer.print_centered(
+                String.format(
+                        "PEDIDO #%d",
+                        posPedido + 1
+                ), dimLinea);
+        G4DUtility.Printer.fill_line('-', dimLinea, 4);
+        G4DUtility.Printer.printf(
+                "%4s%-50s%8s%-32s%27s%28s%30s%n",
+                " ",
+                "CLIENTE",
+                " ",
+                "DESTINO",
+                "CANT. PRODUCTOS MPE",
+                "INSTANTE DE REGISTRO",
+                "INSTANTE DE EXPIRACION"
+        );
+        G4DUtility.Printer.printf(
+                "%4s%-50s%8s%-32s%19s%34s%29s%n",
+                " ",
+                ped_cli,
+                " ",
+                ped_aDest,
+                String.format("%03d", pedido.getCantidadSolicitada()),
+                G4DUtility.Convertor.toDisplayString(ped_fechaHoraGeneracion),
+                G4DUtility.Convertor.toDisplayString(ped_fechaHoraExpiracion)
+        );
+        G4DUtility.Printer.println();
+        G4DUtility.Printer.print_centered(">> RUTAS PLANIFICADAS PARA EL PEDIDO <<", dimLinea);
+        G4DUtility.Printer.println();
+        G4DUtility.Printer.fill_line('*', dimLinea, 8);
+        List<Ruta> ped_rutas = new ArrayList<>(pedido.obtenerSegementacionVigente().getLotesPorRuta().keySet());
+        ped_rutas.sort(Comparator.comparing(Ruta::getFechaHoraSalida));
+        int cantRutas = ped_rutas.size();
+        for (int posRuta = 0; posRuta < cantRutas; posRuta++) {
+            Ruta ruta = ped_rutas.get(posRuta);
+            int rut_numProdAsignados = pedido.obtenerCantidadDeProductosEnRuta(ruta);
+            double rut_duracionActivaTotalInd = ruta.obtenerDuracionActivaTotal();
+            double rut_duracionActivaTotalLot = rut_duracionActivaTotalInd*rut_numProdAsignados;
+            double rut_duracionPasivaTotalInd = ruta.obtenerDuracionPasivaTotal(ped_fechaHoraGeneracion);
+            double rut_duracionPasivaTotalLot = rut_duracionPasivaTotalInd*rut_numProdAsignados;
+            double rut_tiempoOptimizadoInd = G4DUtility.Calculator.getElapsedHours(ruta.getFechaHoraLlegada(), ped_fechaHoraExpiracion);
+            double rut_tiempoOptimizadoLot = rut_tiempoOptimizadoInd*rut_numProdAsignados;
+            Aeropuerto rut_aOrig = ruta.getOrigen();
+            G4DUtility.Printer.printf("%10s RUTA #%s | ORIGEN: %-30s | TIPO DE ENVIO: %s | INSTANTE DE ENTREGA: %s | CANTIDAD ASIGNADA DE PRODUCTOS: %3d%n",
+                    ">>",
+                    String.format("%03d", posRuta + 1),
+                    rut_aOrig,
+                    ruta.getTipo(),
+                    G4DUtility.Convertor.toDisplayString(ruta.getFechaHoraLlegada()),
+                    rut_numProdAsignados
+            );
+            G4DUtility.Printer.println();
+            G4DUtility.Printer.printf(
+                    "%39s%4s%-32s%54s%3s%s%n",
+                    "INSTANTE DE SALIDA",
+                    " ",
+                    "ORIGEN",
+                    "INSTANTE DE LLEGADA",
+                    " ",
+                    "DESTINO"
+            );
+            List<Vuelo> vuelos = ruta.getVuelos();
+            for (Vuelo vuelo : vuelos) {
+                G4DUtility.Printer.print_centered(
+                        String.format("[%s]    %-32s            > > > > > >            [%s]    %-32s",
+                                G4DUtility.Convertor.toDisplayString(vuelo.getFechaHoraSalida()),
+                                vuelo.getPlan().getOrigen(),
+                                G4DUtility.Convertor.toDisplayString(vuelo.getFechaHoraLlegada()),
+                                vuelo.getPlan().getDestino()
+                        ), dimLinea);
+            }
+            G4DUtility.Printer.fill_line('.', dimLinea, 8);
+            G4DUtility.Printer.printf("%27s%22s%16s%n", "Resumen de la ruta:","INDIVIDUAL","LOTE");
+            G4DUtility.Printer.printf("%8s%-30s%11s%20s%n", " ", ">> Duración 'Activa':", G4DUtility.Convertor.toDisplayString(rut_duracionActivaTotalInd), G4DUtility.Convertor.toDisplayString(rut_duracionActivaTotalLot));
+            G4DUtility.Printer.printf("%8s%-30s%11s%20s%n", " ", ">> Duración 'Pasiva':", G4DUtility.Convertor.toDisplayString(rut_duracionPasivaTotalInd), G4DUtility.Convertor.toDisplayString(rut_duracionPasivaTotalLot));
+            G4DUtility.Printer.printf("%8s%-30s%11s%20s%n", " ", ">> Tiempo optimizado:", G4DUtility.Convertor.toDisplayString(rut_tiempoOptimizadoInd), G4DUtility.Convertor.toDisplayString(rut_tiempoOptimizadoLot));
+            if (posRuta != cantRutas - 1) {
+                G4DUtility.Printer.fill_line('*', dimLinea, 8);
+            }
+            ped_duracionActivaTotal += rut_duracionActivaTotalLot;
+            ped_duracionPasivaTotal += rut_duracionPasivaTotalLot;
+            ped_tiempoOptimizado += rut_tiempoOptimizadoLot;
+        }
+        G4DUtility.Printer.fill_line('-', dimLinea, 4);
+        G4DUtility.Printer.printf("%23s%23s%n", "Resumen del pedido:","TOTAL");
+        G4DUtility.Printer.printf("%4s%-30s%15s%n", " ", ">> Duración 'Activa':", G4DUtility.Convertor.toDisplayString(ped_duracionActivaTotal));
+        G4DUtility.Printer.printf("%4s%-30s%15s%n", " ", ">> Duración 'Pasiva':", G4DUtility.Convertor.toDisplayString(ped_duracionPasivaTotal));
+        G4DUtility.Printer.printf("%4s%-30s%15s%n", " ", ">> Tiempo optimizado:", G4DUtility.Convertor.toDisplayString(ped_tiempoOptimizado));
+        G4DUtility.Printer.fill_line('=', dimLinea);
     }
 }
