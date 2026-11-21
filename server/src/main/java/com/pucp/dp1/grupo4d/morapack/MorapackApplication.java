@@ -9,6 +9,7 @@ package com.pucp.dp1.grupo4d.morapack;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.scheduling.annotation.EnableAsync;
+import org.springframework.scheduling.annotation.EnableScheduling;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -16,6 +17,7 @@ import java.util.TimeZone;
 
 @SpringBootApplication
 @EnableAsync
+@EnableScheduling
 public class MorapackApplication {
 
 	public static void main(String[] args) {

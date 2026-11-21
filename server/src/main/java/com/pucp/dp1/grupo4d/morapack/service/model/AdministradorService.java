@@ -23,6 +23,7 @@ import com.pucp.dp1.grupo4d.morapack.model.exception.G4DException;
 import com.pucp.dp1.grupo4d.morapack.repository.AdministradorRepository;
 import com.pucp.dp1.grupo4d.morapack.service.CommunicationService;
 import com.pucp.dp1.grupo4d.morapack.service.ImportationService;
+import com.pucp.dp1.grupo4d.morapack.util.G4DSecurity;
 import com.pucp.dp1.grupo4d.morapack.util.G4DUtility;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -142,7 +143,7 @@ public class AdministradorService {
             administrador.setNombres(G4DUtility.Convertor.toAdmissible(dto.getNombres(), ""));
             administrador.setApellidos(G4DUtility.Convertor.toAdmissible(dto.getApellidos(), ""));
             administrador.setCorreo(correo);
-            administrador.setContrasenia(CONTRASENIA_INICIAL);
+            administrador.setContrasenia(G4DSecurity.hashear(CONTRASENIA_INICIAL));
             administrador.setPais(paisService.obtenerParaUsuario(dto.getPais()));
             this.save(administrador);
             System.out.println("[<] ADMINISTRADOR IMPORTADO!");
@@ -170,6 +171,7 @@ public class AdministradorService {
             int lProcesadas = 0, omitidos = 0;
             communicationService.enviar(progressDestination, new ProgressPayload("Cargando recursos de importación", 3, 3));
             List<AdministradorEntity> administradores = new ArrayList<>();
+            String contraseniaInicial = G4DSecurity.hashear(CONTRASENIA_INICIAL); // un solo hash por importación (BCrypt es lento a propósito)
             String linea;
             communicationService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.INICIADO));
             communicationService.enviar(progressDestination, new ProgressPayload("Leyendo archivo", lProcesadas, lTotales));
@@ -187,7 +189,7 @@ public class AdministradorService {
                         administrador.setNombres(nombreCompleto[0]);
                         administrador.setApellidos(nombreCompleto[1]);
                         administrador.setCorreo(correo);
-                        administrador.setContrasenia(CONTRASENIA_INICIAL);
+                        administrador.setContrasenia(contraseniaInicial);
                         administrador.setPais(pais);
                         administradores.add(administrador);
                         correosRegistrados.add(correo);

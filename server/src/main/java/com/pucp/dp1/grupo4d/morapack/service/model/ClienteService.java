@@ -23,6 +23,7 @@ import com.pucp.dp1.grupo4d.morapack.model.exception.G4DException;
 import com.pucp.dp1.grupo4d.morapack.repository.ClienteRepository;
 import com.pucp.dp1.grupo4d.morapack.service.CommunicationService;
 import com.pucp.dp1.grupo4d.morapack.service.ImportationService;
+import com.pucp.dp1.grupo4d.morapack.util.G4DSecurity;
 import com.pucp.dp1.grupo4d.morapack.util.G4DUtility;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -147,7 +148,7 @@ public class ClienteService {
             cliente.setNombres(G4DUtility.Convertor.toAdmissible(dto.getNombres(), ""));
             cliente.setApellidos(G4DUtility.Convertor.toAdmissible(dto.getApellidos(), ""));
             cliente.setCorreo(correo);
-            cliente.setContrasenia(CONTRASENIA_INICIAL);
+            cliente.setContrasenia(G4DSecurity.hashear(CONTRASENIA_INICIAL));
             cliente.setPais(paisService.obtenerParaUsuario(dto.getPais()));
             this.save(cliente);
             System.out.println("[<] CLIENTE IMPORTADO!");
@@ -175,6 +176,7 @@ public class ClienteService {
             int lProcesadas = 0, omitidos = 0;
             communicationService.enviar(progressDestination, new ProgressPayload("Cargando recursos de importación", 3, 3));
             List<ClienteEntity> clientes = new ArrayList<>();
+            String contraseniaInicial = G4DSecurity.hashear(CONTRASENIA_INICIAL); // un solo hash por importación (BCrypt es lento a propósito)
             String linea;
             communicationService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.INICIADO));
             communicationService.enviar(progressDestination, new ProgressPayload("Leyendo archivo", lProcesadas, lTotales));
@@ -192,7 +194,7 @@ public class ClienteService {
                         cliente.setNombres(nombreCompleto[0]);
                         cliente.setApellidos(nombreCompleto[1]);
                         cliente.setCorreo(correo);
-                        cliente.setContrasenia(CONTRASENIA_INICIAL);
+                        cliente.setContrasenia(contraseniaInicial);
                         cliente.setPais(pais);
                         clientes.add(cliente);
                         correosRegistrados.add(correo);

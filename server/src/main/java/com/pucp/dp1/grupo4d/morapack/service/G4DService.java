@@ -36,6 +36,7 @@ import com.pucp.dp1.grupo4d.morapack.service.model.*;
 import com.pucp.dp1.grupo4d.morapack.util.G4DUtility;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.scheduling.annotation.Async;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import java.io.File;
@@ -98,6 +99,8 @@ public class G4DService {
     private final ContextService contextService;
     private final ObjectMapper objectMapper;
     private final G4DExceptionHandlerAsync asyncExceptionHandler;
+    private final PurgaService purgaService;
+    private volatile boolean purgando = false;
     private final G4DContext operationContext = new G4DContext("OPERATION");
     private final Map<String, G4DContext> simulationContexts = new ConcurrentHashMap<>();
     private final Map<String, G4DContext> importationContexts = new ConcurrentHashMap<>();
@@ -109,7 +112,7 @@ public class G4DService {
                       RegistroAdapter registroAdapter, RutaAdapter rutaAdapter, RutaMapper rutaMapper,
                       SegmentacionAdapter segmentacionAdapter, AdministradorService administradorService, ClienteService clienteService, TrabajadorService trabajadorService, PaisService paisService, EventoService eventoService, UsuarioAdapter usuarioAdapter,
                       VueloAdapter vueloAdapter, VueloMapper vueloMapper, ObjectProvider<G4DService> self,
-                      CommunicationService communicationService, ContextService contextService, ObjectMapper objectMapper, G4DExceptionHandlerAsync asyncExceptionHandler) {
+                      CommunicationService communicationService, ContextService contextService, ObjectMapper objectMapper, G4DExceptionHandlerAsync asyncExceptionHandler, PurgaService purgaService) {
         this.aeropuertoService = aeropuertoService;
         this.aeropuertoAdapter = aeropuertoAdapter;
         this.aeropuertoMapper = aeropuertoMapper;
@@ -138,6 +141,7 @@ public class G4DService {
         this.contextService = contextService;
         this.objectMapper = objectMapper;
         this.asyncExceptionHandler = asyncExceptionHandler;
+        this.purgaService = purgaService;
     }
 
     public GenericResponse iniciarImportacion(ImportRequest request) throws JsonProcessingException {
@@ -354,11 +358,15 @@ public class G4DService {
     }
 
     public GenericResponse replanificarOperacion(ReplanificationRequest request) {
-        if(operationContext.task != null && operationContext.running) {
-            throw new G4DException("Ya hay una replanificación en proceso!");
-        }
-        operationContext.running = true;
-        operationContext.task = self.getObject().replanificar(request)
+        synchronized (operationContext) {
+            if(operationContext.task != null && operationContext.running) {
+                throw new G4DException("Ya hay una replanificación en proceso!");
+            }
+            if(purgando) {
+                throw new G4DException("Hay una purga de datos en proceso, intente en unos segundos.");
+            }
+            operationContext.running = true;
+            operationContext.task = self.getObject().replanificar(request)
                                                       .whenComplete((r, ex) -> {
                                                           operationContext.running = false;
                                                           operationContext.problematic = null;
@@ -368,8 +376,42 @@ public class G4DService {
                                                           asyncExceptionHandler.handleException("Operation", ex);
                                                           return null;
                                                       });
+        }
         communicationService.enviar("/topic/operation-status", EstadoEjecucion.INICIADO);
         return new GenericResponse(true, "Replanificación Iniciada!");
+    }
+
+    // Purga periódica de datos de operación que ya no se usan (por defecto cada hora; 'morapack.purga.cron=-' la desactiva)
+    @Scheduled(cron = "${morapack.purga.cron:0 17 * * * *}", zone = "UTC")
+    public void purgarOperacionProgramada() {
+        try {
+            this.purgarOperacion();
+        } catch (Exception e) {
+            System.out.printf("[*] PURGA OMITIDA: %s%n", e.getMessage());
+        }
+    }
+
+    // Corte: lo que terminó antes de (ahora - plazo máximo de entrega - 1 día) ya no entra en ninguna ventana de operación
+    public GenericResponse purgarOperacion() {
+        synchronized (operationContext) {
+            if(operationContext.task != null) {
+                throw new G4DException("Hay una replanificación en proceso; la purga se omitió.");
+            }
+            purgando = true;
+        }
+        try {
+            ParametrosEntity parametros = parametrosService.findById(1);
+            int maxDias = (parametros != null) ? Math.max(parametros.getMaxDiasEntregaIntracontinental(), parametros.getMaxDiasEntregaIntercontinental()) : 3;
+            LocalDateTime instanteDeCorte = LocalDateTime.now().minusDays(maxDias + 1L);
+            System.out.printf(">> Purgando datos de operación (corte: '%s')..%n", G4DUtility.Convertor.toDisplayString(instanteDeCorte));
+            Map<String, Integer> eliminados = purgaService.purgar(instanteDeCorte);
+            int total = eliminados.values().stream().mapToInt(Integer::intValue).sum();
+            eliminados.forEach((k, v) -> { if (v > 0) System.out.printf("[-] %s: '%d'%n", k, v); });
+            System.out.printf("[~] PURGA REALIZADA! ('%d' filas eliminadas)%n", total);
+            return new GenericResponse(true, String.format("Purga realizada! ('%d' filas eliminadas)", total));
+        } finally {
+            purgando = false;
+        }
     }
 
     @Async("operationExecutor")

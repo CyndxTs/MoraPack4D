@@ -142,7 +142,7 @@ public class AeropuertoService {
             AeropuertoEntity aeropuerto = new AeropuertoEntity();
             aeropuerto.setCodigo(dto.getCodigo());
             aeropuerto.setCiudad(dto.getCiudad());
-            aeropuerto.setPais(paisService.obtenerOCrear(dto.getPais(), dto.getHusoHorario(), dto.getContinente(), null));
+            aeropuerto.setPais(paisService.obtenerExistente(dto.getPais(), null));
             aeropuerto.setAlias(dto.getAlias());
             aeropuerto.setCapacidad(dto.getCapacidad());
             aeropuerto.setEsSede(dto.getEsSede() != null ? dto.getEsSede() : false);
@@ -174,6 +174,11 @@ public class AeropuertoService {
             int lProcesadas = 2, omitidos = 0;
             communicationService.enviar(progressDestination, new ProgressPayload("Cargando recursos de importación", 2, 2));
             List<AeropuertoEntity> aeropuertos = new ArrayList<>();
+            // Sedes: las ya registradas o, si no hay ninguna, las sedes por defecto (SPIM, EBCI, UBBB)
+            Set<String> codSedes = new HashSet<>();
+            this.findAllByEsSede(true).forEach(a -> codSedes.add(a.getCodigo()));
+            if (codSedes.isEmpty()) codSedes.addAll(ParametrosService.COD_SEDES_POR_DEFECTO);
+            Set<String> codigosDelArchivo = new HashSet<>();
             String continente = "";
             String linea;
             br.readLine();
@@ -186,11 +191,20 @@ public class AeropuertoService {
                     if(Character.isDigit(linea.charAt(0))) {
                         String[] partes = linea.split("\\s{2,}");
                         String codigo = partes[1].trim();
+                        if(!codigosDelArchivo.add(codigo)) throw new G4DException(String.format("El aeropuerto '%s' está repetido en el archivo (línea #%d).", codigo, lProcesadas + 1));
                         if(!this.existsByCodigo(codigo)) {
                             AeropuertoEntity aeropuerto = new AeropuertoEntity();
                             aeropuerto.setCodigo(codigo);
                             aeropuerto.setCiudad(partes[2].trim());
-                            aeropuerto.setPais(paisService.obtenerOCrear(partes[3].trim(), Integer.parseInt(partes[5].trim()), continente, poolPaises));
+                            String nombrePais = partes[3].trim();
+                            final int numLinea = lProcesadas + 1;
+                            PaisEntity pais;
+                            try {
+                                pais = paisService.obtenerExistente(nombrePais, poolPaises);
+                            } catch (G4DException e) {
+                                throw new G4DException(String.format("El país '%s' del aeropuerto '%s' no está registrado (línea #%d). Importación cancelada.", nombrePais, codigo, numLinea));
+                            }
+                            aeropuerto.setPais(pais);
                             aeropuerto.setAlias(partes[4].trim());
                             aeropuerto.setCapacidad(Integer.parseInt(partes[6].trim()));
                             String latDMS = partes[7].replace("Latitude:", "").trim();
@@ -199,19 +213,15 @@ public class AeropuertoService {
                             aeropuerto.setLatitudDEC(G4DUtility.Calculator.getLatDEC(latDMS));
                             aeropuerto.setLongitudDMS(lonDMS);
                             aeropuerto.setLongitudDEC(G4DUtility.Calculator.getLonDEC(lonDMS));
-                            aeropuerto.setEsSede(false);
+                            aeropuerto.setEsSede(codSedes.contains(codigo));
                             aeropuertos.add(aeropuerto);
                         } else omitidos++;
                     } else continente = linea.split("\\.")[0].trim();
                 }
                 lProcesadas++;
                 communicationService.enviar(progressDestination, new ProgressPayload("Leyendo archivo", lProcesadas, lTotales));
-                if (aeropuertos.size() >= 500 || (lProcesadas >= lTotales && !aeropuertos.isEmpty())) {
-                    importationService.batchSave(aeropuertos, progressDestination, "aeropuertos");
-                    System.out.printf("[<] AEROPUERTOS IMPORTADOS! ('%d')%n", aeropuertos.size());
-                    aeropuertos.clear();
-                }
             }
+            // Se guarda todo al final: si alguna línea falla, la importación se cancela sin guardar nada
             if (!aeropuertos.isEmpty()) {
                 importationService.batchSave(aeropuertos, progressDestination, "aeropuertos");
                 System.out.printf("[<] AEROPUERTOS IMPORTADOS! ('%d')%n", aeropuertos.size());

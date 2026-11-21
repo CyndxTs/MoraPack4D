@@ -26,6 +26,9 @@ import java.util.*;
 
 @Service
 public class ParametrosService {
+    // Sedes por defecto: se marcan al importar los aeropuertos si aún no hay ninguna sede registrada
+    public static final List<String> COD_SEDES_POR_DEFECTO = List.of("SPIM", "EBCI", "UBBB");
+
     private final ParametrosRepository parametrosRepository;
     private final ParametrosMapper parametrosMapper;
     private final AeropuertoService aeropuertoService;
@@ -96,7 +99,7 @@ public class ParametrosService {
             parametros.setMaxHorasEstancia(G4DUtility.Convertor.toAdmissible(dto.getMaxHorasEstancia(), 12.0));
             parametros.setMinHorasEstancia(G4DUtility.Convertor.toAdmissible(dto.getMinHorasEstancia(), 1.0));
             parametros.setProbabilidadReplanificacion(G4DUtility.Convertor.toAdmissible(dto.getProbabilidadReplanificacion(), 0.350));
-            parametros.setCodOrigenes(G4DUtility.Convertor.toAdmissible(dto.getCodOrigenes(), () -> List.of("SPIM", "EBCI", "UBBB")));
+            parametros.setCodOrigenes(G4DUtility.Convertor.toAdmissible(dto.getCodOrigenes(), () -> COD_SEDES_POR_DEFECTO));
             parametros.setDMin(G4DUtility.Convertor.toAdmissible(dto.getDMin(), 0.005));
             parametros.setIMax(G4DUtility.Convertor.toAdmissible(dto.getIMax(), 3));
             parametros.setEleMin(G4DUtility.Convertor.toAdmissible(dto.getEleMin(), 1));

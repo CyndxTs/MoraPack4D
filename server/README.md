@@ -37,15 +37,27 @@ Las credenciales nunca van en los `.properties`: van en `.env` (ignorado por git
 
 ## Seed
 
-- `db/seed/01_ddl.sql`: esquema completo.
-- Los DML irán como `02_*.sql`, `03_*.sql`, … y se ejecutan en orden alfabético con el mismo comando.
+`.\seed.ps1` borra todas las tablas y ejecuta, en orden:
+
+| Script | Qué hace |
+|---|---|
+| `db/seed/01_ddl.sql` | Esquema completo (sin procedimientos/funciones: TiDB Cloud no los soporta). |
+| `db/seed/02_paises.sql` | Los 3 continentes y 30 países del archivo de aeropuertos (con su huso horario). |
+| `db/seed/03_usuarios.sql` | Una cuenta por tipo: `administrador@g4d.com`, `trabajador@g4d.com`, `cliente@g4d.com` (contraseña `12345678`, guardada con BCrypt). |
+| `db/seed/04_parametros.sql` | Parámetros iniciales (fila `id = 1`). |
+
+## Purga de operación
+
+Cada hora (`morapack.purga.cron`, en UTC) el server borra lo que la operación ya no usa: registros dados de baja,
+la planificación de pedidos cancelados (el pedido se conserva), lotes y segmentaciones reemplazados, rutas y vuelos
+sin uso, y eventos de operación vencidos. No corre mientras hay una replanificación. Manual: `POST /api/operation-purge`.
 
 ## Orden de carga recomendado
 
-1. Aeropuertos (crea continentes y países automáticamente).
-2. Parámetros (define las sedes).
-3. Planes de vuelo.
-4. Usuarios (clientes / trabajadores / administradores).
+1. Aeropuertos (el país de cada aeropuerto debe existir; si no, se cancela toda la importación. Marca SPIM, EBCI y UBBB como sedes si aún no hay ninguna).
+2. Planes de vuelo.
+3. Usuarios (clientes / trabajadores / administradores). El país debe existir.
+4. Eventos (necesitan los planes).
 5. Pedidos:
    - SIMULACION: el cliente no se busca en BD; se genera en RAM al simular.
    - OPERACION: se omiten los pedidos de clientes inexistentes; si el destino es una sede, se guardan como atendidos al instante.

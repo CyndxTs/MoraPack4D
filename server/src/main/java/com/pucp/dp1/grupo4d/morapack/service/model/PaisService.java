@@ -119,6 +119,21 @@ public class PaisService {
     }
 
     // País de un usuario: el indicado o, si no se indicó, el país por defecto (o el primero registrado)
+    // País que debe existir (cargado por el seed o por la importación de PAIS). No crea nada.
+    public PaisEntity obtenerExistente(String nombrePais, Map<String, PaisEntity> poolPaises) {
+        String nombre = G4DUtility.Convertor.toAdmissible(nombrePais);
+        if (nombre == null) {
+            throw new G4DException("El nombre del país es obligatorio.");
+        }
+        final String nombreFinal = nombre.trim();
+        if (poolPaises != null && poolPaises.containsKey(nombreFinal)) {
+            return poolPaises.get(nombreFinal);
+        }
+        PaisEntity pais = paisRepository.findByNombre(nombreFinal).orElseThrow(() -> new G4DException(String.format("El país ('%s') no está registrado en el sistema.", nombreFinal)));
+        if (poolPaises != null) poolPaises.put(nombreFinal, pais);
+        return pais;
+    }
+
     public PaisEntity obtenerParaUsuario(String nombrePais) {
         String nombre = G4DUtility.Convertor.toAdmissible(nombrePais);
         if (nombre != null) {
@@ -126,7 +141,7 @@ public class PaisService {
         }
         return paisRepository.findByNombre(PAIS_POR_DEFECTO)
                 .or(() -> paisRepository.findAll().stream().findFirst())
-                .orElseThrow(() -> new G4DException("No hay países registrados. Importe primero los aeropuertos o los países."));
+                .orElseThrow(() -> new G4DException("No hay países registrados. Ejecute el seed o importe un país (PAIS)."));
     }
 
     public ListResponse listar(ListRequest request) {

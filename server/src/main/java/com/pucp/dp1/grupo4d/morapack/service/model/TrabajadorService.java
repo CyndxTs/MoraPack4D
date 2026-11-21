@@ -23,6 +23,7 @@ import com.pucp.dp1.grupo4d.morapack.model.exception.G4DException;
 import com.pucp.dp1.grupo4d.morapack.repository.TrabajadorRepository;
 import com.pucp.dp1.grupo4d.morapack.service.CommunicationService;
 import com.pucp.dp1.grupo4d.morapack.service.ImportationService;
+import com.pucp.dp1.grupo4d.morapack.util.G4DSecurity;
 import com.pucp.dp1.grupo4d.morapack.util.G4DUtility;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -142,7 +143,7 @@ public class TrabajadorService {
             trabajador.setNombres(G4DUtility.Convertor.toAdmissible(dto.getNombres(), ""));
             trabajador.setApellidos(G4DUtility.Convertor.toAdmissible(dto.getApellidos(), ""));
             trabajador.setCorreo(correo);
-            trabajador.setContrasenia(CONTRASENIA_INICIAL);
+            trabajador.setContrasenia(G4DSecurity.hashear(CONTRASENIA_INICIAL));
             trabajador.setPais(paisService.obtenerParaUsuario(dto.getPais()));
             this.save(trabajador);
             System.out.println("[<] TRABAJADOR IMPORTADO!");
@@ -170,6 +171,7 @@ public class TrabajadorService {
             int lProcesadas = 0, omitidos = 0;
             communicationService.enviar(progressDestination, new ProgressPayload("Cargando recursos de importación", 3, 3));
             List<TrabajadorEntity> trabajadores = new ArrayList<>();
+            String contraseniaInicial = G4DSecurity.hashear(CONTRASENIA_INICIAL); // un solo hash por importación (BCrypt es lento a propósito)
             String linea;
             communicationService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.INICIADO));
             communicationService.enviar(progressDestination, new ProgressPayload("Leyendo archivo", lProcesadas, lTotales));
@@ -187,7 +189,7 @@ public class TrabajadorService {
                         trabajador.setNombres(nombreCompleto[0]);
                         trabajador.setApellidos(nombreCompleto[1]);
                         trabajador.setCorreo(correo);
-                        trabajador.setContrasenia(CONTRASENIA_INICIAL);
+                        trabajador.setContrasenia(contraseniaInicial);
                         trabajador.setPais(pais);
                         trabajadores.add(trabajador);
                         correosRegistrados.add(correo);

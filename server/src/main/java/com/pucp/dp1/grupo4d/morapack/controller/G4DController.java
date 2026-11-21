@@ -67,7 +67,13 @@ public class G4DController {
         return ResponseEntity.ok(response);
     }
 
-    @PostMapping("/exportation-init")
+    @PostMapping("/operation-purge")
+    public ResponseEntity<GenericResponse> purgarOperacion() {
+        GenericResponse response = g4dService.purgarOperacion();
+        return ResponseEntity.ok(response);
+    }
+
+        @PostMapping("/exportation-init")
     public ResponseEntity<GenericResponse> iniciarExportacion(@RequestBody ExportationRequest request) {
         GenericResponse response = g4dService.iniciarExportacion(request);
         return ResponseEntity.ok(response);

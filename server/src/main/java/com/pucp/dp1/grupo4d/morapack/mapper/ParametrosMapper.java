@@ -25,7 +25,7 @@ public class ParametrosMapper {
         problematica.minHorasDeEstancia = G4DUtility.Convertor.toAdmissible(dto.getMinHorasEstancia(), 1.0);
         problematica.probabilidadDeReplanificacion = G4DUtility.Convertor.toAdmissible(dto.getProbabilidadReplanificacion(), 0.35);
         problematica.factorDeLejania = G4DUtility.Convertor.toAdmissible(dto.getFactorDeLejania(), 0.0085);
-        G4DUtility.Convertor.toAdmissible(dto.getCodOrigenes(),() -> List.of("SPIM", "EBCI", "UBBB")).forEach(cod -> problematica.origenes.put(cod, null));
+        G4DUtility.Convertor.toAdmissible(dto.getCodOrigenes(),() -> com.pucp.dp1.grupo4d.morapack.service.model.ParametrosService.COD_SEDES_POR_DEFECTO).forEach(cod -> problematica.origenes.put(cod, null));
     }
 
     public void toAlgorithm(GVNS gvns, ParametrosDTO dto) {
