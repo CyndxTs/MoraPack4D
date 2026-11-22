@@ -65,7 +65,11 @@ public class G4DService {
         public String archivoParcial;
         public int cantidadDesalojada = 0;
         // Operación: última solución enviada (para que un cliente que recién abre la vista no la vea vacía)
+        // Simulación: idem, para retomarla al volver a su pestaña
         public SolucionDTO solutionDTO;
+        // Simulación: fin del rango (la foto de pedidos se toma hasta aquí) y huso del usuario para el PDF
+        public LocalDateTime finDeSimulacion;
+        public Integer husoHorario;
 
         public G4DContext(String id) {
             this.id = id;
@@ -106,6 +110,57 @@ public class G4DService {
     private final Map<String, G4DContext> simulationContexts = new ConcurrentHashMap<>();
     private final Map<String, G4DContext> importationContexts = new ConcurrentHashMap<>();
     private final Map<String, G4DContext> exportationContexts = new ConcurrentHashMap<>();
+    // Simulaciones terminadas: estado final, reporte y última solución (para quien vuelve a su pestaña después)
+    private final Map<String, ResultadoSimulacion> resultadosSimulacion = new ConcurrentHashMap<>();
+
+    public static class ResultadoSimulacion {
+        public volatile EstadoFinalizacion estadoFinalizacion;
+        public volatile String mensaje;
+        public volatile ExportationPayload reporte;
+        public volatile SolucionDTO solucion;
+        public volatile LocalDateTime terminadaEn = LocalDateTime.now();
+    }
+
+    private void registrarFinDeSimulacion(G4DContext context, EstadoFinalizacion estado, String mensaje) {
+        ResultadoSimulacion r = resultadosSimulacion.computeIfAbsent(context.id, k -> new ResultadoSimulacion());
+        r.estadoFinalizacion = estado;
+        r.mensaje = mensaje;
+        r.solucion = context.solutionDTO;
+        r.terminadaEn = LocalDateTime.now();
+    }
+
+    // Estado de una simulación para retomarla (cambio de pestaña, F5): en curso o su resultado final
+    public Map<String, Object> obtenerEstadoSimulacion(String idTransaccion) {
+        Map<String, Object> estado = new java.util.LinkedHashMap<>();
+        G4DContext context = (idTransaccion != null) ? simulationContexts.get(idTransaccion) : null;
+        ResultadoSimulacion resultado = (idTransaccion != null) ? resultadosSimulacion.get(idTransaccion) : null;
+        if (context != null && resultado == null) {
+            estado.put("enCurso", true);
+            estado.put("solucion", context.solutionDTO);
+        } else if (resultado != null) {
+            estado.put("enCurso", false);
+            estado.put("estadoFinalizacion", resultado.estadoFinalizacion);
+            estado.put("mensaje", resultado.mensaje);
+            estado.put("reporte", resultado.reporte);
+            estado.put("solucion", resultado.solucion);
+        } else {
+            estado.put("enCurso", false);
+            estado.put("existe", false);
+        }
+        return estado;
+    }
+
+    // Resultados de simulaciones de hace más de un día: nadie volverá a pedirlos
+    @Scheduled(fixedDelay = 3600000, initialDelay = 3600000)
+    public void olvidarSimulacionesAntiguas() {
+        LocalDateTime limite = LocalDateTime.now().minusDays(1);
+        resultadosSimulacion.entrySet().removeIf(e -> e.getValue().terminadaEn.isBefore(limite));
+    }
+
+    // Los reportes de una simulación se borraron: ya no hace falta recordar su resultado
+    public void olvidarSimulacion(String idTransaccion) {
+        if (idTransaccion != null) resultadosSimulacion.remove(idTransaccion);
+    }
 
     public G4DService(AeropuertoService aeropuertoService, AeropuertoAdapter aeropuertoAdapter, AeropuertoMapper aeropuertoMapper,
                       LoteAdapter loteAdapter, ParametrosService parametrosService, ParametrosMapper parametrosMapper,
@@ -302,9 +357,13 @@ public class G4DService {
             System.out.println(">> Simulando..");
             boolean huboColapso = false;
             context.archivoParcial = Paths.get("exports", String.format(".parcial__%s.txt", context.id)).toString();
+            Files.createDirectories(Paths.get("exports"));
             Files.deleteIfExists(Paths.get(context.archivoParcial));
+            Files.deleteIfExists(Paths.get(ContextService.rutaParcialPdf(context.archivoParcial)));
             LocalDateTime inicioDeSimulacion = G4DUtility.Convertor.toDateTime(request.getFechaHoraInicio());
             LocalDateTime finDeSimulacion = G4DUtility.Convertor.toAdmissible(request.getFechaHoraFin(), LocalDateTime.MAX);
+            context.finDeSimulacion = finDeSimulacion;
+            context.husoHorario = request.getHusoHorario();
             ParametrosDTO parametros = request.getParametros();
             int multiplicadorTemporal = G4DUtility.Convertor.toAdmissible(request.getMultiplicadorTemporal(), 120);
             double saltoDeAlgoritmoEnMinutos = G4DUtility.Convertor.toAdmissible(request.getSaltoDeAlgoritmo(), 2.0);
@@ -320,6 +379,7 @@ public class G4DService {
                 finDePlanificacion = (LocalDateTime) G4DUtility.Calculator.getMin(finDePlanificacion.plusMinutes(saltoDeConsumoEnMinutos),finDeSimulacion);
                 Instant start = Instant.now();
                 SolucionDTO solucion = planificar(context, parametros, TipoEscenario.SIMULACION, inicioDePlanificacion, finDePlanificacion, umbralDeReplanificacion, null);
+                context.solutionDTO = solucion;
                 System.out.println("[>] SOLUCIÓN ENVIADA!");
                 communicationService.enviar(solutionDestination, new SolutionPayload(solucion));
                 if(esPrimeraIteracion) {
@@ -341,8 +401,9 @@ public class G4DService {
                     if(!vencidos.isEmpty()) {
                         System.out.printf("[*] COLAPSO LOGÍSTICO! ('%d' pedidos ya no llegan a tiempo)%n", vencidos.size());
                         huboColapso = true;
-                        communicationService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.COLAPSO,
-                                String.format("%d pedido(s) ya no pueden entregarse dentro de su plazo.", vencidos.size())));
+                        String mensaje = String.format("%d pedido(s) ya no pueden entregarse dentro de su plazo.", vencidos.size());
+                        registrarFinDeSimulacion(context, EstadoFinalizacion.COLAPSO, mensaje);
+                        communicationService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.COLAPSO, mensaje));
                         break;
                     }
                     System.out.printf("[~] '%d' pedidos sin atender en este bloque: se reintentan en el siguiente.%n", context.solution.getPedidosNoAtendidos().size());
@@ -365,21 +426,26 @@ public class G4DService {
             }
             if(context.running && !Thread.currentThread().isInterrupted()) {
                 System.out.println("[>] SIMULACION CONLCUIDA!");
+                if(!huboColapso) registrarFinDeSimulacion(context, EstadoFinalizacion.EXITOSO, null);
                 if(!finDeSimulacion.equals(LocalDateTime.MAX) && !huboColapso) {
                     communicationService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.DETENIDO, EstadoFinalizacion.EXITOSO));
                 }
                 future.complete(true);
             } else {
                 System.out.println("[X] SIMULACION DETENIDA FORZOSAMENTE!");
+                registrarFinDeSimulacion(context, EstadoFinalizacion.FORZADO, null);
                 communicationService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.DETENIDO,  EstadoFinalizacion.FORZADO));
                 future.complete(false);
             }
         } catch (InterruptedException e) {
             System.out.println("[X] SIMULACION DETENIDA FORZOSAMENTE!");
+            registrarFinDeSimulacion(context, EstadoFinalizacion.FORZADO, null);
             communicationService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.DETENIDO,  EstadoFinalizacion.FORZADO));
             future.complete(false);
         } catch (Exception e) {
-            communicationService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.DETENIDO,  EstadoFinalizacion.ERRONEO));
+            String mensaje = (e instanceof G4DException && e.getMessage() != null) ? e.getMessage() : null;
+            registrarFinDeSimulacion(context, EstadoFinalizacion.ERRONEO, mensaje);
+            communicationService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.DETENIDO,  EstadoFinalizacion.ERRONEO, mensaje));
             future.completeExceptionally(e);
         } finally {
             limpiarPools(idTransaccion);
@@ -613,10 +679,24 @@ public class G4DService {
             G4DContext contextoDeSolucion = simulationContexts.getOrDefault(idTransaccionDeContextoDeSolucion, operationContext);
             context.solution = contextoDeSolucion.solution;
             String nombreDelArchivo = String.format("%s__%s.txt", prefijo, idTransaccionDeContextoDeSolucion);
+            String nombreDelPdf = String.format("%s__%s.pdf", prefijo, idTransaccionDeContextoDeSolucion);
             String rutaDeLdirectorio = "exports" + File.separator;
+            Files.createDirectories(Paths.get("exports"));
             contextService.exportSolutionAsTxt(context.solution, Paths.get(rutaDeLdirectorio, nombreDelArchivo).toString(), contextoDeSolucion.archivoParcial, contextoDeSolucion.cantidadDesalojada);
-            System.out.printf("[+] SOLUCION EXPORTADA! ('%s')%n", nombreDelArchivo);
-            communicationService.enviar(linkDestination, new ExportationPayload(nombreDelArchivo, rutaDeLdirectorio));
+            boolean esSimulacion = contextoDeSolucion != operationContext;
+            Integer huso = (request.getHusoHorario() != null) ? request.getHusoHorario() : contextoDeSolucion.husoHorario;
+            contextService.exportSolutionAsPdf(context.solution, Paths.get(rutaDeLdirectorio, nombreDelPdf).toString(), contextoDeSolucion.archivoParcial,
+                    esSimulacion ? "Reporte de simulación" : "Reporte de operación", idTransaccionDeContextoDeSolucion, huso);
+            // Los parciales ya quedaron dentro de los reportes finales
+            if (contextoDeSolucion.archivoParcial != null) {
+                Files.deleteIfExists(Paths.get(contextoDeSolucion.archivoParcial));
+                Files.deleteIfExists(Paths.get(ContextService.rutaParcialPdf(contextoDeSolucion.archivoParcial)));
+            }
+            System.out.printf("[+] SOLUCION EXPORTADA! ('%s' y '%s')%n", nombreDelArchivo, nombreDelPdf);
+            ExportationPayload payload = new ExportationPayload(nombreDelArchivo, rutaDeLdirectorio, nombreDelPdf);
+            ResultadoSimulacion resultado = resultadosSimulacion.get(idTransaccionDeContextoDeSolucion);
+            if (resultado != null) resultado.reporte = payload;
+            communicationService.enviar(linkDestination, payload);
             communicationService.enviar(statusDestination, new StatusPayload(EstadoEjecucion.DETENIDO,  EstadoFinalizacion.EXITOSO));
             future.complete(null);
         } catch (Exception e) {
@@ -631,7 +711,7 @@ public class G4DService {
         if(parametros.getCodOrigenes() != null && parametros.getCodOrigenes().isEmpty()) {
             throw new G4DException("No hay sedes registradas: el administrador debe marcar al menos una sede.");
         }
-        context.problematic = contextService.getUpdatedProblematic(context.id, context.problematic, esSimulacion, parametros, inicioDePlanificacion, finDePlanificacion, umbralDeReplanificacion, instanteDeProcesamiento, tipoEscenario);
+        context.problematic = contextService.getUpdatedProblematic(context.id, context.problematic, esSimulacion, parametros, inicioDePlanificacion, finDePlanificacion, umbralDeReplanificacion, instanteDeProcesamiento, tipoEscenario, context.finDeSimulacion);
         if(esSimulacion) {
             System.out.printf("[*] SIMULANDO BLOQUE TEMPORAL! ['%s' - '%s']%n", G4DUtility.Convertor.toDisplayString(inicioDePlanificacion), G4DUtility.Convertor.toDisplayString(finDePlanificacion));
         } else System.out.printf("[*] OPERANDO BLOQUE TEMPORAL! ['%s' - '%s']%n", G4DUtility.Convertor.toDisplayString(inicioDePlanificacion), G4DUtility.Convertor.toDisplayString(finDePlanificacion));

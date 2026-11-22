@@ -71,3 +71,4 @@ export async function buscarPlanesPagina(filtros, pagina, tamanio) {
   const r = await post("/planes/buscar", { ...filtros, pagina, tamanio });
   return { filas: r.dtos ?? [], total: typeof r.total === "number" ? r.total : null };
 }
+export const probarCorreo = () => post("/usuarios/correo-prueba");

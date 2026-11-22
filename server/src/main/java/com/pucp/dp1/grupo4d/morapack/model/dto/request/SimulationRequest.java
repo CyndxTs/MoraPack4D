@@ -16,4 +16,6 @@ public class SimulationRequest {
     private ParametrosDTO parametros;
     private Integer multiplicadorTemporal;
     private Double saltoDeAlgoritmo;
+    // Huso del usuario (horas) para el reporte PDF
+    private Integer husoHorario;
 }

@@ -13,11 +13,16 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import java.util.List;
 import java.util.Optional;
 
 @Repository
 public interface PlanRepository extends JpaRepository<PlanEntity, Integer> {
     Optional<PlanEntity> findByCodigo(String codigo);
+
+    // Catálogo completo para el algoritmo en UNA consulta: planes + aeropuertos + eventos
+    @Query("SELECT DISTINCT p FROM PlanEntity p JOIN FETCH p.origen JOIN FETCH p.destino LEFT JOIN FETCH p.eventos")
+    List<PlanEntity> findAllConEventos();
 
     @Query(value = """
         SELECT p.*

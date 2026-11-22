@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Campo, Interruptor, PaginaGestion } from "../../components/Gestion/Gestion";
-import { obtenerParametros } from "../../api/catalogos";
+import { obtenerParametros, probarCorreo } from "../../api/catalogos";
 import { guardarParametros } from "../../api/importacion";
 import { useNotify } from "../../notifications/NotificationContext";
 
@@ -69,7 +69,8 @@ export default function Parametros() {
   };
 
   return (
-    <PaginaGestion titulo="Parámetros" descripcion="Valores con los que el server planifica la operación. La simulación parte de estos valores, pero cada simulación puede ajustarlos.">
+    <PaginaGestion titulo="Parámetros" descripcion="Valores con los que el server planifica la operación. La simulación parte de estos valores, pero cada simulación puede ajustarlos."
+      acciones={<BotonProbarCorreo />}>
       {!p ? <p className="tenue">Cargando parámetros...</p> : (
         <>
           <div className="rejilla-2">
@@ -129,5 +130,20 @@ export default function Parametros() {
         </>
       )}
     </PaginaGestion>
+  );
+}
+
+// Envía un correo de prueba al administrador: confirma que Brevo (códigos de verificación y reportes) funciona
+function BotonProbarCorreo() {
+  const notify = useNotify();
+  const [enviando, setEnviando] = useState(false);
+  const probar = async () => {
+    setEnviando(true);
+    try { const r = await probarCorreo(); notify("success", r.mensaje); } catch (e) { notify("danger", e.message); } finally { setEnviando(false); }
+  };
+  return (
+    <button type="button" className="boton boton--fantasma" onClick={probar} disabled={enviando}>
+      {enviando ? "Enviando..." : "Probar envío de correo"}
+    </button>
   );
 }

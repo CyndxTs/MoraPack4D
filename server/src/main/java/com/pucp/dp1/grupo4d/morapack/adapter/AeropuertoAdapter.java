@@ -30,6 +30,12 @@ public class AeropuertoAdapter {
     }
 
     public Aeropuerto toAlgorithm(String idTransaccion, AeropuertoEntity entity) {
+        return this.toAlgorithm(idTransaccion, entity, true);
+    }
+
+    // conRegistros = false: el almacén empieza vacío (simulación); así no se recorren los registros de la operación
+    // (cada uno arrastra su lote, su ruta y sus vuelos). En operación solo se cargan los registros vigentes.
+    public Aeropuerto toAlgorithm(String idTransaccion, AeropuertoEntity entity, boolean conRegistros) {
         if (poolAlgorithm.containsKey(idTransaccion) && poolAlgorithm.get(idTransaccion).containsKey(entity.getCodigo())) {
             return poolAlgorithm.get(idTransaccion).get(entity.getCodigo());
         }
@@ -45,8 +51,9 @@ public class AeropuertoAdapter {
         algorithm.setLongitud(entity.getLongitudDEC());
         algorithm.setEsSede(entity.getEsSede());
         List<Registro> registros = new ArrayList<>();
-        List<RegistroEntity> registrosEntity = entity.getRegistros();
-        registrosEntity.forEach(e -> registros.add(registroAdapter.toAlgorithm(idTransaccion, e)));
+        if (conRegistros) {
+            entity.getRegistros().stream().filter(e -> Boolean.TRUE.equals(e.getSigueVigente())).forEach(e -> registros.add(registroAdapter.toAlgorithm(idTransaccion, e)));
+        }
         algorithm.setRegistros(registros);
         if(!poolAlgorithm.containsKey(idTransaccion)) {
             poolAlgorithm.put(idTransaccion, new HashMap<>());

@@ -118,6 +118,7 @@
     animation: modal2-entra 200ms var(--ease-out);
     &--angosto { max-width: 440px; }
     &--ancho { max-width: 720px; }
+    &--reporte { max-width: 1040px; }
   }
   &__cabecera {
     display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; padding: 22px 24px 0;

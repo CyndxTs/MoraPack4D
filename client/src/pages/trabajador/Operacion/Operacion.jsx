@@ -6,7 +6,7 @@ import { useClock } from "../../../scenario/useClock";
 import { ButtonAdd, LoadingOverlay } from "../../../components/UI/ui";
 import { listarTodosLosAeropuertos } from "../../../api/catalogos";
 import {
-  CARPETA_EXPORTACION, descargarReporte, eliminarReporte, esReplanificacionEnCurso, iniciarExportacion, nombreDeReporte,
+  CARPETA_EXPORTACION, eliminarReporte, esReplanificacionEnCurso, iniciarExportacion, nombreDeReporte,
   obtenerOperacionActual, replanificarOperacion,
 } from "../../../api/escenarios";
 import { suscribir, normalizarEstado } from "../../../realtime/stompClient";
@@ -16,6 +16,7 @@ import { useNotify } from "../../../notifications/NotificationContext";
 import { formatCountdown, formatFecha } from "../../../utils/fechas";
 import { zonaCorta } from "../../../utils/zona";
 import DashboardModal from "./DashboardModal";
+import ReporteModal from "../../../components/Reporte/ReporteModal";
 import runIcon from "../../../assets/icons/run.svg";
 import downloadIcon from "../../../assets/icons/download.svg";
 import configIcon from "../../../assets/icons/config.svg";
@@ -29,6 +30,7 @@ export default function Operacion() {
   const [estado, setEstado] = useState({ estadoEjecucion: null, estadoFinalizacion: null });
   const [enviando, setEnviando] = useState(false);
   const [descargando, setDescargando] = useState(false);
+  const [reporte, setReporte] = useState(null);
   const [dashboardAbierto, setDashboardAbierto] = useState(() => sessionStorage.getItem(KEY_DASHBOARD_VISTO) !== "1");
   const programada = useProgramacion();
   const ahoraReal = useCallback(() => Date.now(), []);
@@ -84,6 +86,7 @@ export default function Operacion() {
     }
   };
 
+  // El reporte (txt + pdf) se genera solo para este modal: al cerrarlo se borra del server
   const onDescargarReporte = async () => {
     setDescargando(true);
     try {
@@ -92,14 +95,18 @@ export default function Operacion() {
       const idExportacion = await iniciarExportacion(idTransaccion, "OPERACION");
       const fin = await esperarExportacion(idExportacion);
       if (fin.estadoFinalizacion === "ERRONEO") throw new Error("El server no pudo generar el reporte.");
-      const archivo = { nombre: nombreDeReporte("OPERACION", idTransaccion), ruta: CARPETA_EXPORTACION };
-      await descargarReporte(archivo);
-      await eliminarReporte(archivo);
+      setReporte({ nombre: nombreDeReporte("OPERACION", idTransaccion), ruta: CARPETA_EXPORTACION });
     } catch (e) {
       notify("danger", e.message);
     } finally {
       setDescargando(false);
     }
+  };
+
+  const cerrarReporte = async ({ enviado }) => {
+    const archivo = reporte;
+    setReporte(null);
+    if (!enviado && archivo) await eliminarReporte(archivo);
   };
 
   const cerrarDashboard = () => {
@@ -138,6 +145,10 @@ export default function Operacion() {
     <ScenarioWorkspace escenario={escenario} nowMs={nowMs} controles={controles} overlays={overlays}>
       {descargando && <LoadingOverlay text="Generando reporte de la operación..." />}
       {dashboardAbierto && <DashboardModal escenario={escenario} nowMs={nowMs} onClose={cerrarDashboard} />}
+      {reporte && (
+        <ReporteModal titulo="Reporte de la operación" descripcion={`Estado de la operación al ${formatFecha(Date.now())} (${zonaCorta()}). Al cerrar, el reporte se elimina del server.`}
+          archivo={reporte} onCerrar={cerrarReporte} />
+      )}
     </ScenarioWorkspace>
   );
 }

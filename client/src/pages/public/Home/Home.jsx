@@ -8,7 +8,7 @@ import "./home.scss";
 import limaMora from "../../../assets/images/limaMora.png";
 import bruselasMora from "../../../assets/images/bruselasMora.webp";
 import arzeMora from "../../../assets/images/arzeMora.webp";
-import empresa from "../../../assets/images/empresa.png";
+import empresa from "../../../assets/images/moraBanner2.jpeg";
 
 const Globo = lazy(() => import("../../../components/Globo/Globo"));
 
@@ -136,17 +136,22 @@ export default function Home() {
 
       <section className="seccion equipo" aria-labelledby="equipo-titulo">
         <div className="container">
-          <h2 id="equipo-titulo">Equipo</h2>
-          <ul className="equipo__lista">
-            <li>César Augusto Napurí de la Cruz</li>
-            <li>Josué Manuel Sivincha Bailón</li>
-            <li>José Armando Moncada Silva</li>
-          </ul>
-          <div className="equipo__inversor">
-            <span>Inversionista principal</span>
+          <h2 id="equipo-titulo">Nuestro equipo</h2>
+          <div className="equipo__tarjeta equipo__tarjeta--inversor">
+            <span className="equipo__inicial" aria-hidden="true">EV</span>
+            <span className="equipo__rol">Inversionista principal</span>
             <strong>Eduardo Valladares</strong>
             <p>Hizo posible MoraPack.</p>
           </div>
+          <ul className="equipo__lista">
+            {[["CN", "César Napurí"], ["JS", "Josué Sivincha"], ["JM", "José Moncada"]].map(([ini, nombre]) => (
+              <li key={nombre} className="equipo__tarjeta">
+                <span className="equipo__inicial" aria-hidden="true">{ini}</span>
+                <span className="equipo__rol">Desarrollador</span>
+                <strong>{nombre}</strong>
+              </li>
+            ))}
+          </ul>
         </div>
       </section>
     </div>

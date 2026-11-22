@@ -1,10 +1,11 @@
+import { offsetHorasZona } from "../utils/zona";
 import { post, http, idDeToken, ApiError } from "./http";
 import { toServerDateTime } from "../utils/fechas";
 
 // ---------- Simulación ----------
 // request: { fechaHoraInicio, fechaHoraFin, parametros, multiplicadorTemporal, saltoDeAlgoritmo }
 export async function iniciarSimulacion(request) {
-  const r = await post("/simulation-init", request);
+  const r = await post("/simulation-init", { husoHorario: offsetHorasZona(), ...request });
   return idDeToken(r.token);
 }
 export const detenerSimulacion = (idTransaccion) => post("/simulation-stop", { idTransaccion });
@@ -34,10 +35,28 @@ export const CARPETA_EXPORTACION = "exports";
 // El server nombra el archivo "<prefijo>__<idTransaccion>.txt"
 export const nombreDeReporte = (prefijo, idTransaccion) => `${prefijo}__${idTransaccion}.txt`;
 
+// El server genera "<prefijo>__<id>.txt" y ".pdf"; el PDF muestra las horas en el huso de la sesión
+export const pdfDe = (nombreTxt) => nombreTxt?.replace(/\.txt$/, ".pdf");
+
 export async function iniciarExportacion(idTransaccion, prefijo) {
-  const r = await post("/exportation-init", { idTransaccion, prefijo });
+  const r = await post("/exportation-init", { idTransaccion, prefijo, husoHorario: offsetHorasZona() });
   return idDeToken(r.token);
 }
+
+// PDF como blob (para la vista previa en un iframe)
+export async function previsualizarPdf(archivo) {
+  const { data } = await http.post("/exportation-preview", archivo, { responseType: "blob" });
+  return data;
+}
+
+// Envío por correo en segundo plano: devuelve el id cuyo resultado llega por WebSocket
+export async function enviarReportePorCorreo(nombre, correo) {
+  const r = await post("/exportation-send", { nombre, correo });
+  return idDeToken(r.token);
+}
+
+// Simulación en curso o terminada (para retomarla al volver a su pestaña)
+export const obtenerEstadoSimulacion = (idTransaccion) => post("/simulation-state", { idTransaccion });
 
 export async function previsualizarReporte(archivo) {
   const { data } = await http.post("/exportation-preview", archivo, { responseType: "text" });

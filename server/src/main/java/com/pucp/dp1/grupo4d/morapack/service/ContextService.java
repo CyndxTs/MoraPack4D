@@ -17,6 +17,8 @@ import com.pucp.dp1.grupo4d.morapack.model.enumeration.EstadoPedido;
 import com.pucp.dp1.grupo4d.morapack.model.enumeration.TipoEscenario;
 import com.pucp.dp1.grupo4d.morapack.service.model.*;
 import com.pucp.dp1.grupo4d.morapack.util.G4DUtility;
+import com.pucp.dp1.grupo4d.morapack.service.reporte.FilaReporte;
+import com.pucp.dp1.grupo4d.morapack.service.reporte.ReportePdfService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
@@ -46,11 +48,12 @@ public class ContextService {
     private final UsuarioAdapter usuarioAdapter;
     private final UsuarioService usuarioService;
     private final ParametrosMapper parametrosMapper;
+    private final ReportePdfService reportePdfService;
 
     public ContextService(VueloAdapter vueloAdapter, VueloService vueloService, RutaAdapter rutaAdapter, RutaService rutaService,
                           PedidoAdapter pedidoAdapter, PedidoService pedidoService, SegmentacionAdapter segmentacionAdapter, SegmentacionService segmentacionService,
                           LoteService loteService, LoteAdapter loteAdapter, AeropuertoAdapter aeropuertoAdapter, AeropuertoService aeropuertoService,
-                          RegistroAdapter registroAdapter, RegistroService registroService, PlanService planService, PlanAdapter planAdapter, UsuarioAdapter usuarioAdapter, UsuarioService usuarioService, ParametrosMapper parametrosMapper) {
+                          RegistroAdapter registroAdapter, RegistroService registroService, PlanService planService, PlanAdapter planAdapter, UsuarioAdapter usuarioAdapter, UsuarioService usuarioService, ParametrosMapper parametrosMapper, ReportePdfService reportePdfService) {
         this.vueloAdapter = vueloAdapter;
         this.vueloService = vueloService;
         this.rutaAdapter = rutaAdapter;
@@ -70,12 +73,23 @@ public class ContextService {
         this.usuarioAdapter = usuarioAdapter;
         this.usuarioService = usuarioService;
         this.parametrosMapper = parametrosMapper;
+        this.reportePdfService = reportePdfService;
     }
 
     @Transactional
     public Problematica getUpdatedProblematic(String idTransaccion, Problematica problematica, boolean esSimulacion, ParametrosDTO parametros,
                                               LocalDateTime inicioDePlanificacion, LocalDateTime finDePlanificacion, LocalDateTime umbralDeReplanificacion,
                                               LocalDateTime instanteDeProcesamiento, TipoEscenario tipoEscenario) {
+        return this.getUpdatedProblematic(idTransaccion, problematica, esSimulacion, parametros, inicioDePlanificacion, finDePlanificacion,
+                                          umbralDeReplanificacion, instanteDeProcesamiento, tipoEscenario, null);
+    }
+
+    // finDeSimulacion: solo simulación. Al iniciarla se toma una foto fija de aeropuertos, planes (con sus eventos de
+    // simulación) y pedidos de todo su rango; lo que se registre después en la BD ya no le afecta.
+    @Transactional
+    public Problematica getUpdatedProblematic(String idTransaccion, Problematica problematica, boolean esSimulacion, ParametrosDTO parametros,
+                                              LocalDateTime inicioDePlanificacion, LocalDateTime finDePlanificacion, LocalDateTime umbralDeReplanificacion,
+                                              LocalDateTime instanteDeProcesamiento, TipoEscenario tipoEscenario, LocalDateTime finDeSimulacion) {
         // En simulación la problemática vive en RAM entre bloques; en operación se reconstruye desde BD cada vez
         boolean esNueva = !esSimulacion || problematica == null;
         if(esNueva) {
@@ -91,16 +105,24 @@ public class ContextService {
         problematica.instanteDeProcesamiento = instanteDeProcesamiento;
         problematica.tipoEscenario = tipoEscenario.toString().toUpperCase();
         if(esNueva) {
+            long t0 = System.currentTimeMillis();
             problematica.cargarAeropuertos(aeropuertoService, aeropuertoAdapter);
+            long t1 = System.currentTimeMillis();
             problematica.cargarPlanes(planService, planAdapter);
+            System.out.printf("[~] CATÁLOGO CARGADO EN %d ms (aeropuertos %d ms, planes %d ms)%n", System.currentTimeMillis() - t0, t1 - t0, System.currentTimeMillis() - t1);
         }
-        problematica.cargarClientes(usuarioService, usuarioAdapter);
-        problematica.cargarPedidos(pedidoService, pedidoAdapter);
         if(esSimulacion) {
-            // Lo planificado en simulación nunca se guarda en BD: no hay vuelos ni rutas que cargar.
-            // Se suelta el pool de pedidos del adapter para que los desalojados puedan liberarse de la RAM.
-            pedidoAdapter.liberarPool(problematica.idTransaccion);
+            if(esNueva) {
+                LocalDateTime fin = (finDeSimulacion == null || finDeSimulacion.getYear() > 9000) ? inicioDePlanificacion.plusYears(1) : finDeSimulacion;
+                problematica.cargarFotoDePedidos(pedidoService, pedidoAdapter, inicioDePlanificacion, fin);
+                // Lo planificado en simulación nunca se guarda en BD. Se suelta el pool de pedidos del adapter para que
+                // los desalojados puedan liberarse de la RAM.
+                pedidoAdapter.liberarPool(problematica.idTransaccion);
+            }
+            problematica.liberarPedidosDeLaFoto();
         } else {
+            problematica.cargarClientes(usuarioService, usuarioAdapter);
+            problematica.cargarPedidos(pedidoService, pedidoAdapter);
             problematica.cargarVuelos(vueloService, vueloAdapter);
             problematica.cargarRutas(rutaService, rutaAdapter);
         }
@@ -210,8 +232,41 @@ public class ContextService {
         }
     }
 
-    public void exportSolutionAsPdf(Solucion solucion, String rutaArchivo) {
-        // To do..
+    // Archivo parcial con las filas del PDF de los pedidos ya desalojados (junto al parcial .txt)
+    public static String rutaParcialPdf(String rutaParcialTxt) {
+        return rutaParcialTxt == null ? null : rutaParcialTxt.replaceAll("\\.txt$", "") + ".tsv";
+    }
+
+    // Reporte PDF: pedidos desalojados (parcial) + pedidos atendidos en RAM + pedidos sin atender
+    public void exportSolutionAsPdf(Solucion solucion, String rutaArchivo, String rutaParcialTxt, String titulo, String idTransaccion, Integer husoHorario) throws java.io.IOException {
+        List<FilaReporte> filas = new ArrayList<>();
+        String rutaTsv = rutaParcialPdf(rutaParcialTxt);
+        if (rutaTsv != null && java.nio.file.Files.exists(java.nio.file.Paths.get(rutaTsv))) {
+            for (String linea : java.nio.file.Files.readAllLines(java.nio.file.Paths.get(rutaTsv), java.nio.charset.StandardCharsets.UTF_8)) {
+                FilaReporte fila = FilaReporte.deTsv(linea);
+                if (fila != null) filas.add(fila);
+            }
+        }
+        List<ReportePdfService.NoAtendido> noAtendidos = new ArrayList<>();
+        int vuelos = 0, rutas = 0;
+        Double fitness = null, ut = null, de = null, dop = null;
+        if (solucion != null) {
+            List<Pedido> atendidos = new ArrayList<>(solucion.getPedidosAtendidos());
+            atendidos.sort(Comparator.comparing(Pedido::getFechaHoraGeneracion));
+            atendidos.forEach(p -> filas.add(FilaReporte.de(p)));
+            solucion.getPedidosNoAtendidos().forEach((p, motivo) -> noAtendidos.add(new ReportePdfService.NoAtendido(
+                    p.getCodigo(), p.getCliente() != null ? p.getCliente().getCodigo() : "-",
+                    p.getDestino() != null ? p.getDestino().getCodigo() + " " + p.getDestino().getCiudad() : "-",
+                    p.getCantidadSolicitada() != null ? p.getCantidadSolicitada() : 0, p.getFechaHoraGeneracion(), motivo)));
+            vuelos = solucion.getVuelosEnTransito().size();
+            rutas = solucion.getRutasEnOperacion().size();
+            fitness = solucion.getFitness();
+            ut = solucion.getRatioPromedioDeUtilizacionTemporal();
+            de = solucion.getRatioPromedioDeDesviacionEspacial();
+            dop = solucion.getRatioPromedioDeDisposicionOperacional();
+        }
+        reportePdfService.generar(java.nio.file.Paths.get(rutaArchivo),
+                new ReportePdfService.Resumen(titulo, idTransaccion, husoHorario, fitness, ut, de, dop, vuelos, rutas), filas, noAtendidos);
     }
 
     // Lock para el Printer (estático): varias simulaciones pueden exportar a la vez
@@ -290,6 +345,15 @@ public class ContextService {
             }
             G4DUtility.Printer.flush();
             G4DUtility.Printer.close();
+            // Las mismas filas para el PDF final
+            try {
+                List<String> lineas = new ArrayList<>();
+                ordenados.forEach(p -> lineas.add(FilaReporte.de(p).aTsv()));
+                java.nio.file.Files.write(java.nio.file.Paths.get(rutaParcialPdf(rutaParcial)), lineas, java.nio.charset.StandardCharsets.UTF_8,
+                        java.nio.file.StandardOpenOption.CREATE, java.nio.file.StandardOpenOption.APPEND);
+            } catch (java.io.IOException e) {
+                G4DUtility.Logger.logf_warn("[WARNING] No se pudo escribir el parcial del PDF '%s'.%n", rutaParcial);
+            }
         }
     }
 

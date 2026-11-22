@@ -11,6 +11,8 @@ import com.pucp.dp1.grupo4d.morapack.model.dto.request.*;
 import com.pucp.dp1.grupo4d.morapack.model.dto.response.GenericResponse;
 import com.pucp.dp1.grupo4d.morapack.model.exception.G4DException;
 import com.pucp.dp1.grupo4d.morapack.service.G4DService;
+import com.pucp.dp1.grupo4d.morapack.service.EnvioReporteService;
+import java.util.Map;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpHeaders;
@@ -28,9 +30,11 @@ import java.nio.file.Paths;
 @RequestMapping("/api")
 public class G4DController {
     private final G4DService g4dService;
+    private final EnvioReporteService envioReporteService;
 
-    public G4DController(G4DService g4dService) {
+    public G4DController(G4DService g4dService, EnvioReporteService envioReporteService) {
         this.g4dService = g4dService;
+        this.envioReporteService = envioReporteService;
     }
 
     @GetMapping
@@ -151,16 +155,23 @@ public class G4DController {
                 .body(resource);
     }
 
+    // Borra los dos formatos del reporte (txt y pdf). Si ya no existen, no es un error.
     @PostMapping("/exportation-delete")
-    public ResponseEntity<GenericResponse> eliminarExportacion(@RequestBody FileRequest request) throws IOException {
-        Path ruta = this.resolverExportacion(request);
-        if (!Files.exists(ruta)) {
-            throw new G4DException(String.format("No se encontró el archivo'%s'", request.getNombre()));
-        }
-        if (!Files.isRegularFile(ruta)) {
-            throw new G4DException("La ruta especificada no es un archivo válido.");
-        }
-        Files.delete(ruta);
-        return ResponseEntity.ok(new GenericResponse(true, "Archivo eliminado exitosamente!"));
+    public ResponseEntity<GenericResponse> eliminarExportacion(@RequestBody FileRequest request) {
+        this.resolverExportacion(request);
+        envioReporteService.eliminarReporte(request.getNombre());
+        return ResponseEntity.ok(new GenericResponse(true, "Reporte eliminado."));
+    }
+
+    // Envía el reporte por correo en segundo plano; el resultado llega por /topic/exportation-send-status-<id>
+    @PostMapping("/exportation-send")
+    public ResponseEntity<GenericResponse> enviarExportacion(@RequestBody ReportSendRequest request) {
+        return ResponseEntity.ok(envioReporteService.iniciarEnvio(request.getNombre(), request.getCorreo()));
+    }
+
+    // Estado de una simulación para retomarla al volver a su pestaña
+    @PostMapping("/simulation-state")
+    public ResponseEntity<Map<String, Object>> estadoSimulacion(@RequestBody TransactionRequest request) {
+        return ResponseEntity.ok(g4dService.obtenerEstadoSimulacion(request.getIdTransaccion()));
     }
 }

@@ -16,4 +16,11 @@ import lombok.NoArgsConstructor;
 public class ExportationRequest {
     private String idTransaccion;
     private String prefijo;
+    // Huso del usuario (horas) para mostrar las fechas del PDF en su hora local; null = UTC
+    private Integer husoHorario;
+
+    public ExportationRequest(String idTransaccion, String prefijo) {
+        this.idTransaccion = idTransaccion;
+        this.prefijo = prefijo;
+    }
 }

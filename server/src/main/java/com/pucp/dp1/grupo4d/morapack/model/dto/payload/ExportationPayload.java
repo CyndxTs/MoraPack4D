@@ -14,6 +14,12 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class ExportationPayload {
-    String nombre;
+    String nombre;      // reporte .txt
     String ruta;
+    String nombrePdf;   // reporte .pdf (mismo nombre base)
+
+    public ExportationPayload(String nombre, String ruta) {
+        this.nombre = nombre;
+        this.ruta = ruta;
+    }
 }

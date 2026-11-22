@@ -154,19 +154,34 @@
 
 .equipo {
   padding-top: 72px;
-  &__lista {
-    display: flex; flex-wrap: wrap; gap: 12px 40px;
-    margin: 24px 0 0; padding: 0; list-style: none;
-    li { font-size: 1.1rem; font-weight: 600; }
+  text-align: center;
+  h2 { margin-bottom: 32px; }
+  &__tarjeta {
+    position: relative;
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+    width: 240px; padding: 22px 20px 20px;
+    border-radius: var(--radio-l); border: 1px solid rgba(120, 198, 255, 0.28);
+    background: radial-gradient(240px 130px at 50% 0%, rgba(120, 198, 255, 0.12), transparent 70%), var(--marino);
+    strong { font-size: 1.2rem; font-variation-settings: "wdth" 112; }
+    p { margin: 2px 0 0; color: var(--tinta-2); font-size: 0.9rem; }
+    &--inversor {
+      width: 300px; margin: 0 auto;
+      border-color: rgba(255, 181, 71, 0.4);
+      background: radial-gradient(300px 150px at 50% 0%, rgba(255, 181, 71, 0.14), transparent 70%), var(--marino);
+      strong { font-size: 1.4rem; }
+      .equipo__rol { color: var(--ambar); }
+      .equipo__inicial { color: #241500; background: var(--ambar); }
+    }
   }
-  &__inversor {
-    display: inline-flex; flex-direction: column; gap: 4px;
-    margin-top: 36px; padding: 18px 22px;
-    border-radius: var(--radio-l); border: 1px solid rgba(255, 181, 71, 0.35);
-    background: radial-gradient(260px 120px at 0% 0%, rgba(255, 181, 71, 0.12), transparent 70%), var(--marino);
-    span { font-size: 0.82rem; color: var(--ambar); font-weight: 650; }
-    strong { font-size: 1.35rem; font-variation-settings: "wdth" 115; }
-    p { margin: 0; color: var(--tinta-2); font-size: 0.9rem; }
+  &__inicial {
+    width: 52px; height: 52px; margin-bottom: 8px; border-radius: 50%;
+    display: grid; place-items: center;
+    font-size: 1rem; font-weight: 750; letter-spacing: 0.02em; color: #061026; background: var(--cielo);
+  }
+  &__rol { font-size: 0.78rem; font-weight: 650; color: var(--cielo); text-transform: uppercase; letter-spacing: 0.08em; }
+  &__lista {
+    display: flex; flex-wrap: wrap; justify-content: center; gap: 16px;
+    margin: 20px 0 0; padding: 0; list-style: none;
   }
 }
 

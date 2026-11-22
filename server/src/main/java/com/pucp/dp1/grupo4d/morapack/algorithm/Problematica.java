@@ -121,9 +121,8 @@ public class Problematica {
         G4DUtility.Logger.logln(">> Cargando aeropuertos..");
         List<AeropuertoEntity> aeropuertosEntity = aeropuertoService.findAll();
         aeropuertosEntity.forEach(entity -> {
-            Aeropuerto aeropuerto = aeropuertoAdapter.toAlgorithm(idTransaccion, entity);
             // La simulación arranca con los almacenes vacíos: los registros guardados en BD son de la operación
-            if ("SIMULACION".equals(this.tipoEscenario)) aeropuerto.setRegistros(new ArrayList<>());
+            Aeropuerto aeropuerto = aeropuertoAdapter.toAlgorithm(idTransaccion, entity, !"SIMULACION".equals(this.tipoEscenario));
             if (this.origenes.containsKey(aeropuerto.getCodigo())) {
                 aeropuerto.setEsSede(true);
                 origenes.put(aeropuerto.getCodigo(), aeropuerto);
@@ -137,7 +136,7 @@ public class Problematica {
 
     public void cargarPlanes(PlanService planService, PlanAdapter planAdapter) {
         G4DUtility.Logger.logln(">> Cargando planes..");
-        List<PlanEntity> planesEntity = planService.findAll();
+        List<PlanEntity> planesEntity = planService.findAllConEventos(); // una sola consulta (sin N+1 de eventos)
         int cantEventos = 0;
         for (PlanEntity entity : planesEntity) {
             Plan plan = planAdapter.toAlgorithm(idTransaccion, entity);
@@ -165,13 +164,7 @@ public class Problematica {
         List<PedidoEntity> pedidosEntity = pedidoService.findAllInRangeByScenario(this.inicioDePlanificacion, this.finDePlanificacion, this.tipoEscenario, new ArrayList<>(this.origenes.keySet()));
         Set<String> codigosCargados = new HashSet<>();
         pedidos.forEach(p -> codigosCargados.add(p.getCodigo()));
-        // Pedidos que quedaron sin atender en un bloque anterior: se reintentan desde el umbral actual
-        // (los vuelos anteriores al umbral ya despegaron en el tiempo simulado)
-        if (this.umbralDeReplanificacion != null) {
-            pedidos.stream().filter(p -> !p.getFueAtendido())
-                            .filter(p -> p.getFechaHoraProcesamiento() == null || p.getFechaHoraProcesamiento().isBefore(this.umbralDeReplanificacion))
-                            .forEach(p -> p.setFechaHoraProcesamiento(this.umbralDeReplanificacion));
-        }
+        this.reintentarNoAtendidos();
         pedidosEntity.forEach(entity -> {
             if(codigosCargados.add(entity.getCodigo())) {
                 Pedido pedido = pedidoAdapter.toAlgorithm(idTransaccion, entity);
@@ -183,6 +176,41 @@ public class Problematica {
         });
         int cantAtendidos = pedidos.stream().filter(Pedido::getFueAtendido).toList().size();
         G4DUtility.Logger.logf("[:] PEDIDOS CARGADOS! | '%d' por atender! & '%d' ya atendidos!%n", pedidos.size() - cantAtendidos, cantAtendidos);
+    }
+
+    // Pedidos que quedaron sin atender en un bloque anterior: se reintentan desde el umbral actual
+    // (los vuelos anteriores al umbral ya despegaron en el tiempo simulado)
+    private void reintentarNoAtendidos() {
+        if (this.umbralDeReplanificacion == null) return;
+        pedidos.stream().filter(p -> !p.getFueAtendido())
+                        .filter(p -> p.getFechaHoraProcesamiento() == null || p.getFechaHoraProcesamiento().isBefore(this.umbralDeReplanificacion))
+                        .forEach(p -> p.setFechaHoraProcesamiento(this.umbralDeReplanificacion));
+    }
+
+    // ---------- Simulación: foto fija de los datos al iniciar ----------
+    // Una simulación trabaja con los pedidos que existían al iniciarla (los que se registren después no entran).
+    // Se cargan una sola vez para todo su rango y en cada bloque se liberan los que ya se generaron.
+    public final List<Pedido> pedidosPorLiberar = new ArrayList<>();
+
+    public void cargarFotoDePedidos(PedidoService pedidoService, PedidoAdapter pedidoAdapter, LocalDateTime inicio, LocalDateTime fin) {
+        G4DUtility.Logger.logln(">> Cargando pedidos de la simulación (foto fija)..");
+        List<PedidoEntity> pedidosEntity = pedidoService.findAllInRangeByScenario(inicio, fin, this.tipoEscenario, new ArrayList<>(this.origenes.keySet()));
+        pedidosEntity.forEach(entity -> pedidosPorLiberar.add(pedidoAdapter.toAlgorithm(idTransaccion, entity)));
+        pedidosPorLiberar.sort(Comparator.comparing(Pedido::getFechaHoraGeneracion));
+        G4DUtility.Logger.logf("[:] FOTO DE PEDIDOS CARGADA! | '%d' pedidos en el rango de la simulación%n", pedidosPorLiberar.size());
+    }
+
+    // Pasa a la problemática los pedidos de la foto generados hasta el fin del bloque actual
+    public void liberarPedidosDeLaFoto() {
+        this.reintentarNoAtendidos();
+        int liberados = 0;
+        while (!pedidosPorLiberar.isEmpty() && !pedidosPorLiberar.getFirst().getFechaHoraGeneracion().isAfter(this.finDePlanificacion)) {
+            Pedido pedido = pedidosPorLiberar.removeFirst();
+            if (pedido.getFechaHoraProcesamiento() == null) pedido.setFechaHoraProcesamiento(pedido.getFechaHoraGeneracion());
+            pedidos.add(pedido);
+            liberados++;
+        }
+        G4DUtility.Logger.logf("[:] PEDIDOS DEL BLOQUE! | '%d' nuevos, '%d' en RAM, '%d' por llegar%n", liberados, pedidos.size(), pedidosPorLiberar.size());
     }
 
     public void cargarVuelos(VueloService vueloService, VueloAdapter vueloAdapter) {

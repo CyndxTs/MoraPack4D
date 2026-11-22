@@ -41,3 +41,17 @@ export function limpiarSimulacionesViejas() {
       } catch { localStorage.removeItem(k); }
     });
 }
+
+// La simulación abierta más reciente de este navegador (para volver a ella al entrar a "Simulación")
+export function simulacionActiva() {
+  let mejor = null;
+  Object.keys(localStorage)
+    .filter((k) => /^morapack\.simulacion\.[^.]+$/.test(k))
+    .forEach((k) => {
+      try {
+        const meta = JSON.parse(localStorage.getItem(k));
+        if (meta?.creadaEn && (!mejor || meta.creadaEn > mejor.creadaEn)) mejor = { id: k.split(".")[2], creadaEn: meta.creadaEn };
+      } catch { /* ignorar */ }
+    });
+  return mejor?.id ?? null;
+}

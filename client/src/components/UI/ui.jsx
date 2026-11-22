@@ -858,7 +858,7 @@ export function LoadingOverlay({ text = "Cargando...", progreso = null }) {
 // === NUEVO COMPONENTE PARA SIMULACIÓN ===
 // src/components/ui/ui.jsx
 
-export function SimulationLoadingOverlay({ text = "Cargando..." }) {
+export function SimulationLoadingOverlay({ text = "Cargando...", onCancelar, cancelando = false }) {
   const [seconds, setSeconds] = useState(0);
 
   useEffect(() => {
@@ -893,6 +893,11 @@ export function SimulationLoadingOverlay({ text = "Cargando..." }) {
           ({seconds}s)
         </span>
       </p>
+      {onCancelar && (
+        <button type="button" className="boton boton--fantasma loading-overlay__cancelar" onClick={onCancelar} disabled={cancelando}>
+          {cancelando ? "Cancelando..." : "Cancelar simulación"}
+        </button>
+      )}
     </div>
   );
 }

@@ -22,10 +22,12 @@ import org.springframework.web.bind.annotation.*;
 public class UsuarioController {
     private final UsuarioService usuarioService;
     private final GestionUsuarioService gestionUsuarioService;
+    private final com.pucp.dp1.grupo4d.morapack.service.CorreoService correoService;
 
-    public UsuarioController(UsuarioService usuarioService, GestionUsuarioService gestionUsuarioService) {
+    public UsuarioController(UsuarioService usuarioService, GestionUsuarioService gestionUsuarioService, com.pucp.dp1.grupo4d.morapack.service.CorreoService correoService) {
         this.usuarioService = usuarioService;
         this.gestionUsuarioService = gestionUsuarioService;
+        this.correoService = correoService;
     }
 
     @PostMapping("/listar")
@@ -57,5 +59,18 @@ public class UsuarioController {
     @PostMapping("/eliminar")
     public ResponseEntity<GenericResponse> eliminar(@RequestBody UserCodeRequest request) {
         return ResponseEntity.ok(gestionUsuarioService.eliminar(request));
+    }
+
+    // Prueba del correo (Brevo): envía un correo al propio administrador y devuelve el motivo exacto si falla
+    @PostMapping("/correo-prueba")
+    public ResponseEntity<GenericResponse> probarCorreo() {
+        var principal = com.pucp.dp1.grupo4d.morapack.security.SesionActual.requerir();
+        String correo = usuarioService.findById(principal.id()).map(u -> u.getCorreo())
+                .orElseThrow(() -> new com.pucp.dp1.grupo4d.morapack.model.exception.G4DException("No se encontró tu cuenta."));
+        correoService.enviar(correo, "MoraPack · Prueba de correo",
+                com.pucp.dp1.grupo4d.morapack.service.CorreoService.plantilla("El correo funciona",
+                        "<p style=\"margin:0;color:#c9d5f0\">Si lees esto, MoraPack puede enviar códigos de verificación y reportes por correo.</p>"),
+                "Si lees esto, MoraPack puede enviar correos.", null);
+        return ResponseEntity.ok(new GenericResponse(true, String.format("Correo de prueba enviado a %s. Revisa tu bandeja (y spam).", correo)));
     }
 }

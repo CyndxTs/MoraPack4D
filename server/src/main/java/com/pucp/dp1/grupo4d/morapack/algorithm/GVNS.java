@@ -52,6 +52,9 @@ public class GVNS {
         G4DUtility.Logger.logf("[+] SOLUCION INICIAL REALIZADA! (FITNESS: %.3f | NO ATENDIDOS: %d)%n", x.getFitness(), x.getPedidosNoAtendidos().size());
         G4DUtility.Logger.Stats.log_stat_local_sol();
         this.solucion = x;
+        // VND y VNS desactivados temporalmente: con ~1000 pedidos por bloque (archivos del curso) el VND se quedaba en
+        // bucle. Por ahora la planificación es solo la solución inicial + sincronización + limpieza final.
+        /*
         if(!x.getPedidosAtendidos().isEmpty()) {
             G4DUtility.Logger.logln("Realizando optimización inicial.. [VND]");
             G4DUtility.Logger.Stats.set_local_start();
@@ -66,6 +69,7 @@ public class GVNS {
             G4DUtility.Logger.logf("[+] OPTIMIZACION FINAL REALIZADA! (FITNESS: %.3f)%n", x.getFitness());
             G4DUtility.Logger.Stats.log_stat_local_sol();
         }
+        */
         sincronizar(problematica, x);
         G4DUtility.Logger.logln("Realizando limpieza final.. [GC]");
         limpiezaFinal(problematica, x);

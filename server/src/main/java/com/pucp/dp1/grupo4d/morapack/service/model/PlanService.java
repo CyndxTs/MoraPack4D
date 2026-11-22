@@ -60,6 +60,10 @@ public class PlanService {
         return planRepository.findAll();
     }
 
+    public List<PlanEntity> findAllConEventos() {
+        return planRepository.findAllConEventos();
+    }
+
     public List<PlanEntity> findAll(Pageable pageable) {
         return planRepository.findAll(pageable).getContent();
     }
